@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StructCap</title>
+<meta name="description" content="Structural section capacity calculator for AS 3600/4100, Eurocode and Thai standards.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>html,body{margin:0;padding:0;}</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand" id="brandHome">
+    <span class="brand-mark">Sc</span>
+    <span id="brandLabel">StructCap</span>
+  </div>
+  <nav class="crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
+</div>
+<main id="app"></main>
+
+<script src="app.js"></script>
+<script src="codes.js"></script>
+<script src="placeholders.js"></script>
+<script src="beam.js"></script>
+<script src="lap.js"></script>
+<script src="pilecap.js"></script>
+<script>
+"use strict";
+
+const { el } = StructCap;
+const appRoot = document.getElementById("app");
+const crumbsRoot = document.getElementById("crumbs");
+const brandLabel = document.getElementById("brandLabel");
+document.getElementById("brandHome").addEventListener("click", () => { location.hash = "#/"; });
+
+const MATERIALS = {
+  concrete: { en: "Concrete Structure", th: "โครงสร้างคอนกรีต", icon: "▦", enabled: true },
+  steel: { en: "Steel Structure", th: "โครงสร้างเหล็ก", icon: "⌗", enabled: false },
+};
+const STANDARD_ORDER = ["AS", "EC", "TH"];
+
+/* ---------------- routing ----------------
+   #/                              welcome
+   #/<code>/<material>             module hub
+   #/<code>/<material>/<module>    module page
+------------------------------------------- */
+function parseHash() {
+  const h = location.hash.replace(/^#\/?/, "");
+  const parts = h.split("/").filter(Boolean);
+  return { code: parts[0], material: parts[1], mod: parts[2] };
+}
+
+function setLang(codeId) {
+  document.body.classList.toggle("lang-th", codeId === "TH");
+}
+
+function crumb(label, onClick, isCurrent) {
+  return el(isCurrent ? "span" : "button", { class: isCurrent ? "current" : "", onclick: onClick }, label);
+}
+
+function renderCrumbs(route) {
+  crumbsRoot.innerHTML = "";
+  const th = route.code === "TH";
+  crumbsRoot.appendChild(crumb(th ? TH_STR.home : "Home", () => location.hash = "#/", !route.code));
+  if (!route.code) return;
+  const C = Codes[route.code];
+  crumbsRoot.appendChild(el("span", { class: "sep" }, "›"));
+  crumbsRoot.appendChild(crumb(C.short, () => location.hash = "#/", false));
+  if (!route.material) { crumbsRoot.lastChild.className = "current"; return; }
+  crumbsRoot.appendChild(el("span", { class: "sep" }, "›"));
+  const matLabel = th ? MATERIALS[route.material].th : MATERIALS[route.material].en;
+  crumbsRoot.appendChild(crumb(matLabel, () => location.hash = `#/${route.code}/${route.material}`, !route.mod));
+  if (!route.mod) return;
+  crumbsRoot.appendChild(el("span", { class: "sep" }, "›"));
+  const mod = MODULES[route.material].find(m => m.key === route.mod);
+  crumbsRoot.appendChild(crumb(th ? mod.th : mod.en, null, true));
+}
+
+function renderWelcome() {
+  setLang(null);
+  appRoot.appendChild(el("div", { class: "hero" }, [
+    el("div", { class: "hero-bg" }),
+    el("div", { class: "hero-content hero-content-centered" }, [
+      el("div", { class: "hero-text" }, [
+        el("h1", {}, "StructCap"),
+        el("p", { class: "hero-sub" }, "Structural section capacity calculator"),
+      ]),
+    ]),
+  ]));
+  const grid = el("div", { class: "material-grid" });
+  appRoot.appendChild(grid);
+
+  Object.entries(MATERIALS).forEach(([key, mat]) => {
+    const matOK = mat.enabled;
+    const card = el("div", { class: "material-card" + (matOK ? "" : " disabled") }, [
+      el("div", { class: "material-card-head" }, [
+        el("div", { class: "material-icon" }, mat.icon),
+        !matOK ? el("span", { class: "module-badge" }, "Not available yet") : null,
+      ]),
+      el("h2", {}, mat.en),
+      el("div", { class: "standard-list" }, STANDARD_ORDER.map(code => {
+        const C = Codes[code];
+        const ok = matOK && C.enabled;
+        if (!ok) {
+          return el("div", { class: "standard-btn standard-btn-disabled" }, [
+            el("span", {}, [
+              el("span", { class: "std-name" }, C.name),
+              el("span", { class: "std-ref" }, C.short)
+            ]),
+            el("span", { class: "module-badge" }, !C.enabled ? "Not available" : "Coming soon")
+          ]);
+        }
+        return el("button", { class: "standard-btn", onclick: () => location.hash = `#/${code}/${key}` }, [
+          el("span", {}, [
+            el("span", { class: "std-name" }, C.name),
+            el("span", { class: "std-ref" }, C.short)
+          ]),
+          el("span", { class: "arrow" }, "→")
+        ]);
+      }))
+    ]);
+    grid.appendChild(card);
+  });
+}
+
+function renderFooter(lang) {
+  const th = lang === "TH";
+  appRoot.appendChild(el("footer", { class: "site-footer" }, th ? TH_STR.footer : FOOTER_EN));
+}
+
+function renderHub(route) {
+  const th = route.code === "TH";
+  setLang(route.code);
+  const C = Codes[route.code];
+  const mat = MATERIALS[route.material];
+  const refText = route.material === "steel" ? C.strings.refSteel : C.strings.refConcrete;
+  appRoot.appendChild(el("div", { class: "hero" }, [
+    el("h1", {}, (th ? mat.th : mat.en) + " — " + C.short),
+    el("p", { class: "muted" }, refText),
+  ]));
+  const grid = el("div", { class: "module-grid" });
+  appRoot.appendChild(grid);
+  MODULES[route.material].forEach(mod => {
+    const card = el("div", { class: "module-card" + (mod.ready ? "" : " disabled"), onclick: () => location.hash = `#/${route.code}/${route.material}/${mod.key}` }, [
+      el("div", { class: "module-card-head" }, [
+        el("h3", {}, th ? mod.th : mod.en),
+        el("span", { class: "module-badge" + (mod.ready ? " ready" : "") }, mod.ready ? (th ? "พร้อมใช้งาน" : "Available") : (th ? "เร็วๆ นี้" : "Coming soon")),
+      ]),
+      el("p", { class: "muted small" }, th ? mod.th_sub : mod.en_sub),
+    ]);
+    grid.appendChild(card);
+  });
+}
+
+function renderModule(route) {
+  setLang(route.code);
+  if (route.mod === "beam") {
+    BeamPage.render(appRoot, route.code);
+  } else if (route.mod === "lap") {
+    LapPage.render(appRoot, route.code);
+  } else if (route.mod === "pilecap") {
+    PileCapPage.render(appRoot, route.code);
+  } else {
+    renderPlaceholder(appRoot, route.code, route.material, route.mod);
+  }
+}
+
+function router() {
+  appRoot.innerHTML = "";
+  const route = parseHash();
+  renderCrumbs(route);
+  if (!route.code) { renderWelcome(); renderFooter(null); return; }
+  const codeOK = Codes[route.code] && Codes[route.code].enabled;
+  const matOK = MATERIALS[route.material] && MATERIALS[route.material].enabled;
+  if (!codeOK || !matOK) { location.hash = "#/"; return; }
+  if (!route.mod) { renderHub(route); renderFooter(route.code); return; }
+  renderModule(route);
+  renderFooter(route.code);
+  window.scrollTo(0, 0);
+}
+
+window.addEventListener("hashchange", router);
+router();
+</script>
+</body>
+</html>
