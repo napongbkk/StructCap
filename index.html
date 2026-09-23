@@ -7,10 +7,10 @@
 <meta name="description" content="Structural section capacity calculator for AS 3600/4100, Eurocode and Thai standards.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="style.css">
-<style>html,body{margin:0;padding:0;}</style>
+
+
 </head>
 <body>
-
 <div class="topbar">
   <div class="brand" id="brandHome">
     <span class="brand-mark">Sc</span>
@@ -26,6 +26,7 @@
 <script src="beam.js"></script>
 <script src="lap.js"></script>
 <script src="pilecap.js"></script>
+<script src="retaining.js"></script>
 <script>
 "use strict";
 
@@ -162,6 +163,8 @@ function renderModule(route) {
     LapPage.render(appRoot, route.code);
   } else if (route.mod === "pilecap") {
     PileCapPage.render(appRoot, route.code);
+  } else if (route.mod === "retaining") {
+    RetainingWallPage.render(appRoot, route.code);
   } else {
     renderPlaceholder(appRoot, route.code, route.material, route.mod);
   }
@@ -184,5 +187,6 @@ function router() {
 window.addEventListener("hashchange", router);
 router();
 </script>
+
 </body>
 </html>

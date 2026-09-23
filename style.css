@@ -282,6 +282,30 @@ select.field-input { font-family: var(--font-body); }
 
 .hidden { display: none !important; }
 
+/* ---------- bearing capacity table ---------- */
+.bearing-table { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+.bearing-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
+.bearing-hdr { font-size: 0.72rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+.bearing-row .cell-input { width: 100%; }
+.bearing-row .btn-secondary { padding: 4px 9px; font-size: 0.8rem; line-height: 1; }
+.bearing-table > .btn-secondary { align-self: flex-start; margin-top: 2px; }
+
+/* ---------- block course table ---------- */
+.course-table { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+.course-row { display: grid; grid-template-columns: 60px 1fr 70px auto; gap: 8px; align-items: center; }
+.course-hdr { font-size: 0.72rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+.course-row .cell-input { width: 100%; }
+.course-row .btn-secondary { padding: 4px 9px; font-size: 0.8rem; line-height: 1; }
+.course-width { font-family: var(--font-mono); font-size: 0.82rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.course-btn-row { margin-top: 2px; }
+
+/* ---------- joint capacity table ---------- */
+.table-scroll { overflow-x: auto; margin-bottom: 10px; }
+.joint-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; white-space: nowrap; }
+.joint-table th { text-align: left; padding: 6px 10px 6px 0; font-size: 0.7rem; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--line); }
+.joint-table td { padding: 7px 10px 7px 0; border-top: 1px solid var(--line); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.joint-table td:first-child, .joint-table th:first-child { font-family: inherit; }
+
 /* ---------- bar row inputs ---------- */
 .bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
 .bar-row-label { flex: 1 1 110px; font-size: 0.82rem; color: var(--ink-soft); min-width: 90px; }

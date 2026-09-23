@@ -59,6 +59,25 @@ const Codes = {
     combinedOK({ V, phiVuMax, T, phiTuMax }) { return Math.pow(V / phiVuMax, 2) + Math.pow(T / phiTuMax, 2) <= 1.0; },
     crackWidthFactor: 1.0,
     lapFactor: 1.3,
+    // Strut-and-tie modelling (Section 7) — single blanket capacity factor per Table 2.2.2
+    phiStm: 0.6,
+    stmNu(fc) { return 1 - fc / 250; }, // concrete efficiency factor for cracked (strut-and-tie) compression zones
+    stmStrutLimit(fc) { return this.phiStm * 0.6 * this.stmNu(fc) * fc; }, // strut crossed by transverse tie
+    stmNodeCCC(fc) { return this.phiStm * 1.0 * this.stmNu(fc) * fc; }, // node bounded only by struts/bearing
+    stmNodeCCT(fc) { return this.phiStm * 0.85 * this.stmNu(fc) * fc; }, // node anchoring one tie
+    frictionMu: 0.6, // Cl 8.4.3, Table 8.4.3 — concrete-to-concrete, not intentionally roughened (conservative default)
+    // AS 4678 — Coulomb active earth pressure coefficient (general wall/backfill/friction geometry)
+    coulombKa({ alpha, phi, delta, beta }) {
+      const r = (d) => d * Math.PI / 180;
+      const num = Math.pow(Math.sin(r(alpha + phi)), 2);
+      const den = Math.pow(Math.sin(r(alpha)), 2) * Math.sin(r(alpha - delta)) *
+        Math.pow(1 + Math.sqrt(Math.sin(r(phi + delta)) * Math.sin(r(phi - beta)) / (Math.sin(r(alpha - delta)) * Math.sin(r(alpha + beta)))), 2);
+      return num / den;
+    },
+    atRestKo({ phi, beta }) {
+      const r = (d) => d * Math.PI / 180;
+      return (1 - Math.sin(r(phi))) / (1 + Math.sin(r(beta)));
+    },
   },
 
   /* ================= EUROCODE — EN 1992-1-1:2004 & EN 1992-2:2005 (EC2) / EN 1993-1-1 (EC3) ================= */
@@ -140,6 +159,12 @@ const Codes = {
     combinedOK({ T, TRdmax, V, VRdmax }) { return (T / TRdmax) + (V / VRdmax) <= 1.0; },
     crackWidthFactor: 1.0,
     lapFactor: 1.4,
+    // Strut-and-tie modelling — EN 1992-1-1 Cl 6.5
+    stmNu(fck) { return 1 - fck / 250; }, // Cl 6.5.2 (2), Eq 6.57N — concrete efficiency factor
+    stmStrutLimit(fck, gammaC = this.gammaC) { return 0.6 * this.stmNu(fck) * (fck / gammaC); }, // Cl 6.5.2 (3) strut with transverse tension
+    stmNodeCCC(fck, gammaC = this.gammaC) { return 1.0 * this.stmNu(fck) * (fck / gammaC); }, // Cl 6.5.4 (4), k1 = 1.0
+    stmNodeCCT(fck, gammaC = this.gammaC) { return 0.85 * this.stmNu(fck) * (fck / gammaC); }, // Cl 6.5.4 (4), k2 = 0.85
+    frictionMu: 0.6, // Cl 6.2.5, Table 6.1 — concrete-to-concrete, smooth/rough intermediate (conservative default)
   },
 
   /* ================= THAI STANDARD — EIT 1008 (ACI 318-derived, USD) — disabled for now ================= */

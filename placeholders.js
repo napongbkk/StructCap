@@ -9,7 +9,7 @@ const MODULES = {
     { key: "column", en: "Column Capacity", th: "กำลังรับน้ำหนักเสา", en_sub: "Rectangular & circular, biaxial bending + shear (ULS)", th_sub: "หน้าตัดสี่เหลี่ยมและวงกลม แรงดัดสองแกน", ready: false },
     { key: "lap", en: "Lap & Anchorage Length", th: "ระยะทาบและระยะฝังยึด", en_sub: "Development, lap splice & anchorage lengths", th_sub: "ระยะฝังยึดและระยะทาบเหล็กเสริม", ready: true },
     { key: "pilecap", en: "Pile Cap Design", th: "ออกแบบฐานรากเสาเข็ม", en_sub: "Bending, one-way & punching shear", th_sub: "การดัด แรงเฉือนแบบเจาะทะลุ", ready: true },
-    { key: "retaining", en: "Retaining Wall", th: "ออกแบบกำแพงกันดิน", en_sub: "Reinforcement design + stability (sliding/overturning/bearing)", th_sub: "ออกแบบเหล็กเสริมและตรวจสอบเสถียรภาพ", ready: false },
+    { key: "retaining", en: "Limestone Retaining Wall", th: "กำแพงกันดินบล็อกหินปูน", en_sub: "Gravity wall stability — overturning, sliding, bearing, intercourse shear (AS 4678)", th_sub: "เสถียรภาพกำแพงกันดินแบบใช้น้ำหนัก — ล้ม เลื่อน แรงแบกทาน แรงเฉือนระหว่างชั้น (AS 4678)", ready: true },
   ],
   steel: [
     { key: "open", en: "Standard Open Section", th: "หน้าตัดเหล็กรูปพรรณเปิด", en_sub: "I / H / channel / angle section capacity", th_sub: "หน้าตัด I / H / รางน้ำ / เหล็กฉาก", ready: false },
