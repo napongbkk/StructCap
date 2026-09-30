@@ -441,6 +441,26 @@ tr.ok .ur i{background:var(--ok)} tr.warn .ur i{background:var(--warn)} tr.bad .
 .g-boltr{fill:var(--acc)} .g-weld{fill:var(--ink)} .g-inv{fill:var(--blue);font-weight:600}
 .fat-t th{white-space:nowrap}
 
+/* 3D view */
+.v3-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.v3-head .card-h{margin:0}
+.v3-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;font-size:13px;color:var(--muted)}
+.v3-tools select{border:1px solid var(--line2);border-radius:8px;background:var(--bg);padding:5px 8px;font-size:13px;max-width:100%}
+.v3c{display:block;width:100%;height:440px;border:1px solid var(--line);border-radius:10px;touch-action:none;cursor:grab;background:var(--card)}
+.v3c:active{cursor:grabbing}
+@media (max-width:560px){.v3c{height:340px}}
+.v3-leg{margin-top:8px}
+.v3-bar{display:flex;align-items:stretch;height:12px;gap:4px}
+.v3-grad{flex:1;border-radius:6px;background:linear-gradient(90deg,rgb(38,84,196),rgb(30,170,214),rgb(52,190,110),rgb(245,200,40),rgb(226,60,50))}
+.v3-over{width:52px;border-radius:6px;background:rgb(200,40,190);color:#fff;font-size:10px;display:grid;place-items:center;font-weight:600}
+.v3-ticks{display:flex;justify-content:space-between;font:11px var(--f-mono);color:var(--muted);padding-right:56px;margin-top:3px}
+.v3-cap{font-size:12.5px;color:var(--muted);margin-top:4px}
+.rp-3d{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.rp-3d figure{margin:0;border:1px solid var(--paper-line);border-radius:6px;overflow:hidden}
+.rp-3d img{display:block;width:100%;height:auto}
+.rp-3d figcaption{font-size:11px;color:var(--paper-mute);padding:4px 6px}
+@media (max-width:820px){.rp-3d{grid-template-columns:1fr}}
+
 /* toasts */
 #toasts{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);display:grid;gap:8px;z-index:80;width:min(92vw,440px)}
 .toast{background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:10px;font-size:14px;box-shadow:var(--shadow);transition:opacity .4s,transform .4s}
@@ -460,6 +480,7 @@ tr.ok .ur i{background:var(--ok)} tr.warn .ur i{background:var(--warn)} tr.bad .
 <script src="config.js"></script>
 <script src="engine.js"></script>
 <script src="gantry.js"></script>
+<script src="view3d.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

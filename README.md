@@ -17,6 +17,7 @@ English / Thai interface, Free and Pro plans, administrator panel, full calculat
 | `index.html` | Page shell and styles |
 | `engine.js` | RC calculation engine (section fibre analysis, shear, torsion, SLS, pile caps) |
 | `gantry.js` | Steel sign gantry engine: AS/NZS 1163 sections, AS 4100 members and connections, AS/NZS 1170.2 wind, AS 4100 §11 fatigue |
+| `view3d.js` | Dependency-free 3D canvas renderer: gantry model and fatigue stress-range contours |
 | `app.js` | Interface, sign-in, admin panel, reports and PDF |
 | `config.js` | Supabase API address and publishable key |
 | `supabase/migrations/` | Database tables (accounts, members, payments, settings) |

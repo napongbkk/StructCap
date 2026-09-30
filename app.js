@@ -4,6 +4,7 @@
   'use strict';
   const RC = window.RC, f = RC.f;
   const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const today = () => new Date().toISOString().slice(0, 10);
   const addDays = (d, n) => { const t = new Date((d || today()) + 'T00:00:00'); t.setDate(t.getDate() + n); return t.toISOString().slice(0, 10); };
@@ -658,8 +659,9 @@
       ${ch.map(c => { const [a, u] = outVal(c.Ed, c.unit), [b] = outVal(c.Rd, c.unit); const dim = c.unit === ''; return `<tr class="${urClass(c.ur)}"><td>${fmLabel(c.name)}</td><td class="num mono">${dim ? '' : f(a, 2)}</td><td class="num mono">${dim ? '' : f(b, 2) + ' <span class="u">' + esc(u) + '</span>'}</td>
         <td><div class="urb"><div class="ur"><i style="width:${Math.min(100, c.ur * 100)}%"></i></div><b class="mono">${f(c.ur, 2)}</b></div></td></tr>`; }).join('')}
       </tbody></table></div>`;
+    if (S.elem === 'gantry') setTimeout(() => mount3D(r), 0);
     $('#sketch').innerHTML = S.elem === 'gantry' ? gantrySketch(r) : S.elem === 'pilecap' ? capSketch(r) : sectionSketch(r);
-    $('#charts').innerHTML = S.elem === 'gantry' ? `<div class="card"><h2 class="card-h">${T('Connection details and fatigue', 'รายละเอียดรอยต่อและความล้า')}</h2>${gantryDetails(r)}</div>` : S.elem === 'column' ? columnCharts(r) : S.elem === 'pilecap' ? capElevation(r) : '';
+    $('#charts').innerHTML = S.elem === 'gantry' ? v3Card(r) + `<div class="card"><h2 class="card-h">${T('Connection details and fatigue', 'รายละเอียดรอยต่อและความล้า')}</h2>${gantryDetails(r)}</div>` : S.elem === 'column' ? columnCharts(r) : S.elem === 'pilecap' ? capElevation(r) : '';
   }
   function summaryKV(r) {
     const kv = (k, v, u) => { const [a, uu] = outVal(v, u); return `<div><dt>${fmLabel(k)}</dt><dd class="mono">${f(a, 2)} <span class="u">${esc(uu)}</span></dd></div>`; };
@@ -876,6 +878,60 @@
     return `<div class="gx"><figure class="det"><figcaption>${T('Base plate plan', 'ผังแผ่นฐาน')}</figcaption>${s}</figure><figure class="det"><figcaption>${cn.type === 'bolt' ? T('Stub and bolted end plates', 'ท่อสั้นและแผ่นปลายยึดสลัก') : T('Arm welded to column', 'คานเชื่อมเข้ากับเสา')}</figcaption>${cst}</figure></div>${ft}`;
   }
 
+  // ------------------------------------------------------------------ 3D view (gantry)
+  S.v3 = { view: 'overall', cs: 'none', mode: 'ur', cam: null };
+  let viewer = null;
+  const worstCase = r => { if (!r.fat || !r.fat.rows.length) return 'none'; const w = r.fat.rows.reduce((p, q) => q.ur > p.ur ? q : p); const c = r.fat.caseObjs.find(o => o.nm === w.cs); return c ? c.id : 'none'; };
+  function themeColors() {
+    const cs = getComputedStyle(document.documentElement), get = k => cs.getPropertyValue(k).trim(), dk = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+    const tryHex = (k, d) => { try { const v = get(k); return v.startsWith('#') ? SC3D.hex(v) : d; } catch (e) { return d; } };
+    return { bg: tryHex('--card', dk ? [20, 30, 49] : [255, 255, 255]), steel: dk ? [128, 146, 178] : [158, 174, 200], dark: dk ? [70, 78, 96] : [72, 80, 98], concrete: dk ? [70, 76, 88] : [206, 208, 204], sign: tryHex('--teal', [0, 168, 154]), bolt: tryHex('--acc', [255, 106, 43]) };
+  }
+  function v3Card(r) {
+    const cases = r.fat && r.fat.caseObjs ? r.fat.caseObjs : [], st = S.v3;
+    if (st.cs !== 'none' && !cases.some(c => c.id === st.cs)) st.cs = 'none';
+    const views = [['overall', T('Overall', 'ภาพรวม')], ['base', T('Base connection', 'รอยต่อฐาน')], ['arm', r.conn.type === 'bolt' ? T('Stub and flange', 'ท่อสั้นและหน้าแปลน') : T('Arm connection', 'รอยต่อคาน')]];
+    return `<div class="card v3"><div class="v3-head"><h2 class="card-h">${T('3D view', 'มุมมอง 3 มิติ')}</h2>
+      <div class="seg" role="group" aria-label="${T('Camera', 'มุมกล้อง')}">${views.map(([k, l]) => `<button data-act="v3view" data-p="${k}" aria-pressed="${st.view === k}">${l}</button>`).join('')}</div></div>
+      <div class="v3-tools"><label for="v3case">${T('Fatigue stress range', 'ช่วงหน่วยแรงล้า')}</label><select id="v3case"${cases.length ? '' : ' disabled'}><option value="none">${T('Off', 'ปิด')}</option>${cases.map(c => `<option value="${c.id}" ${st.cs === c.id ? 'selected' : ''}>${esc(c.nm)}</option>`).join('')}</select>
+        <label for="v3mode">${T('Colour by', 'ระบายสีตาม')}</label><select id="v3mode"${st.cs === 'none' ? ' disabled' : ''}><option value="ur" ${st.mode === 'ur' ? 'selected' : ''}>${T('Utilisation Δσ / φ_f·f₃', 'อัตราส่วน Δσ / φ_f·f₃')}</option><option value="mpa" ${st.mode === 'mpa' ? 'selected' : ''}>${T('Stress range Δσ (MPa)', 'ช่วงหน่วยแรง Δσ (MPa)')}</option></select>
+        <button class="btn btn-ghost xs" data-act="v3reset">${T('Reset view', 'รีเซ็ตมุมมอง')}</button></div>
+      <canvas id="v3c" class="v3c" tabindex="0" aria-label="${T('3D model of the gantry. Drag to rotate, shift-drag or two fingers to pan, scroll or pinch to zoom, arrow keys to rotate.', 'แบบจำลอง 3 มิติ ลากเพื่อหมุน กด shift ค้างแล้วลากหรือใช้สองนิ้วเพื่อเลื่อน เลื่อนล้อหรือบีบนิ้วเพื่อซูม')}"></canvas>
+      <div id="v3leg" class="v3-leg"></div>
+      <p class="hint">${T('Drag to rotate · shift-drag / two fingers to pan · scroll / pinch to zoom. The contour is the nominal stress range from beam theory on the modelled sections (stiffeners included at the base). It shows how the stress is distributed around each weld; it is not a finite-element hot-spot analysis — weld-toe concentration is covered by the detail category.', 'ลากเพื่อหมุน · shift+ลาก / สองนิ้วเพื่อเลื่อน · เลื่อนล้อ / บีบนิ้วเพื่อซูม สีแสดงช่วงหน่วยแรงระบุจากทฤษฎีคาน (รวมแผ่นเสริมที่ฐาน) เพื่อดูการกระจายหน่วยแรงรอบรอยเชื่อม ไม่ใช่การวิเคราะห์ไฟไนต์เอลิเมนต์แบบจุดร้อน ความเข้มข้นของหน่วยแรงที่ขอบรอยเชื่อมครอบคลุมโดยหมวดรายละเอียด')}</p></div>`;
+  }
+  const niceMax = v => { if (!(v > 0)) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; };
+  function colorFn(mode, smax) {
+    return s => { const a = (s[0][mode === 'ur' ? 'ur' : 'mpa'] + s[1][mode === 'ur' ? 'ur' : 'mpa'] + s[2][mode === 'ur' ? 'ur' : 'mpa']) / 3; return SC3D.ramp(mode === 'ur' ? a : Math.min(1, a / smax)); };
+  }
+  function mount3D(r) {
+    const cv = $('#v3c'); if (!cv || !window.SC3D) return;
+    const pre = SC3D.presets(r), theme = themeColors(), st = S.v3;
+    if (!st.cam) st.cam = Object.assign({}, pre[st.view]);
+    viewer = new SC3D.Viewer(cv, st.cam); viewer.onchange = c => { st.cam = Object.assign({}, c); };
+    viewer.bg = theme.bg;
+    const sc = SC3D.gantryScene(r, { stress: st.cs === 'none' ? null : st.cs }, theme);
+    viewer.mesh = sc.mesh;
+    const smax = niceMax(sc.smax);
+    viewer.color = st.cs === 'none' ? null : colorFn(st.mode, smax);
+    viewer.draw();
+    const leg = $('#v3leg');
+    if (st.cs === 'none') { leg.innerHTML = ''; return; }
+    const ticks = st.mode === 'ur' ? ['0', '0.25', '0.50', '0.75', '1.00'] : [0, 0.25, 0.5, 0.75, 1].map(t => f(t * smax, smax < 10 ? 1 : 0));
+    const cname = sc.cs ? sc.cs.nm : '';
+    leg.innerHTML = `<div class="v3-bar"><span class="v3-grad"></span>${st.mode === 'ur' ? '<span class="v3-over">&gt; 1.0</span>' : ''}</div><div class="v3-ticks">${ticks.map(t => `<span>${t}</span>`).join('')}${st.mode === 'ur' ? '<span></span>' : ''}</div>
+      <p class="v3-cap">${esc(cname)} · ${st.mode === 'ur' ? T('UR = Δσ / φ_f·f₃ of the detail at each location (plain tube: FAT 140)', 'UR = Δσ / φ_f·f₃ ของรายละเอียด ณ ตำแหน่งนั้น (ท่อปกติ: FAT 140)') : T('Δσ in MPa', 'Δσ หน่วย MPa')} · ${T('max Δσ in model', 'Δσ สูงสุดในแบบจำลอง')} ${f(sc.smax, 1)} MPa</p>`;
+  }
+  function snapshot3D(r, view, cs) {
+    if (!window.SC3D) return '';
+    const oc = document.createElement('canvas'), theme = themeColors(), pre = SC3D.presets(r);
+    theme.bg = [255, 255, 255];
+    const v = new SC3D.Viewer(oc, pre[view]), sc = SC3D.gantryScene(r, { stress: cs }, theme);
+    v.bg = theme.bg; v.mesh = sc.mesh; v.color = cs ? colorFn('ur', 1) : null; v.draw(720, 430);
+    try { return oc.toDataURL('image/png'); } catch (e) { return ''; }
+  }
+  window.addEventListener('resize', () => { if (viewer && $('#v3c')) viewer.draw(); });
+
   // ------------------------------------------------------------------ REPORT
   function fm(s) { return esc(s).replace(/\^\{([^}]*)\}/g, '<sup>$1</sup>').replace(/_\{([^}]*)\}/g, '<sub>$1</sub>').replace(/_([A-Za-z0-9,.'\-]+)/g, '<sub>$1</sub>'); }
   function inputTable() {
@@ -895,7 +951,12 @@
     }).join('')}</table></section>`).join('');
     const summary = `<table class="rp-sum"><thead><tr><th>${T('Check', 'รายการ')}</th><th class="num">${T('Action', 'แรงกระทำ')}</th><th class="num">${T('Capacity', 'กำลัง')}</th><th class="num">UR</th><th>${T('Result', 'ผล')}</th></tr></thead><tbody>${r.checks.map(x => { const [a, u] = outVal(x.Ed, x.unit), [b] = outVal(x.Rd, x.unit); return `<tr><td>${fmLabel(x.name)}</td><td class="num mono">${x.unit ? f(a, 2) : ''}</td><td class="num mono">${x.unit ? f(b, 2) + ' ' + esc(u) : ''}</td><td class="num mono">${f(x.ur, 3)}</td><td>${x.ur <= 1.0001 ? T('OK', 'ผ่าน') : T('NOT OK', 'ไม่ผ่าน')}</td></tr>`; }).join('')}</tbody></table>`;
     const drawing = S.elem === 'gantry' ? gantrySketch(r) : S.elem === 'pilecap' ? capSketch(r) : sectionSketch(r);
-    const charts = S.elem === 'column' ? columnChartsInner(r) : S.elem === 'gantry' ? gantryDetails(r) : '';
+    let charts = S.elem === 'column' ? columnChartsInner(r) : S.elem === 'gantry' ? gantryDetails(r) : '';
+    if (S.elem === 'gantry') {
+      const wc = worstCase(r), cs = wc === 'none' ? null : wc, cn = cs ? r.fat.caseObjs.find(c => c.id === cs).nm : '';
+      const shots = [['overall', null, T('Overall', 'ภาพรวม')], ['base', cs, T('Base connection', 'รอยต่อฐาน') + (cs ? ' — ' + cn : '')], ['arm', cs, T('Arm connection', 'รอยต่อคาน') + (cs ? ' — ' + cn : '')]];
+      charts += `<div class="rp-3d">${shots.map(([vw, c, cap]) => { const src = snapshot3D(r, vw, c); return src ? `<figure><img src="${src}" alt="${esc(cap)}"><figcaption>${esc(cap)}</figcaption></figure>` : ''; }).join('')}</div>${cs ? `<p class="rp-txt">${T('3D contours: nominal fatigue stress range as UR = Δσ/φ_f·f₃ (blue 0 → red 1.0, magenta > 1.0), beam theory on the modelled sections; not a finite-element hot-spot analysis.', 'สี 3 มิติ: ช่วงหน่วยแรงล้าระบุเป็น UR = Δσ/φ_f·f₃ (น้ำเงิน 0 → แดง 1.0, ม่วง > 1.0) จากทฤษฎีคาน ไม่ใช่การวิเคราะห์ไฟไนต์เอลิเมนต์แบบจุดร้อน')}</p>` : ''}`;
+    }
     $('#reportWrap').innerHTML = `<div class="rp-bar"><h2>${T('Calculation report', 'รายการคำนวณ')}</h2>
       <div class="rp-meta">${[['project', T('Project', 'โครงการ')], ['job', T('Job no.', 'เลขที่งาน')], ['ref', T('Member ref.', 'ชื่อชิ้นส่วน')], ['by', T('Designed by', 'ผู้ออกแบบ')], ['checked', T('Checked by', 'ผู้ตรวจสอบ')]].map(([k, l]) => `<label>${l}<input id="meta-${k}" data-meta="${k}" value="${esc(M[k])}"></label>`).join('')}</div>
       <div class="rp-btns"><button class="btn btn-hot sm" data-act="pdf" id="pdfBtn">${T('Export PDF', 'ส่งออก PDF')}</button><button class="btn btn-ghost sm" data-act="closeReport">${T('Close', 'ปิด')}</button></div></div>
@@ -1147,6 +1208,10 @@
     else if (a === 'report') { if (!isPro()) { toast(T('The full calculation report and PDF export are Pro features.', 'รายการคำนวณฉบับเต็มและ PDF สำหรับสมาชิก Pro'), 'bad'); return; } S.reportOpen = true; renderReport(); $('#reportWrap').scrollIntoView({ behavior: 'smooth' }); }
     else if (a === 'closeReport') { S.reportOpen = false; $('#reportWrap').innerHTML = ''; }
     else if (a === 'pdf') exportPdf();
+    else if (a === 'v3view' || a === 'v3reset') {
+      if (a === 'v3view') { S.v3.view = b.dataset.p; if (S.v3.view !== 'overall' && S.v3.cs === 'none' && S.res) S.v3.cs = worstCase(S.res); }
+      S.v3.cam = null; if (S.res) { $$('[data-act=v3view]').forEach(x => x.setAttribute('aria-pressed', x.dataset.p === S.v3.view)); const cs = $('#v3case'); if (cs) cs.value = S.v3.cs; const md = $('#v3mode'); if (md) md.disabled = S.v3.cs === 'none'; mount3D(S.res); }
+    }
     else if (a === 'tab') { A.tab = b.dataset.t; adminBody(); }
     else if (a === 'filter') { A.filter = b.dataset.f; adminBody(); }
     else if (a === 'newUser') openUser(null);
@@ -1176,6 +1241,7 @@
       schedule();
     }
     else if (t.dataset.row) { inp()[t.dataset.row][+t.dataset.i][t.dataset.f] = +t.value; schedule(); }
+    else if (t.id === 'v3case' || t.id === 'v3mode') { if (t.id === 'v3case') S.v3.cs = t.value; else S.v3.mode = t.value; const md = $('#v3mode'); if (md) md.disabled = S.v3.cs === 'none'; if (S.res) mount3D(S.res); }
     else if (t.dataset.meta) { S.meta[t.dataset.meta] = t.value; const o = $('#rv-' + t.dataset.meta); if (o) o.textContent = t.value; }
     else if (t.id === 'adm-q') { A.q = t.value; const pos = t.selectionStart; adminBody(); const n = $('#adm-q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }
   });

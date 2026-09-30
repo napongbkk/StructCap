@@ -503,7 +503,7 @@
     if (fy1 < 1) warn.push(L('Horizontal natural frequency below 1 Hz: dynamic response to AS/NZS 1170.2 §6 applies — set C_dyn accordingly.', 'ความถี่ธรรมชาติแนวนอนต่ำกว่า 1 Hz: ต้องพิจารณาผลพลวัตตาม AS/NZS 1170.2 §6'));
 
     // ---------- fatigue
-    const fat = { rows: [], cases: [] };
+    const fat = { rows: [], cases: [], caseObjs: [], caps: {} };
     if (ft.on) {
       R.sec(L('Fatigue loads (equivalent static, infinite life)', 'น้ำหนักล้า (สถิตเทียบเท่า อายุไม่จำกัด)'), 'AASHTO LTS §11 · AS 4100 §11');
       const IF = ft.IF;
@@ -554,6 +554,7 @@
       dets.forEach(d => {
         const ks = d.bolt && d.bolt > 30 ? Math.pow(30 / d.bolt, 0.25) : 1;
         const f3 = 0.737 * d.cat * ks, cap = phiF * f3;
+        fat.caps[d.id] = cap;
         if (d.t > 8 && !d.bolt && d.id !== 'fS') warn.push(d.nm + ': ' + L('wall t = ', 'ผนัง t = ') + d.t + L(' mm exceeds the t ≤ 8 mm range of the default category — confirm the category.', ' มม. เกินช่วง t ≤ 8 มม. ของหมวดเริ่มต้น — ยืนยันหมวด'));
         R.eq(d.nm, L('Category f_rc = ', 'หมวด f_rc = ') + d.cat + (ks < 1 ? ', k_s = (30/d)^0.25 = ' + f(ks, 3) : '') + ' — ' + d.src, cap, 'MPa');
         let worst = 0, wc = null;
@@ -566,9 +567,10 @@
         if (wc) add('fat' + d.id, L('Fatigue: ', 'ความล้า: ') + d.nm, wc.ds, cap, 'MPa', worst, 'fat', wc.cs.nm);
       });
       fat.cases = cases.map(c => c.nm);
+      fat.caseObjs = cases; fat.phi = phiF;
     }
 
-    const res = { code: 'AS', elem: 'gantry', checks, rep: R, warn: [...new Set(warn)], col, arm, geo: { H, L: Lr0, xs, Bs, Hs, ez, ey, x0, zs }, acts, base: { bolts: bb, stiff, plateSide, Ls }, flange: flBolts, conn: cn, sls: { dH, dV, limH, limV, fy: fy1, fz: fz1 }, fat, q: { qu, qs } };
+    const res = { code: 'AS', elem: 'gantry', checks, rep: R, warn: [...new Set(warn)], col, arm, geo: { H, L: Lr0, xs, Bs, Hs, ez, ey, x0, zs, xsw }, acts, base: { bolts: bb, stiff, plateSide, Ls, SI }, flange: flBolts, conn: cn, sls: { dH, dV, limH, limV, fy: fy1, fz: fz1 }, fat, q: { qu, qs } };
     return res;
   }
 
