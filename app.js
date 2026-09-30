@@ -26,21 +26,24 @@
   const USER_ITER = 120000;
   const CODES = {
     EC2: { name: ['Eurocode 2', 'Eurocode 2'], std: 'EN 1992-1-1:2023', sub: ['Second-generation Eurocode · design of concrete structures', 'Eurocode รุ่นที่ 2 · การออกแบบโครงสร้างคอนกรีต'], tone: 'blue', tag: 'EU' },
-    AS: { name: ['AS 3600', 'AS 3600'], std: 'AS 3600:2018', sub: ['Australian Standard · concrete structures', 'มาตรฐานออสเตรเลีย · โครงสร้างคอนกรีต'], tone: 'teal', tag: 'AU' },
+    AS: { name: ['Australian Standards', 'มาตรฐานออสเตรเลีย'], std: 'AS 3600:2018 · AS 4100:2020', sub: ['Concrete and steel structures', 'โครงสร้างคอนกรีตและเหล็ก'], tone: 'teal', tag: 'AU' },
     TH: { name: ['Thai Standard', 'มาตรฐานไทย'], std: 'EIT strength design · ACI 318-19', stdTh: 'วสท. วิธีกำลัง · ACI 318-19', sub: ['Strength design in Thai practice units: t · cm · ksc', 'ออกแบบโดยวิธีกำลัง หน่วย ตัน · ซม. · กก./ซม.²'], tone: 'orange', tag: 'TH' }
   };
   const cName = k => T(CODES[k].name[0], CODES[k].name[1]);
   const cStd = k => (S.ui === 'th' && CODES[k].stdTh) || CODES[k].std;
   const cSub = k => T(CODES[k].sub[0], CODES[k].sub[1]);
+  const stdFor = () => S.elem === 'gantry' ? 'AS 4100:2020 · AS/NZS 1170.2 · AS/NZS 1163' : S.code === 'AS' ? 'AS 3600:2018' : cStd(S.code);
   const ELEMS = {
     beam: { en: 'RC Beam', th: 'คาน คสล.', den: 'Bending about both axes, shear, torsion, crack width and service stresses.', dth: 'ดัดสองแกน แรงเฉือน แรงบิด ความกว้างรอยร้าว และหน่วยแรงใช้งาน', free: true },
     column: { en: 'RC Column', th: 'เสา คสล.', den: 'N–M interaction for both axes plus the full biaxial N–Mx–My contour.', dth: 'แผนภาพปฏิสัมพันธ์ N–M ทั้งสองแกน และ N–Mx–My สองแกน', free: false },
-    pilecap: { en: 'RC Pile Cap', th: 'ฐานรากบนเสาเข็ม', den: 'Beam method or strut-and-tie, punching at column and piles, one-way shear.', dth: 'วิธีคานหรือแบบจำลองโครงถัก (STM) เฉือนทะลุที่เสาและเข็ม เฉือนแบบคาน', free: false }
+    pilecap: { en: 'RC Pile Cap', th: 'ฐานรากบนเสาเข็ม', den: 'Beam method or strut-and-tie, punching at column and piles, one-way shear.', dth: 'วิธีคานหรือแบบจำลองโครงถัก (STM) เฉือนทะลุที่เสาและเข็ม เฉือนแบบคาน', free: false },
+    gantry: { en: 'Sign Gantry', th: 'โครงป้ายจราจรยื่น', den: 'Steel cantilever sign structure: CHS / SHS / RHS members, welded or bolted arm, base plate, fatigue.', dth: 'โครงเหล็กป้ายจราจรแบบคานยื่น: หน้าตัด CHS / SHS / RHS รอยต่อเชื่อมหรือสลัก แผ่นฐาน และความล้า', free: false, codes: ['AS'], steel: true }
   };
   const UNITS = {
     len: { si: ['mm', 'mm', 1], th: ['cm', 'ซม.', 10] }, spc: { si: ['mm', 'mm', 1], th: ['cm', 'ซม.', 10] }, dia: { si: ['mm', 'mm', 1], th: ['mm', 'มม.', 1] },
     stress: { si: ['MPa', 'MPa', 1], th: ['ksc', 'ksc', RC.KSC] }, force: { si: ['kN', 'kN', 1], th: ['t', 'ตัน', RC.TF] }, moment: { si: ['kNm', 'kNm', 1], th: ['t·m', 'ตัน·ม.', RC.TF] },
-    density: { si: ['kN/m³', 'kN/m³', 1], th: ['t/m³', 'ตัน/ม.³', RC.TF] }, none: { si: ['', '', 1], th: ['', '', 1] }
+    density: { si: ['kN/m³', 'kN/m³', 1], th: ['t/m³', 'ตัน/ม.³', RC.TF] }, none: { si: ['', '', 1], th: ['', '', 1] },
+    lenm: { si: ['m', 'ม.', 1000], th: ['m', 'ม.', 1000] }, kpa: { si: ['kPa', 'kPa', 1], th: ['kPa', 'kPa', 1] }, ms: { si: ['m/s', 'ม./วินาที', 1], th: ['m/s', 'ม./วินาที', 1] }, pa: { si: ['Pa', 'Pa', 1], th: ['Pa', 'Pa', 1] }
   };
   const OUT_TH = { kN: [['t', 'ตัน'], 1 / RC.TF], kNm: [['t·m', 'ตัน·ม.'], 1 / RC.TF], mm: [['cm', 'ซม.'], 0.1], MPa: [['ksc', 'ksc'], 1 / RC.KSC], 'mm²': [['cm²', 'ซม.²'], 0.01], 'mm²/m': [['cm²/m', 'ซม.²/ม.'], 0.01] };
   const DIAS = { EC2: [8, 10, 12, 16, 20, 25, 32, 40], AS: [10, 12, 16, 20, 24, 28, 32, 36, 40], TH: [6, 9, 10, 12, 16, 20, 25, 28, 32] };
@@ -95,9 +98,64 @@
       F('Ns', 'sls', 'N service', 'N ใช้งาน', 'force'), F('Mxs', 'sls', 'M_x service', 'M_x ใช้งาน', 'moment'), F('Mys', 'sls', 'M_y service', 'M_y ใช้งาน', 'moment')
     ]
   };
+  const GA = window.GANTRY;
+  const YN = [['yes', 'Yes', 'ใช่'], ['no', 'No', 'ไม่ใช่']];
+  const SHAPES = [['CHS', 'CHS — circular hollow', 'CHS — ท่อกลม'], ['SHS', 'SHS — square hollow', 'SHS — ท่อสี่เหลี่ยมจัตุรัส'], ['RHS', 'RHS — rectangular hollow', 'RHS — ท่อสี่เหลี่ยมผืนผ้า']];
+  const SEC_DEF = { CHS: '323.9x9.5', SHS: '250x250x9', RHS: '300x200x10' };
+  const sizeOpts = k => v => GA.sizeOptions(v[k]).map(o => [o[0], o[1], o[1]]);
+  const GRADE_OPTS = Object.keys(GA.GRADES).map(g => [g, g + ' (f_y ' + GA.GRADES[g].fy + ' MPa)', g + ' (f_y ' + GA.GRADES[g].fy + ' MPa)']);
+  const BOLT_OPTS = Object.keys(GA.BOLTS).map(b => [b, b, b]);
+  const BGR_OPTS = [['4.6', 'Grade 4.6 (f_uf 400 MPa)', 'เกรด 4.6 (f_uf 400 MPa)'], ['8.8', 'Grade 8.8 (f_uf 830 MPa)', 'เกรด 8.8 (f_uf 830 MPa)']];
+  const WELD_OPTS = [['cjp', 'Complete-penetration butt weld', 'รอยเชื่อมชนทะลุเต็ม'], ['fillet', 'Fillet weld all round', 'รอยเชื่อมพอกรอบท่อ']];
+  const CAT_OPTS = [['auto', 'Auto (by detail)', 'อัตโนมัติ (ตามรายละเอียด)']].concat([36, 40, 45, 50, 56, 63, 71, 80, 90].map(c => [String(c), 'FAT ' + c, 'FAT ' + c]));
+  const isBolt = v => v.ctype === 'bolt', yes = k => v => v[k] === 'yes';
+  SCHEMA.gantry = [
+    F('H', 'geo', 'Column height to arm centreline H', 'ความสูงเสาถึงแนวแกนคาน H', 'lenm'), F('L', 'geo', 'Arm length from column centreline L', 'ความยาวคานจากแนวแกนเสา L', 'lenm'),
+    F('ke', 'geo', 'Column effective length factor k_e', 'ตัวคูณความยาวประสิทธิผลเสา k_e', 'none'),
+    F('Bs', 'sign', 'Sign width B_s', 'ความกว้างป้าย B_s', 'lenm'), F('Hs', 'sign', 'Sign height H_s', 'ความสูงป้าย H_s', 'lenm'),
+    F('xs', 'sign', 'Sign centre from column centreline x_s', 'ศูนย์กลางป้ายจากแนวแกนเสา x_s', 'lenm'),
+    F('ez', 'sign', 'Sign centre above arm centreline e_z', 'ศูนย์กลางป้ายเหนือแนวแกนคาน e_z', 'len'), F('ey', 'sign', 'Sign face offset from arm centreline e_y', 'ระยะหน้าป้ายจากแนวแกนคาน e_y', 'len'),
+    F('gs', 'sign', 'Sign self-weight g_s', 'น้ำหนักป้าย g_s', 'kpa'), F('Gadd', 'sign', 'Brackets, lights and attachments', 'น้ำหนักขายึด ไฟ และอุปกรณ์', 'force'),
+    F('colShape', 'col', 'Section type', 'ชนิดหน้าตัด', 'none', { type: 'sel', opts: SHAPES, re: 'colSize' }), F('colSize', 'col', 'Size (AS/NZS 1163)', 'ขนาด (AS/NZS 1163)', 'none', { type: 'sel', opts: sizeOpts('colShape') }),
+    F('colGrade', 'col', 'Grade', 'เกรด', 'none', { type: 'sel', opts: GRADE_OPTS }),
+    F('armShape', 'arm', 'Section type', 'ชนิดหน้าตัด', 'none', { type: 'sel', opts: SHAPES, re: 'armSize' }), F('armSize', 'arm', 'Size (AS/NZS 1163)', 'ขนาด (AS/NZS 1163)', 'none', { type: 'sel', opts: sizeOpts('armShape') }),
+    F('armGrade', 'arm', 'Grade', 'เกรด', 'none', { type: 'sel', opts: GRADE_OPTS }),
+    F('mode', 'wind', 'Wind input', 'รูปแบบข้อมูลลม', 'none', { type: 'sel', opts: [['V', 'Design wind speed V_des,θ', 'ความเร็วลมออกแบบ V_des,θ'], ['q', 'Design wind pressure q_z', 'แรงดันลมออกแบบ q_z']], re: true }),
+    F('Vu', 'wind', 'ULS wind speed V_des,θ', 'ความเร็วลม ULS V_des,θ', 'ms', { when: v => v.mode === 'V' }), F('Vs', 'wind', 'SLS wind speed', 'ความเร็วลม SLS', 'ms', { when: v => v.mode === 'V' }),
+    F('qu', 'wind', 'ULS wind pressure q_u', 'แรงดันลม ULS q_u', 'kpa', { when: v => v.mode === 'q' }), F('qs', 'wind', 'SLS wind pressure q_s', 'แรงดันลม SLS q_s', 'kpa', { when: v => v.mode === 'q' }),
+    F('Cfig', 'wind', 'Sign shape factor C_fig', 'สัมประสิทธิ์รูปทรงป้าย C_fig', 'none'), F('Cdc', 'wind', 'Column drag factor C_d', 'สัมประสิทธิ์แรงลากเสา C_d', 'none'),
+    F('Cda', 'wind', 'Arm drag factor C_d', 'สัมประสิทธิ์แรงลากคาน C_d', 'none'), F('Cdyn', 'wind', 'Dynamic response factor C_dyn', 'ตัวคูณผลพลวัต C_dyn', 'none'),
+    F('eb', 'wind', 'Wind eccentricity on sign e/B_s', 'ความเยื้องศูนย์ของลมบนป้าย e/B_s', 'none'),
+    F('ctype', 'conn', 'Arm connection', 'รูปแบบรอยต่อคาน', 'none', { type: 'sel', opts: [['weld', 'Arm welded to column', 'เชื่อมคานเข้ากับเสา'], ['bolt', 'Stub + bolted end plates', 'ท่อสั้น + แผ่นปลายยึดสลัก']], re: true }),
+    F('cweld', 'conn', 'Tube weld', 'รอยเชื่อมท่อ', 'none', { type: 'sel', opts: WELD_OPTS, re: true }), F('sa', 'conn', 'Fillet weld size', 'ขนาดรอยเชื่อมพอก', 'len', { when: v => v.cweld === 'fillet' }),
+    F('Lst', 'conn', 'Stub length from column face', 'ความยาวท่อสั้นจากผิวเสา', 'len', { when: isBolt }), F('tep', 'conn', 'End plate thickness', 'ความหนาแผ่นปลาย', 'len', { when: isBolt }),
+    F('nf', 'conn', 'Flange bolts (number)', 'จำนวนสลักหน้าแปลน', 'none', { type: 'int', when: isBolt }), F('fb', 'conn', 'Flange bolt size', 'ขนาดสลักหน้าแปลน', 'none', { type: 'sel', opts: BOLT_OPTS, when: isBolt }),
+    F('fg', 'conn', 'Flange bolt grade', 'เกรดสลักหน้าแปลน', 'none', { type: 'sel', opts: BGR_OPTS, when: isBolt }), F('af', 'conn', 'Bolt offset from tube face', 'ระยะสลักจากผิวท่อ', 'len', { when: isBolt }),
+    F('nb', 'base', 'Anchor bolts (number)', 'จำนวนสลักยึด', 'none', { type: 'int' }), F('db', 'base', 'Anchor bolt size', 'ขนาดสลักยึด', 'none', { type: 'sel', opts: BOLT_OPTS }),
+    F('bg', 'base', 'Anchor bolt grade', 'เกรดสลักยึด', 'none', { type: 'sel', opts: BGR_OPTS }), F('ab', 'base', 'Bolt offset from tube face a', 'ระยะสลักจากผิวท่อ a', 'len'),
+    F('ep', 'base', 'Plate edge beyond bolt', 'ระยะขอบแผ่นจากสลัก', 'len'), F('tp', 'base', 'Base plate thickness', 'ความหนาแผ่นฐาน', 'len'), F('fyp', 'base', 'Plate yield stress f_y', 'กำลังครากแผ่นเหล็ก f_y', 'stress'),
+    F('bweld', 'base', 'Column-to-plate weld', 'รอยเชื่อมเสากับแผ่นฐาน', 'none', { type: 'sel', opts: WELD_OPTS, re: true }), F('sb', 'base', 'Fillet weld size', 'ขนาดรอยเชื่อมพอก', 'len', { when: v => v.bweld === 'fillet' }),
+    F('stiff', 'base', 'Stiffeners', 'แผ่นเสริมกำลัง', 'none', { type: 'sel', opts: YN, re: true }),
+    F('ts', 'base', 'Stiffener thickness', 'ความหนาแผ่นเสริม', 'len', { when: yes('stiff') }), F('hs', 'base', 'Stiffener height', 'ความสูงแผ่นเสริม', 'len', { when: yes('stiff') }),
+    F('sst', 'base', 'Stiffener fillet weld size', 'ขนาดรอยเชื่อมแผ่นเสริม', 'len', { when: yes('stiff') }),
+    F('fon', 'fat', 'Check fatigue', 'ตรวจสอบความล้า', 'none', { type: 'sel', opts: YN, re: true }),
+    F('IF', 'fat', 'Fatigue importance factor I_F', 'ตัวคูณความสำคัญ I_F', 'none', { when: yes('fon') }), F('phiF', 'fat', 'Fatigue capacity factor φ_f', 'ตัวคูณลดกำลังความล้า φ_f', 'none', { when: yes('fon') }),
+    F('PNW', 'fat', 'Natural wind gust pressure', 'แรงดันลมกระโชกธรรมชาติ', 'pa', { when: yes('fon') }), F('Vm', 'fat', 'Yearly mean wind speed', 'ความเร็วลมเฉลี่ยรายปี', 'ms', { when: yes('fon') }),
+    F('tg', 'fat', 'Truck-induced gust (sign over traffic)', 'ลมจากรถบรรทุก (ป้ายอยู่เหนือช่องจราจร)', 'none', { type: 'sel', opts: YN, re: true, when: yes('fon') }),
+    F('PTG', 'fat', 'Truck gust pressure', 'แรงดันลมจากรถบรรทุก', 'pa', { when: v => v.fon === 'yes' && v.tg === 'yes' }), F('xTG', 'fat', 'Truck lane centre from column x_TG', 'ศูนย์กลางช่องจราจรจากเสา x_TG', 'lenm', { when: v => v.fon === 'yes' && v.tg === 'yes' }),
+    F('LTG', 'fat', 'Loaded length along arm', 'ความยาวรับแรงตามคาน', 'len', { when: v => v.fon === 'yes' && v.tg === 'yes' }), F('dsh', 'fat', 'Sign horizontal projection', 'ความลึกป้ายในแนวราบ', 'len', { when: v => v.fon === 'yes' && v.tg === 'yes' }),
+    F('ga', 'fat', 'Galloping', 'การสั่นแบบแกลลอปปิง', 'none', { type: 'sel', opts: YN, re: true, when: yes('fon') }), F('PG', 'fat', 'Galloping pressure', 'แรงดันแกลลอปปิง', 'pa', { when: v => v.fon === 'yes' && v.ga === 'yes' }),
+    F('cB', 'fat', 'Category: column-to-base weld', 'หมวด: รอยเชื่อมเสา-ฐาน', 'none', { type: 'sel', opts: CAT_OPTS, when: yes('fon') }),
+    F('cS', 'fat', 'Category: stiffener termination', 'หมวด: ปลายแผ่นเสริม', 'none', { type: 'sel', opts: CAT_OPTS, when: v => v.fon === 'yes' && v.stiff === 'yes' }),
+    F('cR', 'fat', 'Category: arm / stub welds', 'หมวด: รอยเชื่อมคาน / ท่อสั้น', 'none', { type: 'sel', opts: CAT_OPTS, when: yes('fon') }),
+    F('cA', 'fat', 'Category: bolts in tension', 'หมวด: สลักรับแรงดึง', 'none', { type: 'sel', opts: CAT_OPTS, when: yes('fon') }),
+    F('limH', 'lim', 'Horizontal tip deflection limit L/…', 'ขีดจำกัดการโก่งแนวนอน L/…', 'none'), F('limV', 'lim', 'Vertical tip deflection limit L/…', 'ขีดจำกัดการโก่งแนวดิ่ง L/…', 'none')
+  ];
   const GROUPS = {
     geo: ['Geometry', 'รูปทรงหน้าตัด'], mat: ['Materials', 'วัสดุ'], coef: ['Code coefficients', 'ค่าสัมประสิทธิ์'], link: ['Shear links', 'เหล็กปลอก'],
-    bars: ['Reinforcement', 'เหล็กเสริม'], uls: ['Design actions — ULS', 'แรงประลัย (ULS)'], sls: ['Service actions — SLS', 'แรงใช้งาน (SLS)'], piles: ['Pile group', 'กลุ่มเสาเข็ม']
+    bars: ['Reinforcement', 'เหล็กเสริม'], uls: ['Design actions — ULS', 'แรงประลัย (ULS)'], sls: ['Service actions — SLS', 'แรงใช้งาน (SLS)'], piles: ['Pile group', 'กลุ่มเสาเข็ม'],
+    sign: ['Sign panel', 'แผ่นป้าย'], col: ['Column section', 'หน้าตัดเสา'], arm: ['Cantilever arm section', 'หน้าตัดคานยื่น'], wind: ['Wind (AS/NZS 1170.2)', 'ลม (AS/NZS 1170.2)'],
+    conn: ['Arm-to-column connection', 'รอยต่อคาน-เสา'], base: ['Base plate and anchor bolts', 'แผ่นฐานและสลักยึด'], fat: ['Fatigue (AS 4100 §11)', 'ความล้า (AS 4100 §11)'], lim: ['Serviceability limits', 'ขีดจำกัดสภาวะใช้งาน']
   };
   const DEF = {
     beam: {
@@ -118,6 +176,14 @@
   };
 
   Object.values(DEF.pilecap).forEach(d => { d.tieN = 5; d.tieD = 20; });
+  DEF.gantry = { AS: {
+    H: 7.0, L: 6.5, ke: 2.2, Bs: 3.0, Hs: 2.0, xs: 4.5, ez: 0, ey: 350, gs: 0.35, Gadd: 1.0,
+    colShape: 'CHS', colSize: '457x12.7', colGrade: 'C350L0', armShape: 'CHS', armSize: '323.9x9.5', armGrade: 'C350L0',
+    mode: 'V', Vu: 45, Vs: 30, qu: 1.2, qs: 0.54, Cfig: 1.4, Cdc: 1.2, Cda: 1.2, Cdyn: 1.0, eb: 0,
+    ctype: 'weld', cweld: 'cjp', sa: 10, Lst: 400, tep: 32, nf: 8, fb: 'M24', fg: '8.8', af: 45,
+    nb: 12, db: 'M36', bg: '8.8', ab: 75, ep: 60, tp: 40, fyp: 340, bweld: 'cjp', sb: 12, stiff: 'yes', ts: 16, hs: 300, sst: 8,
+    fon: 'yes', IF: 1.0, phiF: 0.7, PNW: 250, Vm: 5.0, tg: 'yes', PTG: 900, xTG: 4.5, LTG: 3700, dsh: 300, ga: 'no', PG: 1000,
+    cB: 'auto', cS: 'auto', cR: 'auto', cA: 'auto', limH: 100, limV: 150 } };
 
   // ------------------------------------------------------------------ session
   const sess = ss.get('srcSession'); if (sess) Object.assign(S, { role: sess.role, user: sess.user });
@@ -336,7 +402,7 @@
           ${ticks.map(t => `<li>${t}</li>`).join('')}<li class="no">${T('Full calculation report / PDF', 'รายการคำนวณฉบับเต็ม / PDF')}</li><li class="no">${T('Columns and pile caps', 'เสา และฐานรากบนเสาเข็ม')}</li></ul>
           ${S.promo ? `<span class="btn btn-ghost struck" aria-hidden="true">${T('Start free', 'เริ่มใช้งานฟรี')}</span><p class="promo-note">${T('Pro for free — every feature is open', 'Pro ฟรี — เปิดทุกฟังก์ชัน')}</p>` : `<button class="btn btn-ghost" data-act="free">${T('Start free', 'เริ่มใช้งานฟรี')}</button>`}</article>
         <article class="plan plan-pro"><span class="ribbon">${T('Recommended', 'แนะนำ')}</span><h3>Pro</h3><p class="price">${S.promo ? `<s>USD 1.99</s> <b>${T('Free now', 'ฟรีตอนนี้')}</b>` : `<b>USD 1.99</b> / ${T('month', 'เดือน')}`}</p><ul>
-          <li>${T('Everything in Free', 'ทุกอย่างใน Free')}</li><li>${T('RC columns: N–M and N–Mx–My interaction', 'เสา คสล. แผนภาพ N–M และ N–Mx–My')}</li><li>${T('Pile caps: beam method and STM', 'ฐานรากบนเสาเข็ม วิธีคาน และ STM')}</li><li>${T('Full calculation report with clause references', 'รายการคำนวณฉบับเต็ม อ้างอิงข้อกำหนด')}</li><li>${T('PDF export', 'ส่งออกรายงานเป็น PDF')}</li></ul>
+          <li>${T('Everything in Free', 'ทุกอย่างใน Free')}</li><li>${T('RC columns: N–M and N–Mx–My interaction', 'เสา คสล. แผนภาพ N–M และ N–Mx–My')}</li><li>${T('Pile caps: beam method and STM', 'ฐานรากบนเสาเข็ม วิธีคาน และ STM')}</li><li>${T('Steel sign gantry to AS 4100, including fatigue', 'โครงป้ายจราจรเหล็กตาม AS 4100 รวมความล้า')}</li><li>${T('Full calculation report with clause references', 'รายการคำนวณฉบับเต็ม อ้างอิงข้อกำหนด')}</li><li>${T('PDF export', 'ส่งออกรายงานเป็น PDF')}</li></ul>
           ${S.promo ? `<span class="btn btn-ghost struck" aria-hidden="true">${T('Pro sign in', 'เข้าสู่ระบบ Pro')}</span><button class="btn btn-hot" data-act="free">${T('Pro for free — start now', 'Pro ฟรี — เริ่มใช้งาน')}</button>` : `<button class="btn btn-hot" data-act="nav" data-v="login">${T('Pro sign in', 'เข้าสู่ระบบ Pro')}</button>`}</article>
       </div></div></section>
 
@@ -395,7 +461,7 @@
       </section>
       ${sel && S.codePop ? `<div class="modal-bg pop" data-act="closePop"><div class="modal elem-pop tone-${CODES[sel].tone}" role="dialog" aria-modal="true" aria-labelledby="popT">
         <div class="pop-head"><span class="code-big">${CODES[sel].tag}</span><div><p class="eyebrow">${cName(sel)} · ${cStd(sel)}</p><h2 id="popT">${T('What are you designing?', 'เลือกชิ้นส่วนที่ต้องการออกแบบ')}</h2></div><button class="icon-btn pop-x" data-act="closePop" aria-label="${T('Close', 'ปิด')}">×</button></div>
-        <div class="pop-grid">${Object.entries(ELEMS).map(([k, e]) => {
+        <div class="pop-grid">${Object.entries(ELEMS).filter(([k, e]) => !e.codes || e.codes.includes(sel)).map(([k, e]) => {
         const locked = !e.free && !isPro();
         return `<button class="pick elem ${locked ? 'locked' : ''}" data-act="elem" data-e="${k}">
             ${elemIcon(k)}<span class="pick-t">${T(e.en, e.th)} <span class="pill ${e.free || S.promo ? 'free' : 'pro'}">${e.free ? 'Free' : S.promo ? T('Pro · free now', 'Pro · ฟรี') : 'Pro'}</span></span><span class="pick-s">${T(e.den, e.dth)}</span>
@@ -407,6 +473,13 @@
   // Line-sketch icons in drafting style: ink outlines, accent for loads / struts
   function elemIcon(k) {
     const o = '<svg class="ei" viewBox="0 0 120 72" aria-hidden="true">';
+    if (k === 'gantry') return o + `
+      <path d="M8 68h104" class="ln"/>${[12, 22, 32, 42].map(x => `<path d="M${x} 68l-5 4" class="ln-thin"/>`).join('')}
+      <path d="M16 66h16" class="ln"/><rect x="21" y="10" width="6" height="56" class="ln"/>
+      <rect x="27" y="11" width="84" height="5" class="ln"/><path d="M27 13.5h84" class="ln-dash"/>
+      <rect x="58" y="18" width="40" height="24" class="ln"/><path d="M62 24h32M62 30h26M62 36h20" class="ln-thin"/>
+      <path d="M66 16v2M90 16v2" class="ln"/><path d="M29 16l6 6" class="ln-thin"/>
+      <g class="ln-acc"><circle cx="104" cy="30" r="4"/><path d="M101 27l6 6M107 27l-6 6"/></g></svg>`;
     if (k === 'beam') return o + `
       <g class="ln-acc">${[22, 38, 54, 70, 86, 102].map(x => `<path d="M${x} 8v11M${x - 3} 15l3 4 3-4"/>`).join('')}<path d="M16 8h92"/></g>
       <rect x="10" y="22" width="100" height="18" class="ln"/>
@@ -444,7 +517,7 @@
     const id = 'in-' + fd.k, [u] = unitOf(fd.u);
     let ctrl;
     if (fd.type === 'dia') ctrl = `<select id="${id}" data-k="${fd.k}">${diaOpts(v[fd.k])}</select>`;
-    else if (fd.type === 'sel') ctrl = `<select id="${id}" data-k="${fd.k}">${fd.opts.map(o => `<option value="${o[0]}" ${v[fd.k] === o[0] ? 'selected' : ''}>${T(o[1], o[2])}</option>`).join('')}</select>`;
+    else if (fd.type === 'sel') ctrl = `<select id="${id}" data-k="${fd.k}">${(typeof fd.opts === 'function' ? fd.opts(v) : fd.opts).map(o => `<option value="${o[0]}" ${v[fd.k] === o[0] ? 'selected' : ''}>${T(o[1], o[2])}</option>`).join('')}</select>`;
     else ctrl = `<input id="${id}" data-k="${fd.k}" type="number" inputmode="decimal" step="any" value="${esc(v[fd.k])}">`;
     return `<div class="fld"><label for="${id}">${fmLabel(fieldLabel(fd))}</label><div class="ctl">${ctrl}${u ? `<span class="unit">${u}</span>` : ''}</div></div>`;
   }
@@ -457,7 +530,7 @@
   }
   function inputsHTML() {
     const v = inp(), sch = SCHEMA[S.elem].filter(fd => (!fd.codes || fd.codes.includes(S.code)) && (!fd.when || fd.when(v)));
-    const order = S.elem === 'pilecap' ? ['piles', 'geo', 'mat', 'bars', 'coef', 'uls', 'sls'] : ['geo', 'mat', 'coef', 'bars', 'link', 'uls', 'sls'];
+    const order = S.elem === 'gantry' ? ['geo', 'sign', 'col', 'arm', 'wind', 'conn', 'base', 'fat', 'lim'] : S.elem === 'pilecap' ? ['piles', 'geo', 'mat', 'bars', 'coef', 'uls', 'sls'] : ['geo', 'mat', 'coef', 'bars', 'link', 'uls', 'sls'];
     let html = '';
     order.forEach(g => {
       const fs = sch.filter(fd => fd.g === g);
@@ -467,24 +540,31 @@
           <p class="sub-h">${T('Side bars (each face)', 'เหล็กข้าง (ต่อด้าน)')}</p><div class="brow"><span class="rlab">${T('Per face', 'ต่อด้าน')}</span><input type="number" min="0" step="1" id="in-sideN" data-k="sideN" value="${v.sideN}" aria-label="${T('Side bars per face', 'จำนวนเหล็กข้างต่อด้าน')}"><span class="x">×</span><select id="in-sideD" data-k="sideD" aria-label="${T('Side bar diameter', 'ขนาดเหล็กข้าง')}">${diaOpts(v.sideD)}</select><span></span></div>
           <p class="hint">${T('Bars are positioned automatically: equal spacing inside the links, further layers stacked at the minimum clear gap.', 'ระบบจัดตำแหน่งเหล็กอัตโนมัติ: ระยะเท่ากันภายในเหล็กปลอก ชั้นถัดไปเว้นระยะช่องว่างน้อยสุด')}</p>`;
       }
+      if (S.elem === 'gantry' && (g === 'col' || g === 'arm')) body += secProps(GA.section(v[g + 'Shape'], v[g + 'Size'], v[g + 'Grade']));
+      if (S.elem === 'gantry' && g === 'wind') body += `<p class="hint">${T('Wind acts normal to the sign face. e/B_s = 0.2 models oblique wind (AS/NZS 1170.2 App. B).', 'ลมกระทำตั้งฉากกับหน้าป้าย ใช้ e/B_s = 0.2 สำหรับลมเฉียง (AS/NZS 1170.2 ภาคผนวก B)')}</p>`;
+      if (S.elem === 'gantry' && g === 'fat') body += `<p class="hint">${T('Equivalent static fatigue pressures after AASHTO LTS; defaults 250 Pa natural gust, 900 Pa truck gust, 1000 Pa galloping. Adopt the road authority’s values.', 'แรงดันความล้าสถิตเทียบเท่าตาม AASHTO LTS ค่าเริ่มต้น 250 Pa ลมกระโชก 900 Pa ลมรถบรรทุก 1000 Pa แกลลอปปิง ใช้ค่าตามหน่วยงานทางหลวง')}</p>`;
       if (g === 'coef' && !fs.length && S.elem !== 'pilecap') body = `<p class="hint">${S.code === 'AS' ? T('Capacity reduction factors φ follow Table 2.2.2 and are set automatically from k_uo.', 'ตัวคูณลดกำลัง φ ตามตาราง 2.2.2 คำนวณอัตโนมัติจาก k_uo') : T('Strength reduction factors φ are set from the steel strain (0.65–0.90); 0.75 for shear and torsion.', 'ตัวคูณลดกำลัง φ คำนวณอัตโนมัติจากความเครียดเหล็ก (0.65–0.90) และ 0.75 สำหรับแรงเฉือน/แรงบิด')}</p>`;
       if (!body) return;
       html += `<details class="grp" open><summary>${T(GROUPS[g][0], GROUPS[g][1])}</summary><div class="grp-b">${body}</div></details>`;
     });
     return html;
   }
+  function secProps(p) {
+    const row = (k, v, u) => `<tr><td>${fmLabel(k)}</td><td class="num mono">${v}</td><td class="u">${u}</td></tr>`;
+    return `<table class="props" aria-label="${T('Section properties', 'คุณสมบัติหน้าตัด')}">${row(T('Mass', 'มวล'), f(p.mass, 1), 'kg/m') + row('A', f(p.A, 0), 'mm²') + row('I_x / I_y', f(p.Ix / 1e6, 1) + ' / ' + f(p.Iy / 1e6, 1), '×10⁶ mm⁴') + row('Z_x / S_x', f(p.Zx / 1e3, 0) + ' / ' + f(p.Sx / 1e3, 0), '×10³ mm³') + row('J / C', f(p.J / 1e6, 1) + ' / ' + f(p.C / 1e3, 0), '×10⁶ mm⁴ / ×10³ mm³')}</table>`;
+  }
   function viewDesign() {
     const c = CODES[S.code], e = ELEMS[S.elem];
     return `${navBar()}<main class="wrap page design">
       <div class="crumbs"><button data-act="nav" data-v="home">${T('Design codes', 'มาตรฐานออกแบบ')}</button><span>/</span><button data-act="nav" data-v="home">${cName(S.code)}</button><span>/</span><span>${T(e.en, e.th)}</span></div>
-      <div class="dz-head tone-${c.tone}"><div><p class="eyebrow">${cStd(S.code)}</p><h1>${T(e.en + ' design', 'ออกแบบ' + e.th)}</h1></div>
+      <div class="dz-head tone-${c.tone}"><div><p class="eyebrow">${stdFor()}</p><h1>${T(e.en + ' design', 'ออกแบบ' + e.th)}</h1></div>
         <div class="dz-actions"><button class="btn btn-ghost sm" data-act="reset">${T('Reset example', 'คืนค่าตัวอย่าง')}</button>
         <button class="btn ${isPro() ? 'btn-hot' : 'btn-lock'} sm" data-act="report">${isPro() ? T('Full calculation', 'รายการคำนวณฉบับเต็ม') : '🔒 ' + T('Full calculation (Pro)', 'รายการคำนวณ (Pro)')}</button></div></div>
       ${S.code === 'TH' ? `<p class="note">${T('Input units: cm · mm (bars) · ksc · t · t·m. The calculation report shows equations in SI and summarises results in Thai units.', 'หน่วยที่กรอก: ซม. · มม. (เหล็ก) · กก./ซม.² · ตัน · ตัน·ม. — รายการคำนวณแสดงสมการในหน่วย SI และสรุปผลเป็นหน่วยไทย')}</p>` : ''}
       <div class="dz">
         <aside class="dz-in" id="dzIn" aria-label="${T('Inputs', 'ข้อมูลนำเข้า')}">${inputsHTML()}</aside>
         <section class="dz-out" aria-live="polite">
-          <div class="out-top"><div class="sketch-card"><h2 class="card-h">${S.elem === 'pilecap' ? T('Plan & reactions', 'ผังฐานรากและแรงเข็ม') : T('Section & reinforcement', 'หน้าตัดและเหล็กเสริม')}</h2><div id="sketch"></div></div>
+          <div class="out-top"><div class="sketch-card"><h2 class="card-h">${S.elem === 'gantry' ? T('Elevation and plan', 'รูปด้านและผัง') : S.elem === 'pilecap' ? T('Plan & reactions', 'ผังฐานรากและแรงเข็ม') : T('Section & reinforcement', 'หน้าตัดและเหล็กเสริม')}</h2><div id="sketch"></div></div>
             <div class="sum-card" id="summary"></div></div>
           <div id="charts"></div>
           <div class="card"><h2 class="card-h">${T('Design checks', 'ผลการตรวจสอบ')}</h2><div id="checks"></div></div>
@@ -496,6 +576,18 @@
   function toSI(v, kind) { const [, k] = unitOf(kind); return (+v || 0) * k; }
   function buildInput() {
     const v = inp(), sch = SCHEMA[S.elem], val = k => { const fd = sch.find(x => x.k === k); return fd ? toSI(v[k], fd.u) : +v[k]; };
+    if (S.elem === 'gantry') {
+      const on = k => v[k] === 'yes';
+      return {
+        geo: { H: val('H'), L: val('L'), xs: val('xs'), Bs: val('Bs'), Hs: val('Hs'), ez: +v.ez || 0, ey: +v.ey || 0, eb: +v.eb || 0, gs: +v.gs, Gadd: +v.Gadd || 0, ke: +v.ke || 2.2 },
+        col: { shape: v.colShape, size: v.colSize, grade: v.colGrade }, arm: { shape: v.armShape, size: v.armSize, grade: v.armGrade },
+        wind: { mode: v.mode, Vu: +v.Vu, Vs: +v.Vs, qu: +v.qu, qs: +v.qs, Cfig: +v.Cfig, Cdc: +v.Cdc, Cda: +v.Cda, Cdyn: +v.Cdyn || 1 },
+        conn: { type: v.ctype, weld: v.cweld, sa: +v.sa, Lst: +v.Lst, tep: +v.tep, nf: v.nf | 0, af: +v.af, fb: v.fb, fg: v.fg },
+        base: { nb: v.nb | 0, db: v.db, bg: v.bg, ab: +v.ab, ep: +v.ep, tp: +v.tp, fyp: +v.fyp, stiff: on('stiff'), ts: +v.ts, hs: +v.hs, sst: +v.sst, weld: v.bweld, sb: +v.sb },
+        fat: { on: on('fon'), IF: +v.IF, phi: +v.phiF, PNW: +v.PNW, Vm: +v.Vm, tg: on('tg'), PTG: +v.PTG, xTG: val('xTG'), LTG: +v.LTG, dsh: +v.dsh, ga: on('ga'), PG: +v.PG, cB: v.cB, cS: v.cS, cR: v.cR, cA: v.cA },
+        sls: { limH: +v.limH || 100, limV: +v.limV || 150 }
+      };
+    }
     const mat = { fc: val('fc'), fy: val('fy'), fyt: val('fyt') || val('fy'), dg: +v.dg, gC: +v.gC, gS: +v.gS, ktc: v.ktc, creep: v.creep, kt: v.kt, wlim: +v.wlim };
     if (S.elem === 'beam') return {
       mat, geo: { b: val('b'), h: val('h'), cover: val('cover'), linkD: +v.linkD, s: val('s'), innerN: Math.max(0, v.innerN | 0), innerD: +v.innerD },
@@ -514,6 +606,18 @@
   }
   function validate(x) {
     const g = x.geo, errs = [];
+    if (S.elem === 'gantry') {
+      if (!(g.H >= 2000)) errs.push(T('Column height must be at least 2 m.', 'ความสูงเสาต้องไม่น้อยกว่า 2 ม.'));
+      if (!(g.L >= 1000)) errs.push(T('Arm length must be at least 1 m.', 'ความยาวคานต้องไม่น้อยกว่า 1 ม.'));
+      if (!(g.Bs > 0 && g.Hs > 0)) errs.push(T('Enter the sign size.', 'กรอกขนาดป้าย'));
+      if (!(g.xs > 0 && g.xs <= g.L)) errs.push(T('The sign centre must lie on the arm (0 < x_s ≤ L).', 'ศูนย์กลางป้ายต้องอยู่บนคาน (0 < x_s ≤ L)'));
+      if (!((x.wind.mode === 'V' ? x.wind.Vu : x.wind.qu) > 0)) errs.push(T('Enter the ULS wind.', 'กรอกข้อมูลลม ULS'));
+      if (!(x.base.nb >= 4)) errs.push(T('Use at least 4 anchor bolts.', 'ใช้สลักยึดอย่างน้อย 4 ตัว'));
+      if (x.conn.type === 'bolt' && !(x.conn.nf >= 4)) errs.push(T('Use at least 4 flange bolts.', 'ใช้สลักหน้าแปลนอย่างน้อย 4 ตัว'));
+      if (!(x.base.tp > 0 && x.base.ab > 0 && x.base.ep > 0)) errs.push(T('Check the base plate dimensions.', 'ตรวจสอบขนาดแผ่นฐาน'));
+      if (x.fat.on && !(x.fat.phi > 0 && x.fat.phi <= 1)) errs.push(T('φ_f must be between 0 and 1.', 'φ_f ต้องอยู่ระหว่าง 0 ถึง 1'));
+      return errs;
+    }
     if (S.elem !== 'pilecap') {
       if (!(g.b > 50 && g.h > 50)) errs.push(T('Section size must be greater than 50 mm.', 'ขนาดหน้าตัดต้องมากกว่า 5 ซม.'));
       if (!(g.s > 0)) errs.push(T('Link spacing must be positive.', 'ระยะเหล็กปลอกต้องมากกว่า 0'));
@@ -532,7 +636,7 @@
     const x = buildInput(), errs = validate(x);
     if (errs.length) { $('#checks').innerHTML = `<p class="form-err">${errs.map(esc).join('<br>')}</p>`; $('#summary').innerHTML = ''; return; }
     try {
-      S.res = S.elem === 'beam' ? RC.designBeam(S.code, x, lang()) : S.elem === 'column' ? RC.designColumn(S.code, x, lang()) : RC.designPileCap(S.code, x, lang());
+      S.res = S.elem === 'gantry' ? GA.designGantry(x, lang()) : S.elem === 'beam' ? RC.designBeam(S.code, x, lang()) : S.elem === 'column' ? RC.designColumn(S.code, x, lang()) : RC.designPileCap(S.code, x, lang());
       S.res.input = x;
     } catch (e) { console.error(e); $('#checks').innerHTML = `<p class="form-err">${T('Calculation failed for these inputs. Check geometry and reinforcement.', 'คำนวณไม่สำเร็จ ตรวจสอบรูปทรงและเหล็กเสริม')}</p>`; return; }
     renderResults();
@@ -549,16 +653,22 @@
     const pass = ch.every(c => c.ur <= 1.0001);
     $('#summary').innerHTML = `<div class="sum ${pass ? 'ok' : 'bad'}"><span class="sum-l">${T('Overall', 'สรุปผล')}</span><b class="sum-v">${pass ? T('PASS', 'ผ่าน') : T('FAIL', 'ไม่ผ่าน')}</b>
       <span class="sum-u">UR<sub>max</sub> = <b class="mono">${f(worst.ur, 3)}</b></span><span class="sum-g">${T('Governing', 'วิกฤต')}: ${fmLabel(worst.name)}</span></div>
-      <dl class="kv">${summaryKV(r)}</dl>`;
+      <dl class="kv">${summaryKV(r)}</dl>${r.warn && r.warn.length ? `<ul class="warn-list">${r.warn.map(w => `<li>${fmLabel(w)}</li>`).join('')}</ul>` : ''}`;
     $('#checks').innerHTML = `<div class="tbl-wrap"><table class="chk"><thead><tr><th>${T('Check', 'รายการ')}</th><th class="num">${T('Action', 'แรงกระทำ')}</th><th class="num">${T('Capacity', 'กำลังออกแบบ')}</th><th>UR</th></tr></thead><tbody>
       ${ch.map(c => { const [a, u] = outVal(c.Ed, c.unit), [b] = outVal(c.Rd, c.unit); const dim = c.unit === ''; return `<tr class="${urClass(c.ur)}"><td>${fmLabel(c.name)}</td><td class="num mono">${dim ? '' : f(a, 2)}</td><td class="num mono">${dim ? '' : f(b, 2) + ' <span class="u">' + esc(u) + '</span>'}</td>
         <td><div class="urb"><div class="ur"><i style="width:${Math.min(100, c.ur * 100)}%"></i></div><b class="mono">${f(c.ur, 2)}</b></div></td></tr>`; }).join('')}
       </tbody></table></div>`;
-    $('#sketch').innerHTML = S.elem === 'pilecap' ? capSketch(r) : sectionSketch(r);
-    $('#charts').innerHTML = S.elem === 'column' ? columnCharts(r) : S.elem === 'pilecap' ? capElevation(r) : '';
+    $('#sketch').innerHTML = S.elem === 'gantry' ? gantrySketch(r) : S.elem === 'pilecap' ? capSketch(r) : sectionSketch(r);
+    $('#charts').innerHTML = S.elem === 'gantry' ? `<div class="card"><h2 class="card-h">${T('Connection details and fatigue', 'รายละเอียดรอยต่อและความล้า')}</h2>${gantryDetails(r)}</div>` : S.elem === 'column' ? columnCharts(r) : S.elem === 'pilecap' ? capElevation(r) : '';
   }
   function summaryKV(r) {
     const kv = (k, v, u) => { const [a, uu] = outVal(v, u); return `<div><dt>${fmLabel(k)}</dt><dd class="mono">${f(a, 2)} <span class="u">${esc(uu)}</span></dd></div>`; };
+    if (S.elem === 'gantry') {
+      const mx = fn => Math.max(...r.acts.map(c => fn(c.a)));
+      return kv(T('N* at base', 'N* ที่โคนเสา'), mx(a => a.base.N) / 1e3, 'kN') + kv(T('M* at base (resultant)', 'M* ที่โคนเสา (ผลลัพธ์)'), mx(a => Math.hypot(a.base.Mop, a.base.Mip)) / 1e6, 'kNm')
+        + kv(T('T* in column', 'T* ในเสา'), mx(a => a.base.T) / 1e6, 'kNm') + kv(T('M* at arm root', 'M* ที่โคนคาน'), mx(a => Math.hypot(a.root.Mv, a.root.Mh)) / 1e6, 'kNm')
+        + kv(T('Tip deflection (SLS wind)', 'การโก่งปลายคาน (ลม SLS)'), r.sls.dH, 'mm') + kv(T('Natural frequency', 'ความถี่ธรรมชาติ'), Math.min(r.sls.fy, r.sls.fz), 'Hz');
+    }
     if (S.elem === 'beam') return kv(T('d (effective depth)', 'd (ความลึกประสิทธิผล)'), r.d, 'mm') + kv('A_s,total', r.S.As, 'mm²') + (r.flex.x.st ? kv(T('x (NA depth)', 'x (แกนสะเทิน)'), r.flex.x.st.c, 'mm') : '') + kv(T('M_Rd major', 'กำลังโมเมนต์แกนหลัก'), r.flex.x.Rd / 1e6, 'kNm') + kv(T('V_Rd major', 'กำลังเฉือนแกนหลัก'), r.shear.y.VRd / 1e3, 'kN') + (r.sls && r.sls.wk !== undefined ? kv('w_k', r.sls.wk, 'mm') : '');
     if (S.elem === 'column') return kv('A_s', r.S.As, 'mm²') + `<div><dt>ρ</dt><dd class="mono">${f(r.S.As / r.S.Ag * 100, 2)} %</dd></div>` + kv(T('N_Rd,max', 'กำลังรับแรงอัดสูงสุด'), r.Nmax / 1e3, 'kN') + kv('M_x,Ed', r.Mx / 1e6, 'kNm') + kv('M_y,Ed', r.My / 1e6, 'kNm');
     return kv(T('Cap L_x', 'ความยาว L_x'), r.Lx, 'mm') + kv(T('Cap L_y', 'ความกว้าง L_y'), r.Ly, 'mm') + kv(T('Cap weight', 'น้ำหนักฐานราก'), r.W, 'kN') + kv('P_max (ULS)', Math.max(...r.Pu), 'kN') + kv('P_max (SLS)', Math.max(...r.Ps), 'kN') + (r.input.geo.method === 'stm' ? kv('z', r.z, 'mm') : '');
@@ -688,11 +798,89 @@
     return s;
   }
 
+  // ------------------------------------------------------------------ gantry drawings
+  function gantrySketch(r) {
+    const g = r.geo, col = r.col, arm = r.arm, cn = r.conn;
+    const colW = col.shape === 'RHS' ? col.B : col.D;
+    const W = 360, H = 300, pl = 58, pr = 18, pt = 26, pb = 34;
+    const zTop = Math.max(g.H + arm.D / 2, g.zs + g.Hs / 2) + 250, xMin = -Math.max(900, colW), xMax = g.L + 250;
+    const k = Math.min((W - pl - pr) / (xMax - xMin), (H - pt - pb) / zTop);
+    const X = x => pl + (x - xMin) * k, Y = z => H - pb - z * k;
+    const cw = Math.max(4, colW * k), ad = Math.max(4, arm.D * k), bp = r.base.plateSide;
+    let s = `<svg viewBox="0 0 ${W} ${H}" class="sec-svg gantry-svg" role="img" aria-label="${T('Gantry elevation', 'รูปด้านโครงป้าย')}">`;
+    s += `<line x1="${X(xMin) - 10}" x2="${W - 4}" y1="${Y(0)}" y2="${Y(0)}" class="g-ground"/>`;
+    for (let x = X(xMin) - 6; x < W - 6; x += 9) s += `<line x1="${x}" x2="${x - 6}" y1="${Y(0)}" y2="${Y(0) + 6}" class="g-hatch"/>`;
+    s += `<rect x="${X(-bp / 2)}" y="${Y(0) - 3}" width="${bp * k}" height="3" class="g-plate"/>`;
+    s += `<rect x="${X(0) - cw / 2}" y="${Y(g.H + arm.D / 2)}" width="${cw}" height="${(g.H + arm.D / 2) * k - 3}" class="g-steel"/>`;
+    s += `<rect x="${X(0) + cw / 2}" y="${Y(g.H) - ad / 2}" width="${(g.L - colW / 2) * k}" height="${ad}" class="g-steel"/>`;
+    if (cn.type === 'bolt') { const xf = X(g.x0 + cn.Lst); s += `<line x1="${xf - 1.5}" x2="${xf - 1.5}" y1="${Y(g.H) - ad / 2 - 4}" y2="${Y(g.H) + ad / 2 + 4}" class="g-flange"/><line x1="${xf + 1.5}" x2="${xf + 1.5}" y1="${Y(g.H) - ad / 2 - 4}" y2="${Y(g.H) + ad / 2 + 4}" class="g-flange"/>`; }
+    const sx = X(g.xs - g.Bs / 2), sy = Y(g.zs + g.Hs / 2), sw = g.Bs * k, sh = g.Hs * k;
+    s += `<rect x="${sx}" y="${sy}" width="${sw}" height="${sh}" rx="2" class="g-sign"/><text x="${sx + sw / 2}" y="${sy + sh / 2 + 4}" text-anchor="middle" class="g-signt">${T('SIGN', 'ป้าย')} ${f(g.Bs / 1000, 1)}×${f(g.Hs / 1000, 1)}</text>`;
+    // wind symbol (into page, normal to sign)
+    s += `<circle cx="${sx + sw + 11}" cy="${sy + 8}" r="6" class="g-wind"/><path d="M${sx + sw + 7} ${sy + 4}l8 8M${sx + sw + 15} ${sy + 4}l-8 8" class="g-wind"/>`;
+    // dimensions
+    const dx = X(0) - cw / 2 - 22;
+    s += `<line x1="${dx}" x2="${dx}" y1="${Y(0)}" y2="${Y(g.H)}" class="s-dim"/><path d="M${dx - 4} ${Y(g.H)}h8M${dx - 4} ${Y(0)}h8" class="s-dim"/><text transform="translate(${dx - 6} ${(Y(0) + Y(g.H)) / 2}) rotate(-90)" text-anchor="middle" class="s-lbl">H = ${f(g.H / 1000, 2)} m</text>`;
+    const dy = Y(zTop) + 10;
+    s += `<line x1="${X(0)}" x2="${X(g.L)}" y1="${dy}" y2="${dy}" class="s-dim"/><path d="M${X(0)} ${dy - 4}v8M${X(g.L)} ${dy - 4}v8" class="s-dim"/><text x="${(X(0) + X(g.L)) / 2}" y="${dy - 5}" text-anchor="middle" class="s-lbl">L = ${f(g.L / 1000, 2)} m</text>`;
+    const dy2 = Y(0) + 22;
+    s += `<line x1="${X(0)}" x2="${X(g.xs)}" y1="${dy2}" y2="${dy2}" class="s-dim"/><path d="M${X(0)} ${dy2 - 4}v8M${X(g.xs)} ${dy2 - 4}v8" class="s-dim"/><text x="${(X(0) + X(g.xs)) / 2}" y="${dy2 - 4}" text-anchor="middle" class="s-lbl">x_s = ${f(g.xs / 1000, 2)} m</text>`;
+    s += '</svg>';
+    // plan view
+    const P = 110, kp = Math.min((W - pl - pr) / (xMax - xMin), (P - 30) / (2 * Math.max(Math.abs(g.ey) + 600, colW)));
+    const Xp = x => pl + (x - xMin) * kp, Yp = y => P / 2 - y * kp;
+    let p = `<svg viewBox="0 0 ${W} ${P}" class="sec-svg gantry-svg" role="img" aria-label="${T('Gantry plan', 'ผังโครงป้าย')}">`;
+    p += col.shape === 'CHS' ? `<circle cx="${Xp(0)}" cy="${Yp(0)}" r="${Math.max(3, col.D / 2 * kp)}" class="g-steel"/>` : `<rect x="${Xp(-col.B / 2)}" y="${Yp(col.D / 2)}" width="${Math.max(4, col.B * kp)}" height="${Math.max(4, col.D * kp)}" class="g-steel"/>`;
+    const aw = Math.max(3, (arm.shape === 'CHS' ? arm.D : arm.B) * kp);
+    p += `<rect x="${Xp(colW / 2)}" y="${Yp(0) - aw / 2}" width="${(g.L - colW / 2) * kp}" height="${aw}" class="g-steel"/>`;
+    p += `<line x1="${Xp(g.xs - g.Bs / 2)}" x2="${Xp(g.xs + g.Bs / 2)}" y1="${Yp(g.ey)}" y2="${Yp(g.ey)}" class="g-signp"/>`;
+    for (let i = 0; i < 4; i++) { const x = Xp(g.xs - g.Bs / 2 + g.Bs * (i + 0.5) / 4), y0 = Yp(g.ey) - 26; p += `<path d="M${x} ${y0}v18M${x - 4} ${y0 + 13}l4 5 4-5" class="g-arrow"/>`; }
+    p += `<text x="${Xp(g.xs - g.Bs / 2) - 6}" y="${Yp(g.ey) - 14}" text-anchor="end" class="s-lbl">${T('wind', 'ลม')} ↓</text><text x="${Xp(g.xs - g.Bs / 2) - 6}" y="${Yp(g.ey) + 4}" text-anchor="end" class="s-lbl">e_y = ${f(g.ey, 0)} mm</text>`;
+    p += `<text x="${pl - 50}" y="${P - 6}" class="s-lbl">${T('PLAN', 'ผัง')}</text></svg>`;
+    const leg = `<ul class="legend"><li><i class="g-k-steel"></i>${T('Column', 'เสา')}: ${esc(col.label)} ${col.grade}</li><li><i class="g-k-steel"></i>${T('Arm', 'คาน')}: ${esc(arm.label)} ${arm.grade}</li><li><i class="g-k-sign"></i>${T('Sign', 'ป้าย')} ${f(g.Bs * g.Hs / 1e6, 2)} m²</li></ul>`;
+    return s + p + leg;
+  }
+  function gantryDetails(r) {
+    const col = r.col, arm = r.arm, b = r.base, cn = r.conn, x = r.input.base;
+    // base plate plan
+    const W = 230, P = b.plateSide, k = (W - 40) / P, c = W / 2, U = u => c + u * k, V = v => c - v * k;
+    let s = `<svg viewBox="0 0 ${W} ${W}" class="det-svg" role="img" aria-label="${T('Base plate plan', 'ผังแผ่นฐาน')}"><rect x="${U(-P / 2)}" y="${V(P / 2)}" width="${P * k}" height="${P * k}" class="g-plate2"/>`;
+    b.stiff.forEach(st => { s += `<line x1="${U(st.u)}" y1="${V(st.v)}" x2="${U(st.u + st.nu * b.Ls)}" y2="${V(st.v + st.nv * b.Ls)}" class="g-stiff" style="stroke-width:${Math.max(2, x.ts * k)}"/>`; });
+    s += col.shape === 'CHS' ? `<circle cx="${c}" cy="${c}" r="${col.D / 2 * k}" class="g-tube"/>` : `<rect x="${U(-col.B / 2)}" y="${V(col.D / 2)}" width="${col.B * k}" height="${col.D * k}" rx="${col.ro * k}" class="g-tube"/>`;
+    b.bolts.pts.forEach(q => { s += `<circle cx="${U(q.u)}" cy="${V(q.v)}" r="${Math.max(3, (+x.db.slice(1)) / 2 * k)}" class="g-bolt"/>`; });
+    s += `<text x="${c}" y="${W - 6}" text-anchor="middle" class="s-lbl">${f(P, 0)} × ${f(P, 0)} × ${x.tp} · ${x.nb}×${x.db} ${x.bg}</text><text x="${W - 8}" y="14" text-anchor="end" class="s-lbl">↑ ${T('wind axis', 'แกนลม')}</text></svg>`;
+    // arm connection elevation
+    const Wc = 260, Hc = 150, kc = Math.min(110 / Math.max(arm.D, 200), 0.35), zc = Hc / 2, x0 = 50;
+    const colW = Math.max(18, (col.shape === 'RHS' ? col.B : col.D) * kc * 0.5), ad = arm.D * kc;
+    let cst = `<svg viewBox="0 0 ${Wc} ${Hc}" class="det-svg" role="img" aria-label="${T('Arm connection', 'รอยต่อคาน')}"><rect x="${x0 - colW}" y="6" width="${colW}" height="${Hc - 12}" class="g-steel"/>`;
+    if (cn.type === 'bolt') {
+      const ls = Math.max(24, cn.Lst * kc), tp = Math.max(3, cn.tep * kc), ph = ad + 2 * Math.max(10, (cn.af + 30) * kc);
+      cst += `<rect x="${x0}" y="${zc - ad / 2}" width="${ls}" height="${ad}" class="g-steel"/><rect x="${x0 + ls}" y="${zc - ph / 2}" width="${tp}" height="${ph}" class="g-plate"/><rect x="${x0 + ls + tp + 1}" y="${zc - ph / 2}" width="${tp}" height="${ph}" class="g-plate"/>`;
+      cst += `<rect x="${x0 + ls + 2 * tp + 1}" y="${zc - ad / 2}" width="${Wc - (x0 + ls + 2 * tp + 1) - 6}" height="${ad}" class="g-steel"/>`;
+      [-1, 1].forEach(sg => { const yb = zc + sg * (ad / 2 + Math.max(6, cn.af * kc)); cst += `<rect x="${x0 + ls - 6}" y="${yb - 2}" width="${2 * tp + 13}" height="4" class="g-boltr"/>`; });
+      cst += `<text x="${Wc - 6}" y="12" text-anchor="end" class="s-lbl">${cn.nf}×${cn.fb} ${cn.fg} · t_p ${cn.tep} · L_stub ${cn.Lst}</text>`;
+    } else {
+      cst += `<rect x="${x0}" y="${zc - ad / 2}" width="${Wc - x0 - 6}" height="${ad}" class="g-steel"/>`;
+      [-1, 1].forEach(sg => { const y = zc + sg * ad / 2; cst += `<path d="M${x0} ${y}l8 ${sg * 8}h-8z" class="g-weld"/>`; });
+      cst += `<text x="${x0 + 60}" y="${Hc - 4}" text-anchor="middle" class="s-lbl">${cn.weld === 'cjp' ? T('CJP butt weld', 'เชื่อมชนทะลุเต็ม') : T('Fillet ', 'เชื่อมพอก ') + cn.sa + ' mm'}</text>`;
+    }
+    cst += `<text x="${x0 - colW / 2}" y="${Hc / 2}" transform="rotate(-90 ${x0 - colW / 2} ${Hc / 2})" text-anchor="middle" class="s-lbl g-inv">${T('COLUMN', 'เสา')}</text><text x="${Wc - 10}" y="${zc + 4}" text-anchor="end" class="s-lbl g-inv">${T('ARM', 'คาน')}</text></svg>`;
+    // fatigue table
+    let ft = '';
+    if (r.fat && r.fat.rows.length) {
+      const dets = [...new Set(r.fat.rows.map(q => q.det))], cases = r.fat.cases;
+      ft = `<div class="tbl-wrap"><table class="chk fat-t"><thead><tr><th>${T('Fatigue detail', 'รายละเอียดความล้า')}</th><th class="num">FAT</th><th class="num">φ<sub>f</sub>f<sub>3</sub></th>${cases.map(cs => `<th class="num">Δσ ${esc(cs)}</th>`).join('')}<th>UR</th></tr></thead><tbody>
+        ${dets.map(d => { const rows = r.fat.rows.filter(q => q.det === d), u = Math.max(...rows.map(q => q.ur)); return `<tr class="${urClass(u)}"><td>${esc(d)}</td><td class="num mono">${rows[0].cat}</td><td class="num mono">${f(rows[0].cap, 1)}</td>${cases.map(cs => { const q = rows.find(z => z.cs === cs); return `<td class="num mono">${q ? f(q.ds, 1) : '—'}</td>`; }).join('')}<td><div class="urb"><div class="ur"><i style="width:${Math.min(100, u * 100)}%"></i></div><b class="mono">${f(u, 2)}</b></div></td></tr>`; }).join('')}
+      </tbody></table></div><p class="hint">${T('Stress ranges in MPa. Infinite-life check: Δσ ≤ φ_f·f₃ with f₃ = 0.737·FAT (AS 4100 §11.6).', 'ช่วงหน่วยแรงหน่วย MPa ตรวจอายุไม่จำกัด: Δσ ≤ φ_f·f₃, f₃ = 0.737·FAT (AS 4100 §11.6)')}</p>`;
+    }
+    return `<div class="gx"><figure class="det"><figcaption>${T('Base plate plan', 'ผังแผ่นฐาน')}</figcaption>${s}</figure><figure class="det"><figcaption>${cn.type === 'bolt' ? T('Stub and bolted end plates', 'ท่อสั้นและแผ่นปลายยึดสลัก') : T('Arm welded to column', 'คานเชื่อมเข้ากับเสา')}</figcaption>${cst}</figure></div>${ft}`;
+  }
+
   // ------------------------------------------------------------------ REPORT
   function fm(s) { return esc(s).replace(/\^\{([^}]*)\}/g, '<sup>$1</sup>').replace(/_\{([^}]*)\}/g, '<sub>$1</sub>').replace(/_([A-Za-z0-9,.'\-]+)/g, '<sub>$1</sub>'); }
   function inputTable() {
     const v = inp(), sch = SCHEMA[S.elem].filter(fd => (!fd.codes || fd.codes.includes(S.code)) && (!fd.when || fd.when(v)));
-    let rows = sch.map(fd => { const [u] = unitOf(fd.u); let val = v[fd.k]; if (fd.type === 'dia') val = RC.barName(S.code, val); if (fd.type === 'sel') { const o = fd.opts.find(o => o[0] === val); val = o ? T(o[1], o[2]) : val; } return `<tr><td>${fmLabel(fieldLabel(fd))}</td><td class="num mono">${esc(val)}</td><td>${u}</td></tr>`; }).join('');
+    let rows = sch.map(fd => { const [u] = unitOf(fd.u); let val = v[fd.k]; if (fd.type === 'dia') val = RC.barName(S.code, val); if (fd.type === 'sel') { const o = (typeof fd.opts === 'function' ? fd.opts(v) : fd.opts).find(o => o[0] === val); val = o ? T(o[1], o[2]) : val; } return `<tr><td>${fmLabel(fieldLabel(fd))}</td><td class="num mono">${esc(val)}</td><td>${u}</td></tr>`; }).join('');
     if (S.elem === 'beam') rows += `<tr><td>${T('Top bars', 'เหล็กบน')}</td><td class="num mono">${v.top.map(r => r.n + RC.barName(S.code, r.d)).join(' / ')}</td><td></td></tr><tr><td>${T('Bottom bars', 'เหล็กล่าง')}</td><td class="num mono">${v.bot.map(r => r.n + RC.barName(S.code, r.d)).join(' / ')}</td><td></td></tr><tr><td>${T('Side bars per face', 'เหล็กข้างต่อด้าน')}</td><td class="num mono">${v.sideN + RC.barName(S.code, v.sideD)}</td><td></td></tr>`;
     return `<table class="rp-in">${rows}</table>`;
   }
@@ -706,13 +894,13 @@
       return `<tr><td class="rp-l">${fm(row.label)}</td><td class="rp-ex">${fm(row.expr)}</td><td class="num mono">${val !== '' ? '= ' + val : ''} ${fm(row.unit)}</td><td class="rp-note">${fm(row.note || '')}</td></tr>`;
     }).join('')}</table></section>`).join('');
     const summary = `<table class="rp-sum"><thead><tr><th>${T('Check', 'รายการ')}</th><th class="num">${T('Action', 'แรงกระทำ')}</th><th class="num">${T('Capacity', 'กำลัง')}</th><th class="num">UR</th><th>${T('Result', 'ผล')}</th></tr></thead><tbody>${r.checks.map(x => { const [a, u] = outVal(x.Ed, x.unit), [b] = outVal(x.Rd, x.unit); return `<tr><td>${fmLabel(x.name)}</td><td class="num mono">${x.unit ? f(a, 2) : ''}</td><td class="num mono">${x.unit ? f(b, 2) + ' ' + esc(u) : ''}</td><td class="num mono">${f(x.ur, 3)}</td><td>${x.ur <= 1.0001 ? T('OK', 'ผ่าน') : T('NOT OK', 'ไม่ผ่าน')}</td></tr>`; }).join('')}</tbody></table>`;
-    const drawing = S.elem === 'pilecap' ? capSketch(r) : sectionSketch(r);
-    const charts = S.elem === 'column' ? columnChartsInner(r) : '';
+    const drawing = S.elem === 'gantry' ? gantrySketch(r) : S.elem === 'pilecap' ? capSketch(r) : sectionSketch(r);
+    const charts = S.elem === 'column' ? columnChartsInner(r) : S.elem === 'gantry' ? gantryDetails(r) : '';
     $('#reportWrap').innerHTML = `<div class="rp-bar"><h2>${T('Calculation report', 'รายการคำนวณ')}</h2>
       <div class="rp-meta">${[['project', T('Project', 'โครงการ')], ['job', T('Job no.', 'เลขที่งาน')], ['ref', T('Member ref.', 'ชื่อชิ้นส่วน')], ['by', T('Designed by', 'ผู้ออกแบบ')], ['checked', T('Checked by', 'ผู้ตรวจสอบ')]].map(([k, l]) => `<label>${l}<input id="meta-${k}" data-meta="${k}" value="${esc(M[k])}"></label>`).join('')}</div>
       <div class="rp-btns"><button class="btn btn-hot sm" data-act="pdf" id="pdfBtn">${T('Export PDF', 'ส่งออก PDF')}</button><button class="btn btn-ghost sm" data-act="closeReport">${T('Close', 'ปิด')}</button></div></div>
       <article class="report" id="report" lang="${lang()}">
-        <header class="rp-head"><div class="rp-brand">${logoMark(34)}<div><b>StructCap</b><small>${cStd(S.code)}</small></div></div>
+        <header class="rp-head"><div class="rp-brand">${logoMark(34)}<div><b>StructCap</b><small>${stdFor()}</small></div></div>
           <table class="rp-hd"><tr><th>${T('Project', 'โครงการ')}</th><td id="rv-project">${esc(M.project)}</td><th>${T('Job no.', 'เลขที่งาน')}</th><td id="rv-job">${esc(M.job)}</td></tr>
           <tr><th>${T('Element', 'ชิ้นส่วน')}</th><td>${T(e.en, e.th)} · <span id="rv-ref">${esc(M.ref)}</span></td><th>${T('Date', 'วันที่')}</th><td>${today()}</td></tr>
           <tr><th>${T('Designed', 'ออกแบบ')}</th><td id="rv-by">${esc(M.by)}</td><th>${T('Checked', 'ตรวจสอบ')}</th><td id="rv-checked">${esc(M.checked)}</td></tr></table></header>
@@ -980,7 +1168,13 @@
   });
   document.addEventListener('input', ev => {
     const t = ev.target;
-    if (t.dataset.k && S.view === 'design') { inp()[t.dataset.k] = t.value; if (t.dataset.k === 'layout' || t.dataset.k === 'method') $('#dzIn').innerHTML = inputsHTML(); schedule(); }
+    if (t.dataset.k && S.view === 'design') {
+      const v = inp(), fd = SCHEMA[S.elem].find(x => x.k === t.dataset.k);
+      v[t.dataset.k] = t.value;
+      if (fd && typeof fd.re === 'string') v[fd.re] = SEC_DEF[t.value];
+      if (t.dataset.k === 'layout' || t.dataset.k === 'method' || (fd && fd.re)) { const sc = $('#dzIn').scrollTop; $('#dzIn').innerHTML = inputsHTML(); $('#dzIn').scrollTop = sc; }
+      schedule();
+    }
     else if (t.dataset.row) { inp()[t.dataset.row][+t.dataset.i][t.dataset.f] = +t.value; schedule(); }
     else if (t.dataset.meta) { S.meta[t.dataset.meta] = t.value; const o = $('#rv-' + t.dataset.meta); if (o) o.textContent = t.value; }
     else if (t.id === 'adm-q') { A.q = t.value; const pos = t.selectionStart; adminBody(); const n = $('#adm-q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }

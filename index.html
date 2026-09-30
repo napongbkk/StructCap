@@ -403,7 +403,7 @@ tr.ok .ur i{background:var(--ok)} tr.warn .ur i{background:var(--warn)} tr.bad .
 @keyframes popin{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
 .pop-head{display:flex;align-items:center;gap:14px}
 .pop-head h2{font-size:24px} .pop-x{margin-left:auto;align-self:flex-start}
-.pop-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.pop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
 .elem-pop .pick{--tone:inherit;box-shadow:none}
 .elem-pop .pick::after{display:none}
 .elem-pop .pick:hover{border-color:var(--tone)}
@@ -417,6 +417,29 @@ tr.ok .ur i{background:var(--ok)} tr.warn .ur i{background:var(--warn)} tr.bad .
 .s-tri{fill:none;stroke:var(--blue);stroke-width:3;opacity:.7}
 .pdf-host{position:absolute;left:-12000px;top:0;width:780px;pointer-events:none;background:#fff}
 .pdf-host .report{width:780px;border:0;padding:0 6px}
+
+/* steel sign gantry */
+.props{width:100%;margin-top:4px;border-top:1px dashed var(--line2);font-size:12px}
+.props td{padding:2px 4px;color:var(--muted)} .props td.num{color:var(--ink)} .props td.u{font-size:11px;white-space:nowrap}
+.warn-list{margin:12px 0 0;padding:10px 12px 10px 28px;border-radius:10px;background:var(--warn-bg);color:var(--warn);font-size:13px;display:grid;gap:4px}
+.gantry-svg{max-width:100%}
+.g-ground{stroke:var(--ink);stroke-width:1.4} .g-hatch{stroke:var(--muted);stroke-width:.8}
+.g-steel{fill:color-mix(in srgb,var(--blue) 22%,var(--card));stroke:var(--blue);stroke-width:1.3}
+.g-plate{fill:var(--ink);stroke:none} .g-flange{stroke:var(--ink);stroke-width:2.2}
+.g-sign{fill:color-mix(in srgb,var(--teal) 22%,var(--card));stroke:var(--teal);stroke-width:1.6}
+.g-signt{fill:var(--ink);font:600 10.5px var(--f-mono)}
+.g-signp{stroke:var(--teal);stroke-width:4;stroke-linecap:round}
+.g-wind{fill:none;stroke:var(--acc);stroke-width:1.5} .g-arrow{fill:none;stroke:var(--acc);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+.legend i.g-k-steel{border-radius:2px;background:color-mix(in srgb,var(--blue) 22%,var(--card));border:1.5px solid var(--blue)}
+.legend i.g-k-sign{border-radius:2px;background:color-mix(in srgb,var(--teal) 22%,var(--card));border:1.5px solid var(--teal)}
+.gx{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:14px}
+.det{margin:0;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg)}
+.det figcaption{font-size:13px;font-weight:600;margin-bottom:6px}
+.det-svg{width:100%;height:auto;display:block;max-width:280px;margin:0 auto}
+.g-plate2{fill:var(--conc);stroke:var(--conc-line);stroke-width:1.3} .g-tube{fill:var(--card);stroke:var(--blue);stroke-width:2}
+.g-stiff{stroke:var(--pink);stroke-linecap:butt} .g-bolt{fill:var(--acc);stroke:var(--card);stroke-width:1}
+.g-boltr{fill:var(--acc)} .g-weld{fill:var(--ink)} .g-inv{fill:var(--blue);font-weight:600}
+.fat-t th{white-space:nowrap}
 
 /* toasts */
 #toasts{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);display:grid;gap:8px;z-index:80;width:min(92vw,440px)}
@@ -436,6 +459,7 @@ tr.ok .ur i{background:var(--ok)} tr.warn .ur i{background:var(--warn)} tr.bad .
 <div id="toasts" aria-live="polite"></div>
 <script src="config.js"></script>
 <script src="engine.js"></script>
+<script src="gantry.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

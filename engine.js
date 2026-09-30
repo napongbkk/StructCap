@@ -1006,5 +1006,5 @@
   function barName(code, d) { return code === 'EC2' ? 'H' + d : code === 'AS' ? 'N' + d : 'DB' + d; }
   function linkName(code, d, s) { return (code === 'TH' ? (d <= 9 ? 'RB' : 'DB') : code === 'AS' ? 'N' : 'H') + d + '@' + s; }
 
-  G.RC = { designBeam, designColumn, designPileCap, material, layoutBeam, layoutColumn, pileLayout, f, barName, linkName, KSC, TF, barA };
+  G.RC = { designBeam, designColumn, designPileCap, material, layoutBeam, layoutColumn, pileLayout, f, barName, linkName, KSC, TF, barA, Rep };
 })(typeof window !== 'undefined' ? window : globalThis);
