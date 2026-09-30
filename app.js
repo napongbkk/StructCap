@@ -103,7 +103,7 @@
     beam: {
       EC2: { b: 300, h: 600, cover: 30, fc: 30, fy: 500, fyt: 500, dg: 20, gC: 1.5, gS: 1.15, ktc: 1.0, creep: 2.0, kt: 0.4, wlim: 0.3, linkD: 10, s: 150, innerN: 0, innerD: 10, top: [{ n: 2, d: 16 }], bot: [{ n: 4, d: 20 }], sideN: 1, sideD: 12, Mx: 250, My: 10, Vy: 200, Vx: 30, T: 15, Ms: 170 },
       AS: { b: 300, h: 600, cover: 30, fc: 32, fy: 500, fyt: 500, dg: 20, linkD: 10, s: 150, innerN: 0, innerD: 10, top: [{ n: 2, d: 16 }], bot: [{ n: 4, d: 20 }], sideN: 1, sideD: 12, Mx: 250, My: 10, Vy: 200, Vx: 30, T: 15, Ms: 170 },
-      TH: { b: 30, h: 60, cover: 3, fc: 280, fy: 4000, fyt: 4000, dg: 20, linkD: 12, s: 15, innerN: 0, innerD: 12, top: [{ n: 2, d: 16 }], bot: [{ n: 4, d: 20 }], sideN: 1, sideD: 12, Mx: 22, My: 0.5, Vy: 20, Vx: 3, T: 1.0, Ms: 15 }
+      TH: { b: 30, h: 60, cover: 3, fc: 280, fy: 4000, fyt: 2400, dg: 20, linkD: 9, s: 15, innerN: 0, innerD: 9, top: [{ n: 2, d: 16 }], bot: [{ n: 4, d: 20 }], sideN: 1, sideD: 12, Mx: 25, My: 1, Vy: 20, Vx: 3, T: 1.5, Ms: 17 }
     },
     column: {
       EC2: { b: 400, h: 600, cover: 40, fc: 40, fy: 500, fyt: 500, dg: 20, gC: 1.5, gS: 1.15, ktc: 1.0, dc: 25, dm: 20, nb: 3, nh: 4, linkD: 10, s: 200, innerN: 1, innerD: 10, N: 2500, Mx: 300, My: 120, Vy: 150, Vx: 60 },
