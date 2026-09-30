@@ -851,22 +851,54 @@
     s += col.shape === 'CHS' ? `<circle cx="${c}" cy="${c}" r="${col.D / 2 * k}" class="g-tube"/>` : `<rect x="${U(-col.B / 2)}" y="${V(col.D / 2)}" width="${col.B * k}" height="${col.D * k}" rx="${col.ro * k}" class="g-tube"/>`;
     b.bolts.pts.forEach(q => { s += `<circle cx="${U(q.u)}" cy="${V(q.v)}" r="${Math.max(3, (+x.db.slice(1)) / 2 * k)}" class="g-bolt"/>`; });
     s += `<text x="${c}" y="${W - 6}" text-anchor="middle" class="s-lbl">${f(P, 0)} × ${f(P, 0)} × ${x.tp} · ${x.nb}×${x.db} ${x.bg}</text><text x="${W - 8}" y="14" text-anchor="end" class="s-lbl">↑ ${T('wind axis', 'แกนลม')}</text></svg>`;
+    // base plate elevation (section through two opposite bolts)
+    const We = 270, He = 236, Pp = b.plateSide, ke = (We - 40) / Pp, ce = We / 2, yc = He - 64, tpp = Math.max(4, x.tp * ke), gap = Math.max(5, 50 * ke);
+    const yTop = yc - gap - tpp, db = +x.db.slice(1), FS = SC3D.FAST(db / 1000), px = v => Math.max(2, v * 1000 * ke);
+    const halfC = (col.shape === 'RHS' ? col.B : col.D) / 2, bx = (b.bolts.shape === 'circle' ? b.bolts.R : b.bolts.hu);
+    let el = `<svg viewBox="0 0 ${We} ${He}" class="det-svg" role="img" aria-label="${T('Base plate elevation', 'รูปตัดแผ่นฐาน')}">`;
+    el += `<rect x="4" y="${yc}" width="${We - 8}" height="${He - yc - 4}" class="g-conc"/><line x1="4" x2="${We - 4}" y1="${yc}" y2="${yc}" class="g-ground"/>`;
+    el += `<rect x="${ce - Pp / 2 * ke}" y="${yc - gap}" width="${Pp * ke}" height="${gap}" class="g-grout"/>`;
+    el += `<rect x="${ce - Pp / 2 * ke}" y="${yTop}" width="${Pp * ke}" height="${tpp}" class="g-plate"/>`;
+    const tw = Math.max(3, col.t * ke);
+    el += `<rect x="${ce - halfC * ke}" y="8" width="${2 * halfC * ke}" height="${yTop - 8}" class="g-tube2"/><rect x="${ce - halfC * ke}" y="8" width="${tw}" height="${yTop - 8}" class="g-steelw"/><rect x="${ce + halfC * ke - tw}" y="8" width="${tw}" height="${yTop - 8}" class="g-steelw"/>`;
+    el += `<path d="M${ce - halfC * ke - 6} 8q8 -6 16 0t16 0M${ce + halfC * ke - 26} 8q8 -6 16 0t16 0" class="g-break"/>`;
+    if (x.stiff) {
+      const poly = SC3D.trapStiff(b.Ls / 1000, x.hs / 1000);
+      [-1, 1].forEach(sg => { el += `<polygon points="${poly.map(([rr, zz]) => (ce + sg * (halfC + rr * 1000) * ke) + ',' + (yTop - zz * 1000 * ke)).join(' ')}" class="g-stiffe"/>`; });
+    }
+    [-1, 1].forEach(sg => {
+      const X0 = ce + sg * bx * ke, bw = Math.max(3, db * ke), ww = px(FS.wd), wt = Math.max(2, px(FS.wt)), nw = px(FS.s), nh = Math.max(4, px(FS.m)), jh = Math.max(3, px(FS.mj));
+      el += `<rect x="${X0 - bw / 2}" y="${yTop - wt - nh - jh - 6}" width="${bw}" height="${yc - (yTop - wt - nh - jh - 6)}" class="g-boltr"/><line x1="${X0}" x2="${X0}" y1="${yc}" y2="${yc + 12}" class="g-embed"/>`;
+      let y = yTop; el += `<rect x="${X0 - ww / 2}" y="${y - wt}" width="${ww}" height="${wt}" class="g-washer"/>`; y -= wt;
+      el += `<rect x="${X0 - nw / 2}" y="${y - nh}" width="${nw}" height="${nh}" class="g-nut"/>`; y -= nh;
+      el += `<rect x="${X0 - nw / 2}" y="${y - jh}" width="${nw}" height="${jh}" class="g-nut"/>`;
+      let yb = yTop + tpp; el += `<rect x="${X0 - ww / 2}" y="${yb}" width="${ww}" height="${wt}" class="g-washer"/>`; yb += wt;
+      el += `<rect x="${X0 - nw / 2}" y="${yb}" width="${nw}" height="${Math.min(nh, yc - yb)}" class="g-nut"/>`;
+    });
+    el += `<text x="${ce}" y="${yc + 26}" text-anchor="middle" class="s-lbl">${T('Top: washer · nut · lock nut', 'บน: แหวน · น็อต · น็อตล็อก')}</text><text x="${ce}" y="${yc + 40}" text-anchor="middle" class="s-lbl">${T('Under plate: levelling nut + washer', 'ใต้แผ่น: น็อตปรับระดับ + แหวน')}</text>`;
+    el += `<text x="${ce}" y="${He - 8}" text-anchor="middle" class="s-lbl g-inv2">${T('grout', 'ปูนเกราท์')} 50 · ${x.tp} ${T('plate', 'แผ่น')}${x.stiff ? ' · ' + T('stiffener', 'แผ่นเสริม') + ' ' + x.ts + '×' + x.hs : ''}</text></svg>`;
     // arm connection elevation
-    const Wc = 260, Hc = 150, kc = Math.min(110 / Math.max(arm.D, 200), 0.35), zc = Hc / 2, x0 = 50;
+    const Wc = 260, Hc = 204, kc = Math.min(110 / Math.max(arm.D, 200), 0.35), zc = (Hc - 48) / 2, x0 = 50;
     const colW = Math.max(18, (col.shape === 'RHS' ? col.B : col.D) * kc * 0.5), ad = arm.D * kc;
-    let cst = `<svg viewBox="0 0 ${Wc} ${Hc}" class="det-svg" role="img" aria-label="${T('Arm connection', 'รอยต่อคาน')}"><rect x="${x0 - colW}" y="6" width="${colW}" height="${Hc - 12}" class="g-steel"/>`;
+    let cst = `<svg viewBox="0 0 ${Wc} ${Hc}" class="det-svg" role="img" aria-label="${T('Arm connection', 'รอยต่อคาน')}"><rect x="${x0 - colW}" y="6" width="${colW}" height="${Hc - 50}" class="g-steel"/>`;
     if (cn.type === 'bolt') {
-      const ls = Math.max(24, cn.Lst * kc), tp = Math.max(3, cn.tep * kc), ph = ad + 2 * Math.max(10, (cn.af + 30) * kc);
+      const ls = Math.max(24, cn.Lst * kc), tp = Math.max(3, cn.tep * kc), ph = Math.min(Hc - 60, ad + 2 * Math.max(10, (cn.af + 30) * kc));
       cst += `<rect x="${x0}" y="${zc - ad / 2}" width="${ls}" height="${ad}" class="g-steel"/><rect x="${x0 + ls}" y="${zc - ph / 2}" width="${tp}" height="${ph}" class="g-plate"/><rect x="${x0 + ls + tp + 1}" y="${zc - ph / 2}" width="${tp}" height="${ph}" class="g-plate"/>`;
       cst += `<rect x="${x0 + ls + 2 * tp + 1}" y="${zc - ad / 2}" width="${Wc - (x0 + ls + 2 * tp + 1) - 6}" height="${ad}" class="g-steel"/>`;
-      [-1, 1].forEach(sg => { const yb = zc + sg * (ad / 2 + Math.max(6, cn.af * kc)); cst += `<rect x="${x0 + ls - 6}" y="${yb - 2}" width="${2 * tp + 13}" height="4" class="g-boltr"/>`; });
-      cst += `<text x="${Wc - 6}" y="12" text-anchor="end" class="s-lbl">${cn.nf}×${cn.fb} ${cn.fg} · t_p ${cn.tep} · L_stub ${cn.Lst}</text>`;
+      [-1, 1].forEach(sg => {
+        const yb = zc + sg * (ad / 2 + Math.max(6, cn.af * kc)), xa = x0 + ls, xb = x0 + ls + 2 * tp + 1;
+        cst += `<rect x="${xa - 16}" y="${yb - 2}" width="${xb - xa + 34}" height="4" class="g-boltr"/>`;
+        cst += `<rect x="${xa - 3}" y="${yb - 7}" width="3" height="14" class="g-washer"/><rect x="${xa - 10}" y="${yb - 6}" width="7" height="12" class="g-nut"/>`;
+        cst += `<rect x="${xb}" y="${yb - 7}" width="3" height="14" class="g-washer"/><rect x="${xb + 3}" y="${yb - 6}" width="8" height="12" class="g-nut"/><rect x="${xb + 11}" y="${yb - 6}" width="5" height="12" class="g-nut"/>`;
+      });
+      cst += `<text x="6" y="${Hc - 18}" class="s-lbl">${T('Left: bolt head + washer', 'ซ้าย: หัวสลัก + แหวน')}</text><text x="6" y="${Hc - 5}" class="s-lbl">${T('Right: washer · nut · lock nut', 'ขวา: แหวน · น็อต · น็อตล็อก')}</text>`;
+      cst += `<text x="6" y="${Hc - 31}" class="s-lbl">${cn.nf} × ${cn.fb} ${T('grade', 'เกรด')} ${cn.fg} · ${T('end plates', 'แผ่นปลาย')} ${cn.tep} mm</text>`;
     } else {
       cst += `<rect x="${x0}" y="${zc - ad / 2}" width="${Wc - x0 - 6}" height="${ad}" class="g-steel"/>`;
       [-1, 1].forEach(sg => { const y = zc + sg * ad / 2; cst += `<path d="M${x0} ${y}l8 ${sg * 8}h-8z" class="g-weld"/>`; });
       cst += `<text x="${x0 + 60}" y="${Hc - 4}" text-anchor="middle" class="s-lbl">${cn.weld === 'cjp' ? T('CJP butt weld', 'เชื่อมชนทะลุเต็ม') : T('Fillet ', 'เชื่อมพอก ') + cn.sa + ' mm'}</text>`;
     }
-    cst += `<text x="${x0 - colW / 2}" y="${Hc / 2}" transform="rotate(-90 ${x0 - colW / 2} ${Hc / 2})" text-anchor="middle" class="s-lbl g-inv">${T('COLUMN', 'เสา')}</text><text x="${Wc - 10}" y="${zc + 4}" text-anchor="end" class="s-lbl g-inv">${T('ARM', 'คาน')}</text></svg>`;
+    cst += `<text x="${x0 - colW / 2}" y="${(Hc - 44) / 2}" transform="rotate(-90 ${x0 - colW / 2} ${(Hc - 44) / 2})" text-anchor="middle" class="s-lbl g-inv">${T('COLUMN', 'เสา')}</text><text x="${Wc - 10}" y="${zc + 4}" text-anchor="end" class="s-lbl g-inv">${T('ARM', 'คาน')}</text></svg>`;
     // fatigue table
     let ft = '';
     if (r.fat && r.fat.rows.length) {
@@ -875,7 +907,7 @@
         ${dets.map(d => { const rows = r.fat.rows.filter(q => q.det === d), u = Math.max(...rows.map(q => q.ur)); return `<tr class="${urClass(u)}"><td>${esc(d)}</td><td class="num mono">${rows[0].cat}</td><td class="num mono">${f(rows[0].cap, 1)}</td>${cases.map(cs => { const q = rows.find(z => z.cs === cs); return `<td class="num mono">${q ? f(q.ds, 1) : '—'}</td>`; }).join('')}<td><div class="urb"><div class="ur"><i style="width:${Math.min(100, u * 100)}%"></i></div><b class="mono">${f(u, 2)}</b></div></td></tr>`; }).join('')}
       </tbody></table></div><p class="hint">${T('Stress ranges in MPa. Infinite-life check: Δσ ≤ φ_f·f₃ with f₃ = 0.737·FAT (AS 4100 §11.6).', 'ช่วงหน่วยแรงหน่วย MPa ตรวจอายุไม่จำกัด: Δσ ≤ φ_f·f₃, f₃ = 0.737·FAT (AS 4100 §11.6)')}</p>`;
     }
-    return `<div class="gx"><figure class="det"><figcaption>${T('Base plate plan', 'ผังแผ่นฐาน')}</figcaption>${s}</figure><figure class="det"><figcaption>${cn.type === 'bolt' ? T('Stub and bolted end plates', 'ท่อสั้นและแผ่นปลายยึดสลัก') : T('Arm welded to column', 'คานเชื่อมเข้ากับเสา')}</figcaption>${cst}</figure></div>${ft}`;
+    return `<div class="gx"><figure class="det"><figcaption>${T('Base plate plan', 'ผังแผ่นฐาน')}</figcaption>${s}</figure><figure class="det"><figcaption>${T('Base plate elevation', 'รูปตัดแผ่นฐาน')}</figcaption>${el}</figure><figure class="det"><figcaption>${cn.type === 'bolt' ? T('Stub and bolted end plates', 'ท่อสั้นและแผ่นปลายยึดสลัก') : T('Arm welded to column', 'คานเชื่อมเข้ากับเสา')}</figcaption>${cst}</figure></div>${ft}`;
   }
 
   // ------------------------------------------------------------------ 3D view (gantry)
@@ -885,7 +917,7 @@
   function themeColors() {
     const cs = getComputedStyle(document.documentElement), get = k => cs.getPropertyValue(k).trim(), dk = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
     const tryHex = (k, d) => { try { const v = get(k); return v.startsWith('#') ? SC3D.hex(v) : d; } catch (e) { return d; } };
-    return { bg: tryHex('--card', dk ? [20, 30, 49] : [255, 255, 255]), steel: dk ? [128, 146, 178] : [158, 174, 200], dark: dk ? [70, 78, 96] : [72, 80, 98], concrete: dk ? [70, 76, 88] : [206, 208, 204], sign: tryHex('--teal', [0, 168, 154]), bolt: tryHex('--acc', [255, 106, 43]) };
+    return { bg: tryHex('--card', dk ? [20, 30, 49] : [255, 255, 255]), steel: dk ? [128, 146, 178] : [158, 174, 200], dark: dk ? [70, 78, 96] : [72, 80, 98], concrete: dk ? [70, 76, 88] : [206, 208, 204], washer: dk ? [150, 158, 172] : [200, 206, 216], sign: tryHex('--teal', [0, 168, 154]), bolt: tryHex('--acc', [255, 106, 43]) };
   }
   function v3Card(r) {
     const cases = r.fat && r.fat.caseObjs ? r.fat.caseObjs : [], st = S.v3;

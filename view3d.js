@@ -51,6 +51,17 @@
         [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([sx, sy]) => sx ? this.quad(P(sx, t0, -1), P(sx, t1, -1), P(sx, t1, 1), P(sx, t0, 1), col) : this.quad(P(t0, sy, -1), P(t1, sy, -1), P(t1, sy, 1), P(t0, sy, 1), col));
       }
     }
+    // convex polygon poly [[r,z],...] in the plane spanned by nr (horizontal) and z, extruded ±th/2 along nt
+    prism(o, nr, nt, poly, th, col, sf) {
+      const P = ([rr, zz], k) => [o[0] + rr * nr[0] + k * th / 2 * nt[0], o[1] + rr * nr[1] + k * th / 2 * nt[1], o[2] + zz];
+      const A = poly.map(p => P(p, -1)), B = poly.map(p => P(p, 1)), n = poly.length;
+      const S = sf ? [A.map(p => sf(p)), B.map(p => sf(p))] : null;
+      for (let i = 1; i < n - 1; i++) {
+        if (S) { this.tri(A[0], A[i], A[i + 1], col, S[0][0], S[0][i], S[0][i + 1]); this.tri(B[0], B[i + 1], B[i], col, S[1][0], S[1][i + 1], S[1][i]); }
+        else { this.tri(A[0], A[i], A[i + 1], col); this.tri(B[0], B[i + 1], B[i], col); }
+      }
+      for (let i = 0; i < n; i++) { const j = (i + 1) % n; S ? this.quad(A[i], A[j], B[j], B[i], col, S[0][i], S[0][j], S[1][j], S[1][i]) : this.quad(A[i], A[j], B[j], B[i], col); }
+    }
     // box from centre, half sizes along its local axes ex, ey, ez (unit vectors)
     box(c, h, ex, ey, ez, col, sf) {
       const P = (i, j, k) => [0, 1, 2].map(d => c[d] + i * h[0] * ex[d] + j * h[1] * ey[d] + k * h[2] * ez[d]);
@@ -64,6 +75,18 @@
     const pts = [], cx = [w / 2 - r, -w / 2 + r, -w / 2 + r, w / 2 - r], cy = [h / 2 - r, h / 2 - r, -h / 2 + r, -h / 2 + r];
     for (let q = 0; q < 4; q++) for (let i = 0; i <= nc; i++) { const a = q * PI / 2 + i * PI / 2 / nc; pts.push([cx[q] + r * Math.cos(a), cy[q] + r * Math.sin(a)]); }
     return pts;
+  }
+  const hexP = s => circle(s / Math.sqrt(3), 6);                        // hexagon, s = width across flats
+  const FAST = d => ({ s: Math.max(1.5 * d, d + 0.008), m: 0.8 * d, mj: 0.5 * d, wd: 1.85 * d, wt: Math.max(0.003, 0.11 * d), k: 0.65 * d });
+  // stack of fastener parts along a bolt axis: place(a, b, t) maps profile (a,b) and axial t
+  function stack(m, place, t0, dir, parts, colNut, colW, sf) {
+    let t = t0;
+    parts.forEach(([kind, len, size]) => {
+      const t1 = t + dir * len, prof = kind === 'w' ? circle(size / 2, 14) : hexP(size);
+      m.tube(prof, dir > 0 ? [t, t1] : [t1, t], place, kind === 'w' ? colW : colNut, sf, true);
+      t = t1;
+    });
+    return t;
   }
   const profileOf = (sec, n) => sec.shape === 'CHS' ? circle(sec.D / 2e3, n) : roundRect(sec.B / 1e3, sec.D / 1e3, Math.max(sec.ro, 0.001) / 1e3, Math.max(2, Math.round(n / 8)));
 
@@ -186,16 +209,22 @@
     // ---- anchor bolts (with nuts)
     const bd = +x.db.slice(1) / 1000, BO = G.GANTRY.BOLTS;
     const Mop0 = cs ? cs.Fs * g.zs + cs.wa * Lr0 * g.H + cs.wc * g.H * g.H / 2 : 0, Mip0 = cs ? cs.Fz * cs.xz : 0;
+    const F = FAST(bd), tp0 = mm(x.tp), washer = theme.washer || [196, 202, 212];
     b.bolts.pts.forEach(q => {
       const sval = cs ? boltS(q.u, q.v, b.bolts.pts, Mip0, Mop0, BO[x.db][0], fat.caps.fA || 30) : null;
-      const sf = sval ? () => sval : null;
-      m.tube(circle(bd / 2, 10), [fz, 1.6 * bd], (a, c, t) => [mm(q.u) + a, mm(q.v) + c, t], boltC, sf, true);
-      m.tube(circle(bd * 0.85, 6), [0, 0.8 * bd], (a, c, t) => [mm(q.u) + a, mm(q.v) + c, t], dark, sf, true);
+      const sf = sval ? () => sval : null, pl = (a, c, t) => [mm(q.u) + a, mm(q.v) + c, t];
+      const top = F.wt + F.m + F.mj + 0.35 * bd;
+      m.tube(circle(bd / 2, 10), [fz, top], pl, boltC, sf, true);
+      // levelling nut + washer under the plate
+      stack(m, pl, -tp0, -1, [['w', F.wt, F.wd], ['n', F.m, F.s]], dark, washer, sf);
+      // washer, nut and lock nut on top
+      stack(m, pl, 0, 1, [['w', F.wt, F.wd], ['n', F.m, F.s], ['n', F.mj, F.s]], dark, washer, sf);
     });
     // ---- stiffeners
+    const Ls0 = mm(b.Ls), hs0 = mm(x.hs), stiffPoly = trapStiff(Ls0, hs0);
     b.stiff.forEach(st => {
-      const Ls = mm(b.Ls), c = [mm(st.u) + st.nu * Ls / 2, mm(st.v) + st.nv * Ls / 2, mm(x.hs) / 2];
-      m.box(c, [Ls / 2, mm(x.ts) / 2, mm(x.hs) / 2], [st.nu, st.nv, 0], [-st.nv, st.nu, 0], [0, 0, 1], steel, colS ? p => colS([p[0] - st.nu * Ls * 0.49, p[1] - st.nv * Ls * 0.49, p[2]]) : null);
+      const o = [mm(st.u), mm(st.v), 0];
+      m.prism(o, [st.nu, st.nv, 0], [-st.nv, st.nu, 0], stiffPoly, mm(x.ts), steel, colS ? p => colS([o[0], o[1], p[2]]) : null);
     });
     // ---- column (dense near base / stiffener top)
     const zst = [];
@@ -224,9 +253,13 @@
       const ext = Math.max(...r.flange.pts.map(q => Math.max(Math.abs(q.u), Math.abs(q.v)))) + 45;
       [-1, 1].forEach(sg => m.box([xf + sg * tp / 2, 0, H], [tp / 2, mm(ext), mm(ext)], [1, 0, 0], [0, 1, 0], [0, 0, 1], dark));
       const fb = +cn.fb.slice(1) / 1000, Mh0 = cs ? cs.Fs * Math.max(0, g.xsw - (g.x0 + cn.Lst)) + cs.wa * Math.pow(Lr0 - g.x0 - cn.Lst, 2) / 2 : 0, Mv0 = cs ? cs.Fz * Math.max(0, cs.xz - g.x0 - cn.Lst) : 0;
+      const FF = FAST(fb), washer = theme.washer || [196, 202, 212];
       r.flange.pts.forEach(q => {
-        const sval = cs ? boltS(q.u, q.v, r.flange.pts, Mh0, Mv0, BO[cn.fb][0], fat.caps.fF || 30) : null;
-        m.tube(circle(fb / 2, 8), [xf - 2 * tp - 1.2 * fb, xf + 2 * tp + 1.2 * fb], (a, c, t) => [t, mm(q.u) + a, H + mm(q.v) + c], boltC, sval ? () => sval : null, true);
+        const sval = cs ? boltS(q.u, q.v, r.flange.pts, Mh0, Mv0, BO[cn.fb][0], fat.caps.fF || 30) : null, sf = sval ? () => sval : null;
+        const pl = (a, c, t) => [t, mm(q.u) + a, H + mm(q.v) + c];
+        m.tube(circle(fb / 2, 8), [xf - tp - FF.wt - FF.k * 0.3, xf + tp + FF.wt + FF.m + FF.mj + 0.3 * fb], pl, boltC, sf, true);
+        stack(m, pl, xf - tp, -1, [['w', FF.wt, FF.wd], ['n', FF.k, FF.s]], dark, washer, sf);
+        stack(m, pl, xf + tp, 1, [['w', FF.wt, FF.wd], ['n', FF.m, FF.s], ['n', FF.mj, FF.s]], dark, washer, sf);
       });
     } else m.tube(aprof, xs2, placeArm, steel, armS, true);
     m.tube(aprof.map(([a, c]) => [a * 1.04, c * 1.04]), [xr, xr + 0.012], placeArm, dark, armS);
@@ -239,6 +272,11 @@
     });
     return { mesh: m, smax, cs };
   }
+  // stiffener outline (r from tube face, z up): full height at the tube, short flat top, chamfer to a low outer edge
+  function trapStiff(Ls, hs) {
+    const top = Math.min(Ls * 0.45, Math.max(Ls * 0.3, 0.025)), out = Math.min(hs * 0.6, Math.max(hs * 0.3, 0.025));
+    return [[0, 0], [Ls, 0], [Ls, out], [top, hs], [0, hs]];
+  }
   function presets(r) {
     const g = r.geo, mm = v => v / 1000, P = mm(r.base.plateSide);
     return {
@@ -247,5 +285,5 @@
       arm: { yaw: -0.7, pitch: 0.3, dist: Math.max(1.4, mm(r.arm.D) * 7.5), tx: mm(g.x0 + (r.conn.type === 'bolt' ? r.conn.Lst * 0.6 : 150)), ty: 0, tz: mm(g.H) }
     };
   }
-  G.SC3D = { Viewer, Mesh, gantryScene, presets, ramp, hex };
+  G.SC3D = { Viewer, Mesh, gantryScene, presets, ramp, hex, trapStiff, FAST };
 })(typeof window !== 'undefined' ? window : globalThis);
