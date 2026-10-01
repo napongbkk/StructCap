@@ -720,6 +720,28 @@ button.an-pickrow:hover{border-color:var(--line2)} button.an-pickrow.on{border-c
 .two-card .btn{justify-self:start;margin-top:6px}
 .two-card.an-card .ei{position:absolute;right:18px;top:16px;width:110px;opacity:.9}
 @media (max-width:820px){.two-grid{grid-template-columns:1fr}.two-card.an-card .ei{display:none}}
+
+/* hero card: design + analysis examples */
+.hero-card{display:grid;gap:14px}
+.hc-sec{display:grid;gap:6px} .hc-sec .hc-head{margin-bottom:2px}
+.hc-an{border-top:1px solid color-mix(in srgb,var(--line2) 70%,transparent);padding-top:12px}
+.hero-card .hc-body{grid-template-columns:104px 1fr;gap:14px}
+.hero-card .hero-svg{max-height:150px;width:100%}
+.hero-card .hc-urs{grid-template-columns:1fr 1fr;gap:10px 14px}
+.hc-body2{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:12px;align-items:center}
+.hero-frame{width:100%;height:auto;display:block}
+.hero-frame .f-grid{stroke:var(--line2);stroke-width:.8;stroke-dasharray:3 3;fill:none}
+.hero-frame .f-mem{stroke:var(--conc-line);stroke-width:1.4;fill:none}
+.hero-frame .f-mem.front{stroke:var(--ink);stroke-width:1.8}
+.hero-frame .f-mom{fill:var(--acc);fill-opacity:.22;stroke:var(--acc);stroke-width:1.1}
+.hero-frame .f-sup{stroke:var(--muted);stroke-width:1.6}
+.hero-frame .f-node{fill:var(--card);stroke:var(--ink);stroke-width:1.2}
+.hero-frame .f-lbl{font:600 10px var(--f-mono);fill:var(--acc)}
+.hc-kv{margin:0;display:grid;gap:6px}
+.hc-kv div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding-bottom:3px}
+.hc-kv dt{font-size:12px;color:var(--muted)} .hc-kv dd{margin:0;font:600 12.5px var(--f-mono)}
+.pill.an{background:color-mix(in srgb,var(--blue) 14%,transparent);color:var(--blue)}
+@media (max-width:560px){.hero-card .hc-urs{grid-template-columns:1fr}.hc-body2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>

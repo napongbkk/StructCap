@@ -474,6 +474,33 @@
   const siteFoot = () => `<footer class="foot"><div class="wrap foot-in"><span>${T('StructCap is a design aid. Results must be checked by a licensed engineer.', 'StructCap เป็นเครื่องมือช่วยคำนวณ ผลลัพธ์ต้องตรวจสอบโดยวิศวกรผู้มีใบอนุญาต')}</span><span class="copy">${COPY} · ${T('All rights reserved', 'สงวนลิขสิทธิ์')}</span>${S.role === 'guest' ? `<button class="linkbtn" data-act="nav" data-v="adminLogin">${T('Administrator sign in', 'เข้าสู่ระบบผู้ดูแล')}</button>` : ''}</div></footer>`;
 
   // ------------------------------------------------------------------ LANDING
+  // isometric 3D frame (2 × 2 bays, 3 storeys) with the bending moment on the front frame; fitted to its own view box
+  function heroFrame() {
+    const c = Math.cos(Math.PI / 6), sn = Math.sin(Math.PI / 6), k = 34;
+    const P = (x, y, z) => [(x * 1.3 - y) * c * k, (x * 1.3 + y) * sn * k - z * k * 1.0];
+    const segs = [], fills = [], dots = [], F = 2; // y = 2 is the frame nearest the viewer
+    const L = (a, b, cls) => segs.push([a, b, cls]);
+    [0, 1, 2].forEach(x => L(P(x, 0, 0), P(x, 2, 0), 'f-grid')); [0, 1, 2].forEach(y => L(P(0, y, 0), P(2, y, 0), 'f-grid'));
+    for (let y = 0; y <= 2; y++) {
+      for (let x = 0; x <= 2; x++) L(P(x, y, 0), P(x, y, 3), y === F ? 'f-mem front' : 'f-mem');
+      for (let z = 1; z <= 3; z++) { for (let x = 0; x < 2; x++) L(P(x, y, z), P(x + 1, y, z), y === F ? 'f-mem front' : 'f-mem'); if (y < 2) for (let x = 0; x <= 2; x++) L(P(x, y, z), P(x, y + 1, z), 'f-mem'); }
+    }
+    for (let z = 1; z <= 3; z++) for (let x = 0; x < 2; x++) {
+      const pts = []; for (let i = 0; i <= 14; i++) { const t = i / 14, m = 0.42 * 4 * t * (1 - t) - 0.3 * Math.pow(Math.abs(2 * t - 1), 2.2); pts.push(P(x + t, F, z - m * 0.9)); }
+      fills.push([P(x, F, z)].concat(pts, [P(x + 1, F, z)]));
+    }
+    for (let x = 0; x <= 2; x++) for (let z = 1; z <= 3; z++) dots.push(P(x, F, z));
+    const all = segs.flatMap(q => [q[0], q[1]]).concat(fills.flat()), pad = 12;
+    const x0 = Math.min(...all.map(q => q[0])) - pad, x1 = Math.max(...all.map(q => q[0])) + pad + 10, y0 = Math.min(...all.map(q => q[1])) - pad, y1 = Math.max(...all.map(q => q[1])) + pad;
+    const n = v => v.toFixed(1);
+    let g = segs.map(([a, b2, cls]) => `<path d="M${n(a[0])} ${n(a[1])}L${n(b2[0])} ${n(b2[1])}" class="${cls}"/>`).join('');
+    g += fills.map(f => `<path d="M${f.map(q => n(q[0]) + ' ' + n(q[1])).join('L')}Z" class="f-mom"/>`).join('');
+    for (let y = 0; y <= 2; y++) for (let x = 0; x <= 2; x++) { const q = P(x, y, 0); g += `<path d="M${n(q[0] - 5)} ${n(q[1] + 2.5)}h10M${n(q[0] - 4)} ${n(q[1] + 2.5)}l-3 4M${n(q[0])} ${n(q[1] + 2.5)}l-3 4M${n(q[0] + 4)} ${n(q[1] + 2.5)}l-3 4" class="f-sup"/>`; }
+    g += dots.map(q => `<circle cx="${n(q[0])}" cy="${n(q[1])}" r="2.3" class="f-node"/>`).join('');
+    const t = P(2, F, 3);
+    g += `<text x="${n(t[0] + 6)}" y="${n(t[1] - 4)}" class="f-lbl">M<tspan dy="2" font-size="7">z</tspan></text>`;
+    return `<svg viewBox="${n(x0)} ${n(y0)} ${n(x1 - x0)} ${n(y1 - y0)}" class="hero-frame" role="img" aria-label="${T('3D frame with bending moment diagram', 'โครง 3 มิติพร้อมแผนภาพโมเมนต์ดัด')}">${g}</svg>`;
+  }
   function heroSketch() {
     return `<svg viewBox="0 0 260 300" class="hero-svg" role="img" aria-label="Beam section with reinforcement">
       <rect x="55" y="20" width="150" height="260" rx="3" class="s-conc"/>
@@ -504,29 +531,38 @@
           <p class="lead">${T('Design reinforced concrete, steel and masonry members to three design codes, and analyse 3D frames and trusses — with section sketches, 3D results and full calculation reports you can export to PDF.', 'ออกแบบชิ้นส่วนคอนกรีตเสริมเหล็ก เหล็ก และงานก่อ ตามสามมาตรฐาน และวิเคราะห์โครงข้อแข็งและโครงถัก 3 มิติ — พร้อมภาพหน้าตัด ผลลัพธ์ 3 มิติ และรายการคำนวณฉบับเต็มส่งออกเป็น PDF')}</p>
           <ul class="code-list">${codes.map(c => `<li class="tone-${c[1]}"><span class="code-tag">${c[0]}</span><div><b>${c[2]}</b> <span class="mono">${c[3]}</span><p>${c[4]}</p></div></li>`).join('')}</ul>
           <div class="cta-row">${S.promo ? `
-            <span class="btn btn-glass struck" aria-hidden="true">${T('Start free', 'เริ่มใช้งานฟรี')}</span><span class="btn btn-glass struck" aria-hidden="true">${T('Register for Pro', 'สมัคร Pro')}</span>
-            <button class="btn btn-hot" data-act="free">${T('Pro for free — start now', 'Pro ฟรี — เริ่มใช้งาน')}</button>` : `
+            <button class="btn btn-hot" data-act="free">${T('Pro is free — start now', 'Pro ฟรี — เริ่มใช้งานเลย')}</button>` : `
             <button class="btn btn-hot" data-act="free">${T('Start free', 'เริ่มใช้งานฟรี')}</button>
             <button class="btn btn-glass" data-act="register" data-plan="pro">${T('Register for Pro', 'สมัคร Pro')} · ${priceTxt()}</button>
             <button class="btn btn-glass" data-act="nav" data-v="login">${T('Sign in', 'เข้าสู่ระบบ')}</button>`}
           </div>
         </div>
-        <div class="hero-card" aria-label="${T('Example beam result', 'ตัวอย่างผลการออกแบบคาน')}">
-          <div class="hc-head"><span>RC Beam · EN 1992-1-1:2023</span><span class="pill ok">PASS</span></div>
-          <div class="hc-body">${heroSketch()}
-            <ul class="hc-urs">
-              ${[['M_Ed / M_Rd', 0.83], ['V_Ed / V_Rd', 0.38], [T('Torsion', 'แรงบิด'), 0.58], ['w_k / w_max', 0.71]].map(([l, u]) => `<li><span>${l}</span><div class="ur"><i style="width:${u * 100}%"></i></div><b>${u.toFixed(2)}</b></li>`).join('')}
-            </ul></div>
-          <p class="hc-note">${T('Example', 'ตัวอย่าง')}: 300×600, 4H20 + 2H16, H10@150</p>
+        <div class="hero-card" aria-label="${T('Examples: RC beam design and 3D frame analysis', 'ตัวอย่าง: การออกแบบคาน คสล. และการวิเคราะห์โครง 3 มิติ')}">
+          <div class="hc-sec">
+            <div class="hc-head"><span>${T('Design', 'ออกแบบ')} · RC Beam · EN 1992-1-1:2023</span><span class="pill ok">PASS</span></div>
+            <div class="hc-body">${heroSketch()}
+              <ul class="hc-urs">
+                ${[['M_Ed / M_Rd', 0.83], ['V_Ed / V_Rd', 0.38], [T('Torsion', 'แรงบิด'), 0.58], ['w_k / w_max', 0.71]].map(([l, u]) => `<li><span>${l}</span><div class="ur"><i style="width:${u * 100}%"></i></div><b>${u.toFixed(2)}</b></li>`).join('')}
+              </ul></div>
+            <p class="hc-note">300×600 · 4H20 + 2H16 · H10@150</p>
+          </div>
+          <div class="hc-sec hc-an">
+            <div class="hc-head"><span>${T('Analysis', 'วิเคราะห์')} · ${T('3D frame', 'โครง 3 มิติ')} · AS/NZS 1170</span><span class="pill an">${T('SOLVED', 'คำนวณแล้ว')}</span></div>
+            <div class="hc-body2">${heroFrame()}
+              <dl class="hc-kv">
+                ${[['M<sub>z</sub> max', '201 kNm'], ['N max', '−2 104 kN'], ['T<sub>1</sub>', '0.84 s'], ['λ<sub>cr</sub>', '35.2'], [T('Drift', 'ดริฟต์'), 'h / 1 240']].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}
+              </dl></div>
+            <p class="hc-note">${T('2 × 2 bays · 3 storeys · 63 elements · 1.2G + 1.5Q', '2 × 2 ช่วง · 3 ชั้น · 63 ชิ้นส่วน · 1.2G + 1.5Q')}</p>
+          </div>
         </div>
       </div>
     </section>
 
     <section class="band two-band"><div class="wrap two-grid">
-      <article class="two-card"><p class="eyebrow">1 · ${T('Structural design', 'ออกแบบโครงสร้าง')}</p><h2>${T('Design to Eurocode, AS and Thai EIT', 'ออกแบบตาม Eurocode, AS และ วสท.')}</h2>
+      <article class="two-card"><p class="eyebrow">${T('Structural design', 'ออกแบบโครงสร้าง')}</p><h2>${T('Design to Eurocode, AS and Thai EIT', 'ออกแบบตาม Eurocode, AS และ วสท.')}</h2>
         <ul>${[T('RC beams, columns and pile caps', 'คาน เสา และฐานรากบนเสาเข็ม คสล.'), T('3D strut-and-tie for pile caps', 'Strut-and-tie 3 มิติ สำหรับฐานราก'), T('Steel sign gantries (AS 4100)', 'โครงป้ายเหล็ก (AS 4100)'), T('Limestone block retaining walls (AS 4678)', 'กำแพงกันดินหินบล็อก (AS 4678)'), T('Calculation report and PDF', 'รายการคำนวณและ PDF')].map(x => `<li>${x}</li>`).join('')}</ul>
         <button class="btn btn-hot sm" data-act="free">${T('Open design →', 'เริ่มออกแบบ →')}</button></article>
-      <article class="two-card an-card">${analysisIcon()}<p class="eyebrow">2 · ${T('Structural analysis', 'วิเคราะห์โครงสร้าง')}</p><h2>${T('3D frame & truss analysis', 'วิเคราะห์โครงข้อแข็งและโครงถัก 3 มิติ')}</h2>
+      <article class="two-card an-card">${analysisIcon()}<p class="eyebrow">${T('Structural analysis', 'วิเคราะห์โครงสร้าง')}</p><h2>${T('3D frame & truss analysis', 'วิเคราะห์โครงข้อแข็งและโครงถัก 3 มิติ')}</h2>
         <ul>${[T('Model tree: standard → materials → sections → nodes → elements → supports → loads → combinations', 'เมนูขั้นตอน: มาตรฐาน → วัสดุ → หน้าตัด → จุดต่อ → ชิ้นส่วน → จุดรองรับ → แรง → การรวมน้ำหนัก'), T('Click to select and edit in the 3D view', 'คลิกเลือกและแก้ไขในมุมมอง 3 มิติ'), T('Code concrete and steel grades, UB/UC, IPE/HE and JIS H sections', 'คอนกรีตและเหล็กตามมาตรฐาน หน้าตัด UB/UC, IPE/HE, JIS H'), T('Linear static, P-Delta, modal and buckling', 'สถิตเชิงเส้น P-Delta โหมด และการโก่งเดาะ'), T('3D diagrams, reactions, drift — forces straight to RC design', 'แผนภาพ 3 มิติ แรงปฏิกิริยา ดริฟต์ — ส่งแรงไปออกแบบ RC')].map(x => `<li>${x}</li>`).join('')}</ul>
         <button class="btn btn-hot sm" data-act="nav" data-v="analysis">${T('Open 3D analysis →', 'เปิดการวิเคราะห์ 3 มิติ →')}</button></article>
     </div></section>
@@ -544,10 +580,10 @@
       <div class="plans">
         <article class="plan"><h3>Free</h3><p class="price"><b>${S.ui === 'th' ? '0 บาท' : 'USD 0'}</b></p><ul>
           ${ticks.map(t => `<li>${t}</li>`).join('')}<li class="no">${T('Full calculation report / PDF', 'รายการคำนวณฉบับเต็ม / PDF')}</li><li class="no">${T('Columns and pile caps', 'เสา และฐานรากบนเสาเข็ม')}</li></ul>
-          ${S.promo ? `<span class="btn btn-ghost struck" aria-hidden="true">${T('Start free', 'เริ่มใช้งานฟรี')}</span><p class="promo-note">${T('Pro for free — every feature is open', 'Pro ฟรี — เปิดทุกฟังก์ชัน')}</p>` : `<button class="btn btn-ghost" data-act="free">${T('Start free', 'เริ่มใช้งานฟรี')}</button><button class="linkbtn" data-act="register" data-plan="free">${T('or register a free account', 'หรือสมัครบัญชี Free')}</button>`}</article>
+          ${S.promo ? `<p class="promo-note">${T('Pro is free — every feature is open', 'Pro ฟรี — เปิดทุกฟังก์ชัน')}</p>` : `<button class="btn btn-ghost" data-act="free">${T('Start free', 'เริ่มใช้งานฟรี')}</button><button class="linkbtn" data-act="register" data-plan="free">${T('or register a free account', 'หรือสมัครบัญชี Free')}</button>`}</article>
         <article class="plan plan-pro"><span class="ribbon">${T('Recommended', 'แนะนำ')}</span><h3>Pro</h3><p class="price">${S.promo ? `<s>${priceTxt()}</s> <b>${T('Free now', 'ฟรีตอนนี้')}</b>` : `<b>${money(PRICE[curOf()], curOf())}</b> / ${T('month', 'เดือน')}`}</p><ul>
           <li>${T('Everything in Free', 'ทุกอย่างใน Free')}</li><li>${T('RC columns: N–M and N–Mx–My interaction', 'เสา คสล. แผนภาพ N–M และ N–Mx–My')}</li><li>${T('Pile caps: beam method and STM', 'ฐานรากบนเสาเข็ม วิธีคาน และ STM')}</li><li>${T('Steel sign gantry to AS 4100, including fatigue', 'โครงป้ายจราจรเหล็กตาม AS 4100 รวมความล้า')}</li><li>${T('3D pile cap strut-and-tie and limestone block walls (AS)', 'STM ฐานรากเข็ม 3 มิติ และกำแพงกันดินก้อนหินปูน (AS)')}</li><li>${T('Full calculation report with clause references', 'รายการคำนวณฉบับเต็ม อ้างอิงข้อกำหนด')}</li><li>${T('PDF export', 'ส่งออกรายงานเป็น PDF')}</li></ul>
-          ${S.promo ? `<span class="btn btn-ghost struck" aria-hidden="true">${T('Register for Pro', 'สมัคร Pro')}</span><button class="btn btn-hot" data-act="free">${T('Pro for free — start now', 'Pro ฟรี — เริ่มใช้งาน')}</button>` : `<button class="btn btn-hot" data-act="register" data-plan="pro">${T('Register for Pro', 'สมัคร Pro')}</button><p class="muted small">${T('Pay by transfer and attach the slip — Pro is switched on within 2 hours.', 'ชำระเงินโดยการโอนและแนบสลิป — เปิดใช้ Pro ภายใน 2 ชั่วโมง')}</p>`}</article>
+          ${S.promo ? `<button class="btn btn-hot" data-act="free">${T('Pro is free — start now', 'Pro ฟรี — เริ่มใช้งานเลย')}</button>` : `<button class="btn btn-hot" data-act="register" data-plan="pro">${T('Register for Pro', 'สมัคร Pro')}</button><p class="muted small">${T('Pay by transfer and attach the slip — Pro is switched on within 2 hours.', 'ชำระเงินโดยการโอนและแนบสลิป — เปิดใช้ Pro ภายใน 2 ชั่วโมง')}</p>`}</article>
       </div></div></section>
 
     <section class="band contact-band" id="contact"><div class="wrap contact-in">
