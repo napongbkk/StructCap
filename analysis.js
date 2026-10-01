@@ -540,10 +540,10 @@
         const is3 = A.cam.v === '3d', touch = e.pointerType === 'touch';
         if (e.button === 1 || (e.button === 2 && e.shiftKey)) mode = 'pan';
         else if (e.button === 2) mode = is3 ? 'rot' : 'pan';
-        else if (A.tool === 'orbit') mode = is3 && !e.shiftKey ? 'rot' : 'pan';
-        else if (A.tool === 'select' || (!touch && (e.ctrlKey || e.metaKey || e.shiftKey))) mode = 'box';
+        else if (e.shiftKey || A.tool === 'orbit') mode = is3 ? 'rot' : 'pan';
+        else if (A.tool === 'select' || (!touch && (e.ctrlKey || e.metaKey || e.altKey))) mode = 'box';
         else mode = is3 ? 'rot' : 'pan';
-        A.boxHow = e.shiftKey ? 'add' : e.ctrlKey || e.metaKey ? 'sub' : 'new';
+        A.boxHow = e.ctrlKey || e.metaKey ? 'add' : e.altKey ? 'sub' : 'new';
       });
       cv.addEventListener('pointermove', e => {
         const [x, y] = rel(e);
@@ -1167,7 +1167,7 @@
           <aside class="an-side" id="anSide">${treeHTML()}</aside>
           <section class="an-work">
             <div class="an-tools">
-              <div class="seg" role="group" aria-label="${T('Tool', 'เครื่องมือ')}">${[['select', T('Select', 'เลือก'), T('Click to pick · drag a box: → window, ← crossing · Shift adds · Ctrl removes', 'คลิกเพื่อเลือก · ลากกรอบ: → หน้าต่าง, ← ตัดผ่าน · Shift เพิ่ม · Ctrl ลบออก')], ['orbit', T('Orbit', 'หมุน'), T('Drag to rotate the 3D view', 'ลากเพื่อหมุนมุมมอง 3 มิติ')], ['node', T('Node', 'จุดต่อ'), ''], ['member', T('Element', 'ชิ้นส่วน'), '']].map(([k, l, tt]) => `<button data-act="an-tool" data-t="${k}" aria-pressed="${A.tool === k}" ${tt ? `title="${esc(tt)}"` : ''}>${l}</button>`).join('')}</div>
+              <div class="seg" role="group" aria-label="${T('Tool', 'เครื่องมือ')}">${[['select', T('Select', 'เลือก'), T('Click to pick · drag a box: → window, ← crossing · Ctrl adds · Alt removes · Shift-drag rotates', 'คลิกเพื่อเลือก · ลากกรอบ: → หน้าต่าง, ← ตัดผ่าน · Ctrl เพิ่ม · Alt ลบออก · Shift-ลาก หมุน')], ['orbit', T('Orbit', 'หมุน'), T('Drag to rotate the 3D view', 'ลากเพื่อหมุนมุมมอง 3 มิติ')], ['node', T('Node', 'จุดต่อ'), ''], ['member', T('Element', 'ชิ้นส่วน'), '']].map(([k, l, tt]) => `<button data-act="an-tool" data-t="${k}" aria-pressed="${A.tool === k}" ${tt ? `title="${esc(tt)}"` : ''}>${l}</button>`).join('')}</div>
               ${sel([['', T('Select…', 'เลือก…')], ['all', T('All', 'ทั้งหมด')], ['none', T('None', 'ไม่เลือก')], ['inv', T('Invert', 'กลับการเลือก')], ['nodes', T('All nodes', 'จุดต่อทั้งหมด')], ['elems', T('All elements', 'ชิ้นส่วนทั้งหมด')], ['col', T('Columns', 'เสา')], ['beam', T('Beams', 'คาน')], ['brace', T('Bracing', 'ค้ำยัน')], ['sup', T('Supports', 'จุดรองรับ')], ['samesec', T('Same section as selected', 'หน้าตัดเดียวกับที่เลือก')], ['samemat', T('Same material as selected', 'วัสดุเดียวกับที่เลือก')]].concat(A.model.sections.map(q => ['sec:' + q.id, T('Section ', 'หน้าตัด ') + q.id])), '', `id="an-selby" class="an-selby" aria-label="${T('Select by', 'เลือกตาม')}"`)}
               <div class="seg" role="group" aria-label="${T('Display', 'การแสดงผล')}">${[['wire', T('Wire', 'เส้น'), T('Centre-line view', 'แสดงเส้นแกน')], ['solid', T('Solid', 'ทรงตัน'), T('Render the actual section shapes', 'แสดงรูปหน้าตัดจริง')]].map(([k, l, tt]) => `<button data-act="an-disp" data-d="${k}" aria-pressed="${(k === 'solid') === !!A.solid}" title="${esc(tt)}">${l}</button>`).join('')}</div>
               <div class="seg" role="group" aria-label="${T('View', 'มุมมอง')}">${[['3d', '3D'], ['plan', T('Plan', 'แปลน')], ['xz', 'X–Z'], ['yz', 'Y–Z']].map(([k, l]) => `<button data-act="an-cam" data-v="${k}" aria-pressed="${A.cam.v === k}">${l}</button>`).join('')}</div>
@@ -1190,8 +1190,9 @@
     function syncLshow() { const e = $('#an-lshow'); if (e) e.value = A.loadsOn ? A.lcase : ''; }
     function hintBar() {
       const rot = A.cam.v === '3d' ? T('right-drag: rotate', 'ลากคลิกขวา: หมุน') : T('right-drag: pan', 'ลากคลิกขวา: เลื่อน');
-      if (A.tool === 'select') return T('Drag box: → window / ← crossing · Shift: add · Ctrl: remove', 'ลากกรอบ: → หน้าต่าง / ← ตัดผ่าน · Shift: เพิ่ม · Ctrl: ลบออก') + ' · ' + rot + ' · ' + T('middle-drag: pan · wheel: zoom', 'ลากปุ่มกลาง: เลื่อน · ล้อเมาส์: ซูม');
-      return (A.cam.v === '3d' ? T('Drag: rotate', 'ลาก: หมุน') : T('Drag: pan', 'ลาก: เลื่อน')) + ' · ' + T('Shift-drag: select area · middle/right-drag: pan · wheel: zoom', 'Shift-ลาก: เลือกพื้นที่ · ลากปุ่มกลาง/ขวา: เลื่อน · ล้อเมาส์: ซูม');
+      const sh = A.cam.v === '3d' ? T('Shift-drag: rotate', 'Shift-ลาก: หมุน') : T('Shift-drag: pan', 'Shift-ลาก: เลื่อน');
+      if (A.tool === 'select') return T('Drag box: → window / ← crossing · Ctrl: add · Alt: remove · Shift-click: add/remove', 'ลากกรอบ: → หน้าต่าง / ← ตัดผ่าน · Ctrl: เพิ่ม · Alt: ลบออก · Shift-คลิก: เพิ่ม/ลบ') + ' · ' + sh + ' · ' + T('middle-drag: pan · wheel: zoom', 'ลากปุ่มกลาง: เลื่อน · ล้อเมาส์: ซูม');
+      return (A.cam.v === '3d' ? T('Drag: rotate', 'ลาก: หมุน') : T('Drag: pan', 'ลาก: เลื่อน')) + ' · ' + T('Ctrl-drag: select area · middle-drag: pan · wheel: zoom', 'Ctrl-ลาก: เลือกพื้นที่ · ลากปุ่มกลาง: เลื่อน · ล้อเมาส์: ซูม');
     }
     function drawerHTML() {
       if (!(A.step === 'res' && fresh())) return '';
