@@ -103,6 +103,23 @@ m.nodes = n2; m.members = m2; m.loads = m2.filter(q => q.sec !== 'C').map(q => (
 let t = Date.now(); r = run(m); console.log('15 linear,', m2.length, 'members:', Date.now() - t, 'ms');
 for (const o of [{ pdelta: true }, { modes: 6 }, { buckling: true }]) { t = Date.now(); run(m, Object.assign({ nseg: 2 }, o)); console.log('15', JSON.stringify(o), Date.now() - t, 'ms'); }
 t = Date.now(); r = run(m, { pdelta: true, nseg: 2, modes: 6, buckling: true }); console.log('15 P-Delta + modal + buckling:', Date.now() - t, 'ms; T1 =', r.modal.modes[0].T.toFixed(3), 's; λcr =', r.buckling.C2.modes[0].lam.toFixed(2));
+// 17 temperature loads (α = 12e-6 /°C for steel E): uniform ΔT and gradients across depth / width
+{
+  const al = 12e-6, EA = E * 1e3 * A * 1e-6, hm = h / 1000, bm = b / 1000, SS = () => [N('A', 0, 0, 0, 'custom', { fix: [1, 1, 1, 1, 0, 0] }), N('B', 6, 0, 0, 'custom', { fix: [0, 1, 1, 1, 0, 0] })];
+  let m = base(); m.nodes = [N('A', 0, 0, 0, 'fixed'), N('B', 6, 0, 0, 'fixed')]; m.members = [Mb('B1', 'A', 'B')]; m.loads = [{ case: 'G', kind: 'temp', member: 'B1', dT: 30 }];
+  let c = run(m).cases.G; P('17 fixed bar, ΔT = 30: N = −EAαΔT', c.mem[0].N[3], -EA * al * 30);
+  m.nodes = SS(); c = run(m).cases.G; P('17 sliding end: elongation αΔT·L', c.u[6], al * 30 * 6); P('17 sliding end: N = 0', c.mem[0].N[3], 0);
+  m.loads = [{ case: 'G', kind: 'temp', member: 'B1', dTy: 20 }]; c = run(m, { nps: 10 }).cases.G;
+  P('17 SS beam, top 20° hotter: midspan rises αΔT·L²/8h', c.mem[0].dz[5], al * 20 * 36 / (8 * hm)); P('17 SS beam gradient: Mz = 0', mx(c.mem[0].Mz.map(Math.abs)), 0);
+  m.nodes = [N('A', 0, 0, 0, 'fixed'), N('B', 6, 0, 0, 'fixed')]; c = run(m).cases.G;
+  P('17 fixed beam gradient: Mz = EIz·αΔT/h', c.mem[0].Mz[5], EIz * al * 20 / hm); P('17 fixed beam gradient: no deflection', mx(c.mem[0].dz.map(Math.abs)), 0);
+  m.nodes = SS(); m.loads = [{ case: 'G', kind: 'temp', member: 'B1', dTz: 20 }]; c = run(m).cases.G;
+  P('17 SS beam, +z face hotter: lateral αΔT·L²/8b (local z = −Y)', -c.mem[0].dy[5], al * 20 * 36 / (8 * bm));
+  m.nodes = [N('A', 0, 0, 0, 'fixed'), N('B', 6, 0, 0, 'fixed'), N('C', 6, 0, -4, 'fixed')]; m.members = [Mb('B1', 'A', 'B'), Mb('C1', 'C', 'B')]; m.loads = [{ case: 'G', kind: 'temp', member: 'B1', dT: 25 }, { case: 'G', kind: 'temp', member: 'B1', dTy: 10 }];
+  c = run(m).cases.G; P('17 frame: thermal loads are self-equilibrating (ΣRx)', sumR(c, 0), 0); P('17 frame: ΣRz', sumR(c, 2), 0);
+  m.materials[0].alpha = 10; m.nodes = [N('A', 0, 0, 0, 'fixed'), N('B', 6, 0, 0, 'fixed')]; m.members = [Mb('B1', 'A', 'B')]; m.loads = [{ case: 'G', kind: 'temp', member: 'B1', dT: -20 }]; m.combos = [{ id: 'C1', name: '1.5', type: 'ULS', f: { G: 1.5 } }];
+  P('17 material α = 10e-6, cooling 20°, factor 1.5: N = +1.5·EAαΔT', run(m).combos.C1.mem[0].N[2], 1.5 * EA * 10e-6 * 20);
+}
 // 16 standard steel sections (properties computed from dimensions) against published tables
 require(require('path').join(__dirname, '..', 'steelsec.js')); const SL = globalThis.STEELLIB;
 [['UB', '310UB40.4', 5210, 86.4e6, 7.65e6, 157e3], ['IPE', 'IPE 300', 5381, 83.56e6, 6.038e6, 201.2e3], ['HEB', 'HEB 300', 14910, 251.7e6, 85.63e6, 1850e3], ['H', 'H 300×150', 4678, 72.1e6, 5.08e6, null]].forEach(([sr, nm, A0, Iz0, Iy0, J0]) => {

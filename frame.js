@@ -28,6 +28,8 @@
     const Iz = +s.Iz || +s.I || 1, Iy = +s.Iy || Iz;
     return { A: +s.A || 1, Iz, Iy, J: +s.J || (Iz + Iy) / 50, I: Iz, d: +s.dd || 300, w: +s.ww || +s.dd || 300 };
   }
+  // coefficient of thermal expansion (per °C): material value, else concrete 10e-6, steel 12e-6
+  const alphaOf = t => { const a = +t.alpha; if (a > 0) return a > 0.01 ? a * 1e-6 : a; return t.kind === 'conc' || (+t.E || 0) < 100000 ? 10e-6 : 12e-6; };
   const concreteE = fc => { const t = [[20, 24000], [25, 26700], [32, 30100], [40, 32800], [50, 34800], [65, 37400], [80, 39600], [100, 42200]]; if (fc <= 20) return 24000; for (let i = 1; i < t.length; i++) if (fc <= t[i][0]) return t[i - 1][1] + (t[i][1] - t[i - 1][1]) * (fc - t[i - 1][0]) / (t[i][0] - t[i - 1][0]); return 42200; };
 
   // ------------------------------------------------------------------ vectors, local axes
@@ -129,7 +131,11 @@
       F[2] += p[2] * h[0]; F[4] -= p[2] * h[1]; F[8] += p[2] * h[2]; F[10] -= p[2] * h[3];
     };
     loads.forEach(ld => {
-      if (ld.k === 'p') addPoint(ld.a, ld.P);
+      if (ld.k === 't') { // temperature: equivalent nodal loads of the restrained thermal strain / curvatures
+        F[0] -= ld.N0; F[6] += ld.N0;
+        F[5] -= ld.Mz0; F[11] += ld.Mz0;
+        F[4] += ld.My0; F[10] -= ld.My0;
+      } else if (ld.k === 'p') addPoint(ld.a, ld.P);
       else if (ld.k === 'm') {
         const xi = ld.a / L, d = dH(xi, L), [mx, my, mz] = ld.M;
         F[3] += mx * (1 - xi); F[9] += mx * xi;
@@ -146,6 +152,7 @@
   function loadsUpTo(loads, x) {
     const Q = [0, 0, 0]; let Mz = 0, My = 0, Tq = 0;
     loads.forEach(ld => {
+      if (ld.k === 't') return;
       if (ld.k === 'p') { if (ld.a <= x + 1e-12) { for (let k = 0; k < 3; k++) Q[k] += ld.P[k]; Mz += ld.P[1] * (x - ld.a); My += ld.P[2] * (x - ld.a); } }
       else if (ld.k === 'm') { if (ld.a <= x + 1e-12) { Mz -= ld.M[2]; My += ld.M[1]; Tq += ld.M[0]; } }
       else {
@@ -197,6 +204,7 @@
     const memLoad = (rec, ld) => {
       rec.els.forEach(el => {
         const x0 = el.x0, x1 = el.x0 + el.l, list = byEl.get(el) || []; byEl.set(el, list);
+        if (ld.k === 't') { list.push(ld); return; }
         if (ld.k === 'p' || ld.k === 'm') { if (ld.a >= x0 - 1e-9 && ld.a <= x1 + 1e-9 && !(Math.abs(ld.a - x0) < 1e-9 && x0 > 0)) list.push(Object.assign({}, ld, { a: Math.min(el.l, Math.max(0, ld.a - x0)) })); }
         else {
           const a = Math.max(ld.a, x0), b = Math.min(ld.b, x1); if (b - a < 1e-9) return;
@@ -211,6 +219,13 @@
     model.loads.filter(l => l.case === caseId).forEach(l => {
       if (l.kind === 'node') { const p = mesh.nid[l.node]; if (p !== undefined) addN(p, [+l.Fx || 0, +l.Fy || 0, +l.Fz || 0, +l.Mx || 0, +l.My || 0, +l.Mz || 0]); return; }
       const rec = mesh.mems.find(r => r.id === l.member); if (!rec) return;
+      if (l.kind === 'temp') {
+        // α ΔT: uniform → axial strain; ΔTy = T(+y face) − T(−y face) over the depth, ΔTz over the width → curvature κ = −α ΔT / h
+        const al = alphaOf(rec.mat), h = Math.max(1e-6, (+rec.sec.d || 300) * 1e-3), b = Math.max(1e-6, (+rec.sec.w || +rec.sec.d || 300) * 1e-3);
+        const e0 = al * (+l.dT || 0) * factor, ky = rec.truss ? 0 : -al * (+l.dTy || 0) / h * factor, kz = rec.truss ? 0 : -al * (+l.dTz || 0) / b * factor;
+        if (e0 || ky || kz) memLoad(rec, { k: 't', N0: rec.E * rec.A * e0, Mz0: rec.E * rec.Iz * ky, My0: rec.E * rec.Iy * kz });
+        return;
+      }
       const L = rec.L, dir = l.dir || (l.kind === 'moment' ? 'lz' : 'grav');
       const vec = v => LV[dir] ? LV[dir].map(c => c * v) : loc(rec, (GV[dir] || GV.grav).map(c => c * v));
       const proj = dir === 'gravp' ? Math.hypot(rec.ax.ex[0], rec.ax.ex[1]) : 1;
@@ -422,7 +437,7 @@
       const { ex, ey, ez } = rec.ax;
       rec.els.forEach((el, k) => {
         const ed = st.elData[el.e], f = ed.fe, loads = loadset.byEl.get(el) || [], l = el.l, ul = ed.ul;
-        const fl = feq(loads, l), np = Math.max(nps, 2), xs = Array.from({ length: np + 1 }, (_, i) => l * i / np);
+        const fl = feq(loads.filter(q => q.k !== 't'), l), np = Math.max(nps, 2), xs = Array.from({ length: np + 1 }, (_, i) => l * i / np);
         // particular (fixed-fixed) deflections from the element loads: v'' = Mz/EIz, w'' = My/EIy (analog moments)
         const part = (Mf, EI) => {
           const th = [0], vp = [0];
@@ -624,5 +639,5 @@
     return { mem, R, n: list.length };
   }
 
-  G.FRAME = { analyse, envelope, secProps, concreteE, axes, SUPS, fixOf, COMP, _test: { kLocal, feq, loadsUpTo, jacobiEig, Sky, numbering, build } };
+  G.FRAME = { analyse, envelope, secProps, concreteE, alphaOf, axes, SUPS, fixOf, COMP, _test: { kLocal, feq, loadsUpTo, jacobiEig, Sky, numbering, build } };
 })(typeof window !== 'undefined' ? window : globalThis);

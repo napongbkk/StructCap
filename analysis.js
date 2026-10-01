@@ -9,6 +9,19 @@
     const lsGet = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
     const lsSet = v => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) { } };
     const clone = o => JSON.parse(JSON.stringify(o));
+    // ---- display units: the model is stored in kN, m, °C; inputs and outputs are converted
+    const UF = { kN: 1, N: 1e-3, kgf: 0.00980665, tf: 9.80665, kip: 4.4482216 }, UL = { m: 1, cm: 0.01, mm: 0.001, ft: 0.3048, in: 0.0254 }, UT = { C: 1, F: 5 / 9 };
+    const UPRE = { SI: { F: 'kN', L: 'm', T: 'C' }, SImm: { F: 'N', L: 'mm', T: 'C' }, MKS: { F: 'tf', L: 'm', T: 'C' }, MKScm: { F: 'kgf', L: 'cm', T: 'C' }, US: { F: 'kip', L: 'ft', T: 'F' } };
+    const UU = () => { try { return (A.opt && A.opt.u) || UPRE.SI; } catch (e) { return UPRE.SI; } };
+    const dU = () => (UU().L === 'ft' || UU().L === 'in' ? ['in', 0.0254] : ['mm', 1e-3]);
+    const ufac = q => { const u = UU(), Fq = UF[u.F] || 1, Lq = UL[u.L] || 1; return q === 'L' ? Lq : q === 'F' ? Fq : q === 'w' || q === 'kL' ? Fq / Lq : q === 'M' || q === 'kR' ? Fq * Lq : q === 'd' ? dU()[1] : q === 'T' ? UT[u.T] || 1 : q === 'al' ? 1 / (UT[u.T] || 1) : q === 'g' ? Fq / (Lq * Lq * Lq) : 1; };
+    const ulab = q => { const u = UU(), M = u.F === 'kN' && u.L === 'm' ? 'kNm' : u.F + '·' + u.L; return { L: u.L, F: u.F, w: u.F + '/' + u.L, kL: u.F + '/' + u.L, M, kR: M + '/rad', d: dU()[0], T: '°' + u.T, al: '×10⁻⁶/°' + u.T, g: u.F + '/' + u.L + '³' }[q] || ''; };
+    const toU = (v, q) => v / ufac(q), frU = (v, q) => v * ufac(q);
+    const uv = (v, q) => (v === '' || v == null ? v : Number(toU(+v, q).toPrecision(10)));
+    const udp = q => { const u = UU(); if (q === 'F') return { N: 0, kgf: 0 }[u.F] === 0 ? 0 : 2; if (q === 'M' || q === 'w') return u.F === 'N' || u.F === 'kgf' ? 0 : 2; if (q === 'L') return { m: 3, cm: 1, mm: 0, ft: 3, in: 2 }[u.L]; if (q === 'd') return 2; return 2; };
+    const fu = (v, q, d) => fx(toU(v, q), d === undefined ? udp(q) : d);
+    const ul = q => ' ' + ulab(q);
+    const FQ = { nodes: { x: 'L', y: 'L', z: 'L', kx: 'kL', ky: 'kL', kz: 'kL', krx: 'kR', kry: 'kR', krz: 'kR' }, loads: { Fx: 'F', Fy: 'F', Fz: 'F', P: 'F', Mx: 'M', My: 'M', Mz: 'M', M: 'M', w1: 'w', w2: 'w', a: 'L', b: 'L', dT: 'T', dTy: 'T', dTz: 'T' }, materials: { rho: 'g', alpha: 'al' } };
     const fx = (v, d) => { if (v === undefined || v === null || !isFinite(v)) return '—'; const dd = d === undefined ? 2 : d; return f(Math.abs(v) < 0.5 * Math.pow(10, -dd) ? 0 : v, dd); };
     const r4 = v => Math.round(v * 1e4) / 1e4;
     const pro = () => isPro();
@@ -179,7 +192,7 @@
     const initStd = ({ EC2: 'EC', EC: 'EC', TH: 'TH', AS: 'AS' })[S.codeSel || S.code] || 'AS';
     const A = {
       model: saved && saved.model ? saved.model : build('building', TPL.building.p, initStd),
-      opt: Object.assign({ pdelta: false, modes: false, nmodes: 6, buckling: false, nseg: 4, massG: 1, massQ: 0.3, snap: 0.5 }, saved && saved.opt || {}),
+      opt: Object.assign({ pdelta: false, modes: false, nmodes: 6, buckling: false, nseg: 4, massG: 1, massQ: 0.3, snap: 0.5, u: { F: 'kN', L: 'm', T: 'C' } }, saved && saved.opt || {}),
       step: 'std', rview: 'Mz', src: null, sel: { n: [], m: [] }, tool: 'select', draw: null, mode: 0, labels: true, loadsOn: false, dscale: 1,
       res: null, err: null, errNode: null, tpl: 'building', tplOpen: false, rtab: 'sum', lcase: 'G', cut: 'all', cb: null, ss: null,
       cam: { v: '3d', yaw: VIEWS['3d'][0], pitch: VIEWS['3d'][1], k: null, t: [0, 0, 0] }, hist: [], fut: [], ver: 0, resVer: -1, hover: null, mouse: null, box: null
@@ -390,17 +403,25 @@
         const ls = m.loads.filter(l => lc === 'all' || l.case === lc);
         const maxW = Math.max(1e-9, ...ls.filter(l => l.kind === 'udl').map(l => Math.max(Math.abs(+l.w1 || 0), Math.abs(l.w2 === '' || l.w2 == null ? 0 : +l.w2))));
         const maxP = Math.max(1e-9, ...ls.filter(l => l.kind !== 'udl').map(l => l.kind === 'node' ? Math.max(Math.abs(+l.Fx || 0), Math.abs(+l.Fy || 0), Math.abs(+l.Fz || 0)) : Math.abs(+l.P || 0)));
-        const stack = {}, fewL = ls.length <= 40 || rep;
+        const stack = {}, fewL = ls.length <= 40 || rep, tl = ls.filter(l => l.kind === 'temp'), nT = rep ? 0 : tl.length;
+        if (nT > 8) { const grp = {}; tl.forEach(l => { const k0 = l.case + ': ' + loadDesc(l).replace(/ΔT uniform|ΔT สม่ำเสมอ/, 'ΔT'); grp[k0] = (grp[k0] || 0) + 1; }); Object.entries(grp).slice(0, 4).forEach(([k0, c0]) => notes.push('🌡 ' + k0 + ' — ' + c0 + T(' element(s)', ' ชิ้นส่วน'))); }
         ls.forEach(l => {
           const col = caseCol(pal, l.case);
           if (l.kind === 'node') {
             const n = nd[l.node]; if (!n || !visN.has(n.id)) return; const p0 = P3(n), pp = P(p0);
-            [['Fx', [1, 0, 0]], ['Fy', [0, 1, 0]], ['Fz', [0, 0, 1]]].forEach(([q, e]) => { const v = +l[q] || 0; if (!v) return; const len = (20 + 26 * Math.abs(v) / maxP) / k, d = e.map(c0 => c0 * Math.sign(v)), tail = P(addv(p0, d, -len - 5 / k)), head = P(addv(p0, d, -5 / k)); arrow(tail, head, col, 1.5); if (fewL || selN.has(n.id)) text(f(Math.abs(v), 1), tail[0] + 3, tail[1] - 3, col); });
-            const mtot = ['Mx', 'My', 'Mz'].filter(q => +l[q]).map(q => q + ' ' + f(+l[q], 1)).join(' ');
+            [['Fx', [1, 0, 0]], ['Fy', [0, 1, 0]], ['Fz', [0, 0, 1]]].forEach(([q, e]) => { const v = +l[q] || 0; if (!v) return; const len = (20 + 26 * Math.abs(v) / maxP) / k, d = e.map(c0 => c0 * Math.sign(v)), tail = P(addv(p0, d, -len - 5 / k)), head = P(addv(p0, d, -5 / k)); arrow(tail, head, col, 1.5); if (fewL || selN.has(n.id)) text(fu(Math.abs(v), 'F'), tail[0] + 3, tail[1] - 3, col); });
+            const mtot = ['Mx', 'My', 'Mz'].filter(q => +l[q]).map(q => q + ' ' + fu(+l[q], 'M')).join(' ');
             if (mtot) { g.strokeStyle = col; g.lineWidth = 1.4; g.beginPath(); g.arc(pp[0], pp[1], 12, -PI * 0.9, PI * 0.4); g.stroke(); text(mtot, pp[0] + 14, pp[1] - 10, col); }
             return;
           }
           const mb = m.members.find(q => q.id === l.member); if (!mb || !memVis(mb)) return; const a = nd[mb.i], b = nd[mb.j]; if (!a || !b) return;
+          if (l.kind === 'temp') {
+            const hot = (+l.dT || 0) + Math.abs(+l.dTy || 0) / 2 + Math.abs(+l.dTz || 0) / 2 >= 0 && !((+l.dT || 0) < 0), tc = hot ? '#e8590c' : '#1c7ed6', pa2 = P(P3(a)), pb2 = P(P3(b));
+            g.save(); g.globalAlpha = 0.35; line(pa2, pb2, tc, 9); g.restore(); line(pa2, pb2, tc, 1.4, [5, 4]);
+            const mp = [(pa2[0] + pb2[0]) / 2, (pa2[1] + pb2[1]) / 2], k2 = mb.id + '|t', off = stack[k2] || 0; stack[k2] = off + 13;
+            if (nT <= 8 || selM.has(mb.id)) text(l.case + ' ' + loadDesc(l).replace(/ΔT uniform|ΔT สม่ำเสมอ/, 'ΔT'), mp[0] + 6, mp[1] + 14 + off, tc);
+            return;
+          }
           const pa = P3(a), pb = P3(b), L = Math.hypot(...sub(pb, pa)), ax = F.axes(pa, pb, mb.beta), dir = l.dir || (l.kind === 'moment' ? 'lz' : 'grav');
           const e = GDIR[dir] || (dir === 'lx' ? ax.ex : dir === 'ly' ? ax.ey : ax.ez), at = s => addv(pa, ax.ex, s);
           if (l.kind === 'udl') {
@@ -413,11 +434,11 @@
               if (w) arrow(tail, head, col, 1.2);
             }
             g.strokeStyle = col; g.lineWidth = 1.2; g.beginPath(); tops.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.stroke();
-            const tm = tops[Math.floor(tops.length / 2)]; if (fewL || selM.has(mb.id)) text(l.case + ' ' + f(Math.abs(w1), 2) + (w2 !== w1 ? '→' + f(Math.abs(w2), 2) : ''), tm[0] + 4, tm[1] - 4, col);
+            const tm = tops[Math.floor(tops.length / 2)]; if (fewL || selM.has(mb.id)) text(l.case + ' ' + fu(Math.abs(w1), 'w') + (w2 !== w1 ? '→' + fu(Math.abs(w2), 'w') : ''), tm[0] + 4, tm[1] - 4, col);
           } else if (l.kind === 'point') {
             const v = +l.P || 0, sg = Math.sign(v || 1), base = at(Math.min(L, +l.a || 0)), len = (20 + 26 * Math.abs(v) / maxP) / k, tail = P(addv(base, e, -sg * len)), head = P(addv(base, e, -sg * 4 / k));
-            arrow(tail, head, col, 1.5); text(l.case + ' ' + f(Math.abs(v), 1), tail[0] + 4, tail[1] - 3, col);
-          } else if (l.kind === 'moment') { const pp = P(at(Math.min(L, +l.a || 0))); g.strokeStyle = col; g.lineWidth = 1.4; g.beginPath(); g.arc(pp[0], pp[1], 11, -PI * 0.9, PI * 0.4); g.stroke(); text(l.case + ' M ' + f(+l.M || 0, 1), pp[0] + 13, pp[1] - 9, col); }
+            arrow(tail, head, col, 1.5); text(l.case + ' ' + fu(Math.abs(v), 'F'), tail[0] + 4, tail[1] - 3, col);
+          } else if (l.kind === 'moment') { const pp = P(at(Math.min(L, +l.a || 0))); g.strokeStyle = col; g.lineWidth = 1.4; g.beginPath(); g.arc(pp[0], pp[1], 11, -PI * 0.9, PI * 0.4); g.stroke(); text(l.case + ' M ' + fu(+l.M || 0, 'M'), pp[0] + 13, pp[1] - 9, col); }
         });
       }
       function drawResults() {
@@ -437,8 +458,8 @@
           let mx = 0, best = null; cur.mem.forEach(q => q.dx.forEach((d, i) => { const v = Math.hypot(d, q.dy[i], q.dz[i]); if (v > mx) { mx = v; best = [q, i]; } }));
           const sc = mx > 0 ? 0.08 * ext / mx * A.dscale : 0;
           cur.mem.forEach(q => { const mb = m.members.find(z => z.id === q.id); if (!mb || !memVis(mb)) return; const pa = P3(nd[mb.i]), pb = P3(nd[mb.j]), ex = sub(pb, pa).map(v => v / q.L); g.strokeStyle = pal.pink; g.lineWidth = 2.2; g.beginPath(); q.x.forEach((x, i) => { const p = P([pa[0] + ex[0] * x + q.dx[i] * sc, pa[1] + ex[1] * x + q.dy[i] * sc, pa[2] + ex[2] * x + q.dz[i] * sc]); i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); }); g.stroke(); });
-          if (best) { const [q, i] = best, mb = m.members.find(z => z.id === q.id), pa = P3(nd[mb.i]), pb = P3(nd[mb.j]), ex = sub(pb, pa).map(v => v / q.L), p = P([pa[0] + ex[0] * q.x[i] + q.dx[i] * sc, pa[1] + ex[1] * q.x[i] + q.dy[i] * sc, pa[2] + ex[2] * q.x[i] + q.dz[i] * sc]); g.beginPath(); g.arc(p[0], p[1], 4.5, 0, 2 * PI); g.fillStyle = pal.pink; g.fill(); text(f(mx * 1000, 2) + ' mm', p[0] + 8, p[1] - 8, pal.ink, { font: '600 11px ui-monospace, monospace' }); }
-          notes.push(T('Deflected shape · max ', 'รูปการโก่งตัว · สูงสุด ') + f(mx * 1000, 2) + ' mm'); return;
+          if (best) { const [q, i] = best, mb = m.members.find(z => z.id === q.id), pa = P3(nd[mb.i]), pb = P3(nd[mb.j]), ex = sub(pb, pa).map(v => v / q.L), p = P([pa[0] + ex[0] * q.x[i] + q.dx[i] * sc, pa[1] + ex[1] * q.x[i] + q.dy[i] * sc, pa[2] + ex[2] * q.x[i] + q.dz[i] * sc]); g.beginPath(); g.arc(p[0], p[1], 4.5, 0, 2 * PI); g.fillStyle = pal.pink; g.fill(); text(fu(mx, 'd') + ul('d'), p[0] + 8, p[1] - 8, pal.ink, { font: '600 11px ui-monospace, monospace' }); }
+          notes.push(T('Deflected shape · max ', 'รูปการโก่งตัว · สูงสุด ') + fu(mx, 'd') + ul('d')); return;
         }
         if (view === 'react') {
           const R = cur.R; let mx = 1e-9;
@@ -446,14 +467,14 @@
           m.nodes.forEach((n, i) => {
             const fx6 = F.fixOf(n); if (!fx6.some(Boolean) && !['kx', 'ky', 'kz', 'krx', 'kry', 'krz'].some(q => +n[q] > 0)) return; if (!visN.has(n.id)) return;
             const p0 = P3(n), pp = P(p0), lines = [];
-            ['X', 'Y', 'Z'].forEach((lb, d) => { const v = env ? null : R[6 * i + d]; if (env) { const [a0, a1] = R[6 * i + d]; if (Math.abs(a0) > 1e-6 || Math.abs(a1) > 1e-6) lines.push('R' + lb.toLowerCase() + ' ' + f(a0, 1) + '…' + f(a1, 1)); return; } if (Math.abs(v) < 1e-6) return; const e = [0, 0, 0]; e[d] = Math.sign(v); const len = (18 + 30 * Math.abs(v) / mx) / k; arrow(P(addv(p0, e, -len - 8 / k)), P(addv(p0, e, -8 / k)), pal.ok, 1.8); lines.push('R' + lb.toLowerCase() + ' ' + f(v, 1)); });
-            ['X', 'Y', 'Z'].forEach((lb, d) => { const v = env ? R[6 * i + 3 + d] : R[6 * i + 3 + d]; if (env) { if (Math.abs(v[0]) > 1e-6 || Math.abs(v[1]) > 1e-6) lines.push('M' + lb.toLowerCase() + ' ' + f(v[0], 1) + '…' + f(v[1], 1)); } else if (Math.abs(v) > 1e-6) lines.push('M' + lb.toLowerCase() + ' ' + f(v, 1)); });
+            ['X', 'Y', 'Z'].forEach((lb, d) => { const v = env ? null : R[6 * i + d]; if (env) { const [a0, a1] = R[6 * i + d]; if (Math.abs(a0) > 1e-6 || Math.abs(a1) > 1e-6) lines.push('R' + lb.toLowerCase() + ' ' + fu(a0, 'F', 1) + '…' + fu(a1, 'F', 1)); return; } if (Math.abs(v) < 1e-6) return; const e = [0, 0, 0]; e[d] = Math.sign(v); const len = (18 + 30 * Math.abs(v) / mx) / k; arrow(P(addv(p0, e, -len - 8 / k)), P(addv(p0, e, -8 / k)), pal.ok, 1.8); lines.push('R' + lb.toLowerCase() + ' ' + fu(v, 'F', 1)); });
+            ['X', 'Y', 'Z'].forEach((lb, d) => { const v = env ? R[6 * i + 3 + d] : R[6 * i + 3 + d]; if (env) { if (Math.abs(v[0]) > 1e-6 || Math.abs(v[1]) > 1e-6) lines.push('M' + lb.toLowerCase() + ' ' + fu(v[0], 'M', 1) + '…' + fu(v[1], 'M', 1)); } else if (Math.abs(v) > 1e-6) lines.push('M' + lb.toLowerCase() + ' ' + fu(v, 'M', 1)); });
             if (m.nodes.length <= 120 || selN.has(n.id)) lines.forEach((s, j) => text(s, pp[0] + 10, pp[1] + 26 + j * 13, pal.ok));
           });
-          notes.push(T('Support reactions (kN, kNm), + along +X, +Y, +Z', 'แรงปฏิกิริยา (kN, kNm) + ตามแกน +X, +Y, +Z')); return;
+          notes.push(T('Support reactions', 'แรงปฏิกิริยา') + ' (' + ulab('F') + ', ' + ulab('M') + T('), + along +X, +Y, +Z', ') + ตามแกน +X, +Y, +Z')); return;
         }
         if (!isComp(view)) return;
-        const q = view, onY = ['N', 'Vy', 'T', 'Mz'].includes(q), sgn = q === 'Mz' || q === 'My' ? -1 : 1;
+        const q = view, qU = ['T', 'My', 'Mz'].includes(q) ? 'M' : 'F', onY = ['N', 'Vy', 'T', 'Mz'].includes(q), sgn = q === 'Mz' || q === 'My' ? -1 : 1;
         let mx = 0; cur.mem.forEach(mm2 => { const mb = m.members.find(z => z.id === mm2.id); if (!mb || !memVis(mb) || (mb.type === 'truss' && q !== 'N')) return; arr(mm2, q, env).forEach(a2 => a2.forEach(v => { mx = Math.max(mx, Math.abs(v)); })); });
         if (q !== 'N' && m.members.filter(memVis).every(z => z.type === 'truss')) { notes.push(T('Truss members carry axial force only — see the N diagram.', 'ชิ้นส่วนโครงถักรับแรงตามแนวแกนเท่านั้น — ดูแผนภาพ N')); return; }
         const sc = mx > 0 ? 0.11 * ext / mx * A.dscale : 0, few = cur.mem.length <= 140 || A.cut !== 'all';
@@ -468,11 +489,12 @@
             g.strokeStyle = colQ; g.lineWidth = 1.2; g.setLineDash(si ? [4, 3] : []); g.beginPath(); pts.forEach((p, i) => (i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]))); g.stroke(); g.setLineDash([]);
             if ((A.labels || rep) && (few || selM.has(mb.id))) {
               let bi = 0, bj = 0; vals.forEach((v, i) => { if (v > vals[bi]) bi = i; if (v < vals[bj]) bj = i; });
-              [bi, bj].filter((x, i, a2) => a2.indexOf(x) === i).forEach(i => { if (Math.abs(vals[i]) < 0.04 * mx) return; const p = pts[i]; text(f(vals[i], 1), p[0] + 3, p[1] - 3, colQ); });
+              [bi, bj].filter((x, i, a2) => a2.indexOf(x) === i).forEach(i => { if (Math.abs(vals[i]) < 0.04 * mx) return; const p = pts[i]; text(fu(vals[i], qU, 1), p[0] + 3, p[1] - 3, colQ); });
             }
           });
         });
-        notes.push({ N: T('Axial force N (kN) · tension +', 'แรงตามแนวแกน N (kN) · แรงดึง +'), Vy: T('Shear V_y (kN) · local y', 'แรงเฉือน V_y (kN) · แกน y'), Vz: T('Shear V_z (kN) · local z', 'แรงเฉือน V_z (kN) · แกน z'), T: T('Torsion T (kNm)', 'แรงบิด T (kNm)'), My: T('Moment M_y (kNm) · minor axis, tension side', 'โมเมนต์ M_y (kNm) · แกนรอง ด้านรับแรงดึง'), Mz: T('Moment M_z (kNm) · major axis, tension side', 'โมเมนต์ M_z (kNm) · แกนหลัก ด้านรับแรงดึง') }[q] + ' · ' + T('max ', 'สูงสุด ') + f(mx, 2) + (env ? T(' · envelope (dashed = min)', ' · ค่าสูงสุด/ต่ำสุด (เส้นประ = ต่ำสุด)') : ''));
+        const uF = '(' + ulab('F') + ')', uM = '(' + ulab('M') + ')';
+        notes.push({ N: T('Axial force N ' + uF + ' · tension +', 'แรงตามแนวแกน N ' + uF + ' · แรงดึง +'), Vy: T('Shear V_y ' + uF + ' · local y', 'แรงเฉือน V_y ' + uF + ' · แกน y'), Vz: T('Shear V_z ' + uF + ' · local z', 'แรงเฉือน V_z ' + uF + ' · แกน z'), T: T('Torsion T ' + uM, 'แรงบิด T ' + uM), My: T('Moment M_y ' + uM + ' · minor axis, tension side', 'โมเมนต์ M_y ' + uM + ' · แกนรอง ด้านรับแรงดึง'), Mz: T('Moment M_z ' + uM + ' · major axis, tension side', 'โมเมนต์ M_z ' + uM + ' · แกนหลัก ด้านรับแรงดึง') }[q] + ' · ' + T('max ', 'สูงสุด ') + fu(mx, qU) + (env ? T(' · envelope (dashed = min)', ' · ค่าสูงสุด/ต่ำสุด (เส้นประ = ต่ำสุด)') : ''));
       }
     }
     // canvas on the page
@@ -485,7 +507,7 @@
       if (fitOut && A.scr.n.some(q => q.p[0] < 10 || q.p[0] > W - 10 || q.p[1] < 10 || q.p[1] > H - 10)) { A.cam.k = null; A.scr = render(cv, { W, H, dpr: Math.min(2, G.devicePixelRatio || 1), pal: palette() }); }
       const vs = $('#anViewTag'); if (vs) vs.textContent = viewTag();
     }
-    function viewTag() { return ({ '3d': '3D', plan: T('Plan', 'แปลน'), xz: T('Elevation X–Z', 'รูปด้าน X–Z'), yz: T('Elevation Y–Z', 'รูปด้าน Y–Z') }[A.cam.v]) + (A.cut !== 'all' && cutAxis() ? ' · ' + cutAxis().toUpperCase() + ' = ' + f(+A.cut, 2) + ' m' : ''); }
+    function viewTag() { return ({ '3d': '3D', plan: T('Plan', 'แปลน'), xz: T('Elevation X–Z', 'รูปด้าน X–Z'), yz: T('Elevation Y–Z', 'รูปด้าน Y–Z') }[A.cam.v]) + (A.cut !== 'all' && cutAxis() ? ' · ' + cutAxis().toUpperCase() + ' = ' + fu(+A.cut, 'L', 2) + ul('L') : ''); }
     function snapshot(view, lcase, w, h) {
       const cv = document.createElement('canvas'), cam = clone(A.cam), cut = A.cut;
       A.cut = 'all'; A.cam.k = null;
@@ -689,7 +711,8 @@
     const MDIRS = () => [['lz', T('about local z', 'รอบแกน z')], ['ly', T('about local y', 'รอบแกน y')], ['lx', T('torque (local x)', 'แรงบิด (แกน x)')], ['gx', T('about global X', 'รอบแกน X')], ['gy', T('about global Y', 'รอบแกน Y')], ['gz', T('about global Z', 'รอบแกน Z')]];
     const SECT = () => [['rect', T('Rectangle', 'สี่เหลี่ยม')], ['circ', T('Circle', 'วงกลม')], ['std', T('Standard steel', 'เหล็กมาตรฐาน')], ['tube', 'CHS / SHS / RHS'], ['I', T('I-section (custom)', 'หน้าตัด I (กำหนดเอง)')], ['user', T('User A, I, J', 'กำหนดเอง A, I, J')]];
     const CTYPES = () => [['G', T('G — dead', 'G — คงที่')], ['Q', T('Q — live', 'Q — จร')], ['W', T('W — wind', 'W — ลม')], ['E', T('E — earthquake', 'E — แผ่นดินไหว')], ['O', T('Other', 'อื่น ๆ')]];
-    const LKIND = () => [['udl', T('Distributed', 'แผ่กระจาย')], ['point', T('Point', 'แรงจุด')], ['moment', T('Moment', 'โมเมนต์')]];
+    const LKIND = () => [['udl', T('Distributed', 'แผ่กระจาย')], ['point', T('Point', 'แรงจุด')], ['moment', T('Moment', 'โมเมนต์')], ['temp', T('Temperature', 'อุณหภูมิ')]];
+    const TEMPHINT = () => T('ΔT uniform heats the whole section (axial strain α·ΔT). ΔT_y = T(+y face) − T(−y face) bends about the major axis (for a beam: top minus bottom); ΔT_z = T(+z face) − T(−z face). α is set per material (step 1).', 'ΔT สม่ำเสมอ ทำให้ทั้งหน้าตัดร้อนขึ้น (ความเครียดตามแนวแกน α·ΔT) ΔT_y = T(ผิว +y) − T(ผิว −y) ทำให้ดัดรอบแกนหลัก (คาน: บนลบล่าง) ΔT_z = T(ผิว +z) − T(ผิว −z) ค่า α กำหนดที่วัสดุ (ขั้นที่ 1)');
     const sel = (opts, v, attrs) => `<select ${attrs}>${opts.map(o => `<option value="${esc(o[0])}" ${String(v) === String(o[0]) ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`;
     const inp = (v, attrs, w) => `<input ${attrs} value="${esc(v == null ? '' : v)}" ${w ? `style="width:${w}px"` : ''}>`;
     const cell = (tbl, i, fd, v, type, w) => inp(v, `data-tb="${tbl}" data-i="${i}" data-f="${fd}" ${type === 'n' ? 'type="number" step="any" inputmode="decimal"' : ''}`, w);
@@ -714,12 +737,12 @@
     const liHead = (k, id, main, sub, extra) => `<button class="an-lih" data-act="an-open" data-k="${k}" data-id="${esc(String(id))}" aria-expanded="${isOpen(k, id)}"><span class="an-lim">${main}</span><span class="an-lis">${sub || ''}</span>${extra || ''}</button>`;
     const liDel = (tb, i) => `<button class="icon-btn an-lix" data-act="an-del" data-tb="${tb}" data-i="${i}" aria-label="${T('Delete', 'ลบ')}">×</button>`;
     const grid2 = h => `<div class="an-row2">${h}</div>`;
-    const cf = (lbl, tb, i, fd, v, type) => fld(lbl, inp(v == null ? '' : v, `data-tb="${tb}" data-i="${i}" data-f="${fd}" ${type === 'n' ? 'type="number" step="any" inputmode="decimal"' : ''}`));
+    const cf = (lbl, tb, i, fd, v, type) => { const q = FQ[tb] && FQ[tb][fd]; return fld(q ? `${lbl} <span class="an-u">${ulab(q)}</span>` : lbl, inp(v == null ? '' : q ? uv(v, q) : v, `data-tb="${tb}" data-i="${i}" data-f="${fd}" ${type === 'n' ? 'type="number" step="any" inputmode="decimal"' : ''}`)); };
     const cs2 = (lbl, opts, v, tb, i, fd) => fld(lbl, sel(opts, v, `data-tb="${tb}" data-i="${i}" data-f="${fd}"`));
     function matTable() {
       const m = A.model;
       return `<div class="an-list">${m.materials.map((s, i) => `<div class="an-li ${isOpen('mat', s.id) ? 'open' : ''}" draggable="true" data-dnd="mat:${esc(s.id)}"><div class="an-lirow">${liHead('mat', s.id, '<span class="an-drag" aria-hidden="true">⠿</span>' + esc(s.id), esc(s.name || '') + ' · E ' + f(+s.E, 0) + (s.fc ? " · f'c " + f(+s.fc, 1) : s.fy ? ' · fy ' + f(+s.fy, 0) : ''))}${liDel('materials', i)}</div>
-        ${isOpen('mat', s.id) ? `<div class="an-lied">${grid2(cf('ID', 'materials', i, 'id', s.id) + cf(T('Name', 'ชื่อ'), 'materials', i, 'name', s.name))}${`<div class="an-row3">${cf('E (MPa)', 'materials', i, 'E', s.E, 'n')}${cf('ν', 'materials', i, 'nu', s.nu === undefined ? 0.3 : s.nu, 'n')}${cf('γ (kN/m³)', 'materials', i, 'rho', s.rho, 'n')}</div>`}</div>` : ''}</div>`).join('')}</div>`;
+        ${isOpen('mat', s.id) ? `<div class="an-lied">${grid2(cf('ID', 'materials', i, 'id', s.id) + cf(T('Name', 'ชื่อ'), 'materials', i, 'name', s.name))}${`<div class="an-row3">${cf('E (MPa)', 'materials', i, 'E', s.E, 'n')}${cf('ν', 'materials', i, 'nu', s.nu === undefined ? 0.3 : s.nu, 'n')}${cf('γ', 'materials', i, 'rho', s.rho, 'n')}</div><div class="an-row3">${cf(T('Thermal α', 'สัมประสิทธิ์ α'), 'materials', i, 'alpha', s.alpha || F.alphaOf(s) * 1e6, 'n')}</div>`}</div>` : ''}</div>`).join('')}</div>`;
     }
     function secTable() {
       const m = A.model, ser = stdInfo(m.std).series.filter(q => SL.LIB[q]);
@@ -741,28 +764,35 @@
     }
     function nodeTable() {
       const m = A.model, sup = n => (n.sup && n.sup !== 'free' ? ((SUP().find(q => q[0] === n.sup) || [])[1] || n.sup).split(' (')[0] : '');
-      return `<div class="an-list">${m.nodes.slice(0, 400).map(n => `<button class="an-lirow an-pickrow ${A.sel.n.includes(n.id) ? 'on' : ''}" data-act="an-pickn" data-n="${esc(n.id)}"><span class="an-lim">${esc(n.id)}</span><span class="an-lis mono">(${f(+n.x || 0, 2)}, ${f(+n.y || 0, 2)}, ${f(+n.z || 0, 2)})</span><span class="an-lit">${esc(sup(n))}</span></button>`).join('')}</div>` + (m.nodes.length > 400 ? hint(T('First 400 shown — select in the view for the rest.', 'แสดง 400 รายการแรก — เลือกในมุมมองสำหรับส่วนที่เหลือ')) : '');
+      return `<div class="an-list">${m.nodes.slice(0, 400).map(n => `<button class="an-lirow an-pickrow ${A.sel.n.includes(n.id) ? 'on' : ''}" data-act="an-pickn" data-n="${esc(n.id)}"><span class="an-lim">${esc(n.id)}</span><span class="an-lis mono">(${fu(+n.x || 0, 'L', 2)}, ${fu(+n.y || 0, 'L', 2)}, ${fu(+n.z || 0, 'L', 2)})</span><span class="an-lit">${esc(sup(n))}</span></button>`).join('')}</div>` + (m.nodes.length > 400 ? hint(T('First 400 shown — select in the view for the rest.', 'แสดง 400 รายการแรก — เลือกในมุมมองสำหรับส่วนที่เหลือ')) : '');
     }
     function memTable() {
       const m = A.model, nd = nodeMap();
-      return `<div class="an-list">${m.members.slice(0, 400).map(q => { const a = nd[q.i], b = nd[q.j], L = a && b ? Math.hypot(...sub(P3(b), P3(a))) : 0; return `<button class="an-lirow an-pickrow ${A.sel.m.includes(q.id) ? 'on' : ''}" data-act="an-pick" data-m="${esc(q.id)}"><span class="an-lim">${esc(q.id)}</span><span class="an-lis">${esc(q.i)}→${esc(q.j)} · ${esc(q.sec)} · ${esc(q.mat)}${q.type === 'truss' ? ' · ' + T('truss', 'โครงถัก') : ''}</span><span class="an-lit mono">${f(L, 2)} m</span></button>`; }).join('')}</div>` + (m.members.length > 400 ? hint(T('First 400 shown — select in the view for the rest.', 'แสดง 400 รายการแรก — เลือกในมุมมองสำหรับส่วนที่เหลือ')) : '');
+      return `<div class="an-list">${m.members.slice(0, 400).map(q => { const a = nd[q.i], b = nd[q.j], L = a && b ? Math.hypot(...sub(P3(b), P3(a))) : 0; return `<button class="an-lirow an-pickrow ${A.sel.m.includes(q.id) ? 'on' : ''}" data-act="an-pick" data-m="${esc(q.id)}"><span class="an-lim">${esc(q.id)}</span><span class="an-lis">${esc(q.i)}→${esc(q.j)} · ${esc(q.sec)} · ${esc(q.mat)}${q.type === 'truss' ? ' · ' + T('truss', 'โครงถัก') : ''}</span><span class="an-lit mono">${fu(L, 'L', 2)}${ul('L')}</span></button>`; }).join('')}</div>` + (m.members.length > 400 ? hint(T('First 400 shown — select in the view for the rest.', 'แสดง 400 รายการแรก — เลือกในมุมมองสำหรับส่วนที่เหลือ')) : '');
     }
     function caseTable() {
       const m = A.model;
       return `<div class="an-list">${m.cases.map((c, i) => `<div class="an-li an-case ${A.lcase === c.id ? 'on' : ''}"><div class="an-caserow">${inp(c.id, `data-tb="cases" data-i="${i}" data-f="id" aria-label="ID"`)}${inp(c.name, `data-tb="cases" data-i="${i}" data-f="name" aria-label="${T('Description', 'คำอธิบาย')}"`)}${sel(CTYPES().map(q => [q[0], q[0]]), c.type, `data-tb="cases" data-i="${i}" data-f="type" aria-label="${T('Type', 'ประเภท')}" title="${esc((CTYPES().find(q => q[0] === c.type) || [])[1] || '')}"`)}<label class="an-sw" title="${T('Self-weight', 'น้ำหนักตัวเอง')}"><input type="checkbox" data-tb="cases" data-i="${i}" data-f="sw" ${c.sw ? 'checked' : ''}> SW</label><button class="linkbtn" data-act="an-gocase" data-c="${esc(c.id)}" title="${T('Loads in this case', 'แรงในกรณีนี้')}">${m.loads.filter(l => l.case === c.id).length}→</button>${liDel('cases', i)}</div></div>`).join('')}</div>` + hint(T('ID · description · type (G, Q, W, E, O) · SW = self-weight · number of loads.', 'ID · คำอธิบาย · ประเภท (G, Q, W, E, O) · SW = น้ำหนักตัวเอง · จำนวนแรง')) + addBtn('cases', T('Add load case', 'เพิ่มกรณีน้ำหนัก'));
     }
+    function dirLabel(l) { return ((l.kind === 'moment' ? MDIRS() : DIRS()).find(d => d[0] === (l.dir || (l.kind === 'moment' ? 'lz' : 'grav'))) || ['', ''])[1].split(' (')[0]; }
+    function loadDesc(l) {
+      const span = () => (+l.a || (l.b !== '' && l.b != null) ? ` · ${fu(+l.a || 0, 'L', 2)}–${l.b !== '' && l.b != null ? fu(+l.b, 'L', 2) : 'L'}${ul('L')}` : '');
+      if (l.kind === 'node') return ['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].filter(q => +l[q]).map(q => q + ' ' + fu(+l[q], q[0] === 'F' ? 'F' : 'M') + ul(q[0] === 'F' ? 'F' : 'M')).join(', ') || '0';
+      if (l.kind === 'udl') return `w ${fu(+l.w1 || 0, 'w')}${l.w2 !== '' && l.w2 != null ? '→' + fu(+l.w2, 'w') : ''}${ul('w')} · ${dirLabel(l)}${span()}`;
+      if (l.kind === 'point') return `P ${fu(+l.P || 0, 'F')}${ul('F')} @ ${fu(+l.a || 0, 'L', 2)}${ul('L')} · ${dirLabel(l)}`;
+      if (l.kind === 'temp') return [['dT', T('ΔT uniform', 'ΔT สม่ำเสมอ')], ['dTy', 'ΔT_y'], ['dTz', 'ΔT_z']].filter(([q]) => +l[q]).map(([q, lb]) => lb + ' ' + (+l[q] > 0 ? '+' : '') + fu(+l[q], 'T', 1) + ul('T')).join(' · ') || 'ΔT 0';
+      return `M ${fu(+l.M || 0, 'M')}${ul('M')} @ ${fu(+l.a || 0, 'L', 2)}${ul('L')} · ${dirLabel(l)}`;
+    }
     function loadTable(cs) {
       const m = A.model, rows = m.loads.map((l, i) => [l, i]).filter(([l]) => l.case === cs);
       if (!rows.length) return hint(T('No loads in this case yet.', 'ยังไม่มีแรงในกรณีนี้'));
-      const dl = l => ((l.kind === 'moment' ? MDIRS() : DIRS()).find(d => d[0] === (l.dir || (l.kind === 'moment' ? 'lz' : 'grav'))) || ['', ''])[1].split(' (')[0];
-      const desc = l => l.kind === 'node' ? ['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].filter(q => +l[q]).map(q => q + ' ' + f(+l[q], 2)).join(', ') || '0'
-        : l.kind === 'udl' ? `w ${f(+l.w1 || 0, 2)}${l.w2 !== '' && l.w2 != null ? '→' + f(+l.w2, 2) : ''} kN/m · ${dl(l)}${+l.a || (l.b !== '' && l.b != null) ? ` · ${f(+l.a || 0, 2)}–${l.b !== '' && l.b != null ? f(+l.b, 2) : 'L'} m` : ''}`
-          : l.kind === 'point' ? `P ${f(+l.P || 0, 2)} kN @ ${f(+l.a || 0, 2)} m · ${dl(l)}` : `M ${f(+l.M || 0, 2)} kNm @ ${f(+l.a || 0, 2)} m · ${dl(l)}`;
+      const desc = loadDesc;
       return `<h4>${T('Loads in ', 'แรงในกรณี ')}${esc(cs)} (${rows.length})</h4><div class="an-list">${rows.slice(0, 400).map(([l, i]) => {
         const open = isOpen('load', i), tgt = l.kind === 'node' ? l.node : l.member, on = l.kind === 'node' ? A.sel.n.includes(l.node) : A.sel.m.includes(l.member);
         let ed = '';
         if (open) ed = l.kind === 'node' ? `<div class="an-lied"><div class="an-row3">${['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].map(q => cf(q, 'loads', i, q, l[q] || 0, 'n')).join('')}</div></div>`
-          : `<div class="an-lied">${grid2(cs2(T('Load', 'ชนิด'), LKIND(), l.kind, 'loads', i, 'kind') + cs2(T('Direction', 'ทิศทาง'), l.kind === 'moment' ? MDIRS() : DIRS(), l.dir || (l.kind === 'moment' ? 'lz' : 'grav'), 'loads', i, 'dir'))}<div class="an-row4">${cf(l.kind === 'udl' ? 'w₁' : l.kind === 'point' ? 'P' : 'M', 'loads', i, l.kind === 'udl' ? 'w1' : l.kind === 'point' ? 'P' : 'M', l.kind === 'udl' ? l.w1 : l.kind === 'point' ? l.P : l.M, 'n')}${l.kind === 'udl' ? cf('w₂', 'loads', i, 'w2', l.w2, 'n') : '<span></span>'}${cf('a (m)', 'loads', i, 'a', l.a, 'n')}${l.kind === 'udl' ? cf('b (m)', 'loads', i, 'b', l.b, 'n') : '<span></span>'}</div></div>`;
+          : l.kind === 'temp' ? `<div class="an-lied">${grid2(cs2(T('Load', 'ชนิด'), LKIND(), l.kind, 'loads', i, 'kind') + '<span></span>')}<div class="an-row3">${cf(T('ΔT uniform', 'ΔT สม่ำเสมอ'), 'loads', i, 'dT', l.dT || 0, 'n')}${cf('ΔT_y', 'loads', i, 'dTy', l.dTy || 0, 'n')}${cf('ΔT_z', 'loads', i, 'dTz', l.dTz || 0, 'n')}</div></div>`
+          : `<div class="an-lied">${grid2(cs2(T('Load', 'ชนิด'), LKIND(), l.kind, 'loads', i, 'kind') + cs2(T('Direction', 'ทิศทาง'), l.kind === 'moment' ? MDIRS() : DIRS(), l.dir || (l.kind === 'moment' ? 'lz' : 'grav'), 'loads', i, 'dir'))}<div class="an-row4">${cf(l.kind === 'udl' ? 'w₁' : l.kind === 'point' ? 'P' : 'M', 'loads', i, l.kind === 'udl' ? 'w1' : l.kind === 'point' ? 'P' : 'M', l.kind === 'udl' ? l.w1 : l.kind === 'point' ? l.P : l.M, 'n')}${l.kind === 'udl' ? cf('w₂', 'loads', i, 'w2', l.w2, 'n') : '<span></span>'}${cf('a', 'loads', i, 'a', l.a, 'n')}${l.kind === 'udl' ? cf('b', 'loads', i, 'b', l.b, 'n') : '<span></span>'}</div></div>`;
         return `<div class="an-li ${open ? 'open' : ''} ${on ? 'on' : ''}"><div class="an-lirow">${liHead('load', i, esc(tgt), desc(l))}${liDel('loads', i)}</div>${ed}</div>`;
       }).join('')}</div>`;
     }
@@ -778,15 +808,15 @@
     // ------------------------------------------------------------------ selection editors
     function nodeEditor() {
       const m = A.model, nd = nodeMap(), nN = A.sel.n.length;
-      if (nN === 1) { const n = nd[A.sel.n[0]]; if (!n) return ''; return blk(T('Node', 'จุดต่อ') + ' ' + esc(n.id), `<div class="an-row4">${fld('ID', ins('nid', n.id))}${fld('X (m)', ins('x', n.x, 'n'))}${fld('Y (m)', ins('y', n.y, 'n'))}${fld('Z (m)', ins('z', n.z, 'n'))}</div>${hint(T('Support: ', 'จุดรองรับ: ') + esc((SUP().find(q => q[0] === (n.sup || 'free')) || [])[1] || '') + ' — ' + T('change it in step 5.', 'แก้ไขในขั้นตอนที่ 5'))}`); }
-      return blk(nN + ' ' + T('nodes — move by', 'จุดต่อ — เลื่อนไป'), `<div class="an-row4">${fld('ΔX', num('an-mx', 0))}${fld('ΔY', num('an-my', 0))}${fld('ΔZ', num('an-mz', 0))}<span class="an-f"><span>&nbsp;</span><button class="btn btn-ghost xs" data-act="an-move">${T('Move', 'เลื่อน')}</button></span></div>`);
+      if (nN === 1) { const n = nd[A.sel.n[0]]; if (!n) return ''; return blk(T('Node', 'จุดต่อ') + ' ' + esc(n.id), `<div class="an-row4">${fld('ID', ins('nid', n.id))}${fld('X' + ul('L'), ins('x', uv(n.x, 'L'), 'n'))}${fld('Y' + ul('L'), ins('y', uv(n.y, 'L'), 'n'))}${fld('Z' + ul('L'), ins('z', uv(n.z, 'L'), 'n'))}</div>${hint(T('Support: ', 'จุดรองรับ: ') + esc((SUP().find(q => q[0] === (n.sup || 'free')) || [])[1] || '') + ' — ' + T('change it in step 5.', 'แก้ไขในขั้นตอนที่ 5'))}`); }
+      return blk(nN + ' ' + T('nodes — move by', 'จุดต่อ — เลื่อนไป'), `<div class="an-row4">${fld('ΔX' + ul('L'), num('an-mx', 0))}${fld('ΔY' + ul('L'), num('an-my', 0))}${fld('ΔZ' + ul('L'), num('an-mz', 0))}<span class="an-f"><span>&nbsp;</span><button class="btn btn-ghost xs" data-act="an-move">${T('Move', 'เลื่อน')}</button></span></div>`);
     }
     function memEditor() {
       const m = A.model, nd = nodeMap(), nM = A.sel.m.length;
       if (nM === 1) {
         const q = m.members.find(z => z.id === A.sel.m[0]); if (!q) return '';
         const i0 = nd[q.i], j0 = nd[q.j], L = i0 && j0 ? Math.hypot(...sub(P3(j0), P3(i0))) : 0, s = m.sections.find(z => z.id === q.sec), p = s ? F.secProps(s) : null, no = nodeOpts();
-        return blk(T('Element', 'ชิ้นส่วน') + ' ' + esc(q.id) + ` <span class="muted small">L = ${f(L, 3)} m</span>`, `<div class="an-row3">${fld('ID', ins('mid', q.id))}${fld(T('Node i', 'จุด i'), sel(no, q.i, 'data-ins="i"'))}${fld(T('Node j', 'จุด j'), sel(no, q.j, 'data-ins="j"'))}</div>
+        return blk(T('Element', 'ชิ้นส่วน') + ' ' + esc(q.id) + ` <span class="muted small">L = ${fu(L, 'L')}${ul('L')}</span>`, `<div class="an-row3">${fld('ID', ins('mid', q.id))}${fld(T('Node i', 'จุด i'), sel(no, q.i, 'data-ins="i"'))}${fld(T('Node j', 'จุด j'), sel(no, q.j, 'data-ins="j"'))}</div>
           <div class="an-row2">${fld(T('Section', 'หน้าตัด'), sel(secOpts(), q.sec, 'data-ins="sec"'))}${fld(T('Material', 'วัสดุ'), sel(matOpts(), q.mat, 'data-ins="mat"'))}</div>
           <div class="an-row2">${fld(T('Type', 'ชนิด'), sel([['frame', T('Frame', 'โครงข้อแข็ง')], ['truss', T('Truss (axial only)', 'โครงถัก (แรงตามแนวแกน)')]], q.type || 'frame', 'data-ins="type"'))}${fld(T('Rotation β (°)', 'มุมหมุน β (°)'), ins('beta', q.beta || 0, 'n'))}</div>
           ${p ? hint(`A = ${f(p.A, 0)} mm² · I<sub>z</sub> = ${f(p.Iz / 1e6, 1)} · I<sub>y</sub> = ${f(p.Iy / 1e6, 1)} · J = ${f(p.J / 1e6, 3)} ×10⁶ mm⁴ · ${T('local axes: x red, y green, z blue', 'แกนเฉพาะที่: x แดง y เขียว z น้ำเงิน')}`) : ''}
@@ -798,7 +828,7 @@
     }
     function repBlock() {
       if (!A.sel.n.length && !A.sel.m.length) return '';
-      return `<details class="an-blk an-det" ${A.repOpen ? 'open' : ''} id="an-rep"><summary><b>${T('Replicate / extrude the selection', 'คัดลอก / ยืดส่วนที่เลือก')}</b></summary><div class="an-row4">${fld('ΔX', num('an-rx', A.rep ? A.rep[0] : 0))}${fld('ΔY', num('an-ry', A.rep ? A.rep[1] : 0))}${fld('ΔZ', num('an-rz', A.rep ? A.rep[2] : 3.5))}${fld(T('Copies', 'จำนวน'), `<input id="an-rn" type="number" min="1" max="50" value="${A.rep ? A.rep[3] : 1}">`)}</div>
+      return `<details class="an-blk an-det" ${A.repOpen ? 'open' : ''} id="an-rep"><summary><b>${T('Replicate / extrude the selection', 'คัดลอก / ยืดส่วนที่เลือก')}</b></summary><div class="an-row4">${fld('ΔX' + ul('L'), num('an-rx', A.rep ? uv(A.rep[0], 'L') : 0))}${fld('ΔY' + ul('L'), num('an-ry', A.rep ? uv(A.rep[1], 'L') : 0))}${fld('ΔZ' + ul('L'), num('an-rz', uv(A.rep ? A.rep[2] : 3.5, 'L')))}${fld(T('Copies', 'จำนวน'), `<input id="an-rn" type="number" min="1" max="50" value="${A.rep ? A.rep[3] : 1}">`)}</div>
         <label class="chkl"><input type="checkbox" id="an-rc" ${A.rep && A.rep[4] ? 'checked' : ''}> ${T('Connect the selected nodes to their copies (e.g. columns)', 'เชื่อมจุดต่อที่เลือกกับสำเนา (เช่น เสา)')}</label><label class="chkl"><input type="checkbox" id="an-rl" ${!A.rep || A.rep[5] ? 'checked' : ''}> ${T('Copy loads too', 'คัดลอกแรงด้วย')}</label>
         <button class="btn btn-ghost xs" data-act="an-replicate">${T('Replicate', 'คัดลอก')}</button></details>`;
     }
@@ -856,7 +886,7 @@
         elem: { i: (m.nodes[0] || {}).id || '', j: (m.nodes[1] || {}).id || '', sec: A.lastSec || (m.sections[0] || {}).id || '', mat: A.lastMat || (m.materials[0] || {}).id || '', type: 'frame', beta: 0 },
         sup: { sup: 'fixed', ids: '' },
         case: { id: '', name: '', type: 'O', sw: false },
-        load: { case: A.lcase || (m.cases[0] || {}).id || '', on: A.sel.n.length && !A.sel.m.length ? 'node' : 'elem', ids: '', kind: 'udl', dir: 'grav', w1: 10, w2: '', a: '', b: '', Fx: 0, Fy: 0, Fz: -10, Mx: 0, My: 0, Mz: 0 },
+        load: { case: A.lcase || (m.cases[0] || {}).id || '', on: A.sel.n.length && !A.sel.m.length ? 'node' : 'elem', ids: '', kind: 'udl', dir: 'grav', w1: 10, w2: '', a: '', b: '', Fx: 0, Fy: 0, Fz: -10, Mx: 0, My: 0, Mz: 0, dT: 20, dTy: 0, dTz: 0 },
         combo: {}
       }[k];
       A.wv[k] = v; return v;
@@ -899,7 +929,7 @@
           ['0 → 10', T('Work down the MAIN MENU: standard, materials, sections, nodes, elements, supports, load cases, loads, combinations, run, results.', 'ทำตาม MAIN MENU จากบนลงล่าง: มาตรฐาน วัสดุ หน้าตัด จุดต่อ ชิ้นส่วน จุดรองรับ กรณีน้ำหนัก แรง การรวมน้ำหนัก วิเคราะห์ ผลลัพธ์')],
           ['+', T('The + beside a step opens a movable window to add items.', 'ปุ่ม + ข้างแต่ละขั้นเปิดหน้าต่างที่ย้ายได้เพื่อเพิ่มรายการ')],
           [T('Loads:', 'แรง:'), T('Pick a load case to show only its loads in the view.', 'เลือกกรณีน้ำหนักเพื่อแสดงเฉพาะแรงของกรณีนั้น')]]) +
-        `<p class="muted small">${T('Units: kN, m, kNm · sections in mm · E in MPa. Global axes X, Y horizontal, Z up. On a Mac use ⌘ for Ctrl and ⌥ for Alt.', 'หน่วย: kN, m, kNm · หน้าตัดเป็น mm · E เป็น MPa แกน X, Y แนวนอน Z ขึ้น บน Mac ใช้ ⌘ แทน Ctrl และ ⌥ แทน Alt')}</p></div>`;
+        `<p class="muted small">${T('Units: change force, length and temperature at the bottom right of the view (now ' + ulab('F') + ', ' + ulab('L') + ', ' + ulab('T') + '). Sections are always in mm and E in MPa. Global axes X, Y horizontal, Z up. On a Mac use ⌘ for Ctrl and ⌥ for Alt.', 'หน่วย: เปลี่ยนหน่วยแรง ความยาว และอุณหภูมิได้ที่มุมขวาล่างของมุมมอง หน้าตัดเป็น mm · E เป็น MPa แกน X, Y แนวนอน Z ขึ้น บน Mac ใช้ ⌘ แทน Ctrl และ ⌥ แทน Alt')}</p></div>`;
     }
     function winBody(k) {
       if (k === 'help') return helpHTML();
@@ -922,15 +952,16 @@
         else form = `<div class="an-row2">${wf('A', 'A (mm²)', v.A, 'n')}${wf('Iz', 'I<sub>z</sub> (mm⁴)', v.Iz, 'n')}${wf('Iy', 'I<sub>y</sub> (mm⁴)', v.Iy, 'n')}${wf('J', 'J (mm⁴)', v.J, 'n')}</div>`;
         return `<div class="an-wsec"><div class="an-wsecl">${ws('type', T('Section type', 'ชนิดหน้าตัด'), SECT(), v.type)}${form}${wf('id', T('ID (blank = automatic)', 'ID (ว่าง = อัตโนมัติ)'), v.id)}</div><div class="an-wprev" id="anWPrev">${secSVG(wsecObj(v))}${wsecProps(v)}</div></div>` + add(T('Add section', 'เพิ่มหน้าตัด'));
       }
-      if (k === 'node') return `<div class="an-row3">${wf('x', 'X (m)', v.x, 'n')}${wf('y', 'Y (m)', v.y, 'n')}${wf('z', 'Z (m)', v.z, 'n')}</div>` + hint(T('The window stays open — change the coordinates and add the next node.', 'หน้าต่างยังเปิดอยู่ — แก้พิกัดแล้วเพิ่มจุดต่อถัดไปได้')) + add(T('Add node', 'เพิ่มจุดต่อ'));
+      if (k === 'node') return `<div class="an-row3">${wf('x', 'X' + ul('L'), v.x, 'n')}${wf('y', 'Y' + ul('L'), v.y, 'n')}${wf('z', 'Z' + ul('L'), v.z, 'n')}</div>` + hint(T('The window stays open — change the coordinates and add the next node.', 'หน้าต่างยังเปิดอยู่ — แก้พิกัดแล้วเพิ่มจุดต่อถัดไปได้')) + add(T('Add node', 'เพิ่มจุดต่อ'));
       if (k === 'elem') { const no = nodeOpts(); return `<div class="an-row2">${ws('i', T('Node i', 'จุด i'), no, v.i)}${ws('j', T('Node j', 'จุด j'), no, v.j)}</div><div class="an-row2">${ws('sec', T('Section', 'หน้าตัด'), secOpts(), v.sec)}${ws('mat', T('Material', 'วัสดุ'), matOpts(), v.mat)}</div><div class="an-row2">${ws('type', T('Type', 'ชนิด'), [['frame', T('Frame', 'โครงข้อแข็ง')], ['truss', T('Truss', 'โครงถัก')]], v.type)}${wf('beta', 'β (°)', v.beta, 'n')}</div>` + add(T('Add element', 'เพิ่มชิ้นส่วน')); }
       if (k === 'sup') return ws('sup', T('Support', 'จุดรองรับ'), SUP().filter(q => q[0] !== 'custom'), v.sup) + wf('ids', T('Node IDs, comma separated (blank = selected nodes: ', 'ID จุดต่อ คั่นด้วยจุลภาค (ว่าง = จุดที่เลือก: ') + A.sel.n.length + ')', v.ids, '', 'placeholder="N1, N2"') + hint(T('Tip: you can also drag a support type from step 5 onto a node in the view.', 'เคล็ดลับ: ลากชนิดจุดรองรับจากขั้นที่ 5 ไปวางบนจุดต่อในมุมมองได้')) + add(T('Apply', 'กำหนด'));
       if (k === 'case') return `<div class="an-row2">${wf('id', T('Name (ID)', 'ชื่อ (ID)'), v.id, '', 'placeholder="' + nextId(m.cases, 'L') + '"')}${ws('type', T('Type', 'ประเภท'), CTYPES(), v.type)}</div>${wf('name', T('Description', 'คำอธิบาย'), v.name)}<label class="chkl"><input type="checkbox" data-w="sw" ${v.sw ? 'checked' : ''}> ${T('Include self-weight', 'รวมน้ำหนักตัวเอง')}</label>` + add(T('Add load case', 'เพิ่มกรณีน้ำหนัก'));
       if (k === 'load') {
         const isN = v.on === 'node', cnt = isN ? A.sel.n.length : A.sel.m.length;
         return `<div class="an-row2">${ws('case', T('Load case', 'กรณีน้ำหนัก'), caseOpts(), v.case)}${ws('on', T('Apply to', 'ใส่ที่'), [['elem', T('Elements', 'ชิ้นส่วน')], ['node', T('Nodes', 'จุดต่อ')]], v.on)}</div>` + wf('ids', (isN ? T('Node IDs', 'ID จุดต่อ') : T('Element IDs', 'ID ชิ้นส่วน')) + T(' (blank = selected: ', ' (ว่าง = ที่เลือก: ') + cnt + ')', v.ids, '', 'placeholder="' + (isN ? 'N1, N2' : 'M1, M2') + '"') +
-          (isN ? `<div class="an-row3">${['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].map(q => wf(q, q + (q[0] === 'F' ? ' (kN)' : ' (kNm)'), v[q], 'n')).join('')}</div>`
-            : `<div class="an-row2">${ws('kind', T('Load', 'ชนิด'), LKIND(), v.kind)}${ws('dir', T('Direction', 'ทิศทาง'), v.kind === 'moment' ? MDIRS() : DIRS(), v.kind === 'moment' && !MDIRS().some(q => q[0] === v.dir) ? 'lz' : v.dir)}</div><div class="an-row4">${wf('w1', v.kind === 'udl' ? 'w₁ (kN/m)' : v.kind === 'point' ? 'P (kN)' : 'M (kNm)', v.w1, 'n')}${v.kind === 'udl' ? wf('w2', 'w₂', v.w2, 'n') : '<span></span>'}${wf('a', 'a (m)', v.a, 'n')}${v.kind === 'udl' ? wf('b', 'b (m)', v.b, 'n') : '<span></span>'}</div>`) + add(T('Add load', 'เพิ่มแรง'));
+          (isN ? `<div class="an-row3">${['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].map(q => wf(q, q + ul(q[0] === 'F' ? 'F' : 'M'), v[q], 'n')).join('')}</div>`
+            : v.kind === 'temp' ? `<div class="an-row2">${ws('kind', T('Load', 'ชนิด'), LKIND(), v.kind)}<span></span></div><div class="an-row3">${wf('dT', T('ΔT uniform', 'ΔT สม่ำเสมอ') + ul('T'), v.dT, 'n')}${wf('dTy', 'ΔT_y' + ul('T'), v.dTy, 'n')}${wf('dTz', 'ΔT_z' + ul('T'), v.dTz, 'n')}</div>` + hint(TEMPHINT())
+            : `<div class="an-row2">${ws('kind', T('Load', 'ชนิด'), LKIND(), v.kind)}${ws('dir', T('Direction', 'ทิศทาง'), v.kind === 'moment' ? MDIRS() : DIRS(), v.kind === 'moment' && !MDIRS().some(q => q[0] === v.dir) ? 'lz' : v.dir)}</div><div class="an-row4">${wf('w1', v.kind === 'udl' ? 'w₁' + ul('w') : v.kind === 'point' ? 'P' + ul('F') : 'M' + ul('M'), v.w1, 'n')}${v.kind === 'udl' ? wf('w2', 'w₂', v.w2, 'n') : '<span></span>'}${wf('a', 'a' + ul('L'), v.a, 'n')}${v.kind === 'udl' ? wf('b', 'b' + ul('L'), v.b, 'n') : '<span></span>'}</div>`) + add(T('Add load', 'เพิ่มแรง'));
       }
       if (k === 'combo') {
         const cb = A.cb || (A.cb = { name: '', type: 'ULS', rows: m.cases.slice(0, 2).map((c, i) => ({ c: c.id, f: i ? 1.5 : 1.2 })) });
@@ -969,7 +1000,7 @@
         s0.id = (v.id || '').trim() || auto; s0.name = v.type === 'std' ? v.size : v.type === 'tube' ? v.shape + ' ' + String(v.tsize).replace(/x/g, '×') : v.type === 'rect' ? v.b + '×' + v.h : v.type === 'circ' ? 'Ø' + v.D : '';
         if (m.sections.some(q => q.id === s0.id)) { toast(T(s0.id + ' is already in the list.', s0.id + ' มีอยู่แล้ว'), ''); return; }
         snap(true); m.sections.push(s0); A.lastSec = s0.id; changed(true); toast(T('Added section ', 'เพิ่มหน้าตัด ') + s0.id, 'ok');
-      } else if (k === 'node') { snap(true); const id = ensureNode([+v.x || 0, +v.y || 0, +v.z || 0]); A.sel = { n: [id], m: [] }; changed(true); redraw(true); toast(T('Node ', 'จุดต่อ ') + id, 'ok'); }
+      } else if (k === 'node') { snap(true); const id = ensureNode([frU(+v.x || 0, 'L'), frU(+v.y || 0, 'L'), frU(+v.z || 0, 'L')]); A.sel = { n: [id], m: [] }; changed(true); redraw(true); toast(T('Node ', 'จุดต่อ ') + id, 'ok'); }
       else if (k === 'elem') { if (!v.i || !v.j || v.i === v.j) { toast(T('Choose two different nodes.', 'เลือกจุดต่อสองจุดที่ต่างกัน'), 'bad'); return; } snap(true); const id = addMember(v.i, v.j, { sec: v.sec, mat: v.mat, type: v.type, beta: +v.beta || 0 }); if (!id) { toast(T('That element already exists.', 'มีชิ้นส่วนนี้แล้ว'), 'bad'); return; } A.sel = { n: [], m: [id] }; changed(true); toast(T('Element ', 'ชิ้นส่วน ') + id, 'ok'); }
       else if (k === 'sup') { const ids = idList(v.ids).length ? idList(v.ids) : A.sel.n, ns = ids.map(id => m.nodes.find(q => q.id === id)).filter(Boolean); if (!ns.length) { toast(T('Select nodes or type their IDs.', 'เลือกจุดต่อหรือพิมพ์ ID'), 'bad'); return; } snap(true); ns.forEach(n => { n.sup = v.sup; }); changed(true); toast(T('Support set on ' + ns.length + ' node(s)', 'กำหนดจุดรองรับ ' + ns.length + ' จุด'), 'ok'); }
       else if (k === 'case') { const id = (v.id || '').trim() || nextId(m.cases, 'L'); if (m.cases.some(c => c.id === id)) { toast(T(id + ' already exists.', id + ' มีอยู่แล้ว'), 'bad'); return; } snap(true); m.cases.push({ id, name: v.name || id, type: v.type, sw: !!v.sw }); A.lcase = id; A.wv.case = null; changed(true); toast(T('Load case ', 'กรณีน้ำหนัก ') + id, 'ok'); }
@@ -977,7 +1008,8 @@
         const isN = v.on === 'node', ids = idList(v.ids).length ? idList(v.ids) : isN ? A.sel.n : A.sel.m, ok = ids.filter(id => (isN ? m.nodes : m.members).some(q => q.id === id));
         if (!ok.length) { toast(T('Select ' + (isN ? 'nodes' : 'elements') + ' or type their IDs.', 'เลือก' + (isN ? 'จุดต่อ' : 'ชิ้นส่วน') + 'หรือพิมพ์ ID'), 'bad'); return; }
         snap(true);
-        ok.forEach(id => { if (isN) m.loads.push(nload(v.case, id, { Fx: +v.Fx || 0, Fy: +v.Fy || 0, Fz: +v.Fz || 0, Mx: +v.Mx || 0, My: +v.My || 0, Mz: +v.Mz || 0 })); else if (v.kind === 'udl') m.loads.push({ case: v.case, kind: 'udl', member: id, dir: v.dir, w1: +v.w1 || 0, w2: v.w2 === '' ? '' : +v.w2, a: v.a === '' ? '' : +v.a, b: v.b === '' ? '' : +v.b }); else m.loads.push(Object.assign({ case: v.case, member: id, a: v.a === '' ? 0 : +v.a }, v.kind === 'point' ? { kind: 'point', dir: v.dir, P: +v.w1 || 0 } : { kind: 'moment', dir: MDIRS().some(q => q[0] === v.dir) ? v.dir : 'lz', M: +v.w1 || 0 })); });
+        const cF = x => frU(+x || 0, 'F'), cM = x => frU(+x || 0, 'M'), cL = x => (x === '' || x == null ? '' : frU(+x, 'L')), cW = x => (x === '' || x == null ? '' : frU(+x, 'w'));
+        ok.forEach(id => { if (isN) m.loads.push(nload(v.case, id, { Fx: cF(v.Fx), Fy: cF(v.Fy), Fz: cF(v.Fz), Mx: cM(v.Mx), My: cM(v.My), Mz: cM(v.Mz) })); else if (v.kind === 'temp') m.loads.push({ case: v.case, kind: 'temp', member: id, dT: frU(+v.dT || 0, 'T'), dTy: frU(+v.dTy || 0, 'T'), dTz: frU(+v.dTz || 0, 'T') }); else if (v.kind === 'udl') m.loads.push({ case: v.case, kind: 'udl', member: id, dir: v.dir, w1: cW(v.w1) || 0, w2: cW(v.w2), a: cL(v.a), b: cL(v.b) }); else m.loads.push(Object.assign({ case: v.case, member: id, a: v.a === '' ? 0 : cL(v.a) }, v.kind === 'point' ? { kind: 'point', dir: v.dir, P: cF(v.w1) } : { kind: 'moment', dir: MDIRS().some(q => q[0] === v.dir) ? v.dir : 'lz', M: cM(v.w1) })); });
         A.lcase = v.case; changed(true); toast(T('Load added to ' + ok.length + ' item(s) in ' + v.case, 'เพิ่มแรง ' + ok.length + ' รายการ ในกรณี ' + v.case), 'ok');
       }
       winRefresh();
@@ -1037,7 +1069,7 @@
       const m = A.model, d = stdInfo(m.std);
       if (k === 'std') return hint(T('Choose the design standard first. It sets the concrete and steel grades (step 1), the steel section tables (step 2) and the load combination rules (step 8).', 'เลือกมาตรฐานก่อน มาตรฐานจะกำหนดชั้นคุณภาพคอนกรีตและเหล็ก (ขั้นที่ 1) ตารางหน้าตัดเหล็ก (ขั้นที่ 2) และกฎการรวมน้ำหนัก (ขั้นที่ 8)')) +
         `<div class="an-stds">${STDS.map(q => { const v = stdInfo(q); return `<button class="an-std ${m.std === q ? 'on' : ''}" data-act="an-std" data-k="${q}" aria-pressed="${m.std === q}"><b>${T(v.name[0], v.name[1])}</b><span class="mono">${esc(v.codes)}</span><small>${T('Concrete', 'คอนกรีต')} ${esc(v.conc[0][0])}–${esc(v.conc[v.conc.length - 1][0])} · ${T('steel', 'เหล็ก')} ${v.steel.map(s => esc(s[0])).join(', ')} · ${v.series.join(', ')}</small></button>`; }).join('')}</div>` +
-        hint(T('Units: kN, m, kNm (sections in mm, E in MPa). Global axes: X, Y horizontal, Z up.', 'หน่วย: kN, m, kNm (หน้าตัดเป็น มม., E เป็น MPa) แกนหลัก: X, Y แนวราบ, Z ชี้ขึ้น')) +
+        hint(T('Units: ', 'หน่วย: ') + ulab('F') + ', ' + ulab('L') + ', ' + ulab('M') + ', ' + ulab('T') + T(' (change them at the bottom right of the view; sections in mm, E in MPa). Global axes: X, Y horizontal, Z up.', ' (เปลี่ยนได้ที่มุมขวาล่างของมุมมอง; หน้าตัดเป็น มม., E เป็น MPa) แกนหลัก: X, Y แนวราบ, Z ชี้ขึ้น')) +
         `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-tplopen">${T('Start from a template…', 'เริ่มจากแม่แบบ…')}</button><button class="btn btn-ghost xs" data-act="an-gen" data-code="${d.combo}">${T('Use this standard’s load combinations', 'ใช้การรวมน้ำหนักตามมาตรฐานนี้')}</button><button class="btn btn-hot xs" data-act="an-step" data-s="mat">${T('Next: materials →', 'ถัดไป: วัสดุ →')}</button></div>`;
       if (k === 'mat') return dndHint('mat') + matTable() +
         `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-win" data-k="mat">+ ${T('Add material…', 'เพิ่มวัสดุ…')}</button></div>` +
@@ -1046,8 +1078,8 @@
         `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-win" data-k="sec">+ ${T('Add section…', 'เพิ่มหน้าตัด…')}</button></div>` +
         hint(T('Depth h (d, D) lies along the element local y axis, so I_z is the major axis. Rotate an element with β (step 4). Steel tables: ', 'ความลึก h (d, D) อยู่ตามแกน y เฉพาะที่ของชิ้นส่วน I_z จึงเป็นแกนหลัก หมุนชิ้นส่วนด้วย β (ขั้นที่ 4) ตารางเหล็ก: ') + ({ AS: 'AS/NZS 3679.1, AS/NZS 1163', EC: 'EN 10365, EN 10219', TH: 'TIS 1227 / JIS G 3192, AS/NZS 1163 sizes' })[m.std]);
       if (k === 'node') return hint(T('Pick the Node tool and click grid points in Plan or an Elevation (they snap to the grid), or type coordinates below. Click nodes in the view to select and edit them.', 'เลือกเครื่องมือจุดต่อแล้วคลิกตำแหน่งในแปลนหรือรูปด้าน (สแนปตามกริด) หรือพิมพ์พิกัดด้านล่าง คลิกจุดต่อในมุมมองเพื่อเลือกและแก้ไข')) +
-        `<div class="an-adds"><button class="btn ${A.tool === 'node' ? 'btn-hot' : 'btn-ghost'} xs" data-act="an-tool" data-t="node">${T('Node tool', 'เครื่องมือจุดต่อ')}</button><button class="btn btn-ghost xs" data-act="an-cam" data-v="plan">${T('Plan view', 'มุมมองแปลน')}</button><label class="an-inl">${T('Snap', 'สแนป')} <input type="number" step="any" min="0" data-opt="snap" value="${A.opt.snap}"> m</label></div>` +
-        blk(T('Add a node', 'เพิ่มจุดต่อ'), `<div class="an-row4">${fld('X', num('an-nx', 0))}${fld('Y', num('an-ny', 0))}${fld('Z', num('an-nz', 0))}<span class="an-f"><span>&nbsp;</span><button class="btn btn-ghost xs" data-act="an-addnode">+ ${T('Add', 'เพิ่ม')}</button></span></div>`) +
+        `<div class="an-adds"><button class="btn ${A.tool === 'node' ? 'btn-hot' : 'btn-ghost'} xs" data-act="an-tool" data-t="node">${T('Node tool', 'เครื่องมือจุดต่อ')}</button><button class="btn btn-ghost xs" data-act="an-cam" data-v="plan">${T('Plan view', 'มุมมองแปลน')}</button><label class="an-inl">${T('Snap', 'สแนป')} <input type="number" step="any" min="0" data-opt="snap" value="${uv(A.opt.snap, 'L')}"> ${ulab('L')}</label></div>` +
+        blk(T('Add a node', 'เพิ่มจุดต่อ') + ' <span class="muted small">' + ulab('L') + '</span>', `<div class="an-row4">${fld('X', num('an-nx', 0))}${fld('Y', num('an-ny', 0))}${fld('Z', num('an-nz', 0))}<span class="an-f"><span>&nbsp;</span><button class="btn btn-ghost xs" data-act="an-addnode">+ ${T('Add', 'เพิ่ม')}</button></span></div>`) +
         selCount() + (A.sel.n.length ? nodeEditor() : '') + repBlock() +
         `<details class="an-blk an-det" ${m.nodes.length <= 40 ? 'open' : ''}><summary><b>${T('All nodes', 'จุดต่อทั้งหมด')} (${m.nodes.length})</b></summary>${nodeTable()}</details>`;
       if (k === 'elem') return hint(T('Set the properties for new elements, pick the Element tool and click node to node (Esc to finish). Click elements in the view to change their properties.', 'กำหนดคุณสมบัติของชิ้นส่วนใหม่ เลือกเครื่องมือชิ้นส่วนแล้วคลิกจากจุดต่อไปยังจุดต่อ (Esc เพื่อจบ) คลิกชิ้นส่วนในมุมมองเพื่อแก้ไขคุณสมบัติ')) +
@@ -1059,7 +1091,7 @@
         let ed = '';
         if (nodes.length) { const n = nodes[0], fx6 = F.fixOf(n), one = nodes.length === 1; ed += blk(T('Support of ', 'จุดรองรับของ ') + (one ? T('node ', 'จุดต่อ ') + esc(n.id) : nodes.length + ' ' + T('nodes', 'จุดต่อ')), `${fld(T('Support', 'จุดรองรับ'), sel((one ? [] : [['', T('— keep —', '— คงเดิม —')]]).concat(SUP()), one ? n.sup || 'free' : '', 'data-ins="sup"'))}
           ${one && n.sup === 'custom' ? `<div class="an-fix">${['Ux', 'Uy', 'Uz', 'Rx', 'Ry', 'Rz'].map((lb, dd) => `<label class="chkl"><input type="checkbox" data-ins="fix${dd}" ${fx6[dd] ? 'checked' : ''}> ${lb}</label>`).join('')}</div>` : ''}
-          ${one ? `<details class="an-det"><summary>${T('Springs (kN/m, kNm/rad)', 'สปริง (kN/m, kNm/rad)')}</summary><div class="an-row3">${['kx', 'ky', 'kz', 'krx', 'kry', 'krz'].map(q => fld(q, ins(q, n[q] || '', 'n'))).join('')}</div></details>` : ''}`); }
+          ${one ? `<details class="an-det"><summary>${T('Springs', 'สปริง')} (${ulab('kL')}, ${ulab('kR')})</summary><div class="an-row3">${['kx', 'ky', 'kz', 'krx', 'kry', 'krz'].map(q => fld(q, ins(q, n[q] ? uv(n[q], q[1] === 'r' ? 'kR' : 'kL') : '', 'n'))).join('')}</div></details>` : ''}`); }
         if (mems.length) { const q = mems[0], one = mems.length === 1; ed += blk(T('End releases of ', 'การปลดแรงปลายของ ') + (one ? T('element ', 'ชิ้นส่วน ') + esc(q.id) : mems.length + ' ' + T('elements', 'ชิ้นส่วน')), one ? `<div class="an-chk"><label class="chkl"><input type="checkbox" data-ins="relI" ${q.relI ? 'checked' : ''} ${q.type === 'truss' ? 'disabled' : ''}> ${T('Pin (moment release) at end i', 'หมุด (ปลดโมเมนต์) ที่ปลาย i')} — ${esc(q.i)}</label></div><div class="an-chk"><label class="chkl"><input type="checkbox" data-ins="relJ" ${q.relJ ? 'checked' : ''} ${q.type === 'truss' ? 'disabled' : ''}> ${T('Pin (moment release) at end j', 'หมุด (ปลดโมเมนต์) ที่ปลาย j')} — ${esc(q.j)}</label></div>${fld(T('Element type', 'ชนิดชิ้นส่วน'), sel([['frame', T('Frame', 'โครงข้อแข็ง')], ['truss', T('Truss — both ends pinned, axial force only', 'โครงถัก — หมุดทั้งสองปลาย รับแรงตามแนวแกน')]], q.type || 'frame', 'data-ins="type"'))}`
           : `<div class="an-row2">${fld(T('Moment releases', 'การปลดโมเมนต์'), sel([['', T('— keep —', '— คงเดิม —')], ['none', T('None (rigid)', 'ไม่มี (ยึดแน่น)')], ['i', T('End i', 'ปลาย i')], ['j', T('End j', 'ปลาย j')], ['both', T('Both ends', 'ทั้งสองปลาย')]], '', 'data-ins="hinge"'))}${fld(T('Type', 'ชนิด'), sel([['', T('— keep —', '— คงเดิม —')], ['frame', T('Frame', 'โครงข้อแข็ง')], ['truss', T('Truss', 'โครงถัก')]], '', 'data-ins="type"'))}</div>`); }
         const supN = m.nodes.filter(n => F.fixOf(n).some(Boolean)), relM = m.members.filter(q => q.relI || q.relJ || q.type === 'truss');
@@ -1074,9 +1106,12 @@
         const cs = m.cases.some(c => c.id === A.lcase) ? A.lcase : (m.cases[0] || {}).id;
         if (!cs) return hint(T('Add a load case first (step 6).', 'เพิ่มกรณีน้ำหนักก่อน (ขั้นที่ 6)'));
         let forms = '';
-        if (A.sel.n.length) forms += blk(T('Nodal load on ', 'แรงที่จุดต่อ ') + A.sel.n.length + ' ' + T('selected node(s)', 'จุดที่เลือก') + ' <span class="muted small">kN, kNm · ' + T('global axes', 'แกนหลัก') + '</span>', `<div class="an-row3">${['Fx', 'Fy', 'Fz'].map(q => fld(q, num('an-n' + q, q === 'Fz' ? -10 : 0))).join('')}</div><div class="an-row3">${['Mx', 'My', 'Mz'].map(q => fld(q, num('an-n' + q, 0))).join('')}</div><div class="an-adds"><button class="btn btn-hot xs" data-act="an-nl">${T('Apply to ', 'ใส่แรงใน ') + esc(cs)}</button></div>`);
-        if (A.sel.m.length) forms += blk(T('Element load on ', 'แรงบนชิ้นส่วน ') + A.sel.m.length + ' ' + T('selected element(s)', 'ชิ้นที่เลือก'), `<div class="an-row2">${fld(T('Load', 'ชนิด'), sel(LKIND(), A.mlk || 'udl', 'id="an-mlk"'))}${fld(T('Direction', 'ทิศทาง'), sel((A.mlk || 'udl') === 'moment' ? MDIRS() : DIRS(), (A.mlk || 'udl') === 'moment' ? 'lz' : 'grav', 'id="an-mld"'))}</div>
-          <div class="an-row4">${fld((A.mlk || 'udl') === 'udl' ? 'w₁ (kN/m)' : (A.mlk === 'point' ? 'P (kN)' : 'M (kNm)'), num('an-mlv', 10))}${(A.mlk || 'udl') === 'udl' ? fld(T('w₂ (blank = w₁)', 'w₂ (ว่าง = w₁)'), `<input id="an-mlv2" type="number" step="any">`) : '<span></span>'}${fld(T('a (m from i)', 'a (ม. จาก i)'), `<input id="an-mla" type="number" step="any" placeholder="${(A.mlk || 'udl') === 'udl' ? '0' : T('mid', 'กึ่งกลาง')}">`)}${(A.mlk || 'udl') === 'udl' ? fld(T('b (blank = end j)', 'b (ว่าง = ปลาย j)'), `<input id="an-mlb" type="number" step="any">`) : '<span></span>'}</div>
+        if (A.sel.n.length) forms += blk(T('Nodal load on ', 'แรงที่จุดต่อ ') + A.sel.n.length + ' ' + T('selected node(s)', 'จุดที่เลือก') + ' <span class="muted small">' + ulab('F') + ', ' + ulab('M') + ' · ' + T('global axes', 'แกนหลัก') + '</span>', `<div class="an-row3">${['Fx', 'Fy', 'Fz'].map(q => fld(q, num('an-n' + q, q === 'Fz' ? -10 : 0))).join('')}</div><div class="an-row3">${['Mx', 'My', 'Mz'].map(q => fld(q, num('an-n' + q, 0))).join('')}</div><div class="an-adds"><button class="btn btn-hot xs" data-act="an-nl">${T('Apply to ', 'ใส่แรงใน ') + esc(cs)}</button></div>`);
+        if (A.sel.m.length && A.mlk === 'temp') forms += blk(T('Temperature load on ', 'แรงจากอุณหภูมิบน ') + A.sel.m.length + ' ' + T('selected element(s)', 'ชิ้นที่เลือก'), `<div class="an-row2">${fld(T('Load', 'ชนิด'), sel(LKIND(), 'temp', 'id="an-mlk"'))}<span></span></div>
+          <div class="an-row3">${fld(T('ΔT uniform', 'ΔT สม่ำเสมอ') + ul('T'), num('an-tu', 20))}${fld('ΔT_y' + ul('T'), num('an-ty', 0))}${fld('ΔT_z' + ul('T'), num('an-tz', 0))}</div>${hint(TEMPHINT())}
+          <div class="an-adds"><button class="btn btn-hot xs" data-act="an-ml">${T('Apply to ', 'ใส่แรงใน ') + esc(cs)}</button><button class="btn btn-ghost xs" data-act="an-mlclear">${T('Remove ', 'ลบแรง ') + esc(cs) + T(' loads from selection', ' ของส่วนที่เลือก')}</button></div>`);
+        else if (A.sel.m.length) forms += blk(T('Element load on ', 'แรงบนชิ้นส่วน ') + A.sel.m.length + ' ' + T('selected element(s)', 'ชิ้นที่เลือก'), `<div class="an-row2">${fld(T('Load', 'ชนิด'), sel(LKIND(), A.mlk || 'udl', 'id="an-mlk"'))}${fld(T('Direction', 'ทิศทาง'), sel((A.mlk || 'udl') === 'moment' ? MDIRS() : DIRS(), (A.mlk || 'udl') === 'moment' ? 'lz' : 'grav', 'id="an-mld"'))}</div>
+          <div class="an-row4">${fld((A.mlk || 'udl') === 'udl' ? 'w₁' + ul('w') : (A.mlk === 'point' ? 'P' + ul('F') : 'M' + ul('M')), num('an-mlv', 10))}${(A.mlk || 'udl') === 'udl' ? fld(T('w₂ (blank = w₁)', 'w₂ (ว่าง = w₁)'), `<input id="an-mlv2" type="number" step="any">`) : '<span></span>'}${fld(T('a from i', 'a จาก i') + ul('L'), `<input id="an-mla" type="number" step="any" placeholder="${(A.mlk || 'udl') === 'udl' ? '0' : T('mid', 'กึ่งกลาง')}">`)}${(A.mlk || 'udl') === 'udl' ? fld(T('b (blank = end j)', 'b (ว่าง = ปลาย j)'), `<input id="an-mlb" type="number" step="any">`) : '<span></span>'}</div>
           <div class="an-adds"><button class="btn btn-hot xs" data-act="an-ml">${T('Apply to ', 'ใส่แรงใน ') + esc(cs)}</button><button class="btn btn-ghost xs" data-act="an-mlclear">${T('Remove ', 'ลบแรง ') + esc(cs) + T(' loads from selection', ' ของส่วนที่เลือก')}</button></div>`);
         const pal0 = palette(), nIn = id => m.loads.filter(l => l.case === id).length, shown = A.loadsOn ? A.lcase : '';
         const cards = `<div class="an-lcards" role="listbox" aria-label="${T('Load cases', 'กรณีน้ำหนัก')}">${m.cases.map(c => `<button class="an-lcard ${shown === c.id || (shown === 'all') ? 'on' : ''} ${cs === c.id ? 'cur' : ''}" role="option" aria-selected="${cs === c.id}" data-act="an-lpick" data-c="${esc(c.id)}"><i style="background:${caseCol(pal0, c.id)}"></i><b>${esc(c.id)}</b><span>${esc(c.name)}</span><em>${c.type}${c.sw ? ' · SW' : ''}</em><small>${nIn(c.id)}</small></button>`).join('')}</div>`;
@@ -1127,10 +1162,10 @@
       const NK = ['nid', 'x', 'y', 'z', 'sup', 'kx', 'ky', 'kz', 'krx', 'kry', 'krz'];
       if (nodes.length && (NK.includes(k) || /^fix\d$/.test(k))) {
         if (k === 'nid') { if (nodes.length !== 1) return; const nid = String(v).trim(); if (!nid || m.nodes.some(q => q !== nodes[0] && q.id === nid)) { t.classList.add('bad'); return; } t.classList.remove('bad'); renameRefs('nodes', nodes[0].id, nid); nodes[0].id = nid; }
-        else if (['x', 'y', 'z'].includes(k)) { if (v === '' || !isFinite(+v)) return; nodes.forEach(n => { n[k] = +v; }); }
+        else if (['x', 'y', 'z'].includes(k)) { if (v === '' || !isFinite(+v)) return; nodes.forEach(n => { n[k] = r4(frU(+v, 'L')); }); }
         else if (k === 'sup') { if (!v) return; nodes.forEach(n => { n.sup = v; if (v === 'custom' && !n.fix) n.fix = F.SUPS.pin.slice(); }); side = true; }
         else if (/^fix\d$/.test(k)) { const dd = +k.slice(3); nodes.forEach(n => { n.fix = F.fixOf(n).slice(); n.sup = 'custom'; n.fix[dd] = v ? 1 : 0; }); }
-        else nodes.forEach(n => { if (v === '' || !(+v)) delete n[k]; else n[k] = +v; });
+        else nodes.forEach(n => { if (v === '' || !(+v)) delete n[k]; else n[k] = frU(+v, k[1] === 'r' ? 'kR' : 'kL'); });
       } else if (mems.length) {
         if (k === 'mid') { if (mems.length !== 1) return; const nid = String(v).trim(); if (!nid || m.members.some(q => q !== mems[0] && q.id === nid)) { t.classList.add('bad'); return; } t.classList.remove('bad'); renameRefs('members', mems[0].id, nid); mems[0].id = nid; }
         else if ((k === 'i' || k === 'j') && mems.length === 1) { mems[0][k] = v; side = true; }
@@ -1154,19 +1189,19 @@
       if (rt === 'sum') {
         const best = {}; if (cur) cur.mem.forEach(mm => { ['N', 'Vy', 'Vz', 'T', 'My', 'Mz'].forEach(q => { const v = amax(mm, q); if (!best[q] || v > best[q][0]) best[q] = [v, mm.id]; }); const e = ext2(mm, 'N'); if (!best.Nt || e[0] > best.Nt[0]) best.Nt = [e[0], mm.id]; if (!best.Nc || e[1] < best.Nc[0]) best.Nc = [e[1], mm.id]; });
         let md = null; if (cur && !env) cur.mem.forEach(mm => mm.x.forEach((x, i) => { const dd = Math.hypot(mm.dx[i], mm.dy[i], mm.dz[i]); if (!md || dd > md.d) md = { d: dd, id: mm.id, x }; }));
-        const kv = (k2, v, u) => `<div><dt>${k2}</dt><dd class="mono">${v} <span class="u">${u}</span></dd></div>`, bv = (q, u) => (best[q] ? kv('|' + COMPS.find(c => c[0] === q)[1] + '| max', fx(best[q][0]), u + ' · ' + esc(best[q][1])) : '');
-        body = `<dl class="kv an-kv">${bv('Mz', 'kNm')}${bv('My', 'kNm')}${bv('Vy', 'kN')}${bv('Vz', 'kN')}${bv('T', 'kNm')}${best.Nt ? kv(T('Max tension', 'แรงดึงสูงสุด'), fx(best.Nt[0]), 'kN · ' + esc(best.Nt[1])) : ''}${best.Nc ? kv(T('Max compression', 'แรงอัดสูงสุด'), fx(best.Nc[0]), 'kN · ' + esc(best.Nc[1])) : ''}${md ? kv(T('Max displacement', 'การเคลื่อนตัวสูงสุด'), fx(md.d * 1000) + ' mm', '· ' + esc(md.id) + ' @ ' + f(md.x, 2) + ' m') : ''}${kv(T('Solved in', 'เวลาคำนวณ'), r.ms, 'ms')}</dl>
+        const kv = (k2, v, u) => `<div><dt>${k2}</dt><dd class="mono">${v} <span class="u">${u}</span></dd></div>`, bv = (q, uq) => (best[q] ? kv('|' + COMPS.find(c => c[0] === q)[1] + '| max', fu(best[q][0], uq), ulab(uq) + ' · ' + esc(best[q][1])) : '');
+        body = `<dl class="kv an-kv">${bv('Mz', 'M')}${bv('My', 'M')}${bv('Vy', 'F')}${bv('Vz', 'F')}${bv('T', 'M')}${best.Nt ? kv(T('Max tension', 'แรงดึงสูงสุด'), fu(best.Nt[0], 'F'), ulab('F') + ' · ' + esc(best.Nt[1])) : ''}${best.Nc ? kv(T('Max compression', 'แรงอัดสูงสุด'), fu(best.Nc[0], 'F'), ulab('F') + ' · ' + esc(best.Nc[1])) : ''}${md ? kv(T('Max displacement', 'การเคลื่อนตัวสูงสุด'), fu(md.d, 'd') + ul('d'), '· ' + esc(md.id) + ' @ ' + fu(md.x, 'L', 2) + ul('L')) : ''}${kv(T('Solved in', 'เวลาคำนวณ'), r.ms, 'ms')}</dl>
           ${r.modal && r.modal.modes.length ? `<p class="muted">${T('Fundamental period', 'คาบพื้นฐาน')} T₁ = <b class="mono">${f(r.modal.modes[0].T, 3)} s</b> (f₁ = ${f(r.modal.modes[0].f, 3)} Hz)</p>` : ''}
           ${r.buckling ? `<p class="muted">${T('Lowest buckling factor', 'ตัวคูณการโก่งเดาะต่ำสุด')} λcr = <b class="mono">${fx(Math.min(...Object.values(r.buckling).map(b => (b.modes && b.modes[0] ? b.modes[0].lam : Infinity))))}</b></p>` : ''}
           ${r.warn.length ? `<ul class="warn-list">${r.warn.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}`;
       } else if (rt === 'react') {
         const rows = m.nodes.map((n, i) => [n, i]).filter(([n]) => F.fixOf(n).some(Boolean) || ['kx', 'ky', 'kz', 'krx', 'kry', 'krz'].some(q => +n[q] > 0));
-        body = !cur ? '' : wrap(`<table class="chk an-r"><thead><tr><th>${T('Node', 'จุดต่อ')}</th>${['Rx', 'Ry', 'Rz'].map(q => `<th class="num">${q} (kN)</th>`).join('')}${['Mx', 'My', 'Mz'].map(q => `<th class="num">${q} (kNm)</th>`).join('')}</tr></thead><tbody>${rows.map(([n, i]) => `<tr><td>${esc(n.id)}</td>${[0, 1, 2, 3, 4, 5].map(dd => `<td class="num mono">${env ? fx(cur.R[6 * i + dd][0], 1) + ' … ' + fx(cur.R[6 * i + dd][1], 1) : fx(cur.R[6 * i + dd])}</td>`).join('')}</tr>`).join('')}
-          ${env ? '' : `<tr class="tot"><td>Σ</td>${[0, 1, 2].map(dd => `<td class="num mono">${fx(rows.reduce((s2, [, i]) => s2 + cur.R[6 * i + dd], 0))}</td>`).join('')}<td></td><td></td><td></td></tr>`}</tbody></table>`);
+        body = !cur ? '' : wrap(`<table class="chk an-r"><thead><tr><th>${T('Node', 'จุดต่อ')}</th>${['Rx', 'Ry', 'Rz'].map(q => `<th class="num">${q} (${ulab('F')})</th>`).join('')}${['Mx', 'My', 'Mz'].map(q => `<th class="num">${q} (${ulab('M')})</th>`).join('')}</tr></thead><tbody>${rows.map(([n, i]) => `<tr><td>${esc(n.id)}</td>${[0, 1, 2, 3, 4, 5].map(dd => `<td class="num mono">${env ? fu(cur.R[6 * i + dd][0], dd < 3 ? 'F' : 'M', 1) + ' … ' + fu(cur.R[6 * i + dd][1], dd < 3 ? 'F' : 'M', 1) : fu(cur.R[6 * i + dd], dd < 3 ? 'F' : 'M')}</td>`).join('')}</tr>`).join('')}
+          ${env ? '' : `<tr class="tot"><td>Σ</td>${[0, 1, 2].map(dd => `<td class="num mono">${fu(rows.reduce((s2, [, i]) => s2 + cur.R[6 * i + dd], 0), 'F')}</td>`).join('')}<td></td><td></td><td></td></tr>`}</tbody></table>`);
       } else if (rt === 'forces') {
-        body = !cur ? '' : wrap(`<table class="chk an-r"><thead><tr><th>${T('Element', 'ชิ้นส่วน')}</th><th class="num">L</th><th class="num">N max</th><th class="num">N min</th><th class="num">|V<sub>y</sub>|</th><th class="num">|V<sub>z</sub>|</th><th class="num">|T|</th><th class="num">M<sub>y</sub> max</th><th class="num">M<sub>y</sub> min</th><th class="num">M<sub>z</sub> max</th><th class="num">M<sub>z</sub> min</th>${env ? '' : `<th class="num">δ (mm)</th><th class="num">L/δ</th>`}</tr></thead><tbody>${cur.mem.slice(0, 400).map(mm => { const dmax = env ? 0 : Math.max(...mm.drel.map(Math.abs), ...mm.drelz.map(Math.abs)); const N = ext2(mm, 'N'), My = ext2(mm, 'My'), Mz = ext2(mm, 'Mz'); return `<tr class="${A.sel.m.includes(mm.id) ? 'on' : ''}" data-act="an-pick" data-m="${esc(mm.id)}"><td>${esc(mm.id)}</td><td class="num mono">${f(mm.L, 2)}</td>${[N[0], N[1], amax(mm, 'Vy'), amax(mm, 'Vz'), amax(mm, 'T'), My[0], My[1], Mz[0], Mz[1]].map(v => `<td class="num mono">${fx(v)}</td>`).join('')}${env ? '' : `<td class="num mono">${fx(dmax * 1000)}</td><td class="num mono">${dmax > 1e-9 ? f(mm.L / dmax, 0) : '—'}</td>`}</tr>`; }).join('')}</tbody></table>`) + hint(T('δ = deflection relative to the line joining the element ends (local y and z). Click a row to show the element.', 'δ = การโก่งเทียบเส้นเชื่อมปลายชิ้นส่วน (แกน y และ z) คลิกแถวเพื่อแสดงชิ้นส่วน'));
+        body = !cur ? '' : wrap(`<table class="chk an-r"><thead><tr><th>${T('Element', 'ชิ้นส่วน')}</th><th class="num">L (${ulab('L')})</th><th class="num">N max</th><th class="num">N min</th><th class="num">|V<sub>y</sub>|</th><th class="num">|V<sub>z</sub>|</th><th class="num">|T|</th><th class="num">M<sub>y</sub> max</th><th class="num">M<sub>y</sub> min</th><th class="num">M<sub>z</sub> max</th><th class="num">M<sub>z</sub> min</th>${env ? '' : `<th class="num">δ (${ulab('d')})</th><th class="num">L/δ</th>`}</tr></thead><tbody class="an-uh"><tr><td></td><td></td>${['F', 'F', 'F', 'F', 'M', 'M', 'M', 'M', 'M'].map(q => `<td class="num muted small">${ulab(q)}</td>`).join('')}${env ? '' : '<td></td><td></td>'}</tr></tbody><tbody>${cur.mem.slice(0, 400).map(mm => { const dmax = env ? 0 : Math.max(...mm.drel.map(Math.abs), ...mm.drelz.map(Math.abs)); const N = ext2(mm, 'N'), My = ext2(mm, 'My'), Mz = ext2(mm, 'Mz'); return `<tr class="${A.sel.m.includes(mm.id) ? 'on' : ''}" data-act="an-pick" data-m="${esc(mm.id)}"><td>${esc(mm.id)}</td><td class="num mono">${fu(mm.L, 'L', 2)}</td>${[N[0], N[1], amax(mm, 'Vy'), amax(mm, 'Vz'), amax(mm, 'T'), My[0], My[1], Mz[0], Mz[1]].map((v, j) => `<td class="num mono">${fu(v, j < 4 ? 'F' : 'M')}</td>`).join('')}${env ? '' : `<td class="num mono">${fu(dmax, 'd')}</td><td class="num mono">${dmax > 1e-9 ? f(mm.L / dmax, 0) : '—'}</td>`}</tr>`; }).join('')}</tbody></table>`) + hint(T('δ = deflection relative to the line joining the element ends (local y and z). Click a row to show the element.', 'δ = การโก่งเทียบเส้นเชื่อมปลายชิ้นส่วน (แกน y และ z) คลิกแถวเพื่อแสดงชิ้นส่วน'));
       } else if (rt === 'disp') {
-        body = !cur || env ? `<p class="muted">${T('Choose a load case or combination.', 'เลือกกรณีน้ำหนักหรือการรวมน้ำหนัก')}</p>` : wrap(`<table class="chk an-r"><thead><tr><th>${T('Node', 'จุดต่อ')}</th><th class="num">u<sub>x</sub> (mm)</th><th class="num">u<sub>y</sub> (mm)</th><th class="num">u<sub>z</sub> (mm)</th><th class="num">θ<sub>x</sub></th><th class="num">θ<sub>y</sub></th><th class="num">θ<sub>z</sub> (mrad)</th></tr></thead><tbody>${m.nodes.slice(0, 400).map((n, i) => `<tr class="${A.sel.n.includes(n.id) ? 'on' : ''}"><td>${esc(n.id)}</td>${[0, 1, 2, 3, 4, 5].map(dd => `<td class="num mono">${fx(cur.u[6 * i + dd] * 1000, 3)}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
+        body = !cur || env ? `<p class="muted">${T('Choose a load case or combination.', 'เลือกกรณีน้ำหนักหรือการรวมน้ำหนัก')}</p>` : wrap(`<table class="chk an-r"><thead><tr><th>${T('Node', 'จุดต่อ')}</th><th class="num">u<sub>x</sub> (${ulab('d')})</th><th class="num">u<sub>y</sub> (${ulab('d')})</th><th class="num">u<sub>z</sub> (${ulab('d')})</th><th class="num">θ<sub>x</sub></th><th class="num">θ<sub>y</sub></th><th class="num">θ<sub>z</sub> (mrad)</th></tr></thead><tbody>${m.nodes.slice(0, 400).map((n, i) => `<tr class="${A.sel.n.includes(n.id) ? 'on' : ''}"><td>${esc(n.id)}</td>${[0, 1, 2, 3, 4, 5].map(dd => `<td class="num mono">${dd < 3 ? fu(cur.u[6 * i + dd], 'd', 3) : fx(cur.u[6 * i + dd] * 1000, 3)}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
       } else if (rt === 'drift') {
         if (!cur || env) body = `<p class="muted">${T('Choose a load case or combination.', 'เลือกกรณีน้ำหนักหรือการรวมน้ำหนัก')}</p>`;
         else {
@@ -1174,7 +1209,7 @@
           const zs = Object.keys(lv).map(Number).sort((a, b) => a - b), rows = []; let prev = null;
           zs.forEach(z => { const L = lv[z], ux = L.reduce((s2, v) => s2 + v[0], 0) / L.length, uy = L.reduce((s2, v) => s2 + v[1], 0) / L.length; if (prev) rows.push({ z, ux, uy, h: z - prev.z, dx: ux - prev.ux, dy: uy - prev.uy }); prev = { z, ux, uy }; });
           const rat = (dd, h) => (Math.abs(dd) > 1e-9 ? 'h / ' + f(h / Math.abs(dd), 0) : '—');
-          body = rows.length ? `<table class="chk an-r"><thead><tr><th>${T('Level Z (m)', 'ระดับ Z (ม.)')}</th><th class="num">u<sub>x</sub> (mm)</th><th class="num">u<sub>y</sub> (mm)</th><th class="num">h (m)</th><th class="num">${T('Drift X', 'ดริฟต์ X')}</th><th class="num">${T('Drift Y', 'ดริฟต์ Y')}</th></tr></thead><tbody>${rows.map(rw => `<tr><td class="mono">${f(rw.z, 2)}</td><td class="num mono">${fx(rw.ux * 1000)}</td><td class="num mono">${fx(rw.uy * 1000)}</td><td class="num mono">${f(rw.h, 2)}</td><td class="num mono">${fx(rw.dx * 1000)} · ${rat(rw.dx, rw.h)}</td><td class="num mono">${fx(rw.dy * 1000)} · ${rat(rw.dy, rw.h)}</td></tr>`).join('')}</tbody></table>` + hint(T('Average horizontal displacement of the nodes at each level. Typical limits h/500, h/300 (portal frames under wind).', 'ค่าเฉลี่ยการเคลื่อนตัวแนวราบของจุดต่อในแต่ละระดับ ค่าจำกัดทั่วไป h/500, h/300 (โครงข้อแข็งรับลม)')) : `<p class="muted">${T('One level only.', 'มีระดับเดียว')}</p>`;
+          body = rows.length ? `<table class="chk an-r"><thead><tr><th>${T('Level Z', 'ระดับ Z')} (${ulab('L')})</th><th class="num">u<sub>x</sub> (${ulab('d')})</th><th class="num">u<sub>y</sub> (${ulab('d')})</th><th class="num">h (${ulab('L')})</th><th class="num">${T('Drift X', 'ดริฟต์ X')}</th><th class="num">${T('Drift Y', 'ดริฟต์ Y')}</th></tr></thead><tbody>${rows.map(rw => `<tr><td class="mono">${fu(rw.z, 'L', 2)}</td><td class="num mono">${fu(rw.ux, 'd')}</td><td class="num mono">${fu(rw.uy, 'd')}</td><td class="num mono">${fu(rw.h, 'L', 2)}</td><td class="num mono">${fu(rw.dx, 'd')} · ${rat(rw.dx, rw.h)}</td><td class="num mono">${fu(rw.dy, 'd')} · ${rat(rw.dy, rw.h)}</td></tr>`).join('')}</tbody></table>` + hint(T('Average horizontal displacement of the nodes at each level. Typical limits h/500, h/300 (portal frames under wind).', 'ค่าเฉลี่ยการเคลื่อนตัวแนวราบของจุดต่อในแต่ละระดับ ค่าจำกัดทั่วไป h/500, h/300 (โครงข้อแข็งรับลม)')) : `<p class="muted">${T('One level only.', 'มีระดับเดียว')}</p>`;
         }
       } else if (rt === 'modal') {
         body = r.modal ? wrap(`<table class="chk an-r"><thead><tr><th>${T('Mode', 'โหมด')}</th><th class="num">f (Hz)</th><th class="num">T (s)</th><th class="num">${T('Mass', 'มวล')} X</th><th class="num">Y</th><th class="num">Z</th><th class="num">Σ X</th><th class="num">Σ Y</th><th class="num">Σ Z</th><th></th></tr></thead><tbody>${r.modal.modes.map((md, i) => `<tr class="${A.rview === 'mode' && A.mode === i ? 'on' : ''}"><td>${i + 1}</td><td class="num mono">${f(md.f, 3)}</td><td class="num mono">${f(md.T, 3)}</td>${[md.mx, md.my, md.mz, md.cmx, md.cmy, md.cmz].map(v => `<td class="num mono">${f(v * 100, 1)}%</td>`).join('')}<td><button class="btn btn-ghost xs" data-act="an-mode" data-k="${i}">${T('Show', 'แสดง')}</button></td></tr>`).join('')}</tbody></table>`) + hint(T('Mass X / Y / Z', 'มวล X / Y / Z') + `: ${f(r.modal.massX, 2)} / ${f(r.modal.massY, 2)} / ${f(r.modal.massZ, 2)} t`) : `<p class="muted">${pro() ? T('Turn on modal analysis in step 9 and run again.', 'เปิดการวิเคราะห์โหมดในขั้นที่ 9 แล้ววิเคราะห์อีกครั้ง') : T('Modal analysis is a Pro feature.', 'การวิเคราะห์โหมดสำหรับสมาชิก Pro')}</p>`;
@@ -1192,10 +1227,10 @@
         const paths = arrs.map((a, si) => `<path d="M${X(0)} ${Hc / 2} ${a.map((v, i) => `L${X(mm.x[i]).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ')} L${X(mm.L)} ${Hc / 2} Z" class="an-dg ${cls} ${si ? 'neg' : ''}"/>`).join('');
         return `<figure class="an-mc"><figcaption><span>${lbl}</span> <span class="mono">${f(Math.min(...all), 2)} … ${f(Math.max(...all), 2)} ${unit}</span></figcaption><svg viewBox="0 0 ${Wc} ${Hc}"><line x1="8" x2="${Wc - 8}" y1="${Hc / 2}" y2="${Hc / 2}" class="an-ax"/>${paths}</svg></figure>`;
       };
-      const g = q => arr(mm, q, env), s = A.model.sections.find(q => q.id === mb.sec), p = s ? F.secProps(s) : null;
-      return `<div class="card an-member"><div class="an-mh"><h3>${T('Element', 'ชิ้นส่วน')} ${esc(mm.id)} <span class="muted small">${esc(mb.i)} → ${esc(mb.j)} · L = ${f(mm.L, 3)} m · ${esc(mb.sec)}${p ? ' (A ' + f(p.A, 0) + ' mm²)' : ''}</span></h3>
+      const g = q => arr(mm, q, env).map(a2 => a2.map(v => toU(v, ['T', 'My', 'Mz'].includes(q) ? 'M' : 'F'))), s = A.model.sections.find(q => q.id === mb.sec), p = s ? F.secProps(s) : null;
+      return `<div class="card an-member"><div class="an-mh"><h3>${T('Element', 'ชิ้นส่วน')} ${esc(mm.id)} <span class="muted small">${esc(mb.i)} → ${esc(mb.j)} · L = ${fu(mm.L, 'L')}${ul('L')} · ${esc(mb.sec)}${p ? ' (A ' + f(p.A, 0) + ' mm²)' : ''}</span></h3>
         <div class="an-send"><button class="btn btn-ghost xs" data-act="an-send" data-e="beam">${T('Design as RC beam →', 'ออกแบบเป็นคาน คสล. →')}</button><button class="btn btn-ghost xs" data-act="an-send" data-e="column">${T('Design as RC column →', 'ออกแบบเป็นเสา คสล. →')}</button></div></div>
-        <div class="an-mcs">${chart(T('Axial N', 'แรงตามแนวแกน N'), 'kN', g('N'), 'N')}${chart('V<sub>y</sub>', 'kN', g('Vy'), 'V')}${chart('V<sub>z</sub>', 'kN', g('Vz'), 'V')}${chart(T('Torsion T', 'แรงบิด T'), 'kNm', g('T'), 'T')}${chart('M<sub>y</sub>', 'kNm', g('My'), 'My', true)}${chart('M<sub>z</sub>', 'kNm', g('Mz'), 'M', true)}${env ? '' : chart(T('Deflection (local y)', 'การโก่ง (แกน y)'), 'mm', [mm.drel.map(v => v * 1000)], 'D') + chart(T('Deflection (local z)', 'การโก่ง (แกน z)'), 'mm', [mm.drelz.map(v => v * 1000)], 'D')}</div></div>`;
+        <div class="an-mcs">${chart(T('Axial N', 'แรงตามแนวแกน N'), ulab('F'), g('N'), 'N')}${chart('V<sub>y</sub>', ulab('F'), g('Vy'), 'V')}${chart('V<sub>z</sub>', ulab('F'), g('Vz'), 'V')}${chart(T('Torsion T', 'แรงบิด T'), ulab('M'), g('T'), 'T')}${chart('M<sub>y</sub>', ulab('M'), g('My'), 'My', true)}${chart('M<sub>z</sub>', ulab('M'), g('Mz'), 'M', true)}${env ? '' : chart(T('Deflection (local y)', 'การโก่ง (แกน y)'), ulab('d'), [mm.drel.map(v => toU(v, 'd'))], 'D') + chart(T('Deflection (local z)', 'การโก่ง (แกน z)'), ulab('d'), [mm.drelz.map(v => toU(v, 'd'))], 'D')}</div></div>`;
     }
     function sendToDesign(elem) {
       const cur = current(); if (!cur || A.sel.m.length !== 1) return;
@@ -1217,7 +1252,7 @@
               ${sel([['', T('Select…', 'เลือก…')], ['all', T('All', 'ทั้งหมด')], ['none', T('None', 'ไม่เลือก')], ['inv', T('Invert', 'กลับการเลือก')], ['nodes', T('All nodes', 'จุดต่อทั้งหมด')], ['elems', T('All elements', 'ชิ้นส่วนทั้งหมด')], ['col', T('Columns', 'เสา')], ['beam', T('Beams', 'คาน')], ['brace', T('Bracing', 'ค้ำยัน')], ['sup', T('Supports', 'จุดรองรับ')], ['samesec', T('Same section as selected', 'หน้าตัดเดียวกับที่เลือก')], ['samemat', T('Same material as selected', 'วัสดุเดียวกับที่เลือก')]].concat(A.model.sections.map(q => ['sec:' + q.id, T('Section ', 'หน้าตัด ') + q.id])), '', `id="an-selby" class="an-selby" aria-label="${T('Select by', 'เลือกตาม')}"`)}
               <div class="seg" role="group" aria-label="${T('Display', 'การแสดงผล')}">${[['wire', T('Wire', 'เส้น'), T('Centre-line view', 'แสดงเส้นแกน')], ['solid', T('Solid', 'ทรงตัน'), T('Render the actual section shapes', 'แสดงรูปหน้าตัดจริง')]].map(([k, l, tt]) => `<button data-act="an-disp" data-d="${k}" aria-pressed="${(k === 'solid') === !!A.solid}" title="${esc(tt)}">${l}</button>`).join('')}</div>
               <div class="seg" role="group" aria-label="${T('View', 'มุมมอง')}">${[['3d', '3D'], ['plan', T('Plan', 'แปลน')], ['xz', 'X–Z'], ['yz', 'Y–Z']].map(([k, l]) => `<button data-act="an-cam" data-v="${k}" aria-pressed="${A.cam.v === k}">${l}</button>`).join('')}</div>
-              ${ax ? `<label class="an-lv">${ax.toUpperCase()} = ${sel([['all', T('all', 'ทั้งหมด')]].concat(lv.map(v => [v, f(v, 2)])), A.cut, 'id="an-cut"')}</label>` : ''}
+              ${ax ? `<label class="an-lv">${ax.toUpperCase()} = ${sel([['all', T('all', 'ทั้งหมด')]].concat(lv.map(v => [v, fu(v, 'L', 2)])), A.cut, 'id="an-cut"')}</label>` : ''}
               ${sel([['', T('Loads: off', 'แรง: ปิด')]].concat(A.model.cases.map(c => [c.id, T('Loads: ', 'แรง: ') + c.id + ' — ' + c.name]), [['all', T('Loads: all cases', 'แรง: ทุกกรณี')]]), A.loadsOn ? A.lcase : '', `id="an-lshow" class="an-lshow" aria-label="${T('Show loads of', 'แสดงแรงของ')}"`)}
               <span class="grow"></span>
               <button class="btn btn-ghost xs" data-act="an-fit" title="${T('Zoom to fit', 'ซูมให้พอดี')}" aria-label="${T('Zoom to fit', 'ซูมให้พอดี')}">⤢</button><button class="btn btn-ghost xs" data-act="an-undo" ${A.hist.length ? '' : 'disabled'} title="Ctrl+Z" aria-label="Undo">↶</button><button class="btn btn-ghost xs" data-act="an-redo" ${A.fut.length ? '' : 'disabled'} title="Ctrl+Y" aria-label="Redo">↷</button>
@@ -1227,12 +1262,18 @@
               <button class="btn btn-ghost xs an-helpbtn" data-act="an-win" data-k="help" title="${T('Help and shortcuts (?)', 'วิธีใช้และปุ่มลัด (?)')}" aria-label="${T('Help', 'วิธีใช้')}">? ${T('Help', 'วิธีใช้')}</button>
             </div>
             <div class="an-canvas"><canvas id="anCv" tabindex="0" aria-label="${T('3D model view', 'มุมมองแบบจำลอง 3 มิติ')}"></canvas><span class="an-tag" id="anViewTag">${viewTag()}</span>
-              <p class="an-hintbar"><span id="anHint">${hintBar()}</span> · kN, m</p></div>
+              <p class="an-hintbar"><span id="anHint">${hintBar()}</span></p>${unitBar()}</div>
             <div class="an-drawer ${showRes ? 'on' : ''}" id="anDrawer">${drawerHTML()}</div>
           </section>
         ${A.tplOpen ? `<div class="modal-bg an-tplbg">${tplHTML()}</div>` : ''}
         <div id="anWinHost"></div>
         <div id="reportWrap" class="an-report"></div></main>`;
+    }
+    function unitBar() {
+      const u = UU(), pre = Object.keys(UPRE).find(k => ['F', 'L', 'T'].every(q => UPRE[k][q] === u[q])) || '';
+      return `<div class="an-ubar" role="group" aria-label="${T('Units', 'หน่วย')}"><span>${T('Units', 'หน่วย')}</span>
+        ${sel([['', T('Custom', 'กำหนดเอง')], ['SI', 'kN · m'], ['SImm', 'N · mm'], ['MKS', 'tf · m'], ['MKScm', 'kgf · cm'], ['US', 'kip · ft · °F']], pre, `id="an-upre" title="${T('Unit system', 'ระบบหน่วย')}"`)}
+        ${sel(Object.keys(UF).map(k => [k, k]), u.F, `id="an-uF" title="${T('Force', 'แรง')}"`)}${sel(Object.keys(UL).map(k => [k, k]), u.L, `id="an-uL" title="${T('Length', 'ความยาว')}"`)}${sel([['C', '°C'], ['F', '°F']], u.T, `id="an-uT" title="${T('Temperature', 'อุณหภูมิ')}"`)}</div>`;
     }
     function syncLshow() { const e = $('#an-lshow'); if (e) e.value = A.loadsOn ? A.lcase : ''; }
     function hintBar() {
@@ -1318,13 +1359,18 @@
       if (t.dataset.opt) {
         const k = t.dataset.opt;
         if (k === 'plane') { snap(true); A.model.plane = t.value; changed(false); return true; }
-        A.opt[k] = t.type === 'checkbox' ? t.checked : +t.value; persist(); if (k !== 'snap') { A.ver++; updCounts(); } return true;
+        A.opt[k] = t.type === 'checkbox' ? t.checked : k === 'snap' ? frU(+t.value, 'L') : +t.value; persist(); if (k !== 'snap') { A.ver++; updCounts(); } return true;
       }
       if (t.id === 'an-ss') { A.ss = t.value; const z = $('#an-sz'); if (z) z.innerHTML = (SL.LIB[t.value] ? SL.sizes(t.value).map(q => [q, q]) : (G.GANTRY ? G.GANTRY.sizeOptions(t.value) : [])).map(o => `<option value="${esc(o[0])}">${esc(o[1])}</option>`).join(''); return true; }
       if (t.id === 'an-mlk') { A.mlk = t.value; sideRefresh(); return true; }
       if (t.id === 'an-src') { A.src = t.value; drawAll(); return true; }
       if (t.id === 'an-lcase') { A.lcase = t.value; A.loadsOn = true; syncLshow(); redraw(); sideRefresh(); return true; }
       if (t.id === 'an-lshow') { if (t.value) { A.lcase = t.value; A.loadsOn = true; } else A.loadsOn = false; redraw(); if (['case', 'load'].includes(A.step)) sideRefresh(); return true; }
+      if (t.id === 'an-upre' || t.id === 'an-uF' || t.id === 'an-uL' || t.id === 'an-uT') {
+        const u = Object.assign({}, UU()); if (t.id === 'an-upre') { if (!UPRE[t.value]) return true; Object.assign(u, UPRE[t.value]); } else u[t.id.slice(4)] = t.value;
+        A.opt.u = u; persist(); ctx.render(); if (A.win) winRefresh(); const rw = $('#reportWrap'); if (rw && rw.innerHTML) renderReport();
+        toast(T('Units: ', 'หน่วย: ') + ulab('F') + ', ' + ulab('L') + ', ' + ulab('M') + ', ' + ulab('T'), ''); return true;
+      }
       if (t.id === 'an-selby') { const v = t.value; t.value = ''; if (v) selectBy(v); return true; }
       if (t.id === 'an-modesel') { A.mode = +t.value; redraw(); return true; }
       if (t.id === 'an-scale') { A.dscale = +t.value; redraw(); return true; }
@@ -1338,9 +1384,10 @@
       if (!t.dataset.tb) return false;
       const tb = t.dataset.tb, i = +t.dataset.i, fd = t.dataset.f, row = A.model[tb] && A.model[tb][i]; if (!row) return true;
       snap();
-      const v = t.type === 'checkbox' ? t.checked : t.value;
+      const v = t.type === 'checkbox' ? t.checked : t.value, uq = FQ[tb] && FQ[tb][fd];
       let side = false;
-      if (fd.startsWith('f.')) { row.f = row.f || {}; const k = fd.slice(2); if (v === '' || +v === 0) delete row.f[k]; else row.f[k] = +v; }
+      if (uq) row[fd] = v === '' ? '' : frU(+v, uq);
+      else if (fd.startsWith('f.')) { row.f = row.f || {}; const k = fd.slice(2); if (v === '' || +v === 0) delete row.f[k]; else row.f[k] = +v; }
       else if (fd === 'id') { const nid = String(v).trim(); if (!nid || A.model[tb].some((o, k) => k !== i && o.id === nid)) { t.classList.add('bad'); return true; } t.classList.remove('bad'); renameRefs(tb, row.id, nid); const ok = { materials: 'mat', sections: 'sec', combos: 'combo' }[tb]; if (ok && OPEN[ok] === String(row.id)) OPEN[ok] = nid; row.id = nid; }
       else if (['x', 'y', 'z', 'b', 'h', 'd', 'bf', 'tf', 'tw', 'D', 'A', 'I', 'Iz', 'Iy', 'J', 'E', 'nu', 'rho', 'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz', 'w1', 'P', 'M', 'beta'].includes(fd)) row[fd] = v === '' ? '' : +v;
       else row[fd] = v;
@@ -1349,7 +1396,8 @@
       if (tb === 'sections' && fd === 'series') { row.size = SL.sizes(v)[0] || ''; row.name = row.size; side = true; }
       if (tb === 'sections' && fd === 'size' && row.type === 'std') row.name = v;
       if (tb === 'sections' && fd === 'type') { const ser0 = stdInfo(A.model.std).series[0]; Object.assign(row, { rect: { b: 300, h: 500 }, I: { d: 356, bf: 171, tf: 11.5, tw: 7.3 }, circ: { D: 400 }, std: { series: ser0, size: SL.sizes(ser0)[0] }, tube: { shape: 'SHS', size: (G.GANTRY ? G.GANTRY.sizeOptions('SHS')[0][0] : '') }, user: { A: 10000, Iz: 100e6, Iy: 50e6, J: 20e6 } }[v]); side = true; }
-      if (tb === 'loads' && fd === 'kind') { Object.assign(row, v === 'udl' ? { w1: row.w1 || 5, dir: row.dir && !/^l?[xyz]$/.test(row.dir) || /^l[yz]$/.test(row.dir) ? row.dir : 'grav' } : v === 'point' ? { P: row.P || 10, a: row.a || 1, dir: GDIR[row.dir] || /^l[yz]$/.test(row.dir) ? row.dir : 'grav' } : { M: row.M || 10, a: row.a || 1, dir: 'lz' }); side = true; }
+      if (tb === 'loads' && fd === 'kind' && v === 'temp') { Object.assign(row, { dT: row.dT || 20, dTy: row.dTy || 0, dTz: row.dTz || 0 }); side = true; }
+      else if (tb === 'loads' && fd === 'kind') { Object.assign(row, v === 'udl' ? { w1: row.w1 || 5, dir: row.dir && !/^l?[xyz]$/.test(row.dir) || /^l[yz]$/.test(row.dir) ? row.dir : 'grav' } : v === 'point' ? { P: row.P || 10, a: row.a || 1, dir: GDIR[row.dir] || /^l[yz]$/.test(row.dir) ? row.dir : 'grav' } : { M: row.M || 10, a: row.a || 1, dir: 'lz' }); side = true; }
       if (tb === 'members' && (fd === 'type' || fd === 'i' || fd === 'j')) side = true;
       if ((tb === 'materials' || tb === 'sections') && ['E', 'nu', 'rho', 'b', 'h', 'D', 'd', 'bf', 'tf', 'tw', 'A', 'Iz', 'Iy', 'J'].includes(fd)) { const li = t.closest('.an-li'); if (li) { const sb = li.querySelector('.an-lis'); if (sb && tb === 'materials') sb.textContent = (row.name || '') + ' · E ' + f(+row.E || 0, 0); } }
       changed(side);
@@ -1419,11 +1467,17 @@
       else if (a === 'an-buck') { A.src = 'combo:' + b.dataset.c; A.rview = 'buck'; sideRefresh(); drawAll(); }
       else if (a === 'an-send') sendToDesign(b.dataset.e);
       else if (a === 'an-report') { if (!pro()) { toast(T('The analysis report is a Pro feature.', 'รายงานการวิเคราะห์สำหรับสมาชิก Pro'), 'bad'); return true; } if (!fresh() && !run()) { toast(A.err, 'bad'); return true; } renderReport(); const w = $('#reportWrap'); if (w) w.scrollIntoView({ behavior: 'smooth' }); }
-      else if (a === 'an-addnode') { const p = ['an-nx', 'an-ny', 'an-nz'].map(id => +($('#' + id).value) || 0); snap(true); const id = ensureNode(p); A.sel = { n: [id], m: [] }; changed(true); redraw(true); }
-      else if (a === 'an-move') { const dd = ['an-mx', 'an-my', 'an-mz'].map(id => +($('#' + id).value) || 0); snap(true); const nd = nodeMap(); A.sel.n.forEach(id => { const n = nd[id]; n.x = r4((+n.x || 0) + dd[0]); n.y = r4((+n.y || 0) + dd[1]); n.z = r4((+n.z || 0) + dd[2]); }); changed(true); redraw(true); }
-      else if (a === 'an-nl') { const cs = A.lcase, o = {}; ['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].forEach(q => { o[q] = +($('#an-n' + q).value) || 0; }); if (!Object.values(o).some(Boolean)) { toast(T('Enter a force or moment.', 'ใส่ค่าแรงหรือโมเมนต์'), 'bad'); return true; } snap(true); A.sel.n.forEach(id => m.loads.push(nload(cs, id, o))); changed(true); toast(T('Load added to ' + A.sel.n.length + ' node(s) in ' + cs, 'เพิ่มแรงให้ ' + A.sel.n.length + ' จุดต่อ ในกรณี ' + cs), 'ok'); }
+      else if (a === 'an-addnode') { const p = ['an-nx', 'an-ny', 'an-nz'].map(id => frU(+($('#' + id).value) || 0, 'L')); snap(true); const id = ensureNode(p); A.sel = { n: [id], m: [] }; changed(true); redraw(true); }
+      else if (a === 'an-move') { const dd = ['an-mx', 'an-my', 'an-mz'].map(id => frU(+($('#' + id).value) || 0, 'L')); snap(true); const nd = nodeMap(); A.sel.n.forEach(id => { const n = nd[id]; n.x = r4((+n.x || 0) + dd[0]); n.y = r4((+n.y || 0) + dd[1]); n.z = r4((+n.z || 0) + dd[2]); }); changed(true); redraw(true); }
+      else if (a === 'an-nl') { const cs = A.lcase, o = {}; ['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].forEach(q => { o[q] = frU(+($('#an-n' + q).value) || 0, q[0] === 'F' ? 'F' : 'M'); }); if (!Object.values(o).some(Boolean)) { toast(T('Enter a force or moment.', 'ใส่ค่าแรงหรือโมเมนต์'), 'bad'); return true; } snap(true); A.sel.n.forEach(id => m.loads.push(nload(cs, id, o))); changed(true); toast(T('Load added to ' + A.sel.n.length + ' node(s) in ' + cs, 'เพิ่มแรงให้ ' + A.sel.n.length + ' จุดต่อ ในกรณี ' + cs), 'ok'); }
+      else if (a === 'an-ml' && $('#an-mlk') && $('#an-mlk').value === 'temp') {
+        const cs = A.lcase, o = { dT: frU(+$('#an-tu').value || 0, 'T'), dTy: frU(+$('#an-ty').value || 0, 'T'), dTz: frU(+$('#an-tz').value || 0, 'T') };
+        if (!o.dT && !o.dTy && !o.dTz) { toast(T('Enter a temperature change.', 'ใส่ค่าการเปลี่ยนแปลงอุณหภูมิ'), 'bad'); return true; }
+        snap(true); A.sel.m.forEach(id => { if (m.members.some(z => z.id === id)) m.loads.push(Object.assign({ case: cs, kind: 'temp', member: id }, o)); });
+        changed(true); toast(T('Temperature load added to ' + A.sel.m.length + ' element(s) in ' + cs, 'เพิ่มแรงจากอุณหภูมิให้ ' + A.sel.m.length + ' ชิ้นส่วน ในกรณี ' + cs), 'ok');
+      }
       else if (a === 'an-ml') {
-        const cs = A.lcase, kd = $('#an-mlk').value, dir = $('#an-mld').value, v = +$('#an-mlv').value || 0, v2 = $('#an-mlv2') ? $('#an-mlv2').value : '', aa = $('#an-mla').value, bb = $('#an-mlb') ? $('#an-mlb').value : '';
+        const cs = A.lcase, kd = $('#an-mlk').value, dir = $('#an-mld').value, uq = kd === 'udl' ? 'w' : kd === 'point' ? 'F' : 'M', v = frU(+$('#an-mlv').value || 0, uq), v2r = $('#an-mlv2') ? $('#an-mlv2').value : '', v2 = v2r === '' ? '' : frU(+v2r, uq), aa0 = $('#an-mla').value, bb0 = $('#an-mlb') ? $('#an-mlb').value : '', aa = aa0 === '' ? '' : frU(+aa0, 'L'), bb = bb0 === '' ? '' : frU(+bb0, 'L');
         if (!v && !(+v2)) { toast(T('Enter a load value.', 'ใส่ค่าแรง'), 'bad'); return true; }
         snap(true); const nd = nodeMap();
         A.sel.m.forEach(id => { const q = m.members.find(z => z.id === id); if (!q) return; const L = Math.hypot(...sub(P3(nd[q.j]), P3(nd[q.i]))); if (kd === 'udl') m.loads.push({ case: cs, kind: 'udl', member: id, dir, w1: v, w2: v2 === '' ? '' : +v2, a: aa === '' ? '' : +aa, b: bb === '' ? '' : +bb }); else if (kd === 'point') m.loads.push({ case: cs, kind: 'point', member: id, dir, P: v, a: aa === '' ? r4(L / 2) : +aa }); else m.loads.push({ case: cs, kind: 'moment', member: id, dir, M: v, a: aa === '' ? r4(L / 2) : +aa }); });
@@ -1431,7 +1485,7 @@
       }
       else if (a === 'an-mlclear') { const cs = A.lcase, sm = new Set(A.sel.m), sn = new Set(A.sel.n), n0 = m.loads.length; snap(true); m.loads = m.loads.filter(l => !(l.case === cs && (l.kind === 'node' ? sn.has(l.node) : sm.has(l.member)))); changed(true); toast(T((n0 - m.loads.length) + ' load(s) removed', 'ลบแรง ' + (n0 - m.loads.length) + ' รายการ'), 'ok'); }
       else if (a === 'an-split') { const n = Math.max(2, Math.min(20, +$('#an-splitn').value | 0)); snap(true); const segs = splitMember(A.sel.m[0], n); A.sel = { n: [], m: segs }; changed(true); }
-      else if (a === 'an-replicate') { const dd = ['an-rx', 'an-ry', 'an-rz'].map(id => +($('#' + id).value) || 0), n = Math.max(1, Math.min(50, +$('#an-rn').value | 0)), c = $('#an-rc').checked, l = $('#an-rl').checked; A.rep = dd.concat([n, c, l]); A.repOpen = true; if (!dd.some(Boolean)) { toast(T('Enter a distance to copy by.', 'ใส่ระยะที่ต้องการคัดลอก'), 'bad'); return true; } replicate(dd, n, c, l); redraw(true); }
+      else if (a === 'an-replicate') { const dd = ['an-rx', 'an-ry', 'an-rz'].map(id => frU(+($('#' + id).value) || 0, 'L')), n = Math.max(1, Math.min(50, +$('#an-rn').value | 0)), c = $('#an-rc').checked, l = $('#an-rl').checked; A.rep = dd.concat([n, c, l]); A.repOpen = true; if (!dd.some(Boolean)) { toast(T('Enter a distance to copy by.', 'ใส่ระยะที่ต้องการคัดลอก'), 'bad'); return true; } replicate(dd, n, c, l); redraw(true); }
       else return false;
       return true;
     }
@@ -1447,23 +1501,23 @@
       const supName = n => (SUP().find(s => s[0] === (n.sup || 'free')) || [])[1] + (n.sup === 'custom' ? ' [' + F.fixOf(n).join('') + ']' : '');
       const supN = m.nodes.filter(n => F.fixOf(n).some(Boolean));
       let html = sec(1, T('Model', 'แบบจำลอง'), fig('model', '__none', esc(m.name || '') + ' · ' + (m.plane === 'XZ' ? T('2D frame, X–Z plane', 'โครง 2 มิติ ระนาบ X–Z') : T('3D frame', 'โครง 3 มิติ')) + ' · ' + m.nodes.length + ' ' + T('nodes', 'จุดต่อ') + ', ' + m.members.length + ' ' + T('members', 'ชิ้นส่วน')) +
-        tbl([T('Node', 'จุดต่อ'), 'X (m)', 'Y (m)', 'Z (m)', T('Support', 'จุดรองรับ')], lim(m.nodes, 200).map(n => [esc(n.id), f(+n.x || 0, 3), f(+n.y || 0, 3), f(+n.z || 0, 3), esc(supName(n))])) + more(m.nodes, 200) +
-        tbl([T('Member', 'ชิ้นส่วน'), 'i', 'j', T('Section', 'หน้าตัด'), T('Material', 'วัสดุ'), T('Type', 'ชนิด'), T('Hinges', 'บานพับ'), 'β°', 'L (m)'], lim(m.members, 200).map(x => { const a2 = nd[x.i], b2 = nd[x.j]; return [esc(x.id), esc(x.i), esc(x.j), esc(x.sec), esc(x.mat), x.type === 'truss' ? T('truss', 'โครงถัก') : T('frame', 'โครงข้อแข็ง'), (x.relI ? 'i ' : '') + (x.relJ ? 'j' : ''), f(+x.beta || 0, 0), a2 && b2 ? f(Math.hypot(...sub(P3(b2), P3(a2))), 3) : '']; })) + more(m.members, 200) +
+        tbl([T('Node', 'จุดต่อ'), 'X (' + ulab('L') + ')', 'Y (' + ulab('L') + ')', 'Z (' + ulab('L') + ')', T('Support', 'จุดรองรับ')], lim(m.nodes, 200).map(n => [esc(n.id), fu(+n.x || 0, 'L'), fu(+n.y || 0, 'L'), fu(+n.z || 0, 'L'), esc(supName(n))])) + more(m.nodes, 200) +
+        tbl([T('Member', 'ชิ้นส่วน'), 'i', 'j', T('Section', 'หน้าตัด'), T('Material', 'วัสดุ'), T('Type', 'ชนิด'), T('Hinges', 'บานพับ'), 'β°', 'L (' + ulab('L') + ')'], lim(m.members, 200).map(x => { const a2 = nd[x.i], b2 = nd[x.j]; return [esc(x.id), esc(x.i), esc(x.j), esc(x.sec), esc(x.mat), x.type === 'truss' ? T('truss', 'โครงถัก') : T('frame', 'โครงข้อแข็ง'), (x.relI ? 'i ' : '') + (x.relJ ? 'j' : ''), f(+x.beta || 0, 0), a2 && b2 ? fu(Math.hypot(...sub(P3(b2), P3(a2))), 'L') : '']; })) + more(m.members, 200) +
         tbl([T('Section', 'หน้าตัด'), T('Name', 'ชื่อ'), 'A (mm²)', 'I<sub>z</sub> (×10⁶ mm⁴)', 'I<sub>y</sub> (×10⁶ mm⁴)', 'J (×10⁶ mm⁴)'], m.sections.map(s => { const p = F.secProps(s); return [esc(s.id), esc(s.name || s.type), f(p.A, 0), f(p.Iz / 1e6, 2), f(p.Iy / 1e6, 2), f(p.J / 1e6, 3)]; })) +
-        tbl([T('Material', 'วัสดุ'), 'E (MPa)', 'ν', T('Unit weight (kN/m³)', 'หน่วยน้ำหนัก (kN/m³)')], m.materials.map(x => [esc(x.id + (x.name ? ' — ' + x.name : '')), f(+x.E, 0), f(x.nu === undefined ? 0.3 : +x.nu, 2), f(+x.rho, 1)])));
+        tbl([T('Material', 'วัสดุ'), 'E (MPa)', 'ν', T('Unit weight', 'หน่วยน้ำหนัก') + ' (' + ulab('g') + ')', 'α (' + ulab('al') + ')'], m.materials.map(x => [esc(x.id + (x.name ? ' — ' + x.name : '')), f(+x.E, 0), f(x.nu === undefined ? 0.3 : +x.nu, 2), fu(+x.rho, 'g', UU().F === 'kN' ? 1 : 3), fx(toU(+x.alpha || F.alphaOf(x) * 1e6, 'al'), 2)])));
       html += sec(2, T('Loads and combinations', 'แรงและกรณีรวมแรง'), m.cases.filter(c => m.loads.some(l => l.case === c.id)).map(c => fig('model', c.id, '<b>' + esc(c.id) + '</b> — ' + esc(c.name))).join('') +
         tbl([T('Case', 'กรณี'), T('Name', 'ชื่อ'), T('Type', 'ประเภท'), T('Self-weight', 'น้ำหนักตัวเอง')], m.cases.map(c => [esc(c.id), esc(c.name), c.type, c.sw ? '✓' : ''])) +
-        tbl([T('Case', 'กรณี'), T('On', 'ที่'), T('Load', 'แรง'), T('Values', 'ค่า')], lim(m.loads, 300).map(l => [esc(l.case), esc(l.kind === 'node' ? l.node : l.member), l.kind === 'node' ? T('nodal', 'ที่จุดต่อ') : l.kind + ' · ' + esc(((l.kind === 'moment' ? MDIRS() : DIRS()).find(d => d[0] === (l.dir || (l.kind === 'moment' ? 'lz' : 'grav'))) || ['', ''])[1]), l.kind === 'node' ? ['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].filter(q => +l[q]).map(q => q + ' ' + f(+l[q], 2)).join(', ') : l.kind === 'udl' ? `w ${f(+l.w1 || 0, 2)}${l.w2 !== '' && l.w2 != null ? '→' + f(+l.w2, 2) : ''} kN/m${+l.a || (l.b !== '' && l.b != null) ? ` (${f(+l.a || 0, 2)}–${l.b !== '' && l.b != null ? f(+l.b, 2) : 'L'} m)` : ''}` : l.kind === 'point' ? `P ${f(+l.P || 0, 2)} kN @ ${f(+l.a || 0, 2)} m` : `M ${f(+l.M || 0, 2)} kNm @ ${f(+l.a || 0, 2)} m`])) + more(m.loads, 300) +
+        tbl([T('Case', 'กรณี'), T('On', 'ที่'), T('Load', 'แรง'), T('Values', 'ค่า')], lim(m.loads, 300).map(l => [esc(l.case), esc(l.kind === 'node' ? l.node : l.member), l.kind === 'node' ? T('nodal', 'ที่จุดต่อ') : l.kind === 'temp' ? T('temperature', 'อุณหภูมิ') : l.kind, esc(loadDesc(l))])) + more(m.loads, 300) +
         tbl([T('Combination', 'กรณีรวมแรง'), T('Type', 'ชนิด'), T('Factors', 'ตัวคูณ')], m.combos.map(c => [esc(c.id + ' — ' + c.name), c.type, Object.entries(c.f || {}).map(([k2, v]) => f(v, 2) + '·' + esc(k2)).join(' + ')])));
       html += sec(3, T('Analysis', 'การวิเคราะห์'), `<p class="rp-txt">${T('Finite-element stiffness method, ' + (m.plane === 'XZ' ? '2D frame elements in the X–Z plane' : '3D frame elements with 6 degrees of freedom per node (axial, two shears, torsion, two bending moments)') + ', exact fixed-end actions for member loads, member end releases by static condensation.', 'วิธีสติฟเนสไฟไนต์เอลิเมนต์ ' + (m.plane === 'XZ' ? 'ชิ้นส่วนโครงข้อแข็ง 2 มิติในระนาบ X–Z' : 'ชิ้นส่วนโครงข้อแข็ง 3 มิติ 6 องศาอิสระต่อจุด (แรงตามแนวแกน แรงเฉือนสองทิศ แรงบิด โมเมนต์ดัดสองแกน)') + ' ใช้แรงปลายยึดแน่นที่แม่นตรง และปลดแรงปลายชิ้นส่วนด้วย static condensation')} ${A.opt.pdelta && pro() ? T('Second-order P-Delta analysis of every combination (members subdivided into ' + A.opt.nseg + ' segments).', 'วิเคราะห์อันดับสอง P-Delta ทุกกรณีรวมแรง (แบ่งชิ้นส่วนเป็น ' + A.opt.nseg + ' ส่วน)') : T('First-order (linear) analysis; combinations by superposition.', 'วิเคราะห์อันดับหนึ่ง (เชิงเส้น) รวมแรงโดยการซ้อนทับ')} ${T('Sign convention: N tension +; M_z + = tension on the −y side, M_y + = tension on the −z side of the member local axes.', 'เครื่องหมาย: N แรงดึง +; M_z + ดึงด้าน −y, M_y + ดึงด้าน −z ของแกนเฉพาะที่')}</p>`);
       let n = 4;
       m.combos.filter(c => r.combos[c.id] && !r.combos[c.id].failed).forEach(c => {
         A.src = 'combo:' + c.id; const rc = current(); if (!rc) return;
-        const sums = lim(rc.mem, 200).map(mm => { const e = q => [Math.max(...mm[q]), Math.min(...mm[q])], am = q => Math.max(...mm[q].map(Math.abs)); const N = e('N'), My = e('My'), Mz = e('Mz'); return [esc(mm.id), f(N[0], 1), f(N[1], 1), f(am('Vy'), 1), f(am('Vz'), 1), f(am('T'), 1), f(My[0], 1), f(My[1], 1), f(Mz[0], 1), f(Mz[1], 1), f(Math.max(...mm.drel.map(Math.abs), ...mm.drelz.map(Math.abs)) * 1000, 1)]; });
+        const sums = lim(rc.mem, 200).map(mm => { const e = q => [Math.max(...mm[q]), Math.min(...mm[q])], am = q => Math.max(...mm[q].map(Math.abs)); const N = e('N'), My = e('My'), Mz = e('Mz'); return [esc(mm.id), fu(N[0], 'F', 1), fu(N[1], 'F', 1), fu(am('Vy'), 'F', 1), fu(am('Vz'), 'F', 1), fu(am('T'), 'M', 1), fu(My[0], 'M', 1), fu(My[1], 'M', 1), fu(Mz[0], 'M', 1), fu(Mz[1], 'M', 1), fu(Math.max(...mm.drel.map(Math.abs), ...mm.drelz.map(Math.abs)), 'd', 1)]; });
         const ri = m.nodes.map((nn, i) => [nn, i]).filter(([nn]) => supN.includes(nn));
-        html += sec(n++, esc(c.id + ' — ' + c.name) + ' <span class="rp-cl">' + c.type + '</span>', (c.type === 'ULS' ? `<div class="an-figs">${fig('Mz', null, 'M<sub>z</sub> (kNm)')}${m.plane === 'XZ' ? fig('N', null, 'N (kN)') : fig('My', null, 'M<sub>y</sub> (kNm)')}</div>` : `<div class="an-figs">${fig('def', null, T('Deflected shape', 'รูปการโก่งตัว'))}</div>`) +
-          tbl([T('Node', 'จุดต่อ'), 'Rx', 'Ry', 'Rz (kN)', 'Mx', 'My', 'Mz (kNm)'], ri.map(([nn, i]) => [esc(nn.id)].concat([0, 1, 2, 3, 4, 5].map(d => f(rc.R[6 * i + d], 2))))) +
-          tbl([T('Member', 'ชิ้นส่วน'), 'N max', 'N min', '|V<sub>y</sub>|', '|V<sub>z</sub>|', '|T|', 'M<sub>y</sub> max', 'M<sub>y</sub> min', 'M<sub>z</sub> max', 'M<sub>z</sub> min', 'δ (mm)'], sums) + more(rc.mem, 200));
+        html += sec(n++, esc(c.id + ' — ' + c.name) + ' <span class="rp-cl">' + c.type + '</span>', (c.type === 'ULS' ? `<div class="an-figs">${fig('Mz', null, 'M<sub>z</sub> (' + ulab('M') + ')')}${m.plane === 'XZ' ? fig('N', null, 'N (' + ulab('F') + ')') : fig('My', null, 'M<sub>y</sub> (' + ulab('M') + ')')}</div>` : `<div class="an-figs">${fig('def', null, T('Deflected shape', 'รูปการโก่งตัว'))}</div>`) +
+          tbl([T('Node', 'จุดต่อ'), 'Rx', 'Ry', 'Rz (' + ulab('F') + ')', 'Mx', 'My', 'Mz (' + ulab('M') + ')'], ri.map(([nn, i]) => [esc(nn.id)].concat([0, 1, 2, 3, 4, 5].map(d => fu(rc.R[6 * i + d], d < 3 ? 'F' : 'M'))))) +
+          tbl([T('Member', 'ชิ้นส่วน'), 'N max', 'N min', '|V<sub>y</sub>|', '|V<sub>z</sub>|', '|T| (' + ulab('M') + ')', 'M<sub>y</sub> max', 'M<sub>y</sub> min', 'M<sub>z</sub> max', 'M<sub>z</sub> min', 'δ (' + ulab('d') + ')'], sums) + more(rc.mem, 200));
       });
       A.src = keep.src;
       if (r.modal) html += sec(n++, T('Modal analysis', 'การวิเคราะห์โหมด'), tbl([T('Mode', 'โหมด'), 'f (Hz)', 'T (s)', T('Mass X', 'มวล X'), 'Y', 'Z'], r.modal.modes.map((md, i) => [i + 1, f(md.f, 3), f(md.T, 3), f(md.mx * 100, 1) + '%', f(md.my * 100, 1) + '%', f(md.mz * 100, 1) + '%'])));
@@ -1478,7 +1532,7 @@
             <tr><th>${T('Model', 'แบบจำลอง')}</th><td>${esc(m.name || '')} · <span id="rv-ref">${esc(Mt.ref)}</span></td><th>${T('Date', 'วันที่')}</th><td>${today()}</td></tr>
             <tr><th>${T('Analysed', 'วิเคราะห์')}</th><td id="rv-by">${esc(Mt.by)}</td><th>${T('Checked', 'ตรวจสอบ')}</th><td id="rv-checked">${esc(Mt.checked)}</td></tr></table></header>
           ${html}
-          <p class="rp-foot"><b>${COPY}</b> · ${T('Generated by StructCap. Units kN, m, kNm. The engineer remains responsible for the model, loads and interpretation of results.', 'จัดทำโดย StructCap หน่วย kN, m, kNm วิศวกรต้องรับผิดชอบต่อแบบจำลอง แรง และการตีความผลลัพธ์')}</p>
+          <p class="rp-foot"><b>${COPY}</b> · ${T('Generated by StructCap. Units ' + ulab('F') + ', ' + ulab('L') + ', ' + ulab('M') + ', ' + ulab('T') + '. The engineer remains responsible for the model, loads and interpretation of results.', 'จัดทำโดย StructCap หน่วย ' + ulab('F') + ', ' + ulab('L') + ', ' + ulab('M') + '  วิศวกรต้องรับผิดชอบต่อแบบจำลอง แรง และการตีความผลลัพธ์')}</p>
         </article>`;
     }
 

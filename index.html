@@ -805,6 +805,14 @@ body.an-dragging .an-canvas{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--a
 .an-dnd{font-size:12.5px;line-height:1.5;padding:7px 9px;border:1px dashed var(--line2);border-radius:8px;margin:2px 0 8px;color:var(--muted)}
 .an-dnd.on{border-style:solid;border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,var(--card));color:var(--ink)}
 .an-miss{color:#dc2626}
+
+/* units bar (bottom right of the view) */
+.an-ubar{position:absolute;right:10px;bottom:6px;display:flex;gap:4px;align-items:center;font-size:11.5px;color:var(--muted);background:color-mix(in srgb,var(--card) 92%,transparent);border:1px solid var(--line2);border-radius:8px;padding:3px 6px;z-index:3}
+.an-ubar span{font-weight:700;letter-spacing:.04em;margin-right:2px}
+.an-ubar select{font-size:12px;padding:2px 4px;border:1px solid var(--line2);border-radius:6px;background:var(--card);color:var(--ink)}
+.an-hintbar{max-width:calc(100% - 420px)}
+.an-u{font-weight:400;color:var(--muted);font-size:.92em}
+@media (max-width:900px){.an-hintbar{display:none}.an-ubar{left:8px;right:auto}}
 </style>
 </head>
 <body>
