@@ -839,7 +839,7 @@
     }
 
     // ------------------------------------------------------------------ floating "add" windows (movable)
-    const WIN_T = () => ({ mat: T('Add material', 'เพิ่มวัสดุ'), sec: T('Add section', 'เพิ่มหน้าตัด'), node: T('Add node', 'เพิ่มจุดต่อ'), elem: T('Add element', 'เพิ่มชิ้นส่วน'), sup: T('Assign support', 'กำหนดจุดรองรับ'), case: T('Add load case', 'เพิ่มกรณีน้ำหนัก'), load: T('Add load', 'เพิ่มแรง'), combo: T('Add load combination', 'เพิ่มการรวมน้ำหนัก') });
+    const WIN_T = () => ({ mat: T('Add material', 'เพิ่มวัสดุ'), sec: T('Add section', 'เพิ่มหน้าตัด'), node: T('Add node', 'เพิ่มจุดต่อ'), elem: T('Add element', 'เพิ่มชิ้นส่วน'), sup: T('Assign support', 'กำหนดจุดรองรับ'), case: T('Add load case', 'เพิ่มกรณีน้ำหนัก'), load: T('Add load', 'เพิ่มแรง'), combo: T('Add load combination', 'เพิ่มการรวมน้ำหนัก'), help: T('Help — shortcuts and mouse', 'วิธีใช้ — ปุ่มลัดและเมาส์') });
     const WADD = ['mat', 'sec', 'node', 'elem', 'sup', 'case', 'load', 'combo'];
     A.wv = {};
     function wdef(k) {
@@ -863,7 +863,42 @@
       return v.type === 'rect' ? { type: 'rect', b: +v.b, h: +v.h } : v.type === 'circ' ? { type: 'circ', D: +v.D } : v.type === 'std' ? { type: 'std', series: v.series, size: v.size } : v.type === 'tube' ? { type: 'tube', shape: v.shape, size: v.tsize } : v.type === 'I' ? { type: 'I', d: +v.d, bf: +v.bf, tf: +v.tf, tw: +v.tw } : { type: 'user', A: +v.A, Iz: +v.Iz, Iy: +v.Iy, J: +v.J };
     }
     function wsecProps(v) { const s = wsecObj(v), p = F.secProps(s); return `<dl class="an-wkv"><div><dt>A</dt><dd>${f(p.A, 0)} mm²</dd></div><div><dt>I<sub>z</sub></dt><dd>${f(p.Iz / 1e6, 2)} ×10⁶ mm⁴</dd></div><div><dt>I<sub>y</sub></dt><dd>${f(p.Iy / 1e6, 2)} ×10⁶ mm⁴</dd></div><div><dt>J</dt><dd>${f(p.J / 1e6, 3)} ×10⁶ mm⁴</dd></div>${s.type === 'std' || s.type === 'tube' ? `<div><dt>${T('Mass', 'มวล')}</dt><dd>${f(p.A * 7850e-6, 1)} kg/m</dd></div>` : ''}</dl>`; }
+    function helpHTML() {
+      const K = s => (s === '+' ? ['+'] : s.split('+')).map(q => `<kbd>${esc(q)}</kbd>`).join('+'), rows = (h, list) => `<h4>${h}</h4><dl class="an-keys">${list.map(([k, d]) => `<div><dt>${k.split(' / ').map(K).join(' / ')}</dt><dd>${d}</dd></div>`).join('')}</dl>`;
+      return `<div class="an-help">` +
+        rows(T('Mouse — Select tool', 'เมาส์ — เครื่องมือเลือก'), [
+          [T('Click', 'คลิก'), T('Pick a node or element', 'เลือกจุดต่อหรือชิ้นส่วน')],
+          [T('Shift+Click', 'Shift+คลิก'), T('Add / remove one item', 'เพิ่ม / ลบทีละรายการ')],
+          [T('Drag →', 'ลาก →'), T('Window box — only items fully inside', 'กรอบหน้าต่าง — เฉพาะที่อยู่ในกรอบทั้งหมด')],
+          [T('Drag ←', 'ลาก ←'), T('Crossing box — anything the box touches', 'กรอบตัดผ่าน — ทุกอย่างที่กรอบสัมผัส')],
+          [T('Ctrl+Drag', 'Ctrl+ลาก'), T('Add a box to the selection', 'เพิ่มกรอบในการเลือก')],
+          [T('Alt+Drag', 'Alt+ลาก'), T('Remove a box from the selection', 'ลบกรอบออกจากการเลือก')],
+          [T('Click empty space', 'คลิกที่ว่าง'), T('Clear the selection', 'ล้างการเลือก')]]) +
+        rows(T('Mouse — view', 'เมาส์ — มุมมอง'), [
+          [T('Shift+Drag', 'Shift+ลาก'), T('Rotate (3D) · pan (plan / elevation)', 'หมุน (3D) · เลื่อน (แปลน / รูปด้าน)')],
+          [T('Right-drag', 'ลากคลิกขวา'), T('Rotate (3D) · pan (plan / elevation)', 'หมุน (3D) · เลื่อน (แปลน / รูปด้าน)')],
+          [T('Middle-drag / Shift+Right-drag', 'ลากปุ่มกลาง / Shift+ลากคลิกขวา'), T('Pan', 'เลื่อน')],
+          [T('Wheel', 'ล้อเมาส์'), T('Zoom at the cursor', 'ซูมที่ตำแหน่งเมาส์')],
+          [T('Two fingers', 'สองนิ้ว'), T('Pinch to zoom (touch)', 'บีบเพื่อซูม (หน้าจอสัมผัส)')],
+          [T('Drag from tree', 'ลากจากเมนู'), T('Drop a material / section / release onto an element, a support onto a node', 'วางวัสดุ / หน้าตัด / การปลดแรงบนชิ้นส่วน หรือจุดรองรับบนจุดต่อ')]]) +
+        rows(T('Keyboard', 'แป้นพิมพ์'), [
+          ['? / F1', T('Open this help', 'เปิดหน้าวิธีใช้นี้')],
+          ['S', T('Select tool', 'เครื่องมือเลือก')], ['O', T('Orbit tool', 'เครื่องมือหมุน')], ['N', T('Node tool — click to place nodes', 'เครื่องมือจุดต่อ — คลิกเพื่อวางจุดต่อ')], ['E', T('Element tool — click node to node', 'เครื่องมือชิ้นส่วน — คลิกจากจุดต่อไปจุดต่อ')],
+          ['3', T('3D view', 'มุมมอง 3D')], ['P', T('Plan view', 'แปลน')], ['X', T('Elevation X–Z', 'รูปด้าน X–Z')], ['Y', T('Elevation Y–Z', 'รูปด้าน Y–Z')],
+          ['F', T('Zoom to fit', 'ซูมให้พอดี')], ['+ / -', T('Zoom in / out', 'ซูมเข้า / ออก')], ['← / → / ↑ / ↓', T('Rotate the 3D view (pan in 2D)', 'หมุนมุมมอง 3D (เลื่อนใน 2D)')],
+          ['W', T('Toggle wire / solid sections', 'สลับเส้น / หน้าตัดทรงตัน')], ['L', T('Loads on / off', 'แสดง / ซ่อนแรง')], ['T', T('Labels on / off', 'แสดง / ซ่อนป้ายชื่อ')],
+          ['Ctrl+A', T('Select all', 'เลือกทั้งหมด')], ['I', T('Invert the selection', 'กลับการเลือก')], ['Esc', T('Cancel drawing · clear selection · close window', 'ยกเลิกการวาด · ล้างการเลือก · ปิดหน้าต่าง')],
+          ['Delete / Backspace', T('Delete the selection', 'ลบรายการที่เลือก')],
+          ['Ctrl+Z', T('Undo', 'เลิกทำ')], ['Ctrl+Y / Ctrl+Shift+Z', T('Redo', 'ทำซ้ำ')],
+          ['Ctrl+Enter', T('Run the analysis', 'วิเคราะห์โครงสร้าง')]]) +
+        rows(T('Workflow', 'ขั้นตอนการทำงาน'), [
+          ['0 → 10', T('Work down the MAIN MENU: standard, materials, sections, nodes, elements, supports, load cases, loads, combinations, run, results.', 'ทำตาม MAIN MENU จากบนลงล่าง: มาตรฐาน วัสดุ หน้าตัด จุดต่อ ชิ้นส่วน จุดรองรับ กรณีน้ำหนัก แรง การรวมน้ำหนัก วิเคราะห์ ผลลัพธ์')],
+          ['+', T('The + beside a step opens a movable window to add items.', 'ปุ่ม + ข้างแต่ละขั้นเปิดหน้าต่างที่ย้ายได้เพื่อเพิ่มรายการ')],
+          [T('Loads:', 'แรง:'), T('Pick a load case to show only its loads in the view.', 'เลือกกรณีน้ำหนักเพื่อแสดงเฉพาะแรงของกรณีนั้น')]]) +
+        `<p class="muted small">${T('Units: kN, m, kNm · sections in mm · E in MPa. Global axes X, Y horizontal, Z up. On a Mac use ⌘ for Ctrl and ⌥ for Alt.', 'หน่วย: kN, m, kNm · หน้าตัดเป็น mm · E เป็น MPa แกน X, Y แนวนอน Z ขึ้น บน Mac ใช้ ⌘ แทน Ctrl และ ⌥ แทน Alt')}</p></div>`;
+    }
     function winBody(k) {
+      if (k === 'help') return helpHTML();
       const m = A.model, d = stdInfo(m.std), v = wdef(k), add = (lbl, extra) => `<div class="an-wfoot">${extra || ''}<span class="grow"></span><button class="btn btn-ghost sm" data-act="an-wclose">${T('Close', 'ปิด')}</button><button class="btn btn-hot sm" data-act="an-wadd">${lbl || T('Add', 'เพิ่ม')}</button></div>`;
       if (k === 'mat') {
         const g = v.kind === 'conc' ? concMat(m.std, v.grade) : v.kind === 'steel' ? steelMat(m.std, v.sgrade) : null;
@@ -907,7 +942,7 @@
       const host = $('#anWinHost'); if (!host) return;
       if (!A.win) { host.innerHTML = ''; return; }
       const k = A.win.k;
-      host.innerHTML = `<div class="an-win" id="anWin" role="dialog" aria-label="${esc(WIN_T()[k])}" style="left:${A.win.x}px;top:${A.win.y}px"><div class="an-winhead" title="${T('Drag to move', 'ลากเพื่อย้าย')}"><span class="an-grip" aria-hidden="true">⋮⋮</span><b>${esc(WIN_T()[k])}</b><span class="grow"></span><button class="icon-btn" data-act="an-wclose" aria-label="${T('Close', 'ปิด')}">×</button></div><div class="an-winbody">${winBody(k)}</div></div>`;
+      host.innerHTML = `<div class="an-win" id="anWin" role="dialog" aria-label="${esc(WIN_T()[k])}" data-k="${k}" style="left:${A.win.x}px;top:${A.win.y}px"><div class="an-winhead" title="${T('Drag to move', 'ลากเพื่อย้าย')}"><span class="an-grip" aria-hidden="true">⋮⋮</span><b>${esc(WIN_T()[k])}</b><span class="grow"></span><button class="icon-btn" data-act="an-wclose" aria-label="${T('Close', 'ปิด')}">×</button></div><div class="an-winbody">${winBody(k)}</div></div>`;
       const w = host.firstChild, hd = w.querySelector('.an-winhead');
       hd.addEventListener('pointerdown', e => {
         if (e.target.closest('button')) return;
@@ -917,7 +952,7 @@
         hd.addEventListener('pointermove', mv); hd.addEventListener('pointerup', upf); hd.addEventListener('pointercancel', upf);
       });
     }
-    function openWin(k) { const W0 = Math.min(440, innerWidth - 20); A.win = { k, x: A.win ? A.win.x : Math.max(10, Math.min(innerWidth - W0 - 10, 400)), y: A.win ? A.win.y : 90 }; if (k === 'load') { delete A.wv.load; } winRefresh(); }
+    function openWin(k) { const W0 = Math.min(k === 'help' ? 520 : 440, innerWidth - 20); A.win = { k, x: A.win ? A.win.x : Math.max(10, Math.min(innerWidth - W0 - 10, 400)), y: A.win ? A.win.y : 90 }; if (k === 'load') { delete A.wv.load; } winRefresh(); }
     const idList = s0 => String(s0 || '').split(/[,\s]+/).map(q => q.trim()).filter(Boolean);
     function winAdd() {
       const k = A.win.k, v = wdef(k), m = A.model;
@@ -1178,6 +1213,7 @@
               <span class="an-sep"></span>
               <button class="btn btn-ghost xs" data-act="an-tplopen">${T('Template', 'แม่แบบ')}</button><button class="btn btn-ghost xs" data-act="an-save">${T('Save', 'บันทึก')}</button><label class="btn btn-ghost xs an-open">${T('Open', 'เปิด')}<input type="file" accept=".json,application/json" id="an-file" hidden></label><button class="btn ${pro() ? 'btn-ghost' : 'btn-lock'} xs" data-act="an-report">${pro() ? T('Report', 'รายงาน') : '🔒 ' + T('Report', 'รายงาน')}</button>
               <button class="btn btn-hot xs" data-act="an-run">▶ ${T('Run', 'วิเคราะห์')}</button>
+              <button class="btn btn-ghost xs an-helpbtn" data-act="an-win" data-k="help" title="${T('Help and shortcuts (?)', 'วิธีใช้และปุ่มลัด (?)')}" aria-label="${T('Help', 'วิธีใช้')}">? ${T('Help', 'วิธีใช้')}</button>
             </div>
             <div class="an-canvas"><canvas id="anCv" tabindex="0" aria-label="${T('3D model view', 'มุมมองแบบจำลอง 3 มิติ')}"></canvas><span class="an-tag" id="anViewTag">${viewTag()}</span>
               <p class="an-hintbar"><span id="anHint">${hintBar()}</span> · kN, m</p></div>
@@ -1230,9 +1266,25 @@
           const tg = e.target, typing = tg && (tg.tagName === 'INPUT' || tg.tagName === 'SELECT' || tg.tagName === 'TEXTAREA');
           if ((e.ctrlKey || e.metaKey) && !typing && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); undo(e.shiftKey); return; }
           if ((e.ctrlKey || e.metaKey) && !typing && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); undo(true); return; }
+          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); doRun(); return; }
+          if (e.key === 'F1') { e.preventDefault(); openWin('help'); return; }
           if (typing) return;
-          if (e.key === 'Escape') { if (A.draw) { A.draw = null; redraw(); } else if (A.sel.n.length || A.sel.m.length) { A.sel = { n: [], m: [] }; selChanged(); } }
-          else if ((e.key === 'Delete' || e.key === 'Backspace') && (A.sel.n.length || A.sel.m.length)) { e.preventDefault(); deleteSel(); }
+          if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) { e.preventDefault(); selectBy('all'); return; }
+          if (e.ctrlKey || e.metaKey || e.altKey) return;
+          const tool = t => { const bt = document.querySelector(`.an-tools [data-act=an-tool][data-t=${t}]`); if (bt) bt.click(); };
+          const k = e.key.length === 1 ? e.key.toLowerCase() : e.key, c = A.cam, is3 = c.v === '3d';
+          if (k === 'Escape') { if (A.draw) { A.draw = null; redraw(); } else if (A.sel.n.length || A.sel.m.length) { A.sel = { n: [], m: [] }; selChanged(); } else if (A.win) { A.win = null; winRefresh(); } }
+          else if ((k === 'Delete' || k === 'Backspace') && (A.sel.n.length || A.sel.m.length)) { e.preventDefault(); deleteSel(); }
+          else if (k === '?') openWin('help');
+          else if (k === 's') tool('select'); else if (k === 'o') tool('orbit'); else if (k === 'n') tool('node'); else if (k === 'e') tool('member');
+          else if (k === '3' || k === 'p' || k === 'x' || k === 'y') { setView({ 3: '3d', p: 'plan', x: 'xz', y: 'yz' }[k]); ctx.render(); }
+          else if (k === 'f') { A.cam.k = null; redraw(); }
+          else if (k === '+' || k === '=' || k === '-' || k === '_') { const cv = $('#anCv'); zoomAt(cv.clientWidth / 2, cv.clientHeight / 2, k === '+' || k === '=' ? 1.2 : 1 / 1.2); }
+          else if (k.startsWith('Arrow')) { e.preventDefault(); const dx = k === 'ArrowLeft' ? -1 : k === 'ArrowRight' ? 1 : 0, dy = k === 'ArrowUp' ? -1 : k === 'ArrowDown' ? 1 : 0; if (is3) { c.yaw -= dx * 0.12; c.pitch = Math.max(-1.5, Math.min(1.5, c.pitch - dy * 0.12)); } else { const B = basis(c), st = 40 / c.k; c.t = addv(addv(c.t, B.r, dx * st), B.u, -dy * st); } redraw(); }
+          else if (k === 'w') { const bt = document.querySelector(`.an-tools [data-act=an-disp][data-d=${A.solid ? 'wire' : 'solid'}]`); if (bt) bt.click(); }
+          else if (k === 'l') { if (!A.loadsOn && !A.model.cases.some(q => q.id === A.lcase) && A.lcase !== 'all') A.lcase = (A.model.cases[0] || {}).id || ''; A.loadsOn = !A.loadsOn; syncLshow(); redraw(); }
+          else if (k === 't') { A.labels = !A.labels; redraw(); }
+          else if (k === 'i') selectBy('inv');
         });
       }
     }
