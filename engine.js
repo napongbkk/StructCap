@@ -742,6 +742,56 @@
     return { L, open };
   }
 
+  // ---- cap outline: rectangle round the piles, or (tri) a triangle following a 3-pile setting-out:
+  // sides parallel to the pile-to-pile lines and corners cut square to the bisector, all at the edge distance
+  function clipHalf(poly, [nx, ny, d]) {
+    const out = [], ins = p => nx * p[0] + ny * p[1] <= d + 1e-9;
+    poly.forEach((p, i) => {
+      const q = poly[(i + 1) % poly.length], a = ins(p), b = ins(q);
+      if (a) out.push(p);
+      if (a !== b) { const sp = nx * p[0] + ny * p[1] - d, sq2 = nx * q[0] + ny * q[1] - d, t = sp / (sp - sq2); out.push([p[0] + t * (q[0] - p[0]), p[1] + t * (q[1] - p[1])]); }
+    });
+    return out;
+  }
+  function capOutline(piles, e, tri) {
+    const xs = piles.map(p => p.x), ys = piles.map(p => p.y);
+    let poly = [[Math.min(...xs) - e, Math.min(...ys) - e], [Math.max(...xs) + e, Math.min(...ys) - e], [Math.max(...xs) + e, Math.max(...ys) + e], [Math.min(...xs) - e, Math.max(...ys) + e]];
+    if (tri && piles.length === 3) {
+      const cx = xs.reduce((a, b) => a + b) / 3, cy = ys.reduce((a, b) => a + b) / 3, hp = [];
+      piles.forEach((p, i) => {
+        const q = piles[(i + 1) % 3], o = piles[(i + 2) % 3];
+        let nx = q.y - p.y, ny = -(q.x - p.x); const l = Math.hypot(nx, ny); nx /= l; ny /= l;
+        if (nx * (o.x - p.x) + ny * (o.y - p.y) > 0) { nx = -nx; ny = -ny; }
+        hp.push([nx, ny, nx * p.x + ny * p.y + e]);
+        const lu = Math.hypot(p.x - cx, p.y - cy), ux = (p.x - cx) / lu, uy = (p.y - cy) / lu;
+        hp.push([ux, uy, ux * p.x + uy * p.y + e]);
+      });
+      const B = 10 * (Math.max(...xs.map(Math.abs), ...ys.map(Math.abs)) + e);
+      poly = [[-B, -B], [B, -B], [B, B], [-B, B]];
+      hp.forEach(h => { poly = clipHalf(poly, h); });
+    }
+    const px = poly.map(p => p[0]), py = poly.map(p => p[1]);
+    const X0 = Math.min(...px), X1 = Math.max(...px), Y0 = Math.min(...py), Y1 = Math.max(...py);
+    let area = 0; poly.forEach((p, i) => { const q = poly[(i + 1) % poly.length]; area += p[0] * q[1] - q[0] * p[1]; }); area = Math.abs(area) / 2;
+    const inside = (x, y) => poly.every((p, i) => { const q = poly[(i + 1) % poly.length]; return (q[0] - p[0]) * (y - p[1]) - (q[1] - p[1]) * (x - p[0]) >= -1e-6; });
+    if (!inside((X0 + X1) / 2, (Y0 + Y1) / 2)) poly.reverse();
+    // length of the cap cut by the line axis = t (x = t for axis 'x')
+    const chord = (axis, t) => {
+      const k = axis === 'x' ? 0 : 1, o = 1 - k, hits = [];
+      poly.forEach((p, i) => { const q = poly[(i + 1) % poly.length]; if ((p[k] - t) * (q[k] - t) <= 0 && p[k] !== q[k]) hits.push(p[o] + (t - p[k]) / (q[k] - p[k]) * (q[o] - p[o])); else if (p[k] === t) hits.push(p[o]); });
+      return hits.length ? Math.max(...hits) - Math.min(...hits) : 0;
+    };
+    // area and first moment about the section of the part of the cap beyond it (side sg)
+    const beyond = (axis, sg, sec) => {
+      const end = sg > 0 ? (axis === 'x' ? X1 : Y1) : -(axis === 'x' ? X0 : Y0), L = end - sec;
+      if (L <= 0) return { A: 0, M: 0 };
+      const N = 160, du = L / N; let A = 0, M = 0;
+      for (let i = 0; i < N; i++) { const u = (i + 0.5) * du, c = chord(axis, sg * (sec + u)); A += c * du; M += c * u * du; }
+      return { A, M };
+    };
+    return { poly, tri: !!(tri && piles.length === 3), X0, X1, Y0, Y1, Lx: X1 - X0, Ly: Y1 - Y0, area, chord, beyond, inside: (x, y) => inside(x, y) };
+  }
+
   function designPileCap(code, inp, lang) {
     const R = new Rep(lang), L = (a, b) => R.L(a, b);
     const m = material(code, inp.mat), g = inp.geo, A = inp.act;
@@ -749,20 +799,24 @@
     const add = (id, name, Ed, Rd, unit, ur) => checks.push({ id, name, Ed, Rd, unit, ur: ur !== undefined ? ur : (Rd > 0 ? Math.abs(Ed) / Rd : 99) });
     const piles = pileLayout({ layout: g.layout, s: g.s, nx: g.nx, ny: g.ny, sy: g.sy });
     const xs = piles.map(p => p.x), ys = piles.map(p => p.y);
-    const X1 = Math.max(...xs) + g.edge, X0 = Math.min(...xs) - g.edge, Y1 = Math.max(...ys) + g.edge, Y0 = Math.min(...ys) - g.edge;
-    const Lx = X1 - X0, Ly = Y1 - Y0, H = g.H;
+    const outl = capOutline(piles, g.edge, code === 'AS' && g.layout === '3'), tri = outl.tri;
+    const { X0, X1, Y0, Y1, Lx, Ly } = outl, H = g.H;
     const dx = H - g.cb - g.barX.d / 2, dy = dx - g.barX.d / 2 - g.barY.d / 2, dav = (dx + dy) / 2;
     const n = piles.length;
 
     R.sec(L('Materials & design strengths', 'วัสดุและกำลังออกแบบ'), code === 'EC2' ? '§5.1' : code === 'AS' ? '§3.1' : '19.2');
     materialRows(R, m, lang);
     R.sec(L('Geometry', 'รูปทรงฐานราก'), '');
-    R.eq(L('Cap plan', 'ขนาดฐานราก'), 'L_x × L_y × H', f(Lx, 0) + ' × ' + f(Ly, 0) + ' × ' + f(H, 0), 'mm');
+    if (tri) {
+      R.txt(L('Triangular cap following the pile setting-out: sides parallel to the lines between piles and corners cut square to the bisector, both at the edge distance from the pile centres.', 'ฐานรากรูปสามเหลี่ยมตามผังเข็ม: ด้านขนานกับแนวเส้นระหว่างเข็ม และตัดมุมตั้งฉากกับเส้นแบ่งครึ่งมุม โดยห่างจากศูนย์เข็มเท่ากับระยะขอบ'));
+      R.eq(L('Cap plan (overall)', 'ขนาดฐานราก (รวม)'), 'L_x × L_y × H', f(Lx, 0) + ' × ' + f(Ly, 0) + ' × ' + f(H, 0), 'mm');
+      R.eq(L('Plan area', 'พื้นที่ผัง'), 'A_cap', outl.area / 1e6, 'm²');
+    } else R.eq(L('Cap plan', 'ขนาดฐานราก'), 'L_x × L_y × H', f(Lx, 0) + ' × ' + f(Ly, 0) + ' × ' + f(H, 0), 'mm');
     R.eq(L('Piles', 'เสาเข็ม'), n + ' × Ø' + g.Dp + ', s = ' + g.s, '', 'mm');
     R.eq('d_x, d_y', L('Effective depths to bottom bars', 'ความลึกประสิทธิผลถึงเหล็กล่าง'), f(dx, 0) + ', ' + f(dy, 0), 'mm');
 
     // reactions
-    const W = g.gc * Lx * Ly * H / 1e9; // kN
+    const W = g.gc * outl.area * H / 1e9; // kN
     const gG = +g.gG || 1.35;
     const Nu = (+A.N || 0) + gG * W, Mxu = +A.Mx || 0, Myu = +A.My || 0;
     const Ns = (+A.Ns || 0) + W, Mxs = +A.Mxs || 0, Mys = +A.Mys || 0;
@@ -770,7 +824,7 @@
     const react = (NN, MX, MY) => piles.map(p => NN / n + (sy2 > 0 ? MX * (p.y / 1e3) / sy2 : 0) + (sx2 > 0 ? MY * (p.x / 1e3) / sx2 : 0));
     const Pu = react(Nu, Mxu, Myu), Ps = react(Ns, Mxs, Mys);
     R.sec(L('Pile reactions', 'แรงปฏิกิริยาเสาเข็ม'), L('Rigid cap', 'ฐานรากแข็ง'));
-    R.eq(L('Cap self-weight', 'น้ำหนักฐานราก'), 'W = γ_c·L_x·L_y·H', W, 'kN');
+    R.eq(L('Cap self-weight', 'น้ำหนักฐานราก'), tri ? 'W = γ_c·A_cap·H' : 'W = γ_c·L_x·L_y·H', W, 'kN');
     R.eq('P_i', 'P_i = ΣN/n ± M_x·y_i/Σy² ± M_y·x_i/Σx²', '', '');
     piles.forEach((p, i) => R.eq(p.id + ' (' + f(p.x, 0) + ', ' + f(p.y, 0) + ')', 'ULS / SLS', f(Pu[i], 1) + ' / ' + f(Ps[i], 1), 'kN'));
     const Psmax = Math.max(...Ps), Pumax = Math.max(...Pu), Pmin = Math.min(...Pu);
@@ -784,23 +838,28 @@
     const Asx = nbx * barA(g.barX.d), Asy = nby * barA(g.barY.d);
     const phiB = code === 'EC2' ? 1 : code === 'AS' ? 0.85 : 0.9;
     const cx = g.cx, cy = g.cy;
-    const res = { piles, Pu, Ps, Lx, Ly, X0, X1, Y0, Y1, dx, dy, n, Asx, Asy, nbx, nby };
+    const res = { piles, Pu, Ps, Lx, Ly, X0, X1, Y0, Y1, dx, dy, n, Asx, Asy, nbx, nby, tri, poly: outl.poly, area: outl.area };
+    // bars of one direction crossing a section of width B (bars laid at spacing s inside the side cover)
+    const nCross = (B, s) => B > 2 * g.cs ? Math.floor((B - 2 * g.cs) / s) + 1 : 0;
+    const crd = (axis, t) => tri ? outl.chord(axis, t) : (axis === 'x' ? Ly : Lx);
 
-    // ---- flexure (beam method)
-    const faceMoment = (axis) => {
-      const c = axis === 'x' ? cx : cy, B = axis === 'x' ? Ly : Lx, Lh = (axis === 'x' ? Lx : Ly) / 2;
-      let best = 0;
+    // ---- flexure (beam method), each face of the column; section width and bars from the cap outline
+    const mRd = (As, B, d) => { const a = As * m.fsd / (m.sigc * B); return phiB * As * m.fsd * (d - a / 2) / 1e6; };
+    const faceFlex = (axis) => {
+      const c = axis === 'x' ? cx : cy, d = axis === 'x' ? dx : dy, bar = axis === 'x' ? g.barX : g.barY;
+      let best = null;
       [1, -1].forEach(sg => {
         let M = 0; piles.forEach((p, i) => { const t = sg * (axis === 'x' ? p.x : p.y) - c / 2; if (t > 0) M += Pu[i] * t / 1e3; });
-        const ov = Math.max(0, (sg > 0 ? (axis === 'x' ? X1 : Y1) : -(axis === 'x' ? X0 : Y0)) - c / 2);
-        M -= gG * g.gc * B * H / 1e9 * ov * ov / 2 / 1e3;
-        best = Math.max(best, M);
+        M -= gG * g.gc * H * outl.beyond(axis, sg, c / 2).M / 1e9 / 1e3;
+        M = Math.max(0, M);
+        const B = crd(axis, sg * c / 2), nb = tri ? nCross(B, bar.s) : (axis === 'x' ? nbx : nby), As = tri ? nb * barA(bar.d) : (axis === 'x' ? Asx : Asy), MR = As > 0 ? mRd(As, B, d) : 0;
+        const ur = MR > 0 ? M / MR : (M > 0 ? 99 : 0);
+        if (!best || ur > best.ur) best = { M, MR, B, nb, As, ur, sg };
       });
       return best;
     };
-    const mRd = (As, B, d) => { const a = As * m.fsd / (m.sigc * B); return phiB * As * m.fsd * (d - a / 2) / 1e6; };
-    const Mfx = faceMoment('x'), Mfy = faceMoment('y');
-    const MRx = mRd(Asx, Ly, dx), MRy = mRd(Asy, Lx, dy);
+    const fx = faceFlex('x'), fy = faceFlex('y');
+    const Mfx = fx.M, Mfy = fy.M, MRx = fx.MR, MRy = fy.MR;
     res.Mfx = Mfx; res.Mfy = Mfy;
 
     // ---- STM
@@ -884,8 +943,14 @@
       R.sec(L('Flexure — beam method at column face', 'การดัด — วิธีคานที่ผิวเสา'), code === 'EC2' ? '§8.1, §9.8' : code === 'AS' ? '§8.1, §12.5' : '13.2.7, 22.3');
       R.eq('M_x-face', 'Σ P_i·(x_i − c_x/2) − γ_G·w_cap·l²/2', Mfx, 'kNm');
       R.eq('M_y-face', 'Σ P_i·(y_i − c_y/2) − γ_G·w_cap·l²/2', Mfy, 'kNm');
-      R.eq(L('Bars in x', 'เหล็กแนว x'), nbx + barName(code, g.barX.d) + ' (@' + g.barX.s + ')', Asx, 'mm²');
-      R.eq(L('Bars in y', 'เหล็กแนว y'), nby + barName(code, g.barY.d) + ' (@' + g.barY.s + ')', Asy, 'mm²');
+      if (tri) {
+        R.eq(L('Section width at face x / y', 'ความกว้างหน้าตัดที่ผิวเสา x / y'), 'B = ' + L('chord of the cap outline', 'ความยาวคอร์ดของรูปฐานราก'), f(fx.B, 0) + ' / ' + f(fy.B, 0), 'mm');
+        R.eq(L('Bars in x crossing the section', 'เหล็กแนว x ที่ตัดผ่านหน้าตัด'), fx.nb + barName(code, g.barX.d) + ' (@' + g.barX.s + ')', fx.As, 'mm²');
+        R.eq(L('Bars in y crossing the section', 'เหล็กแนว y ที่ตัดผ่านหน้าตัด'), fy.nb + barName(code, g.barY.d) + ' (@' + g.barY.s + ')', fy.As, 'mm²');
+      } else {
+        R.eq(L('Bars in x', 'เหล็กแนว x'), nbx + barName(code, g.barX.d) + ' (@' + g.barX.s + ')', Asx, 'mm²');
+        R.eq(L('Bars in y', 'เหล็กแนว y'), nby + barName(code, g.barY.d) + ' (@' + g.barY.s + ')', Asy, 'mm²');
+      }
       R.eq(code === 'EC2' ? 'M_Rd,x' : 'φM_n,x', (code === 'EC2' ? '' : 'φ·') + 'A_s·f_s·(d − a/2), a = A_s f_s/(' + (code === 'EC2' ? 'η f_cd' : code === 'AS' ? 'α₂ f\'c' : '0.85 f\'c') + '·B)', MRx, 'kNm');
       R.eq(code === 'EC2' ? 'M_Rd,y' : 'φM_n,y', '', MRy, 'kNm');
       add('Mfx', L('Flexure x (column face)', 'การดัดแกน x (ผิวเสา)'), Mfx, MRx, 'kNm', R.chk(L('Flexure x', 'การดัด x'), Mfx, MRx, 'kNm'));
@@ -893,34 +958,40 @@
     }
     // min steel
     let rminc = code === 'EC2' ? Math.max(0.26 * m.fctm / m.fy, 0.0013) : code === 'AS' ? 0.0019 : 0.0018 * Math.min(1, 420 / m.fy) * H / dx;
-    const Asminx = rminc * Ly * dx, Asminy = rminc * Lx * dy;
-    add('Asmin', L('Min. steel (x / y)', 'เหล็กน้อยสุด (x / y)'), Math.max(Asminx / Asx, Asminy / Asy), 1, '', Math.max(Asminx / Asx, Asminy / Asy));
+    const Asminx = rminc * fx.B * dx, Asminy = rminc * fy.B * dy, urMin = Math.max(fx.As > 0 ? Asminx / fx.As : 99, fy.As > 0 ? Asminy / fy.As : 99);
+    add('Asmin', L('Min. steel (x / y)', 'เหล็กน้อยสุด (x / y)'), urMin, 1, '', urMin);
 
     // ---- one-way shear at d from column face
     R.sec(L('One-way (beam) shear at d from column face', 'แรงเฉือนแบบคานที่ระยะ d จากผิวเสา'), code === 'EC2' ? '§8.2.2' : code === 'AS' ? '§8.2.4' : '13.2.7.2, 22.5');
     const oneWay = axis => {
-      const c = axis === 'x' ? cx : cy, d = axis === 'x' ? dx : dy, B = axis === 'x' ? Ly : Lx;
-      let best = 0;
+      const c = axis === 'x' ? cx : cy, d = axis === 'x' ? dx : dy, bar = axis === 'x' ? g.barX : g.barY;
+      let best = null;
       [1, -1].forEach(sg => {
-        const sec = c / 2 + d; let V = 0;
+        const sec = c / 2 + d, B = crd(axis, sg * sec);
+        if (B <= 0) return;
+        let V = 0;
         piles.forEach((p, i) => { const t = sg * (axis === 'x' ? p.x : p.y) - sec; const w = clamp((t + g.Dp / 2) / g.Dp, 0, 1); V += Pu[i] * w; });
-        const ov = Math.max(0, (sg > 0 ? (axis === 'x' ? X1 : Y1) : -(axis === 'x' ? X0 : Y0)) - sec);
-        V -= gG * g.gc * B * H * ov / 1e9;
-        best = Math.max(best, V);
+        V -= gG * g.gc * H * outl.beyond(axis, sg, sec).A / 1e9;
+        V = Math.max(0, V);
+        const As = tri ? nCross(B, bar.s) * barA(bar.d) : (axis === 'x' ? Asx : Asy), rho = Math.min(0.02, As / (B * d));
+        let VRd, lab, expr;
+        if (code === 'EC2') { const zz = 0.9 * d; const t = Math.max(0.66 / m.gV * cbrt(100 * rho * m.fc * m.ddg / d), 11 / m.gV * sq(m.fc / m.fyd * m.ddg / d)); VRd = t * B * zz / 1e3; lab = 'V_Rd,c,' + axis; expr = 'τ_Rd,c·b·z'; }
+        else if (code === 'AS') { const dv = Math.max(0.72 * H, 0.9 * d), kv = Math.min(0.1, 200 / (1000 + 1.3 * dv)); VRd = 0.75 * kv * B * dv * Math.min(8, sq(m.fc)) / 1e3; lab = 'φV_uc,' + axis; expr = 'φ·k_v·b·d_v·√f\'c, k_v = ' + f(kv, 3); }
+        else { const ls = Math.min(1, sq(2 / (1 + 0.004 * d))); VRd = 0.75 * 0.66 * ls * cbrt(rho) * m.sqfc * B * d / 1e3; lab = 'φV_c,' + axis; expr = 'φ·0.66·λ_s·ρ^{1/3}·√f\'c·b·d, λ_s = ' + f(ls, 3); }
+        const ur = V / VRd;
+        if (!best || ur > best.ur) best = { V, VRd, B, lab, expr, ur };
       });
-      const As = axis === 'x' ? Asx : Asy, rho = Math.min(0.02, As / (B * d));
-      let VRd;
-      if (code === 'EC2') { const zz = 0.9 * d; const t = Math.max(0.66 / m.gV * cbrt(100 * rho * m.fc * m.ddg / d), 11 / m.gV * sq(m.fc / m.fyd * m.ddg / d)); VRd = t * B * zz / 1e3; R.eq('V_Rd,c,' + axis, 'τ_Rd,c·b·z', VRd, 'kN'); }
-      else if (code === 'AS') { const dv = Math.max(0.72 * H, 0.9 * d), kv = Math.min(0.1, 200 / (1000 + 1.3 * dv)); VRd = 0.75 * kv * B * dv * Math.min(8, sq(m.fc)) / 1e3; R.eq('φV_uc,' + axis, 'φ·k_v·b·d_v·√f\'c, k_v = ' + f(kv, 3), VRd, 'kN'); }
-      else { const ls = Math.min(1, sq(2 / (1 + 0.004 * d))); VRd = 0.75 * 0.66 * ls * cbrt(rho) * m.sqfc * B * d / 1e3; R.eq('φV_c,' + axis, 'φ·0.66·λ_s·ρ^{1/3}·√f\'c·b·d, λ_s = ' + f(ls, 3), VRd, 'kN'); }
-      const u = R.chk(L('Beam shear ', 'เฉือนแบบคาน ') + axis, best, VRd, 'kN');
-      add('V1' + axis, L('One-way shear ', 'เฉือนแบบคาน ') + axis, best, VRd, 'kN', u);
+      if (!best) { R.txt(L('Axis ', 'แกน ') + axis + L(': the section at d from the column face lies outside the cap — no one-way shear check needed.', ': หน้าตัดที่ระยะ d จากผิวเสาอยู่นอกฐานราก — ไม่ต้องตรวจเฉือนแบบคาน')); return; }
+      if (tri) R.eq(L('Section width ', 'ความกว้างหน้าตัด ') + axis, 'b = ' + L('chord of the cap outline at the section', 'ความยาวคอร์ดของรูปฐานรากที่หน้าตัด'), best.B, 'mm');
+      R.eq(best.lab, best.expr, best.VRd, 'kN');
+      const u = R.chk(L('Beam shear ', 'เฉือนแบบคาน ') + axis, best.V, best.VRd, 'kN');
+      add('V1' + axis, L('One-way shear ', 'เฉือนแบบคาน ') + axis, best.V, best.VRd, 'kN', u);
     };
     oneWay('x'); oneWay('y');
 
     // ---- punching at column
     R.sec(L('Punching shear — column', 'แรงเฉือนทะลุ — เสา'), code === 'EC2' ? '§8.4' : code === 'AS' ? '§9.3' : '22.6');
-    const rhoP = Math.min(0.02, sq((Asx / (Ly * dx)) * (Asy / (Lx * dy))));
+    const rhoP = Math.min(0.02, sq((fx.As / (fx.B * dx)) * (fy.As / (fy.B * dy))));
     let Vp = 0, VpR = 0, urP = 0;
     const b0 = 2 * (cx + cy);
     if (code === 'EC2') {
@@ -954,18 +1025,23 @@
     R.sec(L('Punching shear — corner / edge pile', 'แรงเฉือนทะลุ — เสาเข็มริม/มุม'), code === 'EC2' ? '§8.4' : code === 'AS' ? '§9.3' : '22.6');
     let worstPile = null, skipped = false;
     piles.forEach((p, i) => {
-      const a = g.Dp / 2 + dav / 2, cp = clippedPerim(p.x, p.y, a, X0, X1, Y0, Y1);
+      const a = g.Dp / 2 + dav / 2;
+      let cp;
+      if (tri) { // circular perimeter at d/2 from the pile face, the part inside the cap outline
+        const N = 360; let inn = 0; for (let k = 0; k < N; k++) { const t = 2 * PI * (k + 0.5) / N; if (outl.inside(p.x + a * Math.cos(t), p.y + a * Math.sin(t))) inn++; }
+        cp = { L: 2 * PI * a * inn / N, open: inn < N ? 1 : 0, circ: true };
+      } else cp = clippedPerim(p.x, p.y, a, X0, X1, Y0, Y1);
       if (cp.L <= 0 || cp.open >= 3) { skipped = true; return; }
       let cap;
       if (code === 'EC2') cap = Math.min(0.6 / m.gV * cbrt(100 * rhoP * m.fc * m.ddg / (res.apd || dav)), 0.5 / m.gV * sq(m.fc)) * cp.L * dav / 1e3;
       else if (code === 'AS') cap = 0.7 * 0.34 * sq(m.fc) * cp.L * dav / 1e3;
       else { const as = cp.open >= 2 ? 20 : cp.open === 1 ? 30 : 40, ls = Math.min(1, sq(2 / (1 + 0.004 * dav))); cap = 0.75 * Math.min(0.33, 0.083 * (2 + as * dav / cp.L)) * ls * m.sqfc * cp.L * dav / 1e3; }
       const u = Pu[i] / cap;
-      if (!worstPile || u > worstPile.u) worstPile = { p, u, cap, P: Pu[i], L: cp.L };
+      if (!worstPile || u > worstPile.u) worstPile = { p, u, cap, P: Pu[i], L: cp.L, a, circ: !!cp.circ };
     });
     if (worstPile) {
       R.eq(L('Critical pile', 'เข็มวิกฤต'), worstPile.p.id, '', '');
-      R.eq(L('Perimeter (edges clipped)', 'เส้นรอบรูป (ตัดขอบ)'), 'u_p', worstPile.L, 'mm');
+      R.eq(L('Perimeter (edges clipped)', 'เส้นรอบรูป (ตัดขอบ)'), worstPile.circ ? L('u_p = circle at d_om/2 from the pile face, part inside the cap', 'u_p = วงกลมที่ระยะ d_om/2 จากผิวเข็ม ส่วนที่อยู่ในฐานราก') : 'u_p', worstPile.L, 'mm');
       const u = R.chk(L('Pile punching', 'เฉือนทะลุเข็ม'), worstPile.P, worstPile.cap, 'kN');
       add('pp', L('Punching at pile', 'เฉือนทะลุที่เข็ม'), worstPile.P, worstPile.cap, 'kN', u);
     }
@@ -1006,5 +1082,5 @@
   function barName(code, d) { return code === 'EC2' ? 'H' + d : code === 'AS' ? 'N' + d : 'DB' + d; }
   function linkName(code, d, s) { return (code === 'TH' ? (d <= 9 ? 'RB' : 'DB') : code === 'AS' ? 'N' : 'H') + d + '@' + s; }
 
-  G.RC = { designBeam, designColumn, designPileCap, material, layoutBeam, layoutColumn, pileLayout, f, barName, linkName, KSC, TF, barA, Rep };
+  G.RC = { designBeam, designColumn, designPileCap, material, layoutBeam, layoutColumn, pileLayout, capOutline, f, barName, linkName, KSC, TF, barA, Rep };
 })(typeof window !== 'undefined' ? window : globalThis);

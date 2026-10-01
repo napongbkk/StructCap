@@ -415,6 +415,12 @@ tr.ok .ur i{background:var(--ok)} tr.warn .ur i{background:var(--warn)} tr.bad .
 .btn.struck{text-decoration:line-through;text-decoration-thickness:2px;opacity:.5;cursor:default;pointer-events:none}
 .promo-note{font-family:var(--f-disp);font-weight:600;color:var(--acc)}
 .s-tri{fill:none;stroke:var(--blue);stroke-width:3;opacity:.7}
+.s-colp{fill:color-mix(in srgb,var(--ink) 12%,transparent);stroke:var(--ink);stroke-width:1.2;stroke-dasharray:4 3}
+.s-stie{stroke:var(--blue);stroke-width:4;stroke-linecap:round;opacity:.85} .s-stop{stroke:#965cdc;stroke-width:1.6;opacity:.85} .s-strut.over,.s-stie.over,.s-stop.over{stroke:var(--bad,#d42a6b)}
+.s-tnode{fill:var(--ink)} .s-tid{fill:var(--blue);font:600 10px var(--f-mono)}
+.legend i.s-stie-k{height:4px;border-radius:2px;background:var(--blue)} .legend i.s-stop-k{height:2px;border-radius:1px;background:#965cdc}
+.rp-3d.one{grid-template-columns:minmax(0,1fr);max-width:620px}
+.stm-t td,.stm-t th{white-space:nowrap}
 .pdf-host{position:absolute;left:-12000px;top:0;width:780px;pointer-events:none;background:#fff}
 .pdf-host .report{width:780px;border:0;padding:0 6px}
 
@@ -486,7 +492,9 @@ tr.ok .ur i{background:var(--ok)} tr.warn .ur i{background:var(--warn)} tr.bad .
 <script src="config.js"></script>
 <script src="engine.js"></script>
 <script src="gantry.js"></script>
+<script src="stm3d.js"></script>
 <script src="view3d.js"></script>
 <script src="app.js"></script>
+
 </body>
 </html>

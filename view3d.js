@@ -24,8 +24,19 @@
 
   // ------------------------------------------------------------------ mesh
   class Mesh {
-    constructor() { this.t = []; this.tag = ''; }
-    tri(a, b, c, col, sa, sb, sc) { this.t.push({ p: [a, b, c], col, s: sa == null ? null : [sa, sb, sc], tag: this.tag }); }
+    constructor() { this.t = []; this.l = []; this.tag = ''; this.alpha = null; }
+    tri(a, b, c, col, sa, sb, sc) { const t = { p: [a, b, c], col, s: sa == null ? null : [sa, sb, sc], tag: this.tag }; if (this.alpha != null) t.a = this.alpha; this.t.push(t); }
+    line(a, b, col, w) { this.l.push({ p: [a, b], col, w: w || 1.2 }); }
+    // cylinder between two points (radius r), scalar s for colouring and picking
+    rod(a, b, r, col, s, n) {
+      const d = norm(sub(b, a)), ref = Math.abs(d[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0], e1 = norm(cross(d, ref)), e2 = cross(d, e1), v = sub(b, a);
+      this.tube(circle(r, n || 10), [0, 1], (u, w, t) => [0, 1, 2].map(k => a[k] + t * v[k] + u * e1[k] + w * e2[k]), col, s ? () => s : null, true);
+    }
+    // octahedron marker
+    blob(c, r, col, s) {
+      const P = [[r, 0, 0], [-r, 0, 0], [0, r, 0], [0, -r, 0], [0, 0, r], [0, 0, -r]].map(q => [c[0] + q[0], c[1] + q[1], c[2] + q[2]]);
+      [[0, 2, 4], [2, 1, 4], [1, 3, 4], [3, 0, 4], [2, 0, 5], [1, 2, 5], [3, 1, 5], [0, 3, 5]].forEach(([i, j, k]) => this.tri(P[i], P[j], P[k], col, s, s, s));
+    }
     quad(a, b, c, d, col, sa, sb, sc, sd) { this.tri(a, b, c, col, sa, sb, sc); this.tri(a, c, d, col, sa, sc, sd); }
     // extrude closed profile [[a,b],...] along stations; place(a,b,t) -> [x,y,z]; sf(x,y,z) -> scalar|null
     tube(prof, stations, place, col, sf, caps) {
@@ -50,6 +61,16 @@
         const t0 = -1 + 2 * a / n, t1 = -1 + 2 * (a + 1) / n;
         [[-1, 0], [1, 0], [0, -1], [0, 1]].forEach(([sx, sy]) => sx ? this.quad(P(sx, t0, -1), P(sx, t1, -1), P(sx, t1, 1), P(sx, t0, 1), col) : this.quad(P(t0, sy, -1), P(t1, sy, -1), P(t1, sy, 1), P(t0, sy, 1), col));
       }
+    }
+    // disc (cylinder) centred at c, radius R, half height hz; faces split into rings / sectors for the depth sort
+    disc(c, R, hz, col, nr, nt) {
+      nr = nr || 4; nt = nt || 40;
+      const P = (rr, k, z) => [c[0] + rr * Math.cos(2 * PI * k / nt), c[1] + rr * Math.sin(2 * PI * k / nt), c[2] + z];
+      for (let i = 0; i < nr; i++) for (let k = 0; k < nt; k++) {
+        const r0 = R * i / nr, r1 = R * (i + 1) / nr;
+        [hz, -hz].forEach(z => i === 0 ? this.tri([c[0], c[1], c[2] + z], P(r1, k, z), P(r1, k + 1, z), col) : this.quad(P(r0, k, z), P(r1, k, z), P(r1, k + 1, z), P(r0, k + 1, z), col));
+      }
+      for (let k = 0; k < nt; k++) this.quad(P(R, k, -hz), P(R, k + 1, -hz), P(R, k + 1, hz), P(R, k, hz), col);
     }
     // convex polygon poly [[r,z],...] in the plane spanned by nr (horizontal) and z, extruded ±th/2 along nt
     prism(o, nr, nt, poly, th, col, sf) {
@@ -190,14 +211,23 @@
         const sh = 0.42 + 0.58 * Math.abs(dot(nrm, L));
         let col = t.col;
         if (t.s && this.color) col = this.color(t.s);
-        list.push({ q, z: zs / 3, t, c: 'rgb(' + Math.round(col[0] * sh) + ',' + Math.round(col[1] * sh) + ',' + Math.round(col[2] * sh) + ')' });
+        const rgb = Math.round(col[0] * sh) + ',' + Math.round(col[1] * sh) + ',' + Math.round(col[2] * sh);
+        list.push({ q, z: zs / 3, t, c: t.a != null ? 'rgba(' + rgb + ',' + t.a + ')' : 'rgb(' + rgb + ')', a: t.a != null });
+      }
+      for (const l of (this.mesh.l || [])) {
+        const q = [], d0 = sub(l.p[0], pos), d1 = sub(l.p[1], pos), z0 = dot(d0, f), z1 = dot(d1, f);
+        if (z0 < near || z1 < near) continue;
+        q.push([W / 2 + foc * dot(d0, r) / z0, H / 2 - foc * dot(d0, u) / z0], [W / 2 + foc * dot(d1, r) / z1, H / 2 - foc * dot(d1, u) / z1]);
+        list.push({ q, z: (z0 + z1) / 2 - 0.02, line: true, w: l.w, c: 'rgb(' + l.col.join(',') + ')' });
       }
       list.sort((a, b) => b.z - a.z);
-      this.last = list;
-      ctx.lineJoin = 'round'; ctx.lineWidth = 0.6;
+      this.last = list.filter(t => !t.line && !t.a);
+      ctx.lineJoin = 'round';
       for (const t of list) {
+        if (t.line) { ctx.lineWidth = t.w; ctx.strokeStyle = t.c; ctx.beginPath(); ctx.moveTo(t.q[0][0], t.q[0][1]); ctx.lineTo(t.q[1][0], t.q[1][1]); ctx.stroke(); continue; }
         ctx.beginPath(); ctx.moveTo(t.q[0][0], t.q[0][1]); ctx.lineTo(t.q[1][0], t.q[1][1]); ctx.lineTo(t.q[2][0], t.q[2][1]); ctx.closePath();
-        ctx.fillStyle = t.c; ctx.fill(); ctx.strokeStyle = t.c; ctx.stroke();
+        ctx.fillStyle = t.c; ctx.fill();
+        if (!t.a) { ctx.lineWidth = 0.6; ctx.strokeStyle = t.c; ctx.stroke(); }
       }
       // pins: maximum markers and the picked point
       const proj = p => { const d = sub(p, pos), z = dot(d, f); return z < near ? null : [W / 2 + foc * dot(d, r) / z, H / 2 - foc * dot(d, u) / z]; };
@@ -256,10 +286,11 @@
     // ---- ground and foundation
     const P = mm(b.plateSide), fz = -mm(x.tp) - 0.05;
     m.tag = 'found';
-    m.slab([0, 0, fz - 0.3], [P * 0.95, P * 0.95, 0.3], concrete, 10);
+    const circP = b.shape === 'circle';
+    if (circP) m.disc([0, 0, fz - 0.3], P * 0.95, 0.3, concrete, 6, 48); else m.slab([0, 0, fz - 0.3], [P * 0.95, P * 0.95, 0.3], concrete, 10);
     // ---- base plate
     m.tag = 'plate';
-    m.slab([0, 0, -mm(x.tp) / 2], [P / 2, P / 2, mm(x.tp) / 2], dark, 8);
+    if (circP) m.disc([0, 0, -mm(x.tp) / 2], P / 2, mm(x.tp) / 2, dark, 5, 48); else m.slab([0, 0, -mm(x.tp) / 2], [P / 2, P / 2, mm(x.tp) / 2], dark, 8);
     // ---- anchor bolts (with nuts)
     const bd = +x.db.slice(1) / 1000, BO = G.GANTRY.BOLTS;
     const Mop0 = cs ? cs.Fs * g.zs + cs.wa * Lr0 * g.H + cs.wc * g.H * g.H / 2 : 0, Mip0 = cs ? cs.Fz * cs.xz : 0;
@@ -342,6 +373,45 @@
     const top = Math.min(Ls * 0.45, Math.max(Ls * 0.3, 0.025)), out = Math.min(hs * 0.6, Math.max(hs * 0.3, 0.025));
     return [[0, 0], [Ls, 0], [Ls, out], [top, hs], [0, hs]];
   }
+  // ------------------------------------------------------------------ pile cap strut-and-tie scene (mm → m)
+  // opts: { mode: 'ur' | 'type' }; members carry s = { mpa: |N| kN, ur, m: index } for colour and picking
+  function stmScene(r, opts, theme) {
+    const m = new Mesh(), mm = v => v / 1000, H = mm(r.H), P = r.poly.map(([x, y]) => [mm(x), mm(y)]), n = P.length;
+    const g = r.input.geo, edge = theme.edge || [120, 130, 150];
+    // translucent cap
+    m.tag = 'cap'; m.alpha = 0.13;
+    for (let i = 1; i < n - 1; i++) { m.tri([P[0][0], P[0][1], 0], [P[i][0], P[i][1], 0], [P[i + 1][0], P[i + 1][1], 0], theme.concrete); m.tri([P[0][0], P[0][1], H], [P[i][0], P[i][1], H], [P[i + 1][0], P[i + 1][1], H], theme.concrete); }
+    P.forEach((p, i) => { const q = P[(i + 1) % n]; m.quad([p[0], p[1], 0], [q[0], q[1], 0], [q[0], q[1], H], [p[0], p[1], H], theme.concrete); });
+    m.alpha = null;
+    P.forEach((p, i) => { const q = P[(i + 1) % n]; [0, H].forEach(z => m.line([p[0], p[1], z], [q[0], q[1], z], edge, 1.2)); m.line([p[0], p[1], 0], [p[0], p[1], H], edge, 1.2); });
+    // column stub and piles
+    const cx = mm(g.cx) / 2, cy = mm(g.cy) / 2, ch = Math.max(0.5, H * 0.5);
+    m.tag = 'column'; m.alpha = 0.35;
+    m.box([0, 0, H + ch / 2], [cx, cy, ch / 2], [1, 0, 0], [0, 1, 0], [0, 0, 1], theme.steel);
+    m.alpha = null;
+    [[-cx, -cy], [cx, -cy], [cx, cy], [-cx, cy]].forEach(([x, y], i, a) => { const [x2, y2] = a[(i + 1) % 4]; m.line([x, y, H], [x2, y2, H], edge, 1); m.line([x, y, H + ch], [x2, y2, H + ch], edge, 1); m.line([x, y, H], [x, y, H + ch], edge, 1); });
+    m.tag = 'pile';
+    const pl = Math.max(0.6, H * 0.6);
+    r.piles.forEach(p => m.tube(circle(mm(g.Dp) / 2, 18), [-pl, 0.05], (a, b, t) => [mm(p.x) + a, mm(p.y) + b, t], theme.pile || [176, 168, 150], null, true));
+    // members
+    const Nmax = Math.max(...r.members.map(e => Math.abs(e.N)), 1), rmin = 0.012, rmax = Math.max(0.035, mm(g.Dp) * 0.12);
+    const nodeP = i => [mm(r.nodes[i].x), mm(r.nodes[i].y), mm(r.nodes[i].z)];
+    let maxU = null;
+    r.members.forEach((e, k) => {
+      m.tag = 'm' + k;
+      const s = { mpa: Math.abs(e.N), ur: e.ur, m: k }, rr = rmin + (rmax - rmin) * Math.sqrt(Math.abs(e.N) / Nmax);
+      const col = e.type === 'tie' ? (e.N > 0 ? theme.tie : theme.idle) : e.type === 'top' ? theme.top : theme.strut;
+      m.rod(nodeP(e.a), nodeP(e.b), rr, col, s, 12);
+      if (!maxU || e.ur > maxU.e.ur) maxU = { e, k, p: nodeP(e.a).map((v, i) => (v + nodeP(e.b)[i]) / 2) };
+    });
+    m.tag = 'node';
+    r.nodes.forEach(q => m.blob([mm(q.x), mm(q.y), mm(q.z)], rmax * 1.25, theme.node || [40, 48, 66]));
+    return { mesh: m, maxU };
+  }
+  function stmPreset(r) {
+    const mm = v => v / 1000, L = Math.max(mm(r.Lx), mm(r.Ly));
+    return { yaw: -1.05, pitch: 0.42, dist: 1.9 * L + 2.2, tx: 0, ty: 0, tz: mm(r.H) * 0.45 };
+  }
   function presets(r) {
     const g = r.geo, mm = v => v / 1000, P = mm(r.base.plateSide);
     return {
@@ -350,5 +420,5 @@
       arm: { yaw: -0.7, pitch: 0.3, dist: Math.max(1.4, mm(r.arm.D) * 7.5), tx: mm(g.x0 + (r.conn.type === 'bolt' ? r.conn.Lst * 0.6 : 150)), ty: 0, tz: mm(g.H) }
     };
   }
-  G.SC3D = { Viewer, Mesh, gantryScene, presets, ramp, hex, trapStiff, FAST };
+  G.SC3D = { Viewer, Mesh, gantryScene, stmScene, stmPreset, presets, ramp, hex, trapStiff, FAST };
 })(typeof window !== 'undefined' ? window : globalThis);

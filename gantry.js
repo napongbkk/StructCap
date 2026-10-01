@@ -422,7 +422,10 @@
       });
     }
     const Ls = bp.ab + bp.ep; // stiffener projection
-    const plateSide = 2 * ((bb.shape === 'circle' ? bb.R : Math.max(bb.hu, bb.hv)) + bp.ep);
+    const circP = bp.shape === 'circle', rMax = Math.max(...bb.pts.map(q => Math.hypot(q.u, q.v)));
+    const plateD = 2 * (rMax + bp.ep); // circular plate: edge distance e_p beyond the outermost bolt
+    const plateSide = circP ? plateD : 2 * ((bb.shape === 'circle' ? bb.R : Math.max(bb.hu, bb.hv)) + bp.ep);
+    const plateTxt = (circP ? 'Ø' + f(plateD, 0) + ' × ' : f(plateSide, 0) + ' × ' + f(plateSide, 0) + ' × ') + bp.tp + ' mm';
     function stiffenedI() {
       let Iu = col.Ix, Iv = col.Iy; // Iu: about global x (stress ∝ v, resists M_op); Iv: about global y (resists M_ip)
       stiff.forEach(s => {
@@ -439,7 +442,7 @@
       // u = global x (in-plane), v = global y (out-of-plane): M_op → tension ∝ v; M_ip → ∝ u
       const grp = boltGroup(bb.pts, b.N, b.My, b.Mx, b.Vx, b.T);
       Rx.eq(L('Anchor bolts', 'สลักยึด'), bp.nb + ' × ' + bp.db + ' ' + L('grade ', 'เกรด ') + bp.bg + ', ' + (bb.shape === 'circle' ? 'PCD = ' + f(2 * bb.R, 0) + ' mm' : L('offset from tube face ', 'ระยะจากผิวท่อ ') + bp.ab + ' mm'), '', '');
-      Rx.eq(L('Base plate', 'แผ่นฐาน'), f(plateSide, 0) + ' × ' + f(plateSide, 0) + ' × ' + bp.tp + ' mm, f_y = ' + plateFy + ' MPa' + (bp.stiff ? ', ' + stiff.length + L(' stiffeners ', ' แผ่นเสริม ') + bp.ts + ' × ' + bp.hs + ' mm' : ''), '', '');
+      Rx.eq(L(circP ? 'Base plate (circular)' : 'Base plate', circP ? 'แผ่นฐาน (วงกลม)' : 'แผ่นฐาน'), plateTxt + ', f_y = ' + plateFy + ' MPa' + (bp.stiff ? ', ' + stiff.length + L(' stiffeners ', ' แผ่นเสริม ') + bp.ts + ' × ' + bp.hs + ' mm' : ''), '', '');
       Rx.eq('N*_tf', '−N*/n + M*_op·v_i/Σv² + M*_ip·u_i/Σu²  (' + L('double-nut, rigid plate', 'น็อตคู่ แผ่นแข็ง') + ')', grp.Tmax / 1e3, 'kN');
       Rx.eq('V*_f', 'V*/n + T*·r_i/Σr²', grp.Vmax / 1e3, 'kN');
       const Nt = 0.8 * bd[0] * fuf, Vf = 0.8 * 0.62 * fuf * bd[1];
@@ -570,7 +573,7 @@
       fat.caseObjs = cases; fat.phi = phiF;
     }
 
-    const res = { code: 'AS', elem: 'gantry', checks, rep: R, warn: [...new Set(warn)], col, arm, geo: { H, L: Lr0, xs, Bs, Hs, ez, ey, x0, zs, xsw }, acts, base: { bolts: bb, stiff, plateSide, Ls, SI }, flange: flBolts, conn: cn, sls: { dH, dV, limH, limV, fy: fy1, fz: fz1 }, fat, q: { qu, qs } };
+    const res = { code: 'AS', elem: 'gantry', checks, rep: R, warn: [...new Set(warn)], col, arm, geo: { H, L: Lr0, xs, Bs, Hs, ez, ey, x0, zs, xsw }, acts, base: { bolts: bb, stiff, plateSide, plateD, shape: circP ? 'circle' : 'square', Ls, SI }, flange: flBolts, conn: cn, sls: { dH, dV, limH, limV, fy: fy1, fz: fz1 }, fat, q: { qu, qs } };
     return res;
   }
 
