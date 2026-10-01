@@ -1,67 +1,107 @@
+// StructCap 3D frame engine — checks against closed-form results.  Run: node tests/frame.test.js
 require(require('path').join(__dirname, '..', 'frame.js')); const F = globalThis.FRAME;
-const E = 200000, b = 200, h = 400, I = b*h**3/12, A = b*h, EI = E*1e3*I*1e-12;
-const base = () => ({ sections: [{ id: 'S1', type: 'rect', b, h }], materials: [{ id: 'M1', E, rho: 0 }], cases: [{ id: 'G', name: 'G', sw: false }], combos: [{ id: 'C1', name: '1.0G', type: 'ULS', f: { G: 1 } }], loads: [] });
-const near = (a, b, tol = 0.005) => Math.abs(a - b) <= tol * Math.max(1, Math.abs(b)) ? 'OK ' : 'BAD';
+const E = 200000, b = 200, h = 400, Iz = b * h ** 3 / 12, Iy = h * b ** 3 / 12, A = b * h;
+const EIz = E * 1e3 * Iz * 1e-12, EIy = E * 1e3 * Iy * 1e-12;
+const base = () => ({ sections: [{ id: 'S1', type: 'rect', b, h }], materials: [{ id: 'M1', E, nu: 0.3, rho: 0 }], cases: [{ id: 'G', name: 'G', sw: false }], combos: [{ id: 'C1', name: '1.0G', type: 'ULS', f: { G: 1 } }], loads: [] });
+let bad = 0;
+const P = (lbl, got, exp, tol = 0.005) => { const ok = Math.abs(got - exp) <= tol * Math.max(1, Math.abs(exp)); if (!ok) bad++; console.log(ok ? 'OK ' : 'BAD', lbl.padEnd(54), (+got).toFixed(4), 'expected', (+exp).toFixed(4)); };
 const mx = a => Math.max(...a), mn = a => Math.min(...a);
-const P = (lbl, got, exp, tol) => console.log(near(got, exp, tol), lbl.padEnd(46), (+got).toFixed(4), 'expected', (+exp).toFixed(4));
-// 1 simply supported UDL
-let m = base(); m.nodes = [{ id: 'N1', x: 0, y: 0, sup: 'pin' }, { id: 'N2', x: 6, y: 0, sup: 'rollerX' }]; m.members = [{ id: 'B1', i: 'N1', j: 'N2', sec: 'S1', mat: 'M1' }];
-m.loads = [{ case: 'G', kind: 'udl', member: 'B1', dir: 'gy', w1: -10 }];
-let r = F.analyse(m), c = r.cases.G;
-P('SS UDL Mmax = wL2/8', mx(c.mem[0].M), 45); P('SS UDL R1 = 30', c.R[1], 30); P('SS UDL defl 5wL4/384EI', -mn(c.mem[0].dy), 5*10*6**4/384/EI);
-// 2 fixed-fixed
-m.nodes[0].sup = 'fixed'; m.nodes[1].sup = 'fixed'; r = F.analyse(m); c = r.cases.G;
-P('FF UDL end M = -wL2/12', c.mem[0].M[0], -30); P('FF UDL mid M = wL2/24', c.mem[0].M[10], 15); P('FF defl wL4/384EI', -mn(c.mem[0].dy), 10*6**4/384/EI);
-// 3 hinge at j -> propped cantilever
-m.members[0].relJ = true; r = F.analyse(m); c = r.cases.G;
-P('Propped (release J) fixed M = -wL2/8', c.mem[0].M[0], -45); P('Propped M at hinge = 0', c.mem[0].M[20], 0);
-delete m.members[0].relJ;
-// 4 cantilever tip load
-m = base(); m.nodes = [{ id: 'N1', x: 0, y: 0, sup: 'fixed' }, { id: 'N2', x: 3, y: 0 }]; m.members = [{ id: 'B1', i: 'N1', j: 'N2', sec: 'S1', mat: 'M1' }];
-m.loads = [{ case: 'G', kind: 'node', node: 'N2', Fy: -10 }]; r = F.analyse(m); c = r.cases.G;
-P('Cantilever M fixed = -PL', c.mem[0].M[0], -30); P('Cantilever tip defl PL3/3EI', -c.u[4], 10*27/3/EI);
-// 5 SS point load mid inside member
-m = base(); m.nodes = [{ id: 'N1', x: 0, y: 0, sup: 'pin' }, { id: 'N2', x: 8, y: 0, sup: 'rollerX' }]; m.members = [{ id: 'B1', i: 'N1', j: 'N2', sec: 'S1', mat: 'M1' }];
-m.loads = [{ case: 'G', kind: 'point', member: 'B1', dir: 'gy', P: -20, a: 2 }]; r = F.analyse(m); c = r.cases.G;
-P('SS point at a=2 Mmax = Pab/L', mx(c.mem[0].M), 20*2*6/8); P('SS point R1 = Pb/L', c.R[1], 15);
-// 6 two-span continuous
-m = base(); m.nodes = [{ id: 'N1', x: 0, y: 0, sup: 'pin' }, { id: 'N2', x: 5, y: 0, sup: 'rollerX' }, { id: 'N3', x: 10, y: 0, sup: 'rollerX' }];
-m.members = [{ id: 'B1', i: 'N1', j: 'N2', sec: 'S1', mat: 'M1' }, { id: 'B2', i: 'N2', j: 'N3', sec: 'S1', mat: 'M1' }];
-m.loads = [{ case: 'G', kind: 'udl', member: 'B1', dir: 'gy', w1: -12 }, { case: 'G', kind: 'udl', member: 'B2', dir: 'gy', w1: -12 }]; r = F.analyse(m); c = r.cases.G;
-P('2-span support M = -wL2/8', c.mem[0].M[20], -12*25/8); P('2-span mid reaction 1.25wL', c.R[4], 1.25*12*5);
-// 7 inclined member gy load: SS inclined 3-4-5, gyp projected 10 kN/m -> M = w Lh^2/8 (horizontal span 4)
-m = base(); m.nodes = [{ id: 'N1', x: 0, y: 0, sup: 'pin' }, { id: 'N2', x: 4, y: 3, sup: 'rollerX' }]; m.members = [{ id: 'B1', i: 'N1', j: 'N2', sec: 'S1', mat: 'M1' }];
-m.loads = [{ case: 'G', kind: 'udl', member: 'B1', dir: 'gyp', w1: -10 }]; r = F.analyse(m); c = r.cases.G;
-P('Inclined projected UDL Mmax = wLh2/8', mx(c.mem[0].M), 10*16/8); P('Inclined R vertical total', c.R[1] + c.R[4], 40);
-// 8 truss triangle: span 4, height 3 apex load 10 down
-m = base(); m.nodes = [{ id: 'A', x: 0, y: 0, sup: 'pin' }, { id: 'B', x: 4, y: 0, sup: 'rollerX' }, { id: 'C', x: 2, y: 3 }];
-m.members = [{ id: 'T1', i: 'A', j: 'C', sec: 'S1', mat: 'M1', type: 'truss' }, { id: 'T2', i: 'C', j: 'B', sec: 'S1', mat: 'M1', type: 'truss' }, { id: 'T3', i: 'A', j: 'B', sec: 'S1', mat: 'M1', type: 'truss' }];
-m.loads = [{ case: 'G', kind: 'node', node: 'C', Fy: -10 }]; r = F.analyse(m); c = r.cases.G;
-P('Truss rafter N = -5/sin', c.mem[0].N[0], -5/(3/Math.sqrt(13))); P('Truss tie N = 5 cot', c.mem[2].N[0], 5*2/3);
-// 9 portal frame fixed bases, lateral H=10 at beam level, rigid-ish: columns 4 m, beam 6 m same section
-m = base(); m.nodes = [{ id: 'A', x: 0, y: 0, sup: 'fixed' }, { id: 'B', x: 0, y: 4 }, { id: 'C', x: 6, y: 4 }, { id: 'D', x: 6, y: 0, sup: 'fixed' }];
-m.members = [{ id: 'C1', i: 'A', j: 'B', sec: 'S1', mat: 'M1' }, { id: 'R1', i: 'B', j: 'C', sec: 'S1', mat: 'M1' }, { id: 'C2', i: 'D', j: 'C', sec: 'S1', mat: 'M1' }];
-m.loads = [{ case: 'G', kind: 'node', node: 'B', Fx: 10 }]; r = F.analyse(m); c = r.cases.G;
-// classical (axially rigid) result: k = (I/h)/(I/L)... base shear split equal 5 each
-P('Portal base shears equal', -c.R[0], 5, 0.02); P('Portal sum H', c.R[0] + c.R[9], -10);
-// 10 Euler buckling pinned column L=5, P=1 compression
-m = base(); m.nodes = [{ id: 'A', x: 0, y: 0, sup: 'pin' }, { id: 'B', x: 0, y: 5, sup: 'rollerY' }]; m.members = [{ id: 'C1', i: 'A', j: 'B', sec: 'S1', mat: 'M1' }];
-m.loads = [{ case: 'G', kind: 'node', node: 'B', Fy: -1 }];
-r = F.analyse(m, { buckling: true, nseg: 6 }); const Ieff = Math.min(I, h*b**3/12);
-P('Euler pinned Pcr = pi2EI/L2 (strong axis)', r.buckling.C1.modes[0].lam, Math.PI**2*EI/25, 0.01);
-// 11 P-delta cantilever column L=4 fixed base, P=0.3 Pcr, H=1
-m = base(); m.nodes = [{ id: 'A', x: 0, y: 0, sup: 'fixed' }, { id: 'B', x: 0, y: 4 }]; m.members = [{ id: 'C1', i: 'A', j: 'B', sec: 'S1', mat: 'M1' }];
-const Pcr = Math.PI**2*EI/(4*16), Pp = 0.3*Pcr;
-m.loads = [{ case: 'G', kind: 'node', node: 'B', Fy: -Pp, Fx: 1 }];
-const r1 = F.analyse(m), r2 = F.analyse(m, { pdelta: true, nseg: 6 });
-const d1 = r1.combos.C1.u[3], d2 = r2.combos.C1.u[3];
-const uu = 4*Math.sqrt(Pp/EI);
-P('P-Delta amplification = 3(tan u - u)/u^3 (exact)', d2/d1, 3*(Math.tan(uu)-uu)/uu**3, 0.005);
-// 12 modal: SS beam with self weight rho
+const N = (id, x, y, z, sup, o) => Object.assign({ id, x, y, z, sup: sup || 'free' }, o || {});
+const Mb = (id, i, j, o) => Object.assign({ id, i, j, sec: 'S1', mat: 'M1' }, o || {});
+const run = (m, o) => F.analyse(m, o);
+
+// 1 simply supported beam along X in space (torsion held at both ends), gravity UDL
+let m = base();
+m.nodes = [N('A', 0, 0, 0, 'custom', { fix: [1, 1, 1, 1, 0, 0] }), N('B', 6, 0, 0, 'custom', { fix: [0, 1, 1, 1, 0, 0] })]; m.members = [Mb('B1', 'A', 'B')];
+m.loads = [{ case: 'G', kind: 'udl', member: 'B1', dir: 'grav', w1: 10 }];
+let c = run(m).cases.G;
+P('1 SS beam along X: Mz max = wL²/8', mx(c.mem[0].Mz), 45); P('1 reaction Rz = wL/2', c.R[2], 30); P('1 midspan deflection 5wL⁴/384EIz', -mn(c.mem[0].dz), 5 * 10 * 6 ** 4 / 384 / EIz);
+// 2 beam along a skew line in plan (3-4-5), horizontal load perpendicular to it → weak axis
+m = base();
+m.nodes = [N('A', 0, 0, 0, 'custom', { fix: [1, 1, 1, 1, 0, 0] }), N('B', 3.6, 4.8, 0, 'custom', { fix: [1, 1, 1, 1, 0, 0] })]; m.members = [Mb('B1', 'A', 'B')];
+m.loads = [{ case: 'G', kind: 'udl', member: 'B1', dir: 'gx', w1: 8 }, { case: 'G', kind: 'udl', member: 'B1', dir: 'gy', w1: -6 }];
+c = run(m).cases.G;
+P('2 skew beam, 10 kN/m horizontal ⟂: |My| max = wL²/8', mx(c.mem[0].My.map(Math.abs)), 45);
+P('2 lateral deflection 5wL⁴/384EIy', mx(c.mem[0].dx.map((d, i) => Math.hypot(d, c.mem[0].dy[i]))), 5 * 10 * 6 ** 4 / 384 / EIy);
+// 3 cantilever along Y, tip loads Fz and Fx, end torque
+m = base(); m.nodes = [N('A', 0, 0, 0, 'fixed'), N('B', 0, 3, 0)]; m.members = [Mb('B1', 'A', 'B')];
+m.loads = [{ case: 'G', kind: 'node', node: 'B', Fz: -10, Fx: 4, My: 2 }];
+c = run(m).cases.G;
+P('3 cantilever tip deflection Z = PL³/3EIz', -c.u[8], 10 * 27 / 3 / EIz); P('3 tip deflection X = PL³/3EIy', c.u[6], 4 * 27 / 3 / EIy);
+P('3 base reaction Mx = 10·3', c.R[3], 30); P('3 base reaction Mz = 4·3', c.R[5], 12);
+const Gm = E * 1e3 / 2.6, J = h * b ** 3 * (1 / 3 - 0.21 * (b / h) * (1 - (b / h) ** 4 / 12)) * 1e-12;
+P('3 torque about member axis: twist = TL/GJ', c.u[10], 2 * 3 / (Gm * J)); P('3 torsion T in member = 2', Math.abs(c.mem[0].T[5]), 2);
+// 4 L-shaped grillage (beam along X then along Y), tip load down — statics at the support
+m = base(); m.nodes = [N('A', 0, 0, 0, 'fixed'), N('B', 4, 0, 0), N('C', 4, 3, 0)]; m.members = [Mb('B1', 'A', 'B'), Mb('B2', 'B', 'C')];
+m.loads = [{ case: 'G', kind: 'node', node: 'C', Fz: -10 }]; c = run(m).cases.G;
+P('4 grillage Rz = 10', c.R[2], 10); P('4 grillage base Mx = P·3 (torsion in B1)', c.R[3], 30); P('4 grillage base My = −P·4', c.R[4], -40);
+P('4 torsion in B1 = P·3', Math.abs(c.mem[0].T[3]), 30);
+// 5 space tripod (truss): apex 0,0,4; feet on a circle radius 3; vertical 30 kN → each leg N = −10/sin
+m = base(); m.nodes = [N('T', 0, 0, 4)].concat([0, 1, 2].map(k => N('F' + k, 3 * Math.cos(2 * Math.PI * k / 3), 3 * Math.sin(2 * Math.PI * k / 3), 0, 'pin')));
+m.members = [0, 1, 2].map(k => Mb('L' + k, 'F' + k, 'T', { type: 'truss' })); m.loads = [{ case: 'G', kind: 'node', node: 'T', Fz: -30 }];
+c = run(m).cases.G; P('5 tripod leg force = −10/(4/5)', c.mem[0].N[0], -12.5); P('5 tripod leg 3 force', c.mem[2].N[0], -12.5);
+// 6 plane frame (XZ) — portal, fixed bases, lateral 10 kN; equal columns → base shears 5
+m = base(); m.plane = 'XZ'; m.nodes = [N('A', 0, 0, 0, 'fixed'), N('B', 0, 0, 4), N('C', 6, 0, 4), N('D', 6, 0, 0, 'fixed')];
+m.members = [Mb('C1', 'A', 'B'), Mb('R1', 'B', 'C'), Mb('C2', 'D', 'C')]; m.loads = [{ case: 'G', kind: 'node', node: 'B', Fx: 10 }];
+c = run(m).cases.G; P('6 plane portal base shears equal', -c.R[0], 5, 0.02); P('6 sum H', c.R[0] + c.R[18], -10);
+// 7 fixed-fixed, propped (release), 2-span — plane XZ
+m = base(); m.plane = 'XZ'; m.nodes = [N('A', 0, 0, 0, 'fixed'), N('B', 6, 0, 0, 'fixed')]; m.members = [Mb('B1', 'A', 'B')];
+m.loads = [{ case: 'G', kind: 'udl', member: 'B1', dir: 'grav', w1: 10 }]; c = run(m).cases.G;
+P('7 FF end M = −wL²/12', c.mem[0].Mz[0], -30); P('7 FF mid M = wL²/24', c.mem[0].Mz[10], 15);
+m.members[0].relJ = true; c = run(m).cases.G; P('7 propped fixed-end M = −wL²/8', c.mem[0].Mz[0], -45); P('7 M at hinge = 0', c.mem[0].Mz[20], 0);
+m = base(); m.plane = 'XZ'; m.nodes = [N('A', 0, 0, 0, 'pin'), N('B', 5, 0, 0, 'rollerX'), N('C', 10, 0, 0, 'rollerX')]; m.members = [Mb('B1', 'A', 'B'), Mb('B2', 'B', 'C')];
+m.loads = ['B1', 'B2'].map(id => ({ case: 'G', kind: 'udl', member: id, dir: 'grav', w1: 12 })); c = run(m).cases.G;
+P('7 2-span support M = −wL²/8', c.mem[0].Mz[20], -37.5); P('7 2-span middle reaction 1.25wL', c.R[8], 75);
+// 8 inclined member, projected load
+m = base(); m.plane = 'XZ'; m.nodes = [N('A', 0, 0, 0, 'pin'), N('B', 4, 0, 3, 'rollerX')]; m.members = [Mb('B1', 'A', 'B')];
+m.loads = [{ case: 'G', kind: 'udl', member: 'B1', dir: 'gravp', w1: 10 }]; c = run(m).cases.G;
+P('8 inclined projected UDL Mmax = wLh²/8', mx(c.mem[0].Mz), 20); P('8 vertical reactions = 40', c.R[2] + c.R[8], 40);
+// 9 point load
+m = base(); m.plane = 'XZ'; m.nodes = [N('A', 0, 0, 0, 'pin'), N('B', 8, 0, 0, 'rollerX')]; m.members = [Mb('B1', 'A', 'B')];
+m.loads = [{ case: 'G', kind: 'point', member: 'B1', dir: 'grav', P: 20, a: 2 }]; c = run(m).cases.G;
+P('9 SS point Mmax = Pab/L', mx(c.mem[0].Mz), 30); P('9 R1 = Pb/L', c.R[2], 15);
+// 10 Euler buckling, pinned both ends in 3D (weak axis governs)
+m = base(); m.nodes = [N('A', 0, 0, 0, 'custom', { fix: [1, 1, 1, 0, 0, 1] }), N('B', 0, 0, 5, 'custom', { fix: [1, 1, 0, 0, 0, 0] })]; m.members = [Mb('C1', 'A', 'B')];
+m.loads = [{ case: 'G', kind: 'node', node: 'B', Fz: -1 }];
+let r = run(m, { buckling: true, nseg: 6 });
+P('10 Euler Pcr = π²EIy/L² (weak axis)', r.buckling.C1.modes[0].lam, Math.PI ** 2 * EIy / 25, 0.01);
+P('10 strong-axis mode = π²EIz/L²', (r.buckling.C1.modes.find(q => q.lam > 1.5 * Math.PI ** 2 * EIy / 25) || { lam: 0 }).lam, Math.PI ** 2 * EIz / 25, 0.01);
+// 11 P-Delta cantilever (strong axis), exact amplification
+m = base(); m.nodes = [N('A', 0, 0, 0, 'fixed'), N('B', 0, 0, 4)]; m.members = [Mb('C1', 'A', 'B')];
+const Pcr = Math.PI ** 2 * EIz / 64, Pp = 0.3 * Pcr; m.loads = [{ case: 'G', kind: 'node', node: 'B', Fz: -Pp, Fx: 1 }];
+const d1 = run(m).combos.C1.u[6], d2 = run(m, { pdelta: true, nseg: 6 }).combos.C1.u[6], uu = 4 * Math.sqrt(Pp / EIz);
+P('11 P-Delta amplification 3(tan u − u)/u³', d2 / d1, 3 * (Math.tan(uu) - uu) / uu ** 3);
+// 12 modal: SS beam in 3D with self-weight: lateral (Iy) then vertical (Iz)
 m = base(); m.materials[0].rho = 78.5; m.cases[0].sw = true;
-m.nodes = [{ id: 'N1', x: 0, y: 0, sup: 'pin' }, { id: 'N2', x: 6, y: 0, sup: 'rollerX' }]; m.members = [{ id: 'B1', i: 'N1', j: 'N2', sec: 'S1', mat: 'M1' }];
-r = F.analyse(m, { modes: 3, nseg: 8 }); const mb = 78.5*A*1e-6/9.81;
-const fexp = Math.PI/2/36*Math.sqrt(EI/mb);
-console.log('modes', r.modal.modes.map(q => q.f.toFixed(3)).join(', '));
-P('Modal f1 SS beam = (pi/2L2) sqrt(EI/m)', r.modal.modes.find(q=>q.my>0.5).f, fexp, 0.01);
-console.log('time ms', r.ms);
+m.nodes = [N('A', 0, 0, 0, 'custom', { fix: [1, 1, 1, 1, 0, 0] }), N('B', 6, 0, 0, 'custom', { fix: [0, 1, 1, 1, 0, 0] })]; m.members = [Mb('B1', 'A', 'B')];
+r = run(m, { modes: 4, nseg: 8 }); const mb = 78.5 * A * 1e-6 / 9.81, fz = Math.PI / 2 / 36 * Math.sqrt(EIz / mb), fy = Math.PI / 2 / 36 * Math.sqrt(EIy / mb);
+P('12 modal lateral f1 = (π/2L²)√(EIy/m)', r.modal.modes[0].f, fy, 0.01); P('12 lateral mode 1 participating mass (t) = 8/π²·mL', r.modal.modes[0].my * r.modal.massY, 8 / Math.PI ** 2 * mb * 6, 0.06); // consistent mass, support coupling ignored
+P('12 vertical mode f = (π/2L²)√(EIz/m)', (r.modal.modes.find(q => q.mz > 0.5) || { f: 0 }).f, fz, 0.01);
+// 13 3D building: equilibrium of reactions under gravity + wind; beta rotation
+m = base(); m.sections.push({ id: 'C', type: 'rect', b: 400, h: 400 }); m.materials[0].rho = 24;
+m.cases = [{ id: 'G', name: 'G', sw: true }, { id: 'W', name: 'W', sw: false }]; m.combos = [{ id: 'C1', name: 'G+W', type: 'ULS', f: { G: 1.2, W: 1 } }];
+const nodes = [], mems = []; for (let k = 0; k <= 2; k++) for (let j = 0; j <= 1; j++) for (let i = 0; i <= 2; i++) nodes.push(N(`N${i}${j}${k}`, 6 * i, 5 * j, 3.5 * k, k ? 'free' : 'fixed'));
+for (let k = 1; k <= 2; k++) for (let j = 0; j <= 1; j++) for (let i = 0; i <= 2; i++) { mems.push(Mb(`C${i}${j}${k}`, `N${i}${j}${k - 1}`, `N${i}${j}${k}`, { sec: 'C' })); if (i < 2) mems.push(Mb(`BX${i}${j}${k}`, `N${i}${j}${k}`, `N${i + 1}${j}${k}`)); if (j < 1) mems.push(Mb(`BY${i}${j}${k}`, `N${i}${j}${k}`, `N${i}${j + 1}${k}`)); }
+m.nodes = nodes; m.members = mems;
+m.loads = mems.filter(q => q.id[0] === 'B').map(q => ({ case: 'G', kind: 'udl', member: q.id, dir: 'grav', w1: 20 })).concat([{ case: 'W', kind: 'node', node: 'N011', Fx: 15, Fy: 8 }, { case: 'W', kind: 'node', node: 'N012', Fx: 10, Fy: 5 }]);
+r = run(m); c = r.combos.C1;
+const sumR = (cc, d) => cc.R.reduce((s, v, i) => s + (i % 6 === d ? v : 0), 0);
+const wt = mems.reduce((s, q) => { const L = q.sec === 'C' ? 3.5 : q.id[1] === 'X' ? 6 : 5; return s + L * ((q.sec === 'C' ? 0.16 : 0.08) * 24 + (q.sec === 'C' ? 0 : 20)); }, 0);
+P('13 ΣRx = −25', sumR(c, 0), -25); P('13 ΣRy = −13', sumR(c, 1), -13); P('13 ΣRz = 1.2·weight', sumR(c, 2), 1.2 * wt);
+m.members.forEach(q => { if (q.sec === 'C') q.beta = 90; }); P('13 beta = 90° on columns keeps equilibrium', sumR(run(m).combos.C1, 0), -25);
+// 14 mechanism detection
+m = base(); m.nodes = [N('A', 0, 0, 0, 'pin'), N('B', 6, 0, 0, 'pin'), N('C', 3, 0, 3)]; m.members = [Mb('B1', 'A', 'C', { relI: true, relJ: true }), Mb('B2', 'C', 'B', { relI: true, relJ: true })];
+m.loads = [{ case: 'G', kind: 'node', node: 'C', Fz: -10 }];
+let msg = ''; try { run(m); } catch (e) { msg = e.message; } console.log(/unstable/.test(msg) ? 'OK ' : 'BAD', '14 out-of-plane mechanism detected:', msg); if (!/unstable/.test(msg)) bad++;
+m.plane = 'XZ'; c = run(m).cases.G; P('14 same frame in plane XZ: N = −10/(2 sin45°)', c.mem[0].N[0], -10 / Math.SQRT2);
+// 15 larger model timing (5×5 bays × 8 storeys)
+m = base(); m.sections.push({ id: 'C', type: 'rect', b: 500, h: 500 }); m.materials[0].rho = 24;
+m.cases = [{ id: 'G', name: 'G', sw: true }, { id: 'W', name: 'W', sw: false }]; m.combos = [{ id: 'C1', name: 'G+W', type: 'ULS', f: { G: 1.2, W: 1 } }, { id: 'C2', name: '1.35G', type: 'ULS', f: { G: 1.35 } }];
+const n2 = [], m2 = [], nb = 5, ns = 8; for (let k = 0; k <= ns; k++) for (let j = 0; j <= nb; j++) for (let i = 0; i <= nb; i++) n2.push(N(`N${i}_${j}_${k}`, 6 * i, 6 * j, 3.5 * k, k ? 'free' : 'fixed'));
+for (let k = 1; k <= ns; k++) for (let j = 0; j <= nb; j++) for (let i = 0; i <= nb; i++) { m2.push(Mb(`C${i}_${j}_${k}`, `N${i}_${j}_${k - 1}`, `N${i}_${j}_${k}`, { sec: 'C' })); if (i < nb) m2.push(Mb(`X${i}_${j}_${k}`, `N${i}_${j}_${k}`, `N${i + 1}_${j}_${k}`)); if (j < nb) m2.push(Mb(`Y${i}_${j}_${k}`, `N${i}_${j}_${k}`, `N${i}_${j + 1}_${k}`)); }
+m.nodes = n2; m.members = m2; m.loads = m2.filter(q => q.sec !== 'C').map(q => ({ case: 'G', kind: 'udl', member: q.id, dir: 'grav', w1: 25 })).concat(Array.from({ length: ns }, (_, k) => ({ case: 'W', kind: 'node', node: `N0_0_${k + 1}`, Fx: 50 })));
+let t = Date.now(); r = run(m); console.log('15 linear,', m2.length, 'members:', Date.now() - t, 'ms');
+for (const o of [{ pdelta: true }, { modes: 6 }, { buckling: true }]) { t = Date.now(); run(m, Object.assign({ nseg: 2 }, o)); console.log('15', JSON.stringify(o), Date.now() - t, 'ms'); }
+t = Date.now(); r = run(m, { pdelta: true, nseg: 2, modes: 6, buckling: true }); console.log('15 P-Delta + modal + buckling:', Date.now() - t, 'ms; T1 =', r.modal.modes[0].T.toFixed(3), 's; λcr =', r.buckling.C2.modes[0].lam.toFixed(2));
+console.log(bad ? bad + ' check(s) FAILED' : 'all checks passed');
+process.exitCode = bad ? 1 : 0;

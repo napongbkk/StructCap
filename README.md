@@ -1,6 +1,6 @@
 # StructCap
 
-Structural design and analysis in the browser: reinforced concrete beams, columns and pile caps (including a 3D strut-and-tie check), steel cantilever sign gantries and limestone block retaining walls, plus a 2D frame / truss analysis module, to
+Structural design and analysis in the browser: reinforced concrete beams, columns and pile caps (including a 3D strut-and-tie check), steel cantilever sign gantries and limestone block retaining walls, plus a 3D frame / truss analysis module, to
 
 - **Eurocode 2** — EN 1992-1-1:2023, Design of concrete structures
 - **Australian Standard** — AS 3600:2018, Concrete structures
@@ -10,14 +10,15 @@ English / Thai interface, Free and Pro plans (Pro: USD 0.99 / month on the Engli
 self-registration with email + password (the email is the sign-in) and payment-slip upload, member page, contact and feedback form, administrator panel,
 full calculation report with PDF export.
 
-### Analysis module (Free up to 30 members; Pro: larger models, P-Delta, modal, buckling, report)
+### Analysis module (Free up to 80 members; Pro: larger models, P-Delta, modal, buckling, report)
 
-- 2D frame and truss members, member end hinges, pinned / fixed / roller / guided supports and springs
+- 3D frame and truss members (or 2D frames in the X–Z plane), member end hinges, β rotation, fixed / pinned / roller / custom supports and springs
+- Edit in 3D: click to select, Shift-click / Ctrl-drag box selection, inspector panel, draw members node to node, place nodes on a snapped grid in plan or elevation, replicate / extrude, split, undo / redo
 - Rectangle, I, circle, CHS / SHS / RHS and user sections; steel, concrete and timber materials
-- Load cases (G, Q, W, E, other) with self-weight; nodal loads; uniform / trapezoidal / partial / point / moment member loads in global, projected or local directions
+- Load cases (G, Q, W, E, other) with self-weight; nodal forces and moments; uniform / trapezoidal / partial / point / moment member loads in global, projected or local directions
 - Combinations generated to AS/NZS 1170.0, EN 1990 or ASCE 7 (editable), ULS / SLS envelopes
-- Results: deflected shape, N / V / M diagrams, reactions, member forces and deflections, storey drift, mode shapes with mass participation, buckling factors λcr
-- Templates: continuous beam, portal frame, multi-storey frame, Pratt / Howe / Warren truss; models save and open as JSON
+- Results: deflected shape, N / Vy / Vz / T / My / Mz diagrams in 3D, reactions, member forces and deflections, storey drift in X and Y, mode shapes with mass participation in X / Y / Z, buckling factors λcr
+- Templates: 3D building frame, 3D steel portal shed with bracing, 2D portal frame, continuous beam, Pratt / Howe / Warren truss; models save and open as JSON (older 2D models are converted)
 
 © 2026 StructCap · Developed by NS
 
@@ -30,8 +31,8 @@ full calculation report with PDF export.
 | `stm3d.js` | 3D strut-and-tie check of pile caps to AS 3600 Section 7 (space truss, struts, ties, nodes, anchorage) |
 | `wall.js` | Limestone block gravity wall to AS 4678: trial-wedge earth pressure, overturning, sliding, shear between blocks, bearing |
 | `gantry.js` | Steel sign gantry engine: AS/NZS 1163 sections, AS 4100 members and connections, AS/NZS 1170.2 wind, AS 4100 §11 fatigue |
-| `frame.js` | 2D frame and truss analysis engine: stiffness method with exact member-load fixed-end actions, hinges, springs, load combinations and envelopes, P-Delta, modal (consistent mass) and elastic buckling |
-| `analysis.js` | Analysis page: templates, model tables, AS / EC / ASCE combination generator, diagrams, results, report, send member forces to RC design |
+| `frame.js` | 3D frame and truss analysis engine (6 DOF per node, local axes with β rotation): stiffness method with exact member-load fixed-end actions, end releases, springs, skyline solver with RCM ordering, load combinations and envelopes, P-Delta, modal (consistent mass) and elastic buckling; optional 2D mode in the X–Z plane |
+| `analysis.js` | Analysis page: interactive 3D view (orbit, plan, elevations, levels), click to select and edit nodes / members, draw members, box select, replicate / extrude, split, undo / redo, templates, tables, AS / EC / ASCE combination generator, 3D diagrams, results, report, send member forces to RC design |
 | `tests/frame.test.js` | Engine checks against closed-form results (`node tests/frame.test.js`) |
 | `view3d.js` | Dependency-free 3D canvas renderer: gantry model with fatigue stress-range contours, pile cap strut-and-tie model |
 | `app.js` | Interface, sign-in, admin panel, reports and PDF |

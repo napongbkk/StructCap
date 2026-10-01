@@ -754,7 +754,7 @@
             ${elemIcon(k)}<span class="pick-t">${T(e.en, e.th)} <span class="pill ${e.free || S.promo ? 'free' : 'pro'}">${e.free ? 'Free' : S.promo ? T('Pro · free now', 'Pro · ฟรี') : 'Pro'}</span></span><span class="pick-s">${T(e.den, e.dth)}</span>
             <span class="pick-go">${locked ? T('Sign in with Pro to unlock', 'เข้าสู่ระบบ Pro เพื่อใช้งาน') : T('Open designer →', 'เปิดหน้าออกแบบ →')}</span></button>`;
       }).join('')}</div></div></div>` : ''}
-      <button class="analysis-strip go" data-act="nav" data-v="analysis">${analysisIcon()}<div><p class="eyebrow">Structural Analysis</p><h2>${T('Frame analysis', 'วิเคราะห์โครงสร้าง')}</h2><p class="muted">${T('Continuous beams, 2D frames and trusses — load cases, AS / EC / ASCE combinations, envelopes, P-Delta, modal and buckling analysis. Send member forces straight to RC design.', 'คานต่อเนื่อง โครงข้อแข็งและโครงถัก 2 มิติ — กรณีแรง การรวมแรงตาม AS / EC / ASCE ค่าสูงสุด/ต่ำสุด P-Delta โหมด และการโก่งเดาะ ส่งแรงในชิ้นส่วนไปออกแบบ RC ได้ทันที')}</p></div><span class="pill free">${T('Open analysis →', 'เปิดหน้าวิเคราะห์ →')}</span></button>
+      <button class="analysis-strip go" data-act="nav" data-v="analysis">${analysisIcon()}<div><p class="eyebrow">Structural Analysis</p><h2>${T('Frame analysis', 'วิเคราะห์โครงสร้าง')}</h2><p class="muted">${T('3D frames and trusses you edit by clicking in the 3D view — load cases, AS / EC / ASCE combinations, envelopes, P-Delta, modal and buckling analysis. Send member forces straight to RC design.', 'โครงข้อแข็งและโครงถัก 3 มิติ แก้ไขได้โดยคลิกในมุมมอง 3 มิติ — กรณีแรง การรวมแรงตาม AS / EC / ASCE ค่าสูงสุด/ต่ำสุด P-Delta โหมด และการโก่งเดาะ ส่งแรงในชิ้นส่วนไปออกแบบ RC ได้ทันที')}</p></div><span class="pill free">${T('Open analysis →', 'เปิดหน้าวิเคราะห์ →')}</span></button>
     </main>`;
   }
   // Line-sketch icons in drafting style: ink outlines, accent for loads / struts
@@ -1805,6 +1805,7 @@
     if (AN) return AN;
     if (!window.SC_ANALYSIS_UI || !window.FRAME) return null;
     AN = window.SC_ANALYSIS_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, toDesign });
+    window.SC_AN = AN; // handy for checking a model from the browser console
     return AN;
   }
   async function saveFile(name, blob) {
@@ -1822,8 +1823,8 @@
     const u = code === 'TH' ? 1 / 9.807 : 1, r = v => Math.round(v * u * 10) / 10;
     if (!S.inputs[k]) S.inputs[k] = JSON.parse(JSON.stringify(DEF[elem][code]));
     const v = S.inputs[k];
-    if (elem === 'beam') Object.assign(v, { Mx: r(a.M), Vy: r(a.V), My: 0, Vx: 0, T: 0 });
-    else Object.assign(v, { N: r(a.N), Mx: r(Math.abs(a.M)), My: 0, Vy: r(a.V), Vx: 0 });
+    if (elem === 'beam') Object.assign(v, { Mx: r(a.M), Vy: r(a.V), My: r(a.My || 0), Vx: r(a.Vz || 0), T: r(a.T || 0) });
+    else Object.assign(v, { N: r(a.N), Mx: r(Math.abs(a.M)), My: r(a.My || 0), Vy: r(a.V), Vx: r(a.Vz || 0) });
     go('design', { elem, code });
     toast(T('Forces of member ' + a.id + ' copied — check the section and serviceability inputs.', 'คัดลอกแรงของชิ้นส่วน ' + a.id + ' แล้ว — ตรวจสอบหน้าตัดและค่าสภาวะใช้งาน'), 'ok');
   }
