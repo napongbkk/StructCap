@@ -1,6 +1,6 @@
 # StructCap
 
-Structural design and analysis in the browser: reinforced concrete beams, columns and pile caps (including a 3D strut-and-tie check), and steel cantilever sign gantries, to
+Structural design and analysis in the browser: reinforced concrete beams, columns and pile caps (including a 3D strut-and-tie check), steel cantilever sign gantries and limestone block retaining walls, to
 
 - **Eurocode 2** — EN 1992-1-1:2023, Design of concrete structures
 - **Australian Standard** — AS 3600:2018, Concrete structures
@@ -17,6 +17,7 @@ English / Thai interface, Free and Pro plans, administrator panel, full calculat
 | `index.html` | Page shell and styles |
 | `engine.js` | RC calculation engine (section fibre analysis, shear, torsion, SLS, pile caps) |
 | `stm3d.js` | 3D strut-and-tie check of pile caps to AS 3600 Section 7 (space truss, struts, ties, nodes, anchorage) |
+| `wall.js` | Limestone block gravity wall to AS 4678: trial-wedge earth pressure, overturning, sliding, shear between blocks, bearing |
 | `gantry.js` | Steel sign gantry engine: AS/NZS 1163 sections, AS 4100 members and connections, AS/NZS 1170.2 wind, AS 4100 §11 fatigue |
 | `view3d.js` | Dependency-free 3D canvas renderer: gantry model with fatigue stress-range contours, pile cap strut-and-tie model |
 | `app.js` | Interface, sign-in, admin panel, reports and PDF |
