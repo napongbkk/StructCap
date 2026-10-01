@@ -558,15 +558,6 @@
       </div>
     </section>
 
-    <section class="band two-band"><div class="wrap two-grid">
-      <article class="two-card"><p class="eyebrow">${T('Structural design', 'ออกแบบโครงสร้าง')}</p><h2>${T('Design to Eurocode, AS and Thai EIT', 'ออกแบบตาม Eurocode, AS และ วสท.')}</h2>
-        <ul>${[T('RC beams, columns and pile caps', 'คาน เสา และฐานรากบนเสาเข็ม คสล.'), T('3D strut-and-tie for pile caps', 'Strut-and-tie 3 มิติ สำหรับฐานราก'), T('Steel sign gantries (AS 4100)', 'โครงป้ายเหล็ก (AS 4100)'), T('Limestone block retaining walls (AS 4678)', 'กำแพงกันดินหินบล็อก (AS 4678)'), T('Calculation report and PDF', 'รายการคำนวณและ PDF')].map(x => `<li>${x}</li>`).join('')}</ul>
-        <button class="btn btn-hot sm" data-act="free">${T('Open design →', 'เริ่มออกแบบ →')}</button></article>
-      <article class="two-card an-card">${analysisIcon()}<p class="eyebrow">${T('Structural analysis', 'วิเคราะห์โครงสร้าง')}</p><h2>${T('3D frame & truss analysis', 'วิเคราะห์โครงข้อแข็งและโครงถัก 3 มิติ')}</h2>
-        <ul>${[T('Model tree: standard → materials → sections → nodes → elements → supports → loads → combinations', 'เมนูขั้นตอน: มาตรฐาน → วัสดุ → หน้าตัด → จุดต่อ → ชิ้นส่วน → จุดรองรับ → แรง → การรวมน้ำหนัก'), T('Click to select and edit in the 3D view', 'คลิกเลือกและแก้ไขในมุมมอง 3 มิติ'), T('Code concrete and steel grades, UB/UC, IPE/HE and JIS H sections', 'คอนกรีตและเหล็กตามมาตรฐาน หน้าตัด UB/UC, IPE/HE, JIS H'), T('Linear static, P-Delta, modal and buckling', 'สถิตเชิงเส้น P-Delta โหมด และการโก่งเดาะ'), T('3D diagrams, reactions, drift — forces straight to RC design', 'แผนภาพ 3 มิติ แรงปฏิกิริยา ดริฟต์ — ส่งแรงไปออกแบบ RC')].map(x => `<li>${x}</li>`).join('')}</ul>
-        <button class="btn btn-hot sm" data-act="nav" data-v="analysis">${T('Open 3D analysis →', 'เปิดการวิเคราะห์ 3 มิติ →')}</button></article>
-    </div></section>
-
     <section class="band steps-band"><div class="wrap">
       <h2>${T('How it works', 'ทำงานอย่างไร')}</h2>
       <ol class="steps">
