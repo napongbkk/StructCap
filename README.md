@@ -7,7 +7,7 @@ Structural design and analysis in the browser: reinforced concrete beams, column
 - **Thai EIT Standard** — The Engineering Institute of Thailand under H.M. The King's Patronage (วสท.), strength design method
 
 English / Thai interface, Free and Pro plans (Pro: USD 0.99 / month on the English page, 30 THB / month on the Thai page),
-self-registration with payment-slip upload, member page, contact and feedback form, administrator panel,
+self-registration with email + password (the email is the sign-in) and payment-slip upload, member page, contact and feedback form, administrator panel,
 full calculation report with PDF export.
 
 © 2026 StructCap · Developed by NS
@@ -47,7 +47,14 @@ service role after checking the caller:
   (approve / reject a Pro application — approving turns Pro on and records the payment), `slipUrl`,
   `readMessage`, `deleteMessage`, `reset` — administrator token required
 
-### Email to the administrator
+### Emails
+
+Members receive: a registration confirmation, a "payment slip received" email when they apply for Pro, and a
+"Pro is now active" email when the administrator approves (or a note if the payment could not be confirmed).
+These need Resend with a verified sending domain: set `RESEND_API_KEY` and `MAIL_FROM` (e.g.
+`StructCap <no-reply@yourdomain.com>`), optionally `SITE_URL`, in Supabase → Edge Functions → Secrets.
+
+#### Email to the administrator
 
 Registrations, Pro applications (with the slip attached) and contact / feedback messages are emailed to
 napong.subanpong@outlook.com. Server email uses [Resend](https://resend.com): create a free account with that

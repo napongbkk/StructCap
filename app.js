@@ -281,6 +281,7 @@
   }
   // ---- prices and the administrator's email (registrations, Pro applications, contact and feedback)
   const PRICE = { USD: 0.99, THB: 30 };
+  const EMAIL_ID = /^[a-z0-9._%+-]{1,64}@[a-z0-9.-]{1,190}\.[a-z]{2,24}$/;
   const ADMIN_EMAIL = CFG.adminEmail || 'napong.subanpong@outlook.com';
   const curOf = () => (S.ui === 'th' ? 'THB' : 'USD');
   const money = (v, cur) => cur === 'THB' ? f(v, v % 1 ? 2 : 0) + ' ' + T('THB', 'บาท') : 'USD ' + (+v).toFixed(2);
@@ -321,12 +322,12 @@
     async register(form) {
       if (CLOUD) {
         const j = await api('register', form);
-        if (!j.emailed) relayMail(form.plan === 'pro' ? 'New registration + Pro application: ' + form.username : 'New registration: ' + form.username, { Username: form.username, Name: form.name, Email: form.email, Phone: form.phone, Company: form.company, Country: form.country, Plan: form.plan === 'pro' ? 'Pro application — ' + (j.request ? j.request.months + ' month(s), ' + money(j.request.amount, j.request.currency) : 'slip not received') : 'Free', Note: form.note || '', Review: 'Open the StructCap admin panel → Applications' });
+        if (!j.emailed) relayMail(form.plan === 'pro' ? 'New registration + Pro application: ' + form.email : 'New registration: ' + form.email, { Email: form.email, Language: form.lang, Plan: form.plan === 'pro' ? 'Pro application — ' + (j.request ? j.request.months + ' month(s), ' + money(j.request.amount, j.request.currency) : 'slip not received') : 'Free', Note: form.note || '', Review: 'Open the StructCap admin panel → Applications' });
         return j;
       }
-      if (await Store.get('accounts', form.username) || form.username.toLowerCase() === ADMIN.user.toLowerCase()) { const e = new Error('taken'); e.msg = 'Username taken'; throw e; }
+      if (await Store.get('accounts', form.username)) { const e = new Error('taken'); e.msg = 'Email taken'; throw e; }
       const salt = newSalt();
-      await Store.set('accounts', form.username, { username: form.username, name: form.name, plan: 'free', status: 'active', start: today(), expiry: null, salt, hash: await pbkdf2(form.password, salt, USER_ITER), iter: USER_ITER, updated: new Date().toISOString() });
+      await Store.set('accounts', form.username, { username: form.username, name: form.name || '', plan: 'free', status: 'active', start: today(), expiry: null, salt, hash: await pbkdf2(form.password, salt, USER_ITER), iter: USER_ITER, updated: new Date().toISOString() });
       await Store.set('members', form.username, { email: form.email, phone: form.phone, company: form.company, country: form.country, note: form.note, created: today() });
       const request = form.plan === 'pro' ? await localRequest(form.username, form.pro) : null;
       await Store.set('messages', uidLocal('msg'), { kind: form.plan === 'pro' ? 'pro' : 'register', name: form.name, email: form.email, username: form.username, message: form.plan === 'pro' ? 'Registered and applied for Pro' : 'Registered (Free)', status: 'new', created: new Date().toISOString() });
@@ -348,7 +349,7 @@
     },
     async applyPro(pro) {
       if (CLOUD) {
-        const j = await api('applyPro', { pro });
+        const j = await api('applyPro', { pro, lang: S.ui });
         if (!j.emailed) relayMail('Pro application: ' + S.user.username, { Username: S.user.username, Name: S.user.name || '', Email: S.user.email || '', Period: j.request.months + ' month(s)', Amount: money(j.request.amount, j.request.currency), 'Method / ref.': (pro.method || '') + ' ' + (pro.ref || ''), Note: pro.note || '', Review: 'Open the StructCap admin panel → Applications' });
         return j;
       }
@@ -390,7 +391,7 @@
       A.payments = (j.payments || []).map(p => Object.assign({ _id: p.id }, p, { amount: +p.amount }));
       A.requests = (j.requests || []).map(r => Object.assign({ _id: r.id }, r, { amount: +r.amount }));
       A.messages = (j.messages || []).map(m => Object.assign({ _id: m.id }, m));
-      A.mail = !!j.mail; S.payInfo = j.payInfo || S.payInfo;
+      A.mail = !!j.mail; A.mailUsers = !!j.mailUsers; S.payInfo = j.payInfo || S.payInfo;
       ['en', 'th'].forEach(k => { const el = $('#pi-' + k); if (el && document.activeElement !== el) el.value = (S.payInfo || {})[k] || ''; });
       S.promo = !!j.proFree;
       if (S.view === 'admin') adminBody();
@@ -536,12 +537,12 @@
           ${S.promo ? `<span class="btn btn-ghost struck" aria-hidden="true">${T('Start free', 'เริ่มใช้งานฟรี')}</span><p class="promo-note">${T('Pro for free — every feature is open', 'Pro ฟรี — เปิดทุกฟังก์ชัน')}</p>` : `<button class="btn btn-ghost" data-act="free">${T('Start free', 'เริ่มใช้งานฟรี')}</button><button class="linkbtn" data-act="register" data-plan="free">${T('or register a free account', 'หรือสมัครบัญชี Free')}</button>`}</article>
         <article class="plan plan-pro"><span class="ribbon">${T('Recommended', 'แนะนำ')}</span><h3>Pro</h3><p class="price">${S.promo ? `<s>${priceTxt()}</s> <b>${T('Free now', 'ฟรีตอนนี้')}</b>` : `<b>${money(PRICE[curOf()], curOf())}</b> / ${T('month', 'เดือน')}`}</p><ul>
           <li>${T('Everything in Free', 'ทุกอย่างใน Free')}</li><li>${T('RC columns: N–M and N–Mx–My interaction', 'เสา คสล. แผนภาพ N–M และ N–Mx–My')}</li><li>${T('Pile caps: beam method and STM', 'ฐานรากบนเสาเข็ม วิธีคาน และ STM')}</li><li>${T('Steel sign gantry to AS 4100, including fatigue', 'โครงป้ายจราจรเหล็กตาม AS 4100 รวมความล้า')}</li><li>${T('3D pile cap strut-and-tie and limestone block walls (AS)', 'STM ฐานรากเข็ม 3 มิติ และกำแพงกันดินก้อนหินปูน (AS)')}</li><li>${T('Full calculation report with clause references', 'รายการคำนวณฉบับเต็ม อ้างอิงข้อกำหนด')}</li><li>${T('PDF export', 'ส่งออกรายงานเป็น PDF')}</li></ul>
-          ${S.promo ? `<span class="btn btn-ghost struck" aria-hidden="true">${T('Register for Pro', 'สมัคร Pro')}</span><button class="btn btn-hot" data-act="free">${T('Pro for free — start now', 'Pro ฟรี — เริ่มใช้งาน')}</button>` : `<button class="btn btn-hot" data-act="register" data-plan="pro">${T('Register for Pro', 'สมัคร Pro')}</button><p class="muted small">${T('Pay by transfer, attach the slip — Pro is switched on after the payment is checked.', 'ชำระเงินโดยการโอน แนบสลิป — เปิดใช้ Pro หลังตรวจสอบการชำระเงิน')}</p>`}</article>
+          ${S.promo ? `<span class="btn btn-ghost struck" aria-hidden="true">${T('Register for Pro', 'สมัคร Pro')}</span><button class="btn btn-hot" data-act="free">${T('Pro for free — start now', 'Pro ฟรี — เริ่มใช้งาน')}</button>` : `<button class="btn btn-hot" data-act="register" data-plan="pro">${T('Register for Pro', 'สมัคร Pro')}</button><p class="muted small">${T('Pay by transfer and attach the slip — Pro is switched on within 2 hours.', 'ชำระเงินโดยการโอนและแนบสลิป — เปิดใช้ Pro ภายใน 2 ชั่วโมง')}</p>`}</article>
       </div></div></section>
 
     <section class="band contact-band" id="contact"><div class="wrap contact-in">
       <div><h2>${T('Contact us & feedback', 'ติดต่อเราและข้อเสนอแนะ')}</h2><p class="muted">${T('Questions about Pro, a calculation, or an idea for a new designer? Write to us — it goes straight to the StructCap team.', 'มีคำถามเกี่ยวกับ Pro การคำนวณ หรือมีไอเดียฟังก์ชันใหม่? เขียนถึงเรา ข้อความจะส่งถึงทีม StructCap โดยตรง')}</p>
-        <ul class="contact-pts"><li>${T('We reply by email, usually within two working days.', 'เราจะตอบกลับทางอีเมล โดยปกติภายใน 2 วันทำการ')}</li><li>${T('Found a wrong result? Include the code, member and inputs.', 'พบผลลัพธ์ผิด? ระบุมาตรฐาน ชิ้นส่วน และข้อมูลที่กรอก')}</li></ul></div>
+        <ul class="contact-pts"><li>${T('We reply by email within 2 hours.', 'เราจะตอบกลับทางอีเมลภายใน 2 ชั่วโมง')}</li><li>${T('Found a wrong result? Include the code, member and inputs.', 'พบผลลัพธ์ผิด? ระบุมาตรฐาน ชิ้นส่วน และข้อมูลที่กรอก')}</li></ul></div>
       <form class="contact-card" id="contactForm" novalidate>
         <div class="seg" role="group" aria-label="${T('Message type', 'ประเภทข้อความ')}"><button type="button" data-act="ckind" data-k="contact" aria-pressed="${S.ckind !== 'feedback'}">${T('Contact', 'ติดต่อ')}</button><button type="button" data-act="ckind" data-k="feedback" aria-pressed="${S.ckind === 'feedback'}">${T('Feedback', 'ข้อเสนอแนะ')}</button></div>
         <div class="mgrid"><label>${T('Name', 'ชื่อ')}<input id="c-name" autocomplete="name" value="${esc(S.user && S.user.member ? S.user.name || '' : '')}"></label><label>${T('Email (for our reply)', 'อีเมล (สำหรับตอบกลับ)')}<input id="c-email" type="email" autocomplete="email" value="${esc(S.user && S.user.member ? S.user.email || '' : '')}"></label></div>
@@ -560,8 +561,8 @@
       <form class="auth-card" id="loginForm" data-admin="${admin ? 1 : 0}" novalidate>
         <p class="eyebrow">${admin ? 'Administrator' : T('Members', 'สมาชิก')}</p>
         <h1>${admin ? T('Administrator sign in', 'เข้าสู่ระบบผู้ดูแล') : T('Sign in', 'เข้าสู่ระบบ')}</h1>
-        <p class="muted">${admin ? T('Manage users, passwords, subscription periods and payments.', 'จัดการผู้ใช้ รหัสผ่าน อายุการใช้งาน และการชำระเงิน') : T('Free and Pro members sign in with the username and password chosen at registration.', 'สมาชิก Free และ Pro เข้าสู่ระบบด้วยชื่อผู้ใช้และรหัสผ่านที่ตั้งไว้ตอนสมัคร')}</p>
-        <label for="lg-user">${T('Username', 'ชื่อผู้ใช้')}</label><input id="lg-user" autocomplete="username" required>
+        <p class="muted">${admin ? T('Manage users, passwords, subscription periods and payments.', 'จัดการผู้ใช้ รหัสผ่าน อายุการใช้งาน และการชำระเงิน') : T('Free and Pro members sign in with their email address and password.', 'สมาชิก Free และ Pro เข้าสู่ระบบด้วยอีเมลและรหัสผ่าน')}</p>
+        <label for="lg-user">${admin ? T('Username', 'ชื่อผู้ใช้') : T('Email', 'อีเมล')}</label><input id="lg-user" ${admin ? '' : 'type="email" inputmode="email" placeholder="name@example.com"'} autocomplete="username" required>
         <label for="lg-pass">${T('Password', 'รหัสผ่าน')}</label><input id="lg-pass" type="password" autocomplete="current-password" required>
         <p class="form-err" id="lg-err" hidden></p>
         <button class="btn btn-hot wide" type="submit" id="lg-btn">${T('Sign in', 'เข้าสู่ระบบ')}</button>
@@ -572,14 +573,15 @@
     const admin = form.dataset.admin === '1', u = $('#lg-user').value.trim(), p = $('#lg-pass').value, err = $('#lg-err'), btn = $('#lg-btn');
     err.hidden = true; btn.disabled = true; btn.textContent = T('Checking…', 'กำลังตรวจสอบ…');
     const fail = m => { err.textContent = m; err.hidden = false; btn.disabled = false; btn.textContent = T('Sign in', 'เข้าสู่ระบบ'); };
-    const bad = T('Username or password is incorrect.', 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+    const bad = admin ? T('Username or password is incorrect.', 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง') : T('Email or password is incorrect.', 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
     try {
       if (admin) {
         if (!(await Ops.adminLogin(u, p))) return fail(bad);
         S.role = 'admin'; S.user = { username: u, name: 'Administrator' }; saveSession(); go('admin'); toast(T('Welcome, administrator', 'ยินดีต้อนรับ ผู้ดูแลระบบ'), 'ok'); return;
       }
-      if (!/^[A-Za-z0-9_.-]{3,32}$/.test(u)) return fail(T('Usernames are 3–32 letters, digits, _ . or -.', 'ชื่อผู้ใช้ต้องเป็นตัวอักษรอังกฤษหรือตัวเลข 3–32 ตัว'));
-      const res = await Ops.userLogin(u, p);
+      const id = u.includes('@') ? u.toLowerCase() : u;
+      if (!EMAIL_ID.test(id) && !/^[A-Za-z0-9_.-]{3,32}$/.test(id)) return fail(T('Enter the email address you registered with.', 'กรอกอีเมลที่ใช้สมัครสมาชิก'));
+      const res = await Ops.userLogin(id, p);
       if (!res.ok) {
         if (res.err === 'suspended') return fail(T('This account is suspended. Contact the administrator.', 'บัญชีนี้ถูกระงับ กรุณาติดต่อผู้ดูแลระบบ'));
         return fail(bad);
@@ -606,7 +608,7 @@
       </div>
       <div class="pay-info"><b>${T('How to pay', 'วิธีชำระเงิน')}</b><p>${info ? esc(info).replace(/\n/g, '<br>') : T('Payment details are sent by the administrator — contact us below the plans on the welcome page if you do not have them yet.', 'ผู้ดูแลระบบจะแจ้งรายละเอียดการชำระเงิน หากยังไม่ได้รับ ติดต่อเราได้ที่หน้าแรก')}</p></div>
       <label class="file-l">${T('Payment slip (image or PDF, max 5 MB)', 'สลิปการชำระเงิน (รูปภาพหรือ PDF ไม่เกิน 5 MB)')}<input id="${pre}-slip" type="file" accept="image/png,image/jpeg,image/webp,image/heic,application/pdf" required></label>
-      <p class="muted small">${T('Pro is switched on by the administrator after the payment is checked — usually within one working day. You can use the Free features meanwhile.', 'ผู้ดูแลระบบจะเปิด Pro หลังตรวจสอบการชำระเงิน โดยปกติภายใน 1 วันทำการ ระหว่างนี้ใช้งานฟังก์ชัน Free ได้')}</p></div>`;
+      <p class="muted small">${T('The administrator checks the payment and switches Pro on within 2 hours, and you get an email when it is on. You can use the Free features meanwhile.', 'ผู้ดูแลระบบจะตรวจสอบการชำระเงินและเปิด Pro ภายใน 2 ชั่วโมง และแจ้งทางอีเมลเมื่อเปิดใช้แล้ว ระหว่างนี้ใช้งานฟังก์ชัน Free ได้')}</p></div>`;
   }
   async function readPro(pre) {
     const fl = $('#' + pre + '-slip').files[0];
@@ -624,17 +626,13 @@
           <button type="button" role="radio" aria-checked="${!pro}" data-act="regplan" data-p="free"><b>Free</b><span>${S.ui === 'th' ? '0 บาท' : 'USD 0'}</span><small>${T('RC beams, all codes', 'คาน คสล. ทุกมาตรฐาน')}</small></button>
           <button type="button" role="radio" aria-checked="${pro}" data-act="regplan" data-p="pro"><b>Pro</b><span>${priceTxt()}</span><small>${T('Every designer, full reports, PDF', 'ทุกฟังก์ชัน รายการคำนวณฉบับเต็ม PDF')}</small></button></div>
         <div class="mgrid">
-          <label>${T('Full name', 'ชื่อ-นามสกุล')} *<input id="r-name" autocomplete="name" required maxlength="120"></label>
-          <label>${T('Email', 'อีเมล')} *<input id="r-email" type="email" autocomplete="email" required maxlength="254"></label>
-          <label>${T('Username', 'ชื่อผู้ใช้')} *<input id="r-user" autocomplete="username" required maxlength="32" placeholder="${T('3–32 letters, digits, _ . -', 'ตัวอักษรอังกฤษ/ตัวเลข 3–32 ตัว')}"></label>
-          <label>${T('Phone', 'โทรศัพท์')}<input id="r-phone" type="tel" autocomplete="tel" maxlength="40"></label>
-          <label>${T('Company / organisation', 'บริษัท / หน่วยงาน')}<input id="r-company" autocomplete="organization" maxlength="120"></label>
-          <label>${T('Country', 'ประเทศ')}<input id="r-country" autocomplete="country-name" maxlength="60" value="${S.ui === 'th' ? 'ประเทศไทย' : ''}"></label>
+          <label class="full">${T('Email — you sign in with this', 'อีเมล — ใช้สำหรับเข้าสู่ระบบ')} *<input id="r-email" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com"></label>
           <label>${T('Password (min. 8 characters)', 'รหัสผ่าน (อย่างน้อย 8 ตัว)')} *<input id="r-pass" type="password" autocomplete="new-password" required minlength="8"></label>
           <label>${T('Confirm password', 'ยืนยันรหัสผ่าน')} *<input id="r-pass2" type="password" autocomplete="new-password" required minlength="8"></label>
         </div>
+        <p class="muted small">${T('We send a confirmation to this email. Name, phone and company can be added later in My account.', 'เราจะส่งอีเมลยืนยันไปยังอีเมลนี้ ชื่อ โทรศัพท์ และบริษัท เพิ่มภายหลังได้ที่ บัญชีของฉัน')}</p>
         ${pro ? proFields('rp') : ''}
-        <label>${T('Note to the administrator (optional)', 'ข้อความถึงผู้ดูแลระบบ (ถ้ามี)')}<input id="r-note" maxlength="500"></label>
+        ${pro ? `<label>${T('Note to the administrator (optional)', 'ข้อความถึงผู้ดูแลระบบ (ถ้ามี)')}<input id="r-note" maxlength="500"></label>` : ''}
         <input id="r-web" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
         <label class="chkl"><input id="r-ok" type="checkbox"> ${T('I understand StructCap is a design aid and results must be checked by a licensed engineer.', 'ข้าพเจ้าเข้าใจว่า StructCap เป็นเครื่องมือช่วยออกแบบ ผลลัพธ์ต้องตรวจสอบโดยวิศวกรผู้มีใบอนุญาต')}</label>
         <p class="form-err" id="r-err" hidden></p>
@@ -646,10 +644,9 @@
     const v = id => $('#' + id).value.trim(), err = $('#r-err'), btn = $('#r-btn'), label = btn.textContent;
     const fail = m => { err.textContent = m; err.hidden = false; btn.disabled = false; btn.textContent = label; err.scrollIntoView({ block: 'nearest' }); };
     err.hidden = true;
-    const form = { name: v('r-name'), email: v('r-email'), username: v('r-user'), phone: v('r-phone'), company: v('r-company'), country: v('r-country'), note: v('r-note'), password: $('#r-pass').value, plan: S.regPlan === 'pro' ? 'pro' : 'free', website: v('r-web') };
-    if (!form.name) return fail(T('Enter your name.', 'กรอกชื่อ'));
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email)) return fail(T('Enter a valid email address.', 'กรอกอีเมลให้ถูกต้อง'));
-    if (!/^[A-Za-z0-9_.-]{3,32}$/.test(form.username)) return fail(T('Username: 3–32 letters, digits, _ . or -.', 'ชื่อผู้ใช้: ตัวอักษรอังกฤษ ตัวเลข _ . - ยาว 3–32 ตัว'));
+    const email = v('r-email').toLowerCase(), note = $('#r-note') ? v('r-note') : '';
+    const form = { email, username: email, note, password: $('#r-pass').value, plan: S.regPlan === 'pro' ? 'pro' : 'free', website: v('r-web'), lang: S.ui };
+    if (!EMAIL_ID.test(form.email)) return fail(T('Enter a valid email address.', 'กรอกอีเมลให้ถูกต้อง'));
     if (form.password.length < 8) return fail(T('The password must be at least 8 characters.', 'รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร'));
     if (form.password !== $('#r-pass2').value) return fail(T('The passwords do not match.', 'รหัสผ่านไม่ตรงกัน'));
     if (!$('#r-ok').checked) return fail(T('Tick the box to confirm.', 'กรุณาทำเครื่องหมายยืนยัน'));
@@ -662,10 +659,11 @@
       if (!j.account) return fail(T('Registration failed. Try again.', 'สมัครไม่สำเร็จ ลองอีกครั้ง'));
       setUser(j.account, j.token);
       S.notice = form.plan === 'pro' ? (j.request ? 'proSent' : 'proFail') : 'freeOk';
+      S.mailed = !!j.emailedUser;
       go('account');
-      toast(T('Welcome to StructCap, ', 'ยินดีต้อนรับสู่ StructCap คุณ') + form.name, 'ok');
+      toast(T('Welcome to StructCap', 'ยินดีต้อนรับสู่ StructCap'), 'ok');
     } catch (x) {
-      fail(x.msg === 'Username taken' ? T('That username is already taken.', 'มีชื่อผู้ใช้นี้แล้ว') : x.msg === 'Invalid email' ? T('Enter a valid email address.', 'กรอกอีเมลให้ถูกต้อง') : T('Registration failed. Check the connection and try again.', 'สมัครไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง'));
+      fail(x.msg === 'Username taken' || x.msg === 'Email taken' ? T('This email is already registered — sign in instead.', 'อีเมลนี้สมัครไว้แล้ว — กรุณาเข้าสู่ระบบ') : x.msg === 'Invalid email' ? T('Enter a valid email address.', 'กรอกอีเมลให้ถูกต้อง') : T('Registration failed. Check the connection and try again.', 'สมัครไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง'));
     }
   }
   const daysTo = d => Math.ceil((new Date(d + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 864e5);
@@ -675,9 +673,10 @@
     if (!u || !u.member) return viewLogin(false);
     const pro = u.plan === 'pro', dl = pro && u.expiry ? daysTo(u.expiry) : null, pend = (u.requests || []).filter(r => r.status === 'pending');
     const pct = dl !== null ? Math.max(0, Math.min(100, dl / 30 * 100)) : 0;
-    const notice = { freeOk: ['ok', T('Your free account is ready. Sign in any time with your username and password.', 'บัญชี Free พร้อมใช้งาน เข้าสู่ระบบได้ทุกเมื่อด้วยชื่อผู้ใช้และรหัสผ่าน')], proSent: ['ok', T('Thank you — your registration and payment slip were sent. Pro will be switched on after the payment is checked; you will see it here.', 'ขอบคุณ — ส่งข้อมูลการสมัครและสลิปแล้ว ผู้ดูแลระบบจะเปิด Pro หลังตรวจสอบการชำระเงิน และจะแสดงที่หน้านี้')], proFail: ['bad', T('Your account was created, but the slip did not upload. Send it again with “Apply for Pro” below.', 'สร้างบัญชีแล้ว แต่ส่งสลิปไม่สำเร็จ กรุณาส่งอีกครั้งด้วยปุ่ม “สมัคร Pro” ด้านล่าง')], applied: ['ok', T('Application sent. Pro will be switched on after the payment is checked.', 'ส่งคำขอแล้ว ผู้ดูแลระบบจะเปิด Pro หลังตรวจสอบการชำระเงิน')] }[S.notice];
+    const sent = S.mailed ? T(' A confirmation has been emailed to ' + u.username + '.', ' ส่งอีเมลยืนยันไปที่ ' + u.username + ' แล้ว') : '';
+    const notice = { freeOk: ['ok', T('Registration complete — your free account is ready. Sign in any time with your email and password.', 'สมัครสมาชิกเรียบร้อย — บัญชี Free พร้อมใช้งาน เข้าสู่ระบบได้ทุกเมื่อด้วยอีเมลและรหัสผ่าน') + sent], proSent: ['ok', T('Thank you — your registration and payment slip were received. Pro will be switched on within 2 hours and you will get an email when it is on.', 'ขอบคุณ — ได้รับข้อมูลการสมัครและสลิปแล้ว จะเปิดใช้ Pro ภายใน 2 ชั่วโมง และแจ้งทางอีเมลเมื่อเปิดใช้แล้ว') + sent], proFail: ['bad', T('Your account was created, but the slip did not upload. Send it again with “Apply for Pro” below.', 'สร้างบัญชีแล้ว แต่ส่งสลิปไม่สำเร็จ กรุณาส่งอีกครั้งด้วยปุ่ม “สมัคร Pro” ด้านล่าง')], applied: ['ok', T('Payment slip received. Pro will be switched on within 2 hours and you will get an email when it is on.', 'ได้รับสลิปแล้ว จะเปิดใช้ Pro ภายใน 2 ชั่วโมง และแจ้งทางอีเมลเมื่อเปิดใช้แล้ว') + sent] }[S.notice];
     return `${navBar()}<main class="wrap page account">
-      <div class="page-head"><div><p class="eyebrow">${T('My account', 'บัญชีของฉัน')}</p><h1>${esc(u.name || u.username)}</h1><p class="muted">@${esc(u.username)}${u.email ? ' · ' + esc(u.email) : ''}</p></div>
+      <div class="page-head"><div><p class="eyebrow">${T('My account', 'บัญชีของฉัน')}</p><h1>${esc(u.name || u.username)}</h1>${u.name ? `<p class="muted">${esc(u.username)}</p>` : ''}</div>
         <div class="dz-actions"><button class="btn btn-hot sm" data-act="nav" data-v="home">${T('Open designers', 'ไปหน้าออกแบบ')} →</button></div></div>
       ${notice ? `<p class="notice ${notice[0]}">${notice[1]}</p>` : ''}
       <div class="acc-grid">
@@ -693,11 +692,10 @@
         <section class="card"><h2 class="card-h">${T('Profile', 'ข้อมูลส่วนตัว')}</h2>
           <form id="profForm" class="mgrid" novalidate>
             <label>${T('Full name', 'ชื่อ-นามสกุล')}<input id="pf-name" value="${esc(u.name)}" maxlength="120"></label>
-            <label>${T('Email', 'อีเมล')}<input id="pf-email" type="email" value="${esc(u.email)}" maxlength="254"></label>
+            <label>${T('Email (sign-in)', 'อีเมล (ใช้เข้าสู่ระบบ)')}<input id="pf-email" type="email" value="${esc(u.email || u.username)}" maxlength="254" ${u.username.includes('@') ? 'disabled' : ''}></label>
             <label>${T('Phone', 'โทรศัพท์')}<input id="pf-phone" value="${esc(u.phone)}" maxlength="40"></label>
             <label>${T('Company / organisation', 'บริษัท / หน่วยงาน')}<input id="pf-company" value="${esc(u.company)}" maxlength="120"></label>
             <label>${T('Country', 'ประเทศ')}<input id="pf-country" value="${esc(u.country)}" maxlength="60"></label>
-            <label>${T('Username', 'ชื่อผู้ใช้')}<input value="${esc(u.username)}" disabled></label>
             <p class="form-err full" id="pf-err" hidden></p>
             <div class="mfoot full"><span class="grow"></span><button class="btn btn-ghost sm" type="submit">${T('Save profile', 'บันทึกข้อมูล')}</button></div></form>
           <h2 class="card-h">${T('Change password', 'เปลี่ยนรหัสผ่าน')}</h2>
@@ -719,7 +717,7 @@
     const err = $('#ap-err'), btn = $('#ap-btn'), fail = m => { err.textContent = m; err.hidden = false; btn.disabled = false; btn.textContent = T('Send slip', 'ส่งสลิป'); };
     err.hidden = true; btn.disabled = true; btn.textContent = T('Sending…', 'กำลังส่ง…');
     let pro; try { pro = await readPro('ap'); } catch (x) { return fail(x.message); }
-    try { const j = await Ops.applyPro(pro); if (j.account) setUser(j.account); S.applyOpen = false; S.notice = 'applied'; render(); toast(T('Application sent', 'ส่งคำขอแล้ว'), 'ok'); }
+    try { const j = await Ops.applyPro(pro); if (j.account) setUser(j.account); S.applyOpen = false; S.notice = 'applied'; S.mailed = !!j.emailedUser; render(); toast(T('Application sent', 'ส่งคำขอแล้ว'), 'ok'); }
     catch (x) { fail(x.msg === 'Too many pending applications' ? T('You already have applications waiting for review.', 'มีคำขอที่รอตรวจสอบอยู่แล้ว') : T('Could not send. Check the connection and try again.', 'ส่งไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง')); }
   }
   async function doProfile() {
@@ -1660,6 +1658,7 @@
         <div class="stat"><span>${T('Users', 'ผู้ใช้ทั้งหมด')}</span><b>${acc.length}</b></div><div class="stat"><span>${T('Active Pro', 'Pro ที่ใช้งานอยู่')}</span><b>${pro.length}</b></div>
         <div class="stat ${soon.length ? 'warn' : ''}"><span>${T('Expiring in 14 days', 'หมดอายุใน 14 วัน')}</span><b>${soon.length}</b></div><div class="stat"><span>${T('Paid this month', 'รายรับเดือนนี้')}${pend ? ' · ' + pend + T(' pending', ' รอตรวจ') : ''}</span><b>$${f(rev, 2)}${revT ? ` <small>+ ${f(revT, 0)} ฿</small>` : ''}</b></div></div>
       <div class="tabs" role="tablist"><button role="tab" aria-selected="${A.tab === 'users'}" data-act="tab" data-t="users">${T('Users', 'ผู้ใช้งาน')}</button><button role="tab" aria-selected="${A.tab === 'req'}" data-act="tab" data-t="req">${T('Pro applications', 'คำขอ Pro')}${nReq ? ` <span class="badge">${nReq}</span>` : ''}</button><button role="tab" aria-selected="${A.tab === 'pay'}" data-act="tab" data-t="pay">${T('Payments', 'การชำระเงิน')}</button><button role="tab" aria-selected="${A.tab === 'msg'}" data-act="tab" data-t="msg">${T('Messages', 'ข้อความ')}${nMsg ? ` <span class="badge">${nMsg}</span>` : ''}</button></div>
+      <p class="mail-state ${A.mailUsers ? 'ok' : ''}">${T('Member emails (registration confirmation, payment received, Pro switched on): ', 'อีเมลถึงสมาชิก (ยืนยันการสมัคร ได้รับการชำระเงิน เปิดใช้ Pro): ') + (A.mailUsers ? T('on.', 'เปิดใช้งาน') : T('off — needs RESEND_API_KEY and MAIL_FROM on a domain verified in Resend (Supabase → Edge Functions → Secrets).', 'ปิดอยู่ — ต้องตั้งค่า RESEND_API_KEY และ MAIL_FROM บนโดเมนที่ยืนยันใน Resend (Supabase → Edge Functions → Secrets)'))}</p>
       <p class="mail-state ${A.mail ? 'ok' : ''}">${A.mail ? T('Email to ' + ADMIN_EMAIL + ': sent by the server.', 'อีเมลถึง ' + ADMIN_EMAIL + ': ส่งจากเซิร์ฟเวอร์') : T('Email to ' + ADMIN_EMAIL + ': sent through the browser relay (FormSubmit) — confirm the address once from the first FormSubmit email. For server email with the slip attached, set RESEND_API_KEY in Supabase.', 'อีเมลถึง ' + ADMIN_EMAIL + ': ส่งผ่านตัวส่งต่อในเบราว์เซอร์ (FormSubmit) — ยืนยันที่อยู่อีเมลครั้งแรกจากอีเมลของ FormSubmit หากต้องการส่งจากเซิร์ฟเวอร์พร้อมแนบสลิป ให้ตั้งค่า RESEND_API_KEY ใน Supabase')}</p>
       ${A.tab === 'req' ? reqTab() : A.tab === 'msg' ? msgTab() : A.tab === 'users' ? `<div class="card"><div class="tbl-tools"><input id="adm-q" placeholder="${T('Search username, name or email', 'ค้นหาชื่อผู้ใช้ ชื่อ หรืออีเมล')}" value="${esc(A.q)}" aria-label="${T('Search', 'ค้นหา')}"><div class="seg">${filters.map(([k, l]) => `<button data-act="filter" data-f="${k}" aria-pressed="${A.filter === k}">${l}</button>`).join('')}</div></div>
         ${acc.length ? (list.length ? `<div class="tbl-wrap"><table class="chk adm"><thead><tr><th>${T('User', 'ผู้ใช้')}</th><th>${T('Plan', 'แพ็กเกจ')}</th><th>${T('Start', 'เริ่ม')}</th><th>${T('Expiry', 'หมดอายุ')}</th><th>${T('Status', 'สถานะ')}</th><th></th></tr></thead><tbody>
@@ -1683,7 +1682,7 @@
         <td>${r.months} ${T('month(s)', 'เดือน')}</td><td class="num mono">${money(+r.amount, r.currency)}</td><td>${m ? T(m[1], m[2]) : esc(r.method || '')}<br><span class="mono small">${esc(r.ref || '')}</span></td>
         <td><button class="btn btn-ghost xs" data-act="slip" data-r="${esc(r._id)}">${T('View', 'ดู')}</button><br><span class="muted small">${esc(r.slip_name || '')}</span></td><td><span class="pill st-${st[2]}">${T(st[0], st[1])}</span></td>
         <td class="act">${r.status === 'pending' ? `<label class="days-in">${T('Days', 'วัน')} <input type="number" min="1" id="rd-${esc(r._id)}" value="${r.months * 30}"></label><button class="btn btn-hot xs" data-act="approve" data-r="${esc(r._id)}">${T('Approve · turn on Pro', 'อนุมัติ · เปิด Pro')}</button><button class="btn btn-danger-ghost xs" data-act="reject" data-r="${esc(r._id)}">${T('Reject', 'ไม่อนุมัติ')}</button>` : `<span class="muted small">${esc((r.decided || '').slice(0, 10))}</span>`}</td></tr>`; }).join('')}
-      </tbody></table></div><p class="hint">${T('Approving switches the member to Pro (adding the days to any time left), and records the payment.', 'การอนุมัติจะเปิด Pro ให้สมาชิก (บวกวันเพิ่มจากเวลาที่เหลือ) และบันทึกการชำระเงิน')}</p></div>`;
+      </tbody></table></div><p class="hint">${T('Approving switches the member to Pro (adding the days to any time left), records the payment and emails the member that Pro is on. Members are told it takes up to 2 hours.', 'การอนุมัติจะเปิด Pro ให้สมาชิก (บวกวันเพิ่มจากเวลาที่เหลือ) บันทึกการชำระเงิน และส่งอีเมลแจ้งสมาชิก สมาชิกได้รับแจ้งว่าใช้เวลาไม่เกิน 2 ชั่วโมง')}</p></div>`;
   }
   function msgTab() {
     const ms = A.messages.slice().sort((a, b) => (b.created || '').localeCompare(a.created || ''));
@@ -1700,7 +1699,7 @@
       const a = e.data;
       el.innerHTML = `<div class="modal-bg"><form class="modal" id="userForm" novalidate><h2>${e.isNew ? T('New user', 'สร้างผู้ใช้ใหม่') : T('Edit user ', 'แก้ไขผู้ใช้ ') + esc(a.username)}</h2>
         <div class="mgrid">
-          <label>${T('Username', 'ชื่อผู้ใช้')}<input id="u-username" value="${esc(a.username)}" ${e.isNew ? '' : 'disabled'} required autocomplete="off"></label>
+          <label>${T('Email (sign-in)', 'อีเมล (ใช้เข้าสู่ระบบ)')}<input id="u-username" value="${esc(a.username)}" ${e.isNew ? '' : 'disabled'} required autocomplete="off" placeholder="name@example.com"></label>
           <label>${T('Full name', 'ชื่อ-นามสกุล')}<input id="u-name" value="${esc(a.name)}"></label>
           <label>${T('Email', 'อีเมล')}<input id="u-email" type="email" value="${esc(a.email)}"></label>
           <label>${T('Phone', 'โทรศัพท์')}<input id="u-phone" value="${esc(a.phone)}"></label>
@@ -1748,8 +1747,8 @@
   }
   async function saveUser() {
     const e = A.edit, v = id => $('#' + id).value.trim(), err = $('#u-err'), fail = m => { err.textContent = m; err.hidden = false; };
-    const username = e.isNew ? v('u-username') : e.data.username;
-    if (!/^[A-Za-z0-9_.-]{3,32}$/.test(username)) return fail(T('Username: 3–32 letters, digits, _ . or -.', 'ชื่อผู้ใช้: ตัวอักษรอังกฤษ ตัวเลข _ . - ยาว 3–32 ตัว'));
+    const raw = e.isNew ? v('u-username') : e.data.username, username = raw.includes('@') ? raw.toLowerCase() : raw;
+    if (!EMAIL_ID.test(username) && !/^[A-Za-z0-9_.-]{3,32}$/.test(username)) return fail(T('Enter the member’s email address.', 'กรอกอีเมลของสมาชิก'));
     if (username.toLowerCase() === ADMIN.user.toLowerCase()) return fail(T('That username is reserved for the administrator.', 'ชื่อนี้สงวนไว้สำหรับผู้ดูแลระบบ'));
     if (e.isNew && A.accounts.some(a => a._id.toLowerCase() === username.toLowerCase())) return fail(T('That username is already taken.', 'มีชื่อผู้ใช้นี้แล้ว'));
     const pass = $('#u-pass').value;

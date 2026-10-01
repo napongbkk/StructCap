@@ -12,6 +12,9 @@ const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL") || "napong.subanpong@outlook.com
 const USER_ITER = 120000;
 const USER_RE = /^[A-Za-z0-9_.-]{3,32}$/;
 const EMAIL_RE = /^[^@\s]{1,64}@[^@\s]{1,190}\.[^@\s]{2,24}$/;
+const EMAIL_ID_RE = /^[a-z0-9._%+-]{1,64}@[a-z0-9.-]{1,190}\.[a-z]{2,24}$/;   // email used as the sign-in name
+const normId = (u: unknown) => { const s = String(u ?? "").trim(); return s.includes("@") ? s.toLowerCase() : s; };
+const isId = (u: string) => USER_RE.test(u) || EMAIL_ID_RE.test(u);
 const PRICE: Record<string, number> = { USD: 0.99, THB: 30 };
 const SLIP_TYPES: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/heic": "heic", "application/pdf": "pdf" };
 
@@ -68,22 +71,62 @@ async function extend(username: string, days: number) {
   check(await db.from("accounts").update({ plan: "pro", status: "active", expiry: addDays(base, days), start: a.start || today(), updated: new Date().toISOString() }).eq("username", username));
 }
 
-// ---------- email to the administrator (Resend)
-async function mail(subject: string, rows: [string, unknown][], extra: { text?: string; replyTo?: string; attach?: { filename: string; content: string } } = {}) {
+// ---------- email (Resend). Admin notices need only RESEND_API_KEY; emails to members also need MAIL_FROM on a
+// sending domain verified in Resend (the test sender onboarding@resend.dev only delivers to the account owner).
+async function send(to: string, subject: string, html: string, replyTo?: string, attach?: { filename: string; content: string }) {
   const key = Deno.env.get("RESEND_API_KEY");
-  if (!key) return false;
-  const html = `<div style="font:14px/1.5 system-ui,sans-serif;color:#14213a"><h2 style="margin:0 0 12px">${esc(subject)}</h2>
-    <table style="border-collapse:collapse">${rows.map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#667">${esc(k)}</td><td style="padding:4px 0"><b>${esc(v)}</b></td></tr>`).join("")}</table>
-    ${extra.text ? `<p style="white-space:pre-wrap;border-left:3px solid #f2387a;padding:8px 12px;background:#fafafa">${esc(extra.text)}</p>` : ""}
-    <p style="color:#889;font-size:12px">StructCap · ${new Date().toISOString().replace("T", " ").slice(0, 16)} UTC — review in the StructCap admin panel.</p></div>`;
+  if (!key || !to) return false;
   try {
     const r = await fetch("https://api.resend.com/emails", {
       method: "POST", headers: { Authorization: "Bearer " + key, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: Deno.env.get("MAIL_FROM") || "StructCap <onboarding@resend.dev>", to: [ADMIN_EMAIL], subject: "[StructCap] " + subject, html, reply_to: extra.replyTo && EMAIL_RE.test(extra.replyTo) ? extra.replyTo : undefined, attachments: extra.attach ? [extra.attach] : undefined }),
+      body: JSON.stringify({ from: Deno.env.get("MAIL_FROM") || "StructCap <onboarding@resend.dev>", to: [to], subject, html, reply_to: replyTo && EMAIL_RE.test(replyTo) ? replyTo : undefined, attachments: attach ? [attach] : undefined }),
     });
     if (!r.ok) console.error("resend", r.status, await r.text());
     return r.ok;
   } catch (e) { console.error("resend", e); return false; }
+}
+// emails to the member, in their language
+const SITE = Deno.env.get("SITE_URL") || "https://napongbkk.github.io/StructCap/";
+const money = (v: number, cur: string) => cur === "THB" ? `${v} THB` : `USD ${(+v).toFixed(2)}`;
+function userMail(to: string, lang: string, kind: string, d: Record<string, any> = {}) {
+  const th = lang === "th";
+  const L = (en: string, t: string) => (th ? t : en);
+  const per = d.months ? L(`${d.months} month(s), ${money(d.amount, d.currency)}`, `${d.months} เดือน ${d.currency === "THB" ? d.amount + " บาท" : money(d.amount, d.currency)}`) : "";
+  const M: Record<string, [string, string[]]> = {
+    welcome: [L("Welcome to StructCap — registration confirmed", "ยืนยันการสมัครสมาชิก StructCap"), [
+      L("Thank you for registering. Your free account is ready.", "ขอบคุณที่สมัครสมาชิก บัญชี Free ของท่านพร้อมใช้งานแล้ว"),
+      L(`Sign in with this email address: <b>${esc(to)}</b>`, `เข้าสู่ระบบด้วยอีเมลนี้: <b>${esc(to)}</b>`),
+      L("Free covers RC beam design to all three codes. Pro (USD 0.99 / month or 30 THB / month) unlocks every designer, the full calculation report and PDF export — apply any time from My account.", "แพ็กเกจ Free ใช้ออกแบบคาน คสล. ได้ทุกมาตรฐาน Pro (30 บาท / เดือน) เปิดทุกฟังก์ชัน รายการคำนวณฉบับเต็ม และ PDF สมัครได้ทุกเมื่อจากหน้า บัญชีของฉัน")]],
+    welcomePro: [L("Welcome to StructCap — registration and payment received", "ยืนยันการสมัครสมาชิกและได้รับการชำระเงินแล้ว — StructCap"), [
+      L("Thank you for registering. Your account is ready.", "ขอบคุณที่สมัครสมาชิก บัญชีของท่านพร้อมใช้งานแล้ว"),
+      L(`Sign in with this email address: <b>${esc(to)}</b>`, `เข้าสู่ระบบด้วยอีเมลนี้: <b>${esc(to)}</b>`),
+      L(`We have received your payment slip for Pro (${per}). We will check it and switch Pro on within 2 hours — you will get another email when it is on. Meanwhile you can use the Free features.`, `เราได้รับสลิปการชำระเงินสำหรับ Pro (${per}) แล้ว จะตรวจสอบและเปิดใช้ Pro ภายใน 2 ชั่วโมง และจะแจ้งทางอีเมลเมื่อเปิดใช้แล้ว ระหว่างนี้ใช้งานฟังก์ชัน Free ได้`)]],
+    payment: [L("StructCap — payment slip received", "StructCap — ได้รับสลิปการชำระเงินแล้ว"), [
+      L(`We have received your payment slip for Pro (${per}).`, `เราได้รับสลิปการชำระเงินสำหรับ Pro (${per}) แล้ว`),
+      L("We will check the payment and switch Pro on within 2 hours. You will get an email as soon as it is on.", "จะตรวจสอบการชำระเงินและเปิดใช้ Pro ภายใน 2 ชั่วโมง และจะแจ้งทางอีเมลทันทีที่เปิดใช้")]],
+    approved: [L("StructCap Pro is now active", "StructCap Pro เปิดใช้งานแล้ว"), [
+      L("Your payment is confirmed and Pro is switched on.", "ยืนยันการชำระเงินแล้ว และเปิดใช้ Pro ให้แล้ว"),
+      L(`Pro is active until <b>${esc(d.expiry)}</b>.`, `ใช้งาน Pro ได้ถึง <b>${esc(d.expiry)}</b>`),
+      L("Sign in again (or reload the page) to unlock every designer, the full calculation report and PDF export.", "กรุณาเข้าสู่ระบบใหม่ (หรือรีเฟรชหน้า) เพื่อใช้ทุกฟังก์ชัน รายการคำนวณฉบับเต็ม และ PDF")]],
+    rejected: [L("StructCap — we could not confirm your payment", "StructCap — ไม่สามารถยืนยันการชำระเงินได้"), [
+      L("We could not match your payment slip to a payment, so Pro has not been switched on.", "เราไม่สามารถตรวจสอบสลิปกับรายการชำระเงินได้ จึงยังไม่ได้เปิดใช้ Pro"),
+      d.note ? L(`Note from the administrator: ${esc(d.note)}`, `หมายเหตุจากผู้ดูแลระบบ: ${esc(d.note)}`) : "",
+      L("Reply to this email and we will sort it out.", "ตอบกลับอีเมลนี้ แล้วเราจะช่วยดำเนินการให้")]],
+  };
+  const [subject, lines] = M[kind];
+  const html = `<div style="font:15px/1.6 system-ui,sans-serif;color:#14213a;max-width:560px"><p style="font:700 22px system-ui;margin:0 0 14px"><span style="color:#14213a">Struct</span><span style="color:#f2387a">Cap</span></p>
+    ${lines.filter(Boolean).map((l) => `<p style="margin:0 0 12px">${l}</p>`).join("")}
+    <p style="margin:18px 0"><a href="${esc(SITE)}" style="background:#ff6a2b;color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:700">${L("Open StructCap", "เปิด StructCap")}</a></p>
+    <p style="color:#778;font-size:13px">${L("Questions? Reply to this email — we answer within 2 hours.", "มีคำถาม? ตอบกลับอีเมลนี้ เราจะตอบภายใน 2 ชั่วโมง")}<br>© StructCap · Developed by NS</p></div>`;
+  return send(to, subject, html, ADMIN_EMAIL);
+}
+async function mail(subject: string, rows: [string, unknown][], extra: { text?: string; replyTo?: string; attach?: { filename: string; content: string } } = {}) {
+  if (!Deno.env.get("RESEND_API_KEY")) return false;
+  const html = `<div style="font:14px/1.5 system-ui,sans-serif;color:#14213a"><h2 style="margin:0 0 12px">${esc(subject)}</h2>
+    <table style="border-collapse:collapse">${rows.map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;color:#667">${esc(k)}</td><td style="padding:4px 0"><b>${esc(v)}</b></td></tr>`).join("")}</table>
+    ${extra.text ? `<p style="white-space:pre-wrap;border-left:3px solid #f2387a;padding:8px 12px;background:#fafafa">${esc(extra.text)}</p>` : ""}
+    <p style="color:#889;font-size:12px">StructCap · ${new Date().toISOString().replace("T", " ").slice(0, 16)} UTC — review in the StructCap admin panel.</p></div>`;
+  return send(ADMIN_EMAIL, "[StructCap] " + subject, html, extra.replyTo, extra.attach);
 }
 
 // ---------- payment slip upload (base64 from the browser, max 5 MB)
@@ -135,8 +178,8 @@ Deno.serve(async (req) => {
       return json({ ok: true, token: await issue("admin", ADMIN_USER, 12) });
     }
     if (a === "login") {
-      const u = String(body.username || "");
-      if (!USER_RE.test(u)) return json({ ok: false, err: "bad" });
+      const u = normId(body.username);
+      if (!isId(u)) return json({ ok: false, err: "bad" });
       const { data: acc } = await db.from("accounts").select("*").eq("username", u).maybeSingle();
       if (!acc || !same(await pbkdf2(String(body.password || ""), acc.salt, acc.iter), acc.hash)) return json({ ok: false, err: "bad" });
       if (acc.status !== "active") return json({ ok: false, err: "suspended" });
@@ -144,27 +187,27 @@ Deno.serve(async (req) => {
     }
     if (a === "register") {
       if (body.website) return json({ ok: true }); // honeypot
-      const u = str(body.username, 32), pw = String(body.password || ""), email = str(body.email, 254);
-      if (!USER_RE.test(u)) return fail("Invalid username");
-      if (u.toLowerCase() === ADMIN_USER.toLowerCase()) return fail("Username taken", 409);
+      const email = normId(str(body.email, 254)), u = email, pw = String(body.password || ""), lang = body.lang === "th" ? "th" : "en";
+      if (!EMAIL_ID_RE.test(email)) return fail("Invalid email");
       if (pw.length < 8 || pw.length > 128) return fail("Password too short");
-      if (!EMAIL_RE.test(email)) return fail("Invalid email");
-      const name = str(body.name, 120);
-      if (!name) return fail("Name required");
-      const { data: taken } = await db.from("accounts").select("username").ilike("username", u.replace(/[\\%_]/g, (c) => "\\" + c)).maybeSingle();
-      if (taken) return fail("Username taken", 409);
+      const name = str(body.name, 120) || null;
+      const { data: taken } = await db.from("accounts").select("username").eq("username", u).maybeSingle();
+      if (taken) return fail("Email taken", 409);
       const s = salt();
       check(await db.from("accounts").insert({ username: u, name, plan: "free", status: "active", start: today(), expiry: null, salt: s, hash: await pbkdf2(pw, s, USER_ITER), iter: USER_ITER, updated: new Date().toISOString() }));
-      check(await db.from("members").insert({ username: u, email, phone: str(body.phone, 40) || null, company: str(body.company, 120) || null, country: str(body.country, 60) || null, note: str(body.note, 500) || null }));
+      check(await db.from("members").insert({ username: u, email, phone: str(body.phone, 40) || null, company: str(body.company, 120) || null, country: str(body.country, 60) || null, note: str(body.note, 500) || null, lang }));
       let rq: any = null;
       if (body.plan === "pro") {
         try { rq = await createRequest(u, body); } catch (e) { console.error(e); rq = { error: String((e as Error).message || e) }; }
       }
-      const rows: [string, unknown][] = [["Username", u], ["Name", name], ["Email", email], ["Phone", body.phone], ["Company", body.company], ["Country", body.country], ["Plan", body.plan === "pro" ? "Pro (application)" : "Free"]];
+      const rows: [string, unknown][] = [["Email (sign-in)", u], ["Name", name], ["Language", lang], ["Phone", body.phone], ["Company", body.company], ["Country", body.country], ["Plan", body.plan === "pro" ? "Pro (application)" : "Free"]];
       if (rq && !rq.error) rows.push(["Pro period", rq.months + " month(s)"], ["Amount", rq.amount + " " + rq.currency], ["Method / ref.", (body.pro?.method || "") + " " + (body.pro?.ref || "")]);
-      const emailed = await mail(body.plan === "pro" ? "New registration + Pro application: " + u : "New registration: " + u, rows, { replyTo: email, text: str(body.note, 500), attach: rq?.slip ? { filename: rq.slip.name, content: rq.slip.b64 } : undefined });
+      const [emailed, emailedUser] = await Promise.all([
+        mail(body.plan === "pro" ? "New registration + Pro application: " + u : "New registration: " + u, rows, { replyTo: email, text: str(body.note, 500), attach: rq?.slip ? { filename: rq.slip.name, content: rq.slip.b64 } : undefined }),
+        userMail(email, lang, rq && !rq.error ? "welcomePro" : "welcome", rq && !rq.error ? rq : {}),
+      ]);
       await db.from("messages").insert({ id: uid("msg"), kind: body.plan === "pro" ? "pro" : "register", name, email, username: u, message: (body.plan === "pro" ? "Registered and applied for Pro" + (rq && !rq.error ? ` (${rq.months} month(s), ${rq.amount} ${rq.currency})` : " — slip upload failed") : "Registered (Free)") + (body.note ? " — " + str(body.note, 500) : "") });
-      return json({ ok: true, emailed, request: rq && !rq.error ? { id: rq.id, months: rq.months, amount: rq.amount, currency: rq.currency } : null, slipError: rq?.error || null, account: await account(u), token: await issue("user", u, 24) });
+      return json({ ok: true, emailed, emailedUser, request: rq && !rq.error ? { id: rq.id, months: rq.months, amount: rq.amount, currency: rq.currency } : null, slipError: rq?.error || null, account: await account(u), token: await issue("user", u, 24) });
     }
     if (a === "contact") {
       if (body.website) return json({ ok: true });
@@ -198,7 +241,7 @@ Deno.serve(async (req) => {
         const email = str(body.email, 254);
         if (email && !EMAIL_RE.test(email)) return fail("Invalid email");
         if (body.name !== undefined) check(await db.from("accounts").update({ name: str(body.name, 120) || null, updated: new Date().toISOString() }).eq("username", u));
-        check(await db.from("members").upsert({ username: u, email: email || null, phone: str(body.phone, 40) || null, company: str(body.company, 120) || null, country: str(body.country, 60) || null }));
+        check(await db.from("members").upsert({ username: u, email: EMAIL_ID_RE.test(u) ? u : (email || null), phone: str(body.phone, 40) || null, company: str(body.company, 120) || null, country: str(body.country, 60) || null }));
         return json({ ok: true, account: await account(u) });
       }
       if (a === "applyPro") {
@@ -207,9 +250,12 @@ Deno.serve(async (req) => {
         let rq;
         try { rq = await createRequest(u, body); } catch (e) { const m = String((e as Error).message); return fail(m === "slipType" || m === "slipSize" || m === "slipMissing" ? m : "Upload failed"); }
         const acc = await account(u);
+        const { data: mm } = await db.from("members").select("lang,email").eq("username", u).maybeSingle();
+        if (body.lang === "th" || body.lang === "en") await db.from("members").update({ lang: body.lang }).eq("username", u);
+        const emailedUser = await userMail(mm?.email || (EMAIL_ID_RE.test(u) ? u : ""), body.lang || mm?.lang || "en", "payment", rq);
         const emailed = await mail("Pro application: " + u, [["Username", u], ["Name", acc?.name], ["Email", (acc as any)?.email], ["Pro period", rq.months + " month(s)"], ["Amount", rq.amount + " " + rq.currency], ["Method / ref.", (body.pro?.method || "") + " " + (body.pro?.ref || "")]], { replyTo: (acc as any)?.email, text: str(body.pro?.note, 1000), attach: { filename: rq.slip.name, content: rq.slip.b64 } });
         await db.from("messages").insert({ id: uid("msg"), kind: "pro", name: acc?.name || null, email: (acc as any)?.email || null, username: u, message: `Applied for Pro (${rq.months} month(s), ${rq.amount} ${rq.currency})` });
-        return json({ ok: true, emailed, request: { id: rq.id, months: rq.months, amount: rq.amount, currency: rq.currency }, account: acc });
+        return json({ ok: true, emailed, emailedUser, request: { id: rq.id, months: rq.months, amount: rq.amount, currency: rq.currency }, account: acc });
       }
       return fail("Unknown action");
     }
@@ -226,11 +272,12 @@ Deno.serve(async (req) => {
         getSettings(),
       ]);
       [acc, mem, pay, rq, msg].forEach(check);
-      return json({ accounts: acc.data, members: mem.data, payments: pay.data, requests: rq.data, messages: msg.data, proFree: !!set.proFree, payInfo: set.payInfo || { en: "", th: "" }, mail: !!Deno.env.get("RESEND_API_KEY") });
+      return json({ accounts: acc.data, members: mem.data, payments: pay.data, requests: rq.data, messages: msg.data, proFree: !!set.proFree, payInfo: set.payInfo || { en: "", th: "" }, mail: !!Deno.env.get("RESEND_API_KEY"), mailUsers: !!Deno.env.get("RESEND_API_KEY") && !!Deno.env.get("MAIL_FROM") });
     }
     if (a === "saveUser") {
       const u = body.user || {}, m = body.member || {}, pw = body.password ? String(body.password) : "";
-      if (!USER_RE.test(u.username || "")) return fail("Invalid username");
+      u.username = normId(u.username);
+      if (!isId(u.username || "")) return fail("Invalid username");
       if (u.username.toLowerCase() === ADMIN_USER.toLowerCase()) return fail("Reserved username");
       const { data: old } = await db.from("accounts").select("salt,hash,iter").eq("username", u.username).maybeSingle();
       if (body.isNew && old) return fail("Username taken", 409);
@@ -239,7 +286,7 @@ Deno.serve(async (req) => {
       let s = old?.salt, h = old?.hash, it = old?.iter || USER_ITER;
       if (pw) { s = salt(); it = USER_ITER; h = await pbkdf2(pw, s, it); }
       check(await db.from("accounts").upsert({ username: u.username, name: u.name || null, plan: u.plan === "free" ? "free" : "pro", status: u.status === "suspended" ? "suspended" : "active", start: u.start || null, expiry: u.expiry || null, salt: s, hash: h, iter: it, updated: new Date().toISOString() }));
-      check(await db.from("members").upsert({ username: u.username, email: m.email || null, phone: m.phone || null, company: m.company || null, country: m.country || null, note: m.note || null }));
+      check(await db.from("members").upsert({ username: u.username, email: EMAIL_ID_RE.test(u.username) ? u.username : (m.email || null), phone: m.phone || null, company: m.company || null, country: m.country || null, note: m.note || null }));
       return json({ ok: true });
     }
     if (a === "deleteUser") {
@@ -268,7 +315,9 @@ Deno.serve(async (req) => {
         await extend(r.username, days);
         check(await db.from("payments").insert({ id: uid("pay"), username: r.username, date: today(), amount: r.amount, currency: r.currency, method: r.method || "bank", ref: r.ref || r.slip_name, days, status: "paid" }));
       }
-      return json({ ok: true });
+      const [{ data: mm }, { data: ac }] = await Promise.all([db.from("members").select("email,lang").eq("username", r.username).maybeSingle(), db.from("accounts").select("expiry").eq("username", r.username).maybeSingle()]);
+      const emailedUser = await userMail(mm?.email || (EMAIL_ID_RE.test(r.username) ? r.username : ""), mm?.lang || "en", approve ? "approved" : "rejected", { expiry: ac?.expiry, note: str(body.note, 1000) });
+      return json({ ok: true, emailedUser });
     }
     if (a === "slipUrl") {
       const { data: r } = await db.from("requests").select("slip_path").eq("id", String(body.id)).maybeSingle();
