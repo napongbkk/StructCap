@@ -24,8 +24,8 @@
 
   // ------------------------------------------------------------------ mesh
   class Mesh {
-    constructor() { this.t = []; }
-    tri(a, b, c, col, sa, sb, sc) { this.t.push({ p: [a, b, c], col, s: sa == null ? null : [sa, sb, sc] }); }
+    constructor() { this.t = []; this.tag = ''; }
+    tri(a, b, c, col, sa, sb, sc) { this.t.push({ p: [a, b, c], col, s: sa == null ? null : [sa, sb, sc], tag: this.tag }); }
     quad(a, b, c, d, col, sa, sb, sc, sd) { this.tri(a, b, c, col, sa, sb, sc); this.tri(a, c, d, col, sa, sc, sd); }
     // extrude closed profile [[a,b],...] along stations; place(a,b,t) -> [x,y,z]; sf(x,y,z) -> scalar|null
     tube(prof, stations, place, col, sf, caps) {
@@ -99,18 +99,24 @@
     }
     bind() {
       const cv = this.cv, pts = new Map();
-      let mode = null, lx = 0, ly = 0, pd = 0;
-      cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); mode = (e.button === 2 || e.shiftKey || pts.size === 2) ? 'pan' : 'rot'; lx = e.clientX; ly = e.clientY; if (pts.size === 2) { const [a, b] = [...pts.values()]; pd = Math.hypot(a[0] - b[0], a[1] - b[1]); } });
+      let mode = null, lx = 0, ly = 0, pd = 0, sx = 0, sy = 0, moved = false;
+      cv.addEventListener('pointerdown', e => { sx = e.clientX; sy = e.clientY; moved = pts.size > 0; cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); mode = (e.button === 2 || e.shiftKey || pts.size === 2) ? 'pan' : 'rot'; lx = e.clientX; ly = e.clientY; if (pts.size === 2) { const [a, b] = [...pts.values()]; pd = Math.hypot(a[0] - b[0], a[1] - b[1]); } });
       cv.addEventListener('pointermove', e => {
         if (!pts.has(e.pointerId)) return;
         pts.set(e.pointerId, [e.clientX, e.clientY]);
+        if (Math.hypot(e.clientX - sx, e.clientY - sy) > 4) moved = true;
+        if (!moved) return;
         if (pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pd) this.zoom(pd / d); pd = d; return; }
         const dx = e.clientX - lx, dy = e.clientY - ly; lx = e.clientX; ly = e.clientY;
         if (mode === 'rot') { this.cam.yaw -= dx * 0.008; this.cam.pitch = Math.max(-1.45, Math.min(1.45, this.cam.pitch + dy * 0.008)); }
         else this.pan(dx, dy);
         this.draw();
       });
-      const up = e => { pts.delete(e.pointerId); if (!pts.size) { mode = null; pd = 0; if (this.onchange) this.onchange(this.cam); } };
+      const up = e => {
+        const click = e.type === 'pointerup' && !moved && pts.size === 1 && mode === 'rot';
+        pts.delete(e.pointerId);
+        if (!pts.size) { mode = null; pd = 0; if (click) { const b = cv.getBoundingClientRect(); this.pick(e.clientX - b.left, e.clientY - b.top); } else if (this.onchange) this.onchange(this.cam); }
+      };
       cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
       cv.addEventListener('wheel', e => { e.preventDefault(); this.zoom(Math.exp(e.deltaY * 0.0012)); if (this.onchange) this.onchange(this.cam); }, { passive: false });
       cv.addEventListener('contextmenu', e => e.preventDefault());
@@ -126,6 +132,39 @@
       const pos = [t[0] + c.dist * Math.cos(c.pitch) * Math.cos(c.yaw), t[1] + c.dist * Math.cos(c.pitch) * Math.sin(c.yaw), t[2] + c.dist * Math.sin(c.pitch)];
       const f = norm(sub(t, pos)), r = norm(cross(f, [0, 0, 1])), u = cross(r, f);
       return { pos, f, r, u };
+    }
+    pick(px, py) {
+      const L = this.last || [];
+      let hit = null;
+      for (let i = L.length - 1; i >= 0 && !hit; i--) {
+        const [a, b, c] = L[i].q, d = (b[1] - c[1]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[1] - c[1]);
+        if (Math.abs(d) < 1e-9) continue;
+        const w0 = ((b[1] - c[1]) * (px - c[0]) + (c[0] - b[0]) * (py - c[1])) / d, w1 = ((c[1] - a[1]) * (px - c[0]) + (a[0] - c[0]) * (py - c[1])) / d, w2 = 1 - w0 - w1;
+        if (w0 >= -1e-6 && w1 >= -1e-6 && w2 >= -1e-6) {
+          const t = L[i].t, w = [w0, w1, w2], p = [0, 1, 2].map(k => w[0] * t.p[0][k] + w[1] * t.p[1][k] + w[2] * t.p[2][k]);
+          const s = t.s ? { mpa: w[0] * t.s[0].mpa + w[1] * t.s[1].mpa + w[2] * t.s[2].mpa, ur: w[0] * t.s[0].ur + w[1] * t.s[1].ur + w[2] * t.s[2].ur } : null;
+          hit = { p, s, tag: t.tag };
+        }
+      }
+      this.sel = hit;
+      this.draw();
+      if (this.onpick) this.onpick(hit);
+    }
+    pin(ctx, q, lines, kind, W, H) {
+      const col = kind === 'max' ? '#d42a6b' : kind === 'maxu' ? '#b35a00' : '#14213a';
+      ctx.save();
+      ctx.font = '600 11.5px ui-monospace, SFMono-Regular, Menlo, monospace';
+      const tw = Math.max(...lines.map(l => ctx.measureText(l).width)) + 14, th = lines.length * 15 + 8;
+      let bx = q[0] + 16, by = q[1] - th - 18;
+      if (bx + tw > W - 4) bx = q[0] - 16 - tw;
+      if (by < 4) by = q[1] + 18;
+      ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(q[0], q[1]); ctx.lineTo(bx + (bx > q[0] ? 0 : tw), by + (by < q[1] ? th : 0)); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.94)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(bx, by, tw, th, 6) : ctx.rect(bx, by, tw, th); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = col; lines.forEach((l, i) => ctx.fillText(l, bx + 7, by + 16 + i * 15));
+      ctx.beginPath(); ctx.arc(q[0], q[1], 5.5, 0, 2 * PI); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
+      ctx.beginPath(); ctx.arc(q[0], q[1], 2.5, 0, 2 * PI); ctx.fillStyle = col; ctx.fill();
+      ctx.restore();
     }
     zoom(k) { this.cam.dist = Math.max(0.2, Math.min(200, this.cam.dist * k)); this.draw(); }
     pan(dx, dy) { const { r, u } = this.basis(), s = this.cam.dist * 0.0016; ['tx', 'ty', 'tz'].forEach((k, i) => { this.cam[k] += (-dx * r[i] + dy * u[i]) * s; }); }
@@ -151,14 +190,19 @@
         const sh = 0.42 + 0.58 * Math.abs(dot(nrm, L));
         let col = t.col;
         if (t.s && this.color) col = this.color(t.s);
-        list.push({ q, z: zs / 3, c: 'rgb(' + Math.round(col[0] * sh) + ',' + Math.round(col[1] * sh) + ',' + Math.round(col[2] * sh) + ')' });
+        list.push({ q, z: zs / 3, t, c: 'rgb(' + Math.round(col[0] * sh) + ',' + Math.round(col[1] * sh) + ',' + Math.round(col[2] * sh) + ')' });
       }
       list.sort((a, b) => b.z - a.z);
+      this.last = list;
       ctx.lineJoin = 'round'; ctx.lineWidth = 0.6;
       for (const t of list) {
         ctx.beginPath(); ctx.moveTo(t.q[0][0], t.q[0][1]); ctx.lineTo(t.q[1][0], t.q[1][1]); ctx.lineTo(t.q[2][0], t.q[2][1]); ctx.closePath();
         ctx.fillStyle = t.c; ctx.fill(); ctx.strokeStyle = t.c; ctx.stroke();
       }
+      // pins: maximum markers and the picked point
+      const proj = p => { const d = sub(p, pos), z = dot(d, f); return z < near ? null : [W / 2 + foc * dot(d, r) / z, H / 2 - foc * dot(d, u) / z]; };
+      (this.marks || []).forEach(mk => { const q = proj(mk.p); if (q) this.pin(ctx, q, mk.lines, mk.kind, W, H); });
+      if (this.sel && this.fmtPick) { const q = proj(this.sel.p); if (q) this.pin(ctx, q, this.fmtPick(this.sel), 'pick', W, H); }
       // axis triad
       const ax = [[1, 0, 0, 'x'], [0, 1, 0, 'y'], [0, 0, 1, 'z']], o = [36, H - 30];
       ctx.lineWidth = 2; ctx.font = '600 11px ui-monospace, monospace';
@@ -174,8 +218,16 @@
     const fat = r.fat, cs = opts.stress && fat && fat.caseObjs ? fat.caseObjs.find(c => c.id === opts.stress) : null;
     const plainCap = fat && fat.phi ? fat.phi * 0.737 * 140 : 72;
     const colTop = g.H + arm.D / 2, SI = b.SI, Lr0 = g.L, hs = x.stiff ? x.hs : 0;
-    let smax = 0;
-    const track = s => { if (s && s.mpa > smax) smax = s.mpa; return s; };
+    let smax = 0, maxM = null, maxU = null;
+    const byTag = {};
+    const track = (s, p) => {
+      if (!s) return s;
+      if (s.mpa > smax) smax = s.mpa;
+      if (p && (!maxM || s.mpa > maxM.s.mpa)) maxM = { p: p.slice(), s, tag: m.tag };
+      if (p && (!maxU || s.ur > maxU.s.ur)) maxU = { p: p.slice(), s, tag: m.tag };
+      if (p) { const k = m.tag, e = byTag[k] || (byTag[k] = { m: null, u: null }); if (!e.m || s.mpa > e.m.s.mpa) e.m = { p: p.slice(), s, tag: k }; if (!e.u || s.ur > e.u.s.ur) e.u = { p: p.slice(), s, tag: k }; }
+      return s;
+    };
     // stress functions (N, mm → MPa); return {mpa, ur}
     const colS = !cs ? null : p => {
       const X = p[0] * 1e3, Y = p[1] * 1e3, Z = Math.max(0, p[2] * 1e3);
@@ -185,7 +237,7 @@
       const s = Math.abs(Mop * Y / Iop + Mip * X / Iip);
       let cap = plainCap;
       if (Z <= 40) cap = fat.caps.fB || plainCap; else if (x.stiff && Math.abs(Z - hs) <= 60) cap = fat.caps.fS || plainCap;
-      return track({ mpa: s, ur: s / cap });
+      return track({ mpa: s, ur: s / cap }, p);
     };
     const armS = !cs ? null : p => {
       const X = p[0] * 1e3, Y = p[1] * 1e3, Z = p[2] * 1e3 - g.H;
@@ -194,24 +246,27 @@
       let cap = plainCap;
       if (X - g.x0 <= 40) cap = fat.caps.fR || plainCap;
       else if (cn.type === 'bolt' && Math.abs(X - (g.x0 + cn.Lst)) <= 40) cap = fat.caps.fE || plainCap;
-      return track({ mpa: s, ur: s / cap });
+      return track({ mpa: s, ur: s / cap }, p);
     };
-    const boltS = (u, v, grpPts, Mu, Mv, As, cap) => {
+    const boltS = (u, v, grpPts, Mu, Mv, As, cap, p) => {
       const Su = grpPts.reduce((a, q) => a + q.u * q.u, 0), Sv = grpPts.reduce((a, q) => a + q.v * q.v, 0);
       const s = Math.abs((Su ? Mu * u / Su : 0) + (Sv ? Mv * v / Sv : 0)) / As;
-      return track({ mpa: s, ur: s / cap });
+      return track({ mpa: s, ur: s / cap }, p);
     };
     // ---- ground and foundation
     const P = mm(b.plateSide), fz = -mm(x.tp) - 0.05;
+    m.tag = 'found';
     m.slab([0, 0, fz - 0.3], [P * 0.95, P * 0.95, 0.3], concrete, 10);
     // ---- base plate
+    m.tag = 'plate';
     m.slab([0, 0, -mm(x.tp) / 2], [P / 2, P / 2, mm(x.tp) / 2], dark, 8);
     // ---- anchor bolts (with nuts)
     const bd = +x.db.slice(1) / 1000, BO = G.GANTRY.BOLTS;
     const Mop0 = cs ? cs.Fs * g.zs + cs.wa * Lr0 * g.H + cs.wc * g.H * g.H / 2 : 0, Mip0 = cs ? cs.Fz * cs.xz : 0;
     const F = FAST(bd), tp0 = mm(x.tp), washer = theme.washer || [196, 202, 212];
     b.bolts.pts.forEach(q => {
-      const sval = cs ? boltS(q.u, q.v, b.bolts.pts, Mip0, Mop0, BO[x.db][0], fat.caps.fA || 30) : null;
+      m.tag = 'anchor';
+      const sval = cs ? boltS(q.u, q.v, b.bolts.pts, Mip0, Mop0, BO[x.db][0], fat.caps.fA || 30, [mm(q.u), mm(q.v), 0]) : null;
       const sf = sval ? () => sval : null, pl = (a, c, t) => [mm(q.u) + a, mm(q.v) + c, t];
       const top = F.wt + F.m + F.mj + 0.35 * bd;
       m.tube(circle(bd / 2, 10), [fz, top], pl, boltC, sf, true);
@@ -222,6 +277,7 @@
     });
     // ---- stiffeners
     const Ls0 = mm(b.Ls), hs0 = mm(x.hs), stiffPoly = trapStiff(Ls0, hs0);
+    m.tag = 'stiff';
     b.stiff.forEach(st => {
       const o = [mm(st.u), mm(st.v), 0];
       m.prism(o, [st.nu, st.nv, 0], [-st.nv, st.nu, 0], stiffPoly, mm(x.ts), steel, colS ? p => colS([o[0], o[1], p[2]]) : null);
@@ -233,7 +289,9 @@
     dense(zst.length ? zst[zst.length - 1] + 0.02 : 0, mm(colTop), 0.25); zst.push(mm(colTop));
     const zs2 = [...new Set(zst.map(z => +z.toFixed(4)))].sort((a, c) => a - c);
     const cprof = profileOf(col, 36);
+    m.tag = 'col';
     m.tube(cprof, zs2, (a, c, t) => [a, c, t], steel, colS, true);
+    m.tag = 'bweld';
     // base weld ring
     m.tube(cprof.map(([a, c]) => [a * 1.035, c * 1.035]), [0, 0.012], (a, c, t) => [a, c, t], dark, colS);
     // ---- arm (and stub / flange)
@@ -248,29 +306,36 @@
     const placeArm = (a, c, t) => [t, a, H + c];
     if (xf) {
       const tp = mm(cn.tep);
+      m.tag = 'stub';
       m.tube(aprof, xs2.filter(v => v <= xf - tp), placeArm, steel, armS, true);
+      m.tag = 'arm';
       m.tube(aprof, [xf + tp].concat(xs2.filter(v => v > xf + tp)), placeArm, steel, armS, true);
       const ext = Math.max(...r.flange.pts.map(q => Math.max(Math.abs(q.u), Math.abs(q.v)))) + 45;
+      m.tag = 'eplate';
       [-1, 1].forEach(sg => m.box([xf + sg * tp / 2, 0, H], [tp / 2, mm(ext), mm(ext)], [1, 0, 0], [0, 1, 0], [0, 0, 1], dark));
       const fb = +cn.fb.slice(1) / 1000, Mh0 = cs ? cs.Fs * Math.max(0, g.xsw - (g.x0 + cn.Lst)) + cs.wa * Math.pow(Lr0 - g.x0 - cn.Lst, 2) / 2 : 0, Mv0 = cs ? cs.Fz * Math.max(0, cs.xz - g.x0 - cn.Lst) : 0;
       const FF = FAST(fb), washer = theme.washer || [196, 202, 212];
       r.flange.pts.forEach(q => {
-        const sval = cs ? boltS(q.u, q.v, r.flange.pts, Mh0, Mv0, BO[cn.fb][0], fat.caps.fF || 30) : null, sf = sval ? () => sval : null;
+        m.tag = 'fbolt';
+        const sval = cs ? boltS(q.u, q.v, r.flange.pts, Mh0, Mv0, BO[cn.fb][0], fat.caps.fF || 30, [xf, mm(q.u), H + mm(q.v)]) : null, sf = sval ? () => sval : null;
         const pl = (a, c, t) => [t, mm(q.u) + a, H + mm(q.v) + c];
         m.tube(circle(fb / 2, 8), [xf - tp - FF.wt - FF.k * 0.3, xf + tp + FF.wt + FF.m + FF.mj + 0.3 * fb], pl, boltC, sf, true);
         stack(m, pl, xf - tp, -1, [['w', FF.wt, FF.wd], ['n', FF.k, FF.s]], dark, washer, sf);
         stack(m, pl, xf + tp, 1, [['w', FF.wt, FF.wd], ['n', FF.m, FF.s], ['n', FF.mj, FF.s]], dark, washer, sf);
       });
-    } else m.tube(aprof, xs2, placeArm, steel, armS, true);
+    } else { m.tag = 'arm'; m.tube(aprof, xs2, placeArm, steel, armS, true); }
+    m.tag = 'aweld';
     m.tube(aprof.map(([a, c]) => [a * 1.04, c * 1.04]), [xr, xr + 0.012], placeArm, dark, armS);
     // ---- sign panel and brackets
     const sx0 = mm(g.xs - g.Bs / 2), sx1 = mm(g.xs + g.Bs / 2), sz0 = mm(g.zs - g.Hs / 2), sz1 = mm(g.zs + g.Hs / 2), sy = mm(g.ey);
+    m.tag = 'sign';
     m.box([(sx0 + sx1) / 2, sy, (sz0 + sz1) / 2], [(sx1 - sx0) / 2, 0.02, (sz1 - sz0) / 2], [1, 0, 0], [0, 1, 0], [0, 0, 1], signC);
     [sx0 + (sx1 - sx0) * 0.2, sx1 - (sx1 - sx0) * 0.2].forEach(bx => {
+      m.tag = 'bracket';
       m.box([bx, sy / 2, H], [0.03, Math.abs(sy) / 2, 0.03], [1, 0, 0], [0, 1, 0], [0, 0, 1], dark);
       m.box([bx, sy - Math.sign(sy || 1) * 0.04, (sz0 + sz1) / 2], [0.03, 0.02, (sz1 - sz0) / 2 * 0.95], [1, 0, 0], [0, 1, 0], [0, 0, 1], dark);
     });
-    return { mesh: m, smax, cs };
+    return { mesh: m, smax, cs, maxM, maxU, byTag };
   }
   // stiffener outline (r from tube face, z up): full height at the tube, short flat top, chamfer to a low outer edge
   function trapStiff(Ls, hs) {

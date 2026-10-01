@@ -930,36 +930,68 @@
         <button class="btn btn-ghost xs" data-act="v3reset">${T('Reset view', 'รีเซ็ตมุมมอง')}</button></div>
       <canvas id="v3c" class="v3c" tabindex="0" aria-label="${T('3D model of the gantry. Drag to rotate, shift-drag or two fingers to pan, scroll or pinch to zoom, arrow keys to rotate.', 'แบบจำลอง 3 มิติ ลากเพื่อหมุน กด shift ค้างแล้วลากหรือใช้สองนิ้วเพื่อเลื่อน เลื่อนล้อหรือบีบนิ้วเพื่อซูม')}"></canvas>
       <div id="v3leg" class="v3-leg"></div>
+      <div id="v3pick" class="v3-pick" aria-live="polite"></div>
       <p class="hint">${T('Drag to rotate · shift-drag / two fingers to pan · scroll / pinch to zoom. The contour is the nominal stress range from beam theory on the modelled sections (stiffeners included at the base). It shows how the stress is distributed around each weld; it is not a finite-element hot-spot analysis — weld-toe concentration is covered by the detail category.', 'ลากเพื่อหมุน · shift+ลาก / สองนิ้วเพื่อเลื่อน · เลื่อนล้อ / บีบนิ้วเพื่อซูม สีแสดงช่วงหน่วยแรงระบุจากทฤษฎีคาน (รวมแผ่นเสริมที่ฐาน) เพื่อดูการกระจายหน่วยแรงรอบรอยเชื่อม ไม่ใช่การวิเคราะห์ไฟไนต์เอลิเมนต์แบบจุดร้อน ความเข้มข้นของหน่วยแรงที่ขอบรอยเชื่อมครอบคลุมโดยหมวดรายละเอียด')}</p></div>`;
   }
   const niceMax = v => { if (!(v > 0)) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; };
   function colorFn(mode, smax) {
     return s => { const a = (s[0][mode === 'ur' ? 'ur' : 'mpa'] + s[1][mode === 'ur' ? 'ur' : 'mpa'] + s[2][mode === 'ur' ? 'ur' : 'mpa']) / 3; return SC3D.ramp(mode === 'ur' ? a : Math.min(1, a / smax)); };
   }
+  const PART = () => ({ found: T('Foundation', 'ฐานคอนกรีต'), plate: T('Base plate', 'แผ่นฐาน'), anchor: T('Anchor bolt', 'สลักยึด'), stiff: T('Stiffener', 'แผ่นเสริม'), col: T('Column', 'เสา'),
+    bweld: T('Column-to-base weld', 'รอยเชื่อมเสา-ฐาน'), stub: T('Stub', 'ท่อสั้น'), arm: T('Arm', 'คาน'), eplate: T('End plate', 'แผ่นปลาย'), fbolt: T('Flange bolt', 'สลักหน้าแปลน'),
+    aweld: S.res && S.res.conn.type === 'bolt' ? T('Stub-to-column weld', 'รอยเชื่อมท่อสั้น-เสา') : T('Arm-to-column weld', 'รอยเชื่อมคาน-เสา'), sign: T('Sign panel', 'แผ่นป้าย'), bracket: T('Sign bracket', 'ขายึดป้าย') });
+  // location text in the terms an engineer uses for that part
+  function where(sel) {
+    const p = sel.p.map(v => v * 1000), nm = PART()[sel.tag] || sel.tag;
+    if (['col', 'bweld', 'stiff'].includes(sel.tag)) return nm + ' · z = ' + f(Math.max(0, p[2]), 0) + ' mm';
+    if (['arm', 'stub', 'aweld'].includes(sel.tag)) return nm + ' · x = ' + f(p[0], 0) + ' mm';
+    return nm + ' · ' + f(p[0], 0) + ', ' + f(p[1], 0) + ', ' + f(p[2], 0) + ' mm';
+  }
+  const stressTxt = s => 'Δσ = ' + f(s.mpa, 1) + ' MPa · UR ' + f(s.ur, 2);
   function mount3D(r) {
     const cv = $('#v3c'); if (!cv || !window.SC3D) return;
     const pre = SC3D.presets(r), theme = themeColors(), st = S.v3;
     if (!st.cam) st.cam = Object.assign({}, pre[st.view]);
-    viewer = new SC3D.Viewer(cv, st.cam); viewer.onchange = c => { st.cam = Object.assign({}, c); };
+    viewer = cv._v || new SC3D.Viewer(cv, st.cam); cv._v = viewer;
+    viewer.cam = Object.assign({}, viewer.cam, st.cam); viewer.sel = null;
+    viewer.onchange = c => { st.cam = Object.assign({}, c); };
     viewer.bg = theme.bg;
     const sc = SC3D.gantryScene(r, { stress: st.cs === 'none' ? null : st.cs }, theme);
     viewer.mesh = sc.mesh;
     const smax = niceMax(sc.smax);
     viewer.color = st.cs === 'none' ? null : colorFn(st.mode, smax);
+    viewer.fmtPick = sel => sel.s ? [where(sel), stressTxt(sel.s)] : [where(sel), st.cs === 'none' ? T('select a fatigue case to see stress', 'เลือกกรณีความล้าเพื่อดูหน่วยแรง') : T('not stress-checked in this model', 'ไม่ได้คำนวณหน่วยแรงในแบบจำลองนี้')];
+    viewer.marks = [];
+    // each view labels the maximum within its own region
+    const region = { base: ['col', 'bweld', 'stiff', 'anchor'], arm: ['arm', 'aweld', 'stub', 'eplate', 'fbolt'] }[st.view];
+    if (region && sc.byTag) {
+      const pickMax = k => region.map(t => sc.byTag[t] && sc.byTag[t][k]).filter(Boolean).reduce((p, q) => !p || q.s[k === 'm' ? 'mpa' : 'ur'] > p.s[k === 'm' ? 'mpa' : 'ur'] ? q : p, null);
+      sc.maxM = pickMax('m'); sc.maxU = pickMax('u');
+    }
+    if (st.cs !== 'none' && sc.maxM) {
+      viewer.marks.push({ p: sc.maxM.p, kind: 'max', lines: [(region ? T('MAX Δσ in view', 'Δσ สูงสุดในมุมนี้') : T('MAX Δσ', 'Δσ สูงสุด')) + ' ' + f(sc.maxM.s.mpa, 1) + ' MPa', where(sc.maxM), 'UR ' + f(sc.maxM.s.ur, 2)] });
+      if (sc.maxU && Math.hypot(...sc.maxU.p.map((v, i) => v - sc.maxM.p[i])) > 0.05) viewer.marks.push({ p: sc.maxU.p, kind: 'maxu', lines: [T('MAX UR', 'UR สูงสุด') + ' ' + f(sc.maxU.s.ur, 2), where(sc.maxU), 'Δσ ' + f(sc.maxU.s.mpa, 1) + ' MPa'] });
+    }
+    const pickBox = $('#v3pick');
+    const showPick = sel => { if (!pickBox) return; pickBox.innerHTML = sel ? `<b>${T('Selected', 'จุดที่เลือก')}:</b> ${esc(where(sel))}${sel.s ? ' · <span class="mono">' + esc(stressTxt(sel.s)) + '</span>' : ''} <button class="linkbtn" data-act="v3clear">${T('Clear', 'ล้าง')}</button>` : `<span class="muted">${T('Click the model to read the stress range at any point.', 'คลิกที่แบบจำลองเพื่ออ่านช่วงหน่วยแรง ณ จุดนั้น')}</span>`; };
+    viewer.onpick = showPick;
+    showPick(null);
     viewer.draw();
     const leg = $('#v3leg');
     if (st.cs === 'none') { leg.innerHTML = ''; return; }
     const ticks = st.mode === 'ur' ? ['0', '0.25', '0.50', '0.75', '1.00'] : [0, 0.25, 0.5, 0.75, 1].map(t => f(t * smax, smax < 10 ? 1 : 0));
     const cname = sc.cs ? sc.cs.nm : '';
     leg.innerHTML = `<div class="v3-bar"><span class="v3-grad"></span>${st.mode === 'ur' ? '<span class="v3-over">&gt; 1.0</span>' : ''}</div><div class="v3-ticks">${ticks.map(t => `<span>${t}</span>`).join('')}${st.mode === 'ur' ? '<span></span>' : ''}</div>
-      <p class="v3-cap">${esc(cname)} · ${st.mode === 'ur' ? T('UR = Δσ / φ_f·f₃ of the detail at each location (plain tube: FAT 140)', 'UR = Δσ / φ_f·f₃ ของรายละเอียด ณ ตำแหน่งนั้น (ท่อปกติ: FAT 140)') : T('Δσ in MPa', 'Δσ หน่วย MPa')} · ${T('max Δσ in model', 'Δσ สูงสุดในแบบจำลอง')} ${f(sc.smax, 1)} MPa</p>`;
+      <p class="v3-cap">${esc(cname)} · ${st.mode === 'ur' ? T('UR = Δσ / φ_f·f₃ of the detail at each location (plain tube: FAT 140)', 'UR = Δσ / φ_f·f₃ ของรายละเอียด ณ ตำแหน่งนั้น (ท่อปกติ: FAT 140)') : T('Δσ in MPa', 'Δσ หน่วย MPa')} · ${T('model max Δσ', 'Δσ สูงสุดทั้งแบบจำลอง')} ${f(sc.smax, 1)} MPa</p>`;
   }
   function snapshot3D(r, view, cs) {
     if (!window.SC3D) return '';
     const oc = document.createElement('canvas'), theme = themeColors(), pre = SC3D.presets(r);
     theme.bg = [255, 255, 255];
     const v = new SC3D.Viewer(oc, pre[view]), sc = SC3D.gantryScene(r, { stress: cs }, theme);
-    v.bg = theme.bg; v.mesh = sc.mesh; v.color = cs ? colorFn('ur', 1) : null; v.draw(720, 430);
+    v.bg = theme.bg; v.mesh = sc.mesh; v.color = cs ? colorFn('ur', 1) : null;
+    v.marks = cs && sc.maxM ? [{ p: sc.maxM.p, kind: 'max', lines: [T('MAX Δσ', 'Δσ สูงสุด') + ' ' + f(sc.maxM.s.mpa, 1) + ' MPa', where(sc.maxM)] }] : [];
+    v.draw(720, 430);
     try { return oc.toDataURL('image/png'); } catch (e) { return ''; }
   }
   window.addEventListener('resize', () => { if (viewer && $('#v3c')) viewer.draw(); });
@@ -1240,6 +1272,7 @@
     else if (a === 'report') { if (!isPro()) { toast(T('The full calculation report and PDF export are Pro features.', 'รายการคำนวณฉบับเต็มและ PDF สำหรับสมาชิก Pro'), 'bad'); return; } S.reportOpen = true; renderReport(); $('#reportWrap').scrollIntoView({ behavior: 'smooth' }); }
     else if (a === 'closeReport') { S.reportOpen = false; $('#reportWrap').innerHTML = ''; }
     else if (a === 'pdf') exportPdf();
+    else if (a === 'v3clear') { if (viewer) { viewer.sel = null; viewer.draw(); if (viewer.onpick) viewer.onpick(null); } }
     else if (a === 'v3view' || a === 'v3reset') {
       if (a === 'v3view') { S.v3.view = b.dataset.p; if (S.v3.view !== 'overall' && S.v3.cs === 'none' && S.res) S.v3.cs = worstCase(S.res); }
       S.v3.cam = null; if (S.res) { $$('[data-act=v3view]').forEach(x => x.setAttribute('aria-pressed', x.dataset.p === S.v3.view)); const cs = $('#v3case'); if (cs) cs.value = S.v3.cs; const md = $('#v3mode'); if (md) md.disabled = S.v3.cs === 'none'; mount3D(S.res); }
