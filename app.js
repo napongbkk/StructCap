@@ -794,16 +794,18 @@
     const g = r.input.geo, stm = g.method === 'stm';
     let s = `<svg viewBox="0 0 ${W} ${H}" class="sec-svg" role="img" aria-label="${T('Pile cap plan', 'ผังฐานราก')}">`;
     const pth = P => 'M' + P.map(p => X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' L') + ' Z';
+    const cid = 'capclip' + (++clipSeq);
+    s += `<defs><clipPath id="${cid}o"><path d="${pth(r.poly)}"/></clipPath></defs>`;
     if (r.tri) {
-      const inner = RC.capOutline(r.piles, g.edge - g.cs, true).poly, cid = 'capclip' + (++clipSeq);
-      s += `<defs><clipPath id="${cid}"><path d="${pth(inner)}"/></clipPath><clipPath id="${cid}o"><path d="${pth(r.poly)}"/></clipPath></defs><path d="${pth(r.poly)}" class="s-conc"/><g clip-path="url(#${cid})">`;
+      const inner = RC.capOutline(r.piles, g.edge - g.cs, true).poly;
+      s += `<defs><clipPath id="${cid}"><path d="${pth(inner)}"/></clipPath></defs><path d="${pth(r.poly)}" class="s-conc"/><g clip-path="url(#${cid})">`;
     } else s += `<rect x="${X(r.X0)}" y="${Y(r.Y1)}" width="${r.Lx * k}" height="${r.Ly * k}" class="s-conc"/>`;
     const nbx = Math.min(r.nbx, 14), nby = Math.min(r.nby, 14);
     for (let i = 0; i < nbx; i++) { const y = r.Y0 + g.cs + (r.Ly - 2 * g.cs) * i / Math.max(1, nbx - 1); s += `<line x1="${X(r.X0 + g.cs)}" x2="${X(r.X1 - g.cs)}" y1="${Y(y)}" y2="${Y(y)}" class="s-mesh"/>`; }
     for (let i = 0; i < nby; i++) { const x = r.X0 + g.cs + (r.Lx - 2 * g.cs) * i / Math.max(1, nby - 1); s += `<line y1="${Y(r.Y0 + g.cs)}" y2="${Y(r.Y1 - g.cs)}" x1="${X(x)}" x2="${X(x)}" class="s-mesh"/>`; }
     if (r.tri) s += '</g>';
     const d = (r.dx + r.dy) / 2;
-    s += `<rect x="${X(-g.cx / 2 - d / 2)}" y="${Y(g.cy / 2 + d / 2)}" width="${(g.cx + d) * k}" height="${(g.cy + d) * k}" rx="${S.code === 'EC2' ? d / 2 * k : 0}" class="s-perim"/>`;
+    s += `<rect x="${X(-g.cx / 2 - d / 2)}" y="${Y(g.cy / 2 + d / 2)}" width="${(g.cx + d) * k}" height="${(g.cy + d) * k}" rx="${S.code === 'EC2' ? d / 2 * k : 0}" class="s-perim" clip-path="url(#${cid}o)"/>`;
     if (stm && g.layout === '3') { const P = r.piles; s += `<path d="M${X(P[0].x)} ${Y(P[0].y)} L${X(P[1].x)} ${Y(P[1].y)} L${X(P[2].x)} ${Y(P[2].y)} Z" class="s-tri"/>`; }
     if (stm) r.piles.forEach(p => { const nx = Math.sign(p.x) * g.cx / 4, ny = Math.sign(p.y) * g.cy / 4; s += `<line x1="${X(nx)}" y1="${Y(ny)}" x2="${X(p.x)}" y2="${Y(p.y)}" class="s-strut"/>`; });
     const Pmax = Math.max(...r.Pu);

@@ -799,7 +799,7 @@
     const add = (id, name, Ed, Rd, unit, ur) => checks.push({ id, name, Ed, Rd, unit, ur: ur !== undefined ? ur : (Rd > 0 ? Math.abs(Ed) / Rd : 99) });
     const piles = pileLayout({ layout: g.layout, s: g.s, nx: g.nx, ny: g.ny, sy: g.sy });
     const xs = piles.map(p => p.x), ys = piles.map(p => p.y);
-    const outl = capOutline(piles, g.edge, code === 'AS' && g.layout === '3'), tri = outl.tri;
+    const outl = capOutline(piles, g.edge, g.layout === '3'), tri = outl.tri;
     const { X0, X1, Y0, Y1, Lx, Ly } = outl, H = g.H;
     const dx = H - g.cb - g.barX.d / 2, dy = dx - g.barX.d / 2 - g.barY.d / 2, dav = (dx + dy) / 2;
     const n = piles.length;
@@ -994,17 +994,33 @@
     const rhoP = Math.min(0.02, sq((fx.As / (fx.B * dx)) * (fy.As / (fy.B * dy))));
     let Vp = 0, VpR = 0, urP = 0;
     const b0 = 2 * (cx + cy);
+    // length of a closed critical perimeter that lies inside the cap (parts outside the cap edges do not count)
+    const clipLen = path => {
+      let Lt = 0, Li = 0;
+      path.forEach((p, i) => {
+        const q = path[(i + 1) % path.length], l = Math.hypot(q[0] - p[0], q[1] - p[1]), k = Math.max(1, Math.ceil(l / 5));
+        for (let j = 0; j < k; j++) { const t = (j + 0.5) / k; if (outl.inside(p[0] + t * (q[0] - p[0]), p[1] + t * (q[1] - p[1]))) Li += l / k; }
+        Lt += l;
+      });
+      return { Lt, Li };
+    };
+    const rectPath = (a, b, r) => { // rectangle a × b with corner radius r (r = 0: square corners)
+      const pts = [], cxs = [a / 2 - r, -a / 2 + r, -a / 2 + r, a / 2 - r], cys = [b / 2 - r, b / 2 - r, -b / 2 + r, -b / 2 + r];
+      for (let qd = 0; qd < 4; qd++) { const nseg = r > 0 ? 12 : 0; for (let i = 0; i <= nseg; i++) { const an = qd * PI / 2 + (nseg ? i * PI / 2 / nseg : PI / 4); pts.push([cxs[qd] + r * Math.cos(an), cys[qd] + r * Math.sin(an)]); } }
+      return r > 0 ? pts : [[a / 2, b / 2], [-a / 2, b / 2], [-a / 2, -b / 2], [a / 2, -b / 2]];
+    };
+    const clipNote = (full, inn) => { if (inn < full - 1) R.txt(L('Part of the critical perimeter falls outside the cap: only the length inside the cap is used (', 'เส้นรอบรูปวิกฤตบางส่วนอยู่นอกฐานราก: ใช้เฉพาะความยาวภายในฐานราก (') + f(inn, 0) + L(' of ', ' จาก ') + f(full, 0) + ' mm).'); };
     if (code === 'EC2') {
-      const dv = dav, b05 = b0 + PI * dv;
+      const dv = dav, b05f = b0 + PI * dv, cl = clipLen(rectPath(cx + dv, cy + dv, dv / 2)), b05 = b05f * cl.Li / cl.Lt;
       const inside = piles.reduce((s, p, i) => s + ((Math.abs(p.x) <= cx / 2 + dv / 2 && Math.abs(p.y) <= cy / 2 + dv / 2) ? Pu[i] : 0), 0);
       Vp = (+A.N) - inside;
-      const kpb = clamp(3.6 * sq(1 - b0 / b05), 1, 2.5);
+      const kpb = clamp(3.6 * sq(1 - b0 / b05f), 1, 2.5);
       const ap = Math.max(1, Math.min(...piles.map(p => Math.max(Math.abs(p.x) - cx / 2, Math.abs(p.y) - cy / 2)).filter(v => v > 0).concat([dv])));
       const apd = Math.min(dv, sq(ap * dv / 8));
       const tR = Math.min(0.6 / m.gV * kpb * cbrt(100 * rhoP * m.fc * m.ddg / apd), 0.5 / m.gV * sq(m.fc));
       res.apd = apd; res.ap = ap;
       const tE = 1.15 * Vp * 1e3 / (b05 * dv);
-      R.eq('b_0,5', 'b_0,5 = 2(c_x + c_y) + π·d_v', b05, 'mm'); R.eq('k_pb', 'k_pb = 3.6√(1 − b_0/b_0,5), 1 ≤ k_pb ≤ 2.5', kpb, '');
+      R.eq('b_0,5', 'b_0,5 = 2(c_x + c_y) + π·d_v' + (b05 < b05f - 1 ? L(', inside the cap', ', ภายในฐานราก') : ''), b05, 'mm'); clipNote(b05f, b05); res.colPerim = { a: cx + dv, b: cy + dv, r: dv / 2 }; R.eq('k_pb', 'k_pb = 3.6√(1 − b_0/b_0,5), 1 ≤ k_pb ≤ 2.5', kpb, '');
       R.eq('ρ_l', '√(ρ_x·ρ_y)', rhoP, '');
       R.eq('a_pd', L('a_pd = √(a_p·d_v/8) ≤ d_v, a_p = column face to nearest pile axis', 'a_pd = √(a_p·d_v/8) ≤ d_v'), apd, 'mm', '§8.4.3');
       R.eq('τ_Ed', 'τ_Ed = β_e·V_Ed/(b_0,5·d_v),  β_e = 1.15', tE, 'MPa');
@@ -1012,13 +1028,14 @@
       urP = R.chk(L('Punching stress', 'หน่วยแรงเฉือนทะลุ'), tE, tR, 'MPa'); Vp = tE; VpR = tR;
       add('pc', L('Punching at column', 'เฉือนทะลุที่เสา'), tE, tR, 'MPa', urP);
     } else {
-      const d = dav, bo = 2 * (cx + d) + 2 * (cy + d);
+      const d = dav, bof = 2 * (cx + d) + 2 * (cy + d), cl = clipLen(rectPath(cx + d, cy + d, 0)), bo = bof * cl.Li / cl.Lt;
+      clipNote(bof, bo); res.colPerim = { a: cx + d, b: cy + d, r: 0 };
       const inside = piles.reduce((s, p, i) => s + ((Math.abs(p.x) <= cx / 2 + d / 2 && Math.abs(p.y) <= cy / 2 + d / 2) ? Pu[i] : 0), 0);
       const V = (+A.N) - inside;
       const beta = Math.max(cx, cy) / Math.min(cx, cy);
       let Vc;
-      if (code === 'AS') { const fcv = Math.min(0.17 * (1 + 2 / beta), 0.34) * sq(m.fc); Vc = 0.7 * bo * d * fcv / 1e3; R.eq('u', 'u = 2(c_x + d_om) + 2(c_y + d_om)', bo, 'mm'); R.eq('f_cv', 'f_cv = 0.17(1 + 2/β_h)√f\'c ≤ 0.34√f\'c', fcv, 'MPa'); R.eq('φV_uo', 'φ·u·d_om·f_cv, φ = 0.7', Vc, 'kN'); }
-      else { const ls = Math.min(1, sq(2 / (1 + 0.004 * d))); const vc = Math.min(0.33, 0.17 * (1 + 2 / beta), 0.083 * (2 + 40 * d / bo)) * ls * m.sqfc; Vc = 0.75 * vc * bo * d / 1e3; R.eq('b_o', 'b_o = 2(c_1 + d) + 2(c_2 + d)', bo, 'mm'); R.eq('v_c', 'min(0.33, 0.17(1+2/β), 0.083(2+α_s d/b_o))·λ_s·√f\'c', vc, 'MPa', 'Table 22.6.5.2'); R.eq('φV_c', 'φ·v_c·b_o·d, φ = 0.75', Vc, 'kN'); }
+      if (code === 'AS') { const fcv = Math.min(0.17 * (1 + 2 / beta), 0.34) * sq(m.fc); Vc = 0.7 * bo * d * fcv / 1e3; R.eq('u', 'u = 2(c_x + d_om) + 2(c_y + d_om)' + (bo < bof - 1 ? L(', inside the cap', ', ภายในฐานราก') : ''), bo, 'mm'); R.eq('f_cv', 'f_cv = 0.17(1 + 2/β_h)√f\'c ≤ 0.34√f\'c', fcv, 'MPa'); R.eq('φV_uo', 'φ·u·d_om·f_cv, φ = 0.7', Vc, 'kN'); }
+      else { const ls = Math.min(1, sq(2 / (1 + 0.004 * d))); const vc = Math.min(0.33, 0.17 * (1 + 2 / beta), 0.083 * (2 + 40 * d / bo)) * ls * m.sqfc; Vc = 0.75 * vc * bo * d / 1e3; R.eq('b_o', 'b_o = 2(c_1 + d) + 2(c_2 + d)' + (bo < bof - 1 ? L(', inside the cap', ', ภายในฐานราก') : ''), bo, 'mm'); R.eq('v_c', 'min(0.33, 0.17(1+2/β), 0.083(2+α_s d/b_o))·λ_s·√f\'c', vc, 'MPa', 'Table 22.6.5.2'); R.eq('φV_c', 'φ·v_c·b_o·d, φ = 0.75', Vc, 'kN'); }
       urP = R.chk(L('Punching', 'เฉือนทะลุ'), V, Vc, 'kN'); add('pc', L('Punching at column', 'เฉือนทะลุที่เสา'), V, Vc, 'kN', urP);
     }
     // punching at pile (worst)
@@ -1029,7 +1046,9 @@
       let cp;
       if (tri) { // circular perimeter at d/2 from the pile face, the part inside the cap outline
         const N = 360; let inn = 0; for (let k = 0; k < N; k++) { const t = 2 * PI * (k + 0.5) / N; if (outl.inside(p.x + a * Math.cos(t), p.y + a * Math.sin(t))) inn++; }
-        cp = { L: 2 * PI * a * inn / N, open: inn < N ? 1 : 0, circ: true };
+        const P = outl.poly, segD = (u, v) => { const ux = v[0] - u[0], uy = v[1] - u[1], t = clamp(((p.x - u[0]) * ux + (p.y - u[1]) * uy) / (ux * ux + uy * uy), 0, 1); return Math.hypot(u[0] + t * ux - p.x, u[1] + t * uy - p.y); };
+        const cut = P.filter((u, k) => segD(u, P[(k + 1) % P.length]) < a).length;
+        cp = { L: 2 * PI * a * inn / N, open: Math.min(2, cut), circ: true };
       } else cp = clippedPerim(p.x, p.y, a, X0, X1, Y0, Y1);
       if (cp.L <= 0 || cp.open >= 3) { skipped = true; return; }
       let cap;
