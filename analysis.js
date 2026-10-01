@@ -260,7 +260,7 @@
       ns.forEach(n => { const p = P3(n), a = dot(p, B.r), b = dot(p, B.u); x0 = Math.min(x0, a); x1 = Math.max(x1, a); y0 = Math.min(y0, b); y1 = Math.max(y1, b); });
       const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, ctr = ns.reduce((s, n) => addv(s, P3(n), 1 / ns.length), [0, 0, 0]);
       const dd = dot(ctr, B.d); c.t = addv(addv(addv([0, 0, 0], B.r, cx), B.u, cy), B.d, dd);
-      c.k = Math.min((W - 90) / Math.max(x1 - x0, 1), (H - 90) / Math.max(y1 - y0, 1), 400);
+      c.k = Math.min((W - 110) / Math.max(x1 - x0, 1), (H - 120) / Math.max(y1 - y0, 1), 400);
     }
     function extent() { const ns = A.model.nodes; if (!ns.length) return 10; let mx = 0; const c = ns.reduce((s, n) => addv(s, P3(n), 1 / ns.length), [0, 0, 0]); ns.forEach(n => { mx = Math.max(mx, Math.hypot(...sub(P3(n), c))); }); return Math.max(2 * mx, 1); }
     function screenToWorld(x, y, W, H) { const c = A.cam, B = basis(c); return addv(addv(c.t.slice(), B.r, (x - W / 2) / c.k), B.u, (H / 2 - y) / c.k); }
@@ -651,43 +651,71 @@
     const nodeOpts = () => A.model.nodes.map(n => [n.id, n.id]);
     const big = n => (n > 300 ? hint(T('Showing the first 300 rows — select items in the view to edit the rest.', 'แสดง 300 แถวแรก — เลือกในมุมมองเพื่อแก้ไขส่วนที่เหลือ')) : '');
 
-    // ------------------------------------------------------------------ tables
+    // ------------------------------------------------------------------ compact lists (fit the tree without sideways scrolling)
+    const OPEN = {};
+    const isOpen = (k, id) => OPEN[k] === String(id);
+    const liHead = (k, id, main, sub, extra) => `<button class="an-lih" data-act="an-open" data-k="${k}" data-id="${esc(String(id))}" aria-expanded="${isOpen(k, id)}"><span class="an-lim">${main}</span><span class="an-lis">${sub || ''}</span>${extra || ''}</button>`;
+    const liDel = (tb, i) => `<button class="icon-btn an-lix" data-act="an-del" data-tb="${tb}" data-i="${i}" aria-label="${T('Delete', 'ลบ')}">×</button>`;
+    const grid2 = h => `<div class="an-row2">${h}</div>`;
+    const cf = (lbl, tb, i, fd, v, type) => fld(lbl, inp(v == null ? '' : v, `data-tb="${tb}" data-i="${i}" data-f="${fd}" ${type === 'n' ? 'type="number" step="any" inputmode="decimal"' : ''}`));
+    const cs2 = (lbl, opts, v, tb, i, fd) => fld(lbl, sel(opts, v, `data-tb="${tb}" data-i="${i}" data-f="${fd}"`));
     function matTable() {
       const m = A.model;
-      return wrap(`<table class="an-t"><thead><tr><th>ID</th><th>${T('Name', 'ชื่อ')}</th><th>E (MPa)</th><th>ν</th><th>γ (kN/m³)</th><th>${T('Strength', 'กำลัง')}</th><th></th></tr></thead><tbody>${m.materials.map((s, i) => `<tr><td>${cell('materials', i, 'id', s.id, '', 76)}</td><td>${cell('materials', i, 'name', s.name || '', '', 150)}</td><td>${cell('materials', i, 'E', s.E, 'n', 84)}</td><td>${cell('materials', i, 'nu', s.nu === undefined ? 0.3 : s.nu, 'n', 48)}</td><td>${cell('materials', i, 'rho', s.rho, 'n', 52)}</td><td class="mono small">${s.fc ? "f'c " + f(+s.fc, 1) : s.fy ? 'fy ' + f(+s.fy, 0) : ''}</td><td>${del('materials', i)}</td></tr>`).join('')}</tbody></table>`);
+      return `<div class="an-list">${m.materials.map((s, i) => `<div class="an-li ${isOpen('mat', s.id) ? 'open' : ''}"><div class="an-lirow">${liHead('mat', s.id, esc(s.id), esc(s.name || '') + ' · E ' + f(+s.E, 0) + (s.fc ? " · f'c " + f(+s.fc, 1) : s.fy ? ' · fy ' + f(+s.fy, 0) : ''))}${liDel('materials', i)}</div>
+        ${isOpen('mat', s.id) ? `<div class="an-lied">${grid2(cf('ID', 'materials', i, 'id', s.id) + cf(T('Name', 'ชื่อ'), 'materials', i, 'name', s.name))}${`<div class="an-row3">${cf('E (MPa)', 'materials', i, 'E', s.E, 'n')}${cf('ν', 'materials', i, 'nu', s.nu === undefined ? 0.3 : s.nu, 'n')}${cf('γ (kN/m³)', 'materials', i, 'rho', s.rho, 'n')}</div>`}</div>` : ''}</div>`).join('')}</div>`;
     }
     function secTable() {
-      const m = A.model, ser = stdInfo(A.model.std).series.filter(q => SL.LIB[q]);
-      return wrap(`<table class="an-t"><thead><tr><th>ID</th><th>${T('Type', 'ชนิด')}</th><th>${T('Size / dimensions (mm)', 'ขนาด (มม.)')}</th><th>A (mm²)</th><th>I<sub>z</sub> / I<sub>y</sub> ×10⁶</th><th></th></tr></thead><tbody>${m.sections.map((s, i) => {
-        const p = F.secProps(s);
-        const dims = s.type === 'rect' ? `b ${cell('sections', i, 'b', s.b, 'n', 54)} h ${cell('sections', i, 'h', s.h, 'n', 54)}` : s.type === 'I' ? `d ${cell('sections', i, 'd', s.d, 'n', 50)} bf ${cell('sections', i, 'bf', s.bf, 'n', 50)} tf ${cell('sections', i, 'tf', s.tf, 'n', 44)} tw ${cell('sections', i, 'tw', s.tw, 'n', 44)}` : s.type === 'circ' ? `D ${cell('sections', i, 'D', s.D, 'n', 60)}`
-          : s.type === 'std' ? `${sel([...new Set(ser.concat([s.series]))].map(q => [q, q]), s.series, `data-tb="sections" data-i="${i}" data-f="series"`)} ${sel(SL.sizes(s.series).map(z => [z, z]), s.size, `data-tb="sections" data-i="${i}" data-f="size"`)}`
-            : s.type === 'tube' ? `${sel([['CHS', 'CHS'], ['SHS', 'SHS'], ['RHS', 'RHS']], s.shape || 'SHS', `data-tb="sections" data-i="${i}" data-f="shape"`)} ${sel((G.GANTRY ? G.GANTRY.sizeOptions(s.shape || 'SHS') : []).map(o => [o[0], o[1]]), s.size, `data-tb="sections" data-i="${i}" data-f="size"`)}`
-              : `A ${cell('sections', i, 'A', s.A, 'n', 70)} I<sub>z</sub> ${cell('sections', i, 'Iz', s.Iz || s.I, 'n', 80)} I<sub>y</sub> ${cell('sections', i, 'Iy', s.Iy, 'n', 80)} J ${cell('sections', i, 'J', s.J, 'n', 76)}`;
-        return `<tr><td>${cell('sections', i, 'id', s.id, '', 76)}</td><td>${sel(SECT(), s.type, `data-tb="sections" data-i="${i}" data-f="type"`)}</td><td class="dims">${dims}</td><td class="mono">${f(p.A, 0)}</td><td class="mono">${f(p.Iz / 1e6, 1)} / ${f(p.Iy / 1e6, 1)}</td><td>${del('sections', i)}</td></tr>`;
-      }).join('')}</tbody></table>`);
+      const m = A.model, ser = stdInfo(m.std).series.filter(q => SL.LIB[q]);
+      return `<div class="an-list">${m.sections.map((s, i) => {
+        const p = F.secProps(s), open = isOpen('sec', s.id);
+        const sub = ({ rect: 'b×h ' + s.b + '×' + s.h, circ: 'Ø' + s.D, std: s.size, tube: s.shape + ' ' + s.size, I: 'I ' + s.d + '×' + s.bf, user: T('user', 'กำหนดเอง') })[s.type] + ' · A ' + f(p.A, 0) + ' · I<sub>z</sub> ' + f(p.Iz / 1e6, 1) + 'e6';
+        let ed = '';
+        if (open) {
+          const dims = s.type === 'rect' ? grid2(cf('b (mm)', 'sections', i, 'b', s.b, 'n') + cf('h (mm)', 'sections', i, 'h', s.h, 'n'))
+            : s.type === 'circ' ? grid2(cf('D (mm)', 'sections', i, 'D', s.D, 'n') + '<span></span>')
+              : s.type === 'I' ? `<div class="an-row4">${cf('d', 'sections', i, 'd', s.d, 'n')}${cf('bf', 'sections', i, 'bf', s.bf, 'n')}${cf('tf', 'sections', i, 'tf', s.tf, 'n')}${cf('tw', 'sections', i, 'tw', s.tw, 'n')}</div>`
+                : s.type === 'std' ? grid2(cs2(T('Series', 'ชุด'), [...new Set(ser.concat([s.series]))].map(q => [q, q]), s.series, 'sections', i, 'series') + cs2(T('Size', 'ขนาด'), SL.sizes(s.series).map(z => [z, z]), s.size, 'sections', i, 'size'))
+                  : s.type === 'tube' ? grid2(cs2(T('Shape', 'รูปตัด'), [['CHS', 'CHS'], ['SHS', 'SHS'], ['RHS', 'RHS']], s.shape || 'SHS', 'sections', i, 'shape') + cs2(T('Size', 'ขนาด'), (G.GANTRY ? G.GANTRY.sizeOptions(s.shape || 'SHS') : []).map(o => [o[0], o[1]]), s.size, 'sections', i, 'size'))
+                    : `<div class="an-row4">${cf('A', 'sections', i, 'A', s.A, 'n')}${cf('I<sub>z</sub>', 'sections', i, 'Iz', s.Iz || s.I, 'n')}${cf('I<sub>y</sub>', 'sections', i, 'Iy', s.Iy, 'n')}${cf('J', 'sections', i, 'J', s.J, 'n')}</div>`;
+          ed = `<div class="an-lied">${grid2(cf('ID', 'sections', i, 'id', s.id) + cs2(T('Type', 'ชนิด'), SECT(), s.type, 'sections', i, 'type'))}${dims}${hint(`A = ${f(p.A, 0)} mm² · I<sub>z</sub> = ${f(p.Iz / 1e6, 2)} · I<sub>y</sub> = ${f(p.Iy / 1e6, 2)} · J = ${f(p.J / 1e6, 3)} ×10⁶ mm⁴`)}</div>`;
+        }
+        return `<div class="an-li ${open ? 'open' : ''}"><div class="an-lirow">${liHead('sec', s.id, esc(s.id), sub)}${liDel('sections', i)}</div>${ed}</div>`;
+      }).join('')}</div>`;
     }
     function nodeTable() {
-      const m = A.model;
-      return wrap(`<table class="an-t"><thead><tr><th>ID</th><th>X</th><th>Y</th><th>Z</th><th>${T('Support', 'จุดรองรับ')}</th><th></th></tr></thead><tbody>${m.nodes.slice(0, 300).map((n, i) => `<tr class="${A.sel.n.includes(n.id) ? 'on' : ''}"><td>${cell('nodes', i, 'id', n.id, '', 52)}</td><td>${cell('nodes', i, 'x', n.x, 'n', 58)}</td><td>${cell('nodes', i, 'y', n.y, 'n', 58)}</td><td>${cell('nodes', i, 'z', n.z, 'n', 58)}</td><td>${sel(SUP(), n.sup || 'free', `data-tb="nodes" data-i="${i}" data-f="sup"`)}</td><td>${del('nodes', i)}</td></tr>`).join('')}</tbody></table>`) + big(m.nodes.length) + addBtn('nodes', T('Add node row', 'เพิ่มแถวจุดต่อ'));
+      const m = A.model, sup = n => (n.sup && n.sup !== 'free' ? ((SUP().find(q => q[0] === n.sup) || [])[1] || n.sup).split(' (')[0] : '');
+      return `<div class="an-list">${m.nodes.slice(0, 400).map(n => `<button class="an-lirow an-pickrow ${A.sel.n.includes(n.id) ? 'on' : ''}" data-act="an-pickn" data-n="${esc(n.id)}"><span class="an-lim">${esc(n.id)}</span><span class="an-lis mono">(${f(+n.x || 0, 2)}, ${f(+n.y || 0, 2)}, ${f(+n.z || 0, 2)})</span><span class="an-lit">${esc(sup(n))}</span></button>`).join('')}</div>` + (m.nodes.length > 400 ? hint(T('First 400 shown — select in the view for the rest.', 'แสดง 400 รายการแรก — เลือกในมุมมองสำหรับส่วนที่เหลือ')) : '');
     }
     function memTable() {
-      const m = A.model, nd = nodeMap(), no = nodeOpts();
-      return wrap(`<table class="an-t"><thead><tr><th>ID</th><th>i</th><th>j</th><th>${T('Section', 'หน้าตัด')}</th><th>${T('Material', 'วัสดุ')}</th><th>${T('Type', 'ชนิด')}</th><th>β°</th><th>L (m)</th><th></th></tr></thead><tbody>${m.members.slice(0, 300).map((mb, i) => { const a = nd[mb.i], b = nd[mb.j], L = a && b ? Math.hypot(...sub(P3(b), P3(a))) : 0; return `<tr class="${A.sel.m.includes(mb.id) ? 'on' : ''}"><td>${cell('members', i, 'id', mb.id, '', 52)}</td><td>${sel(no, mb.i, `data-tb="members" data-i="${i}" data-f="i"`)}</td><td>${sel(no, mb.j, `data-tb="members" data-i="${i}" data-f="j"`)}</td><td>${sel(m.sections.map(o => [o.id, o.id]), mb.sec, `data-tb="members" data-i="${i}" data-f="sec"`)}</td><td>${sel(m.materials.map(o => [o.id, o.id]), mb.mat, `data-tb="members" data-i="${i}" data-f="mat"`)}</td><td>${sel([['frame', T('Frame', 'โครงข้อแข็ง')], ['truss', T('Truss', 'โครงถัก')]], mb.type || 'frame', `data-tb="members" data-i="${i}" data-f="type"`)}</td><td>${cell('members', i, 'beta', mb.beta || 0, 'n', 44)}</td><td class="mono">${f(L, 3)}</td><td>${del('members', i)}</td></tr>`; }).join('')}</tbody></table>`) + big(m.members.length);
+      const m = A.model, nd = nodeMap();
+      return `<div class="an-list">${m.members.slice(0, 400).map(q => { const a = nd[q.i], b = nd[q.j], L = a && b ? Math.hypot(...sub(P3(b), P3(a))) : 0; return `<button class="an-lirow an-pickrow ${A.sel.m.includes(q.id) ? 'on' : ''}" data-act="an-pick" data-m="${esc(q.id)}"><span class="an-lim">${esc(q.id)}</span><span class="an-lis">${esc(q.i)}→${esc(q.j)} · ${esc(q.sec)} · ${esc(q.mat)}${q.type === 'truss' ? ' · ' + T('truss', 'โครงถัก') : ''}</span><span class="an-lit mono">${f(L, 2)} m</span></button>`; }).join('')}</div>` + (m.members.length > 400 ? hint(T('First 400 shown — select in the view for the rest.', 'แสดง 400 รายการแรก — เลือกในมุมมองสำหรับส่วนที่เหลือ')) : '');
     }
     function caseTable() {
       const m = A.model;
-      return wrap(`<table class="an-t"><thead><tr><th>${T('Name (ID)', 'ชื่อ (ID)')}</th><th>${T('Description', 'คำอธิบาย')}</th><th>${T('Type', 'ประเภท')}</th><th>${T('Self-weight', 'น้ำหนักตัวเอง')}</th><th>${T('Loads', 'แรง')}</th><th></th></tr></thead><tbody>${m.cases.map((c, i) => `<tr class="${A.lcase === c.id ? 'on' : ''}"><td>${cell('cases', i, 'id', c.id, '', 56)}</td><td>${cell('cases', i, 'name', c.name, '', 150)}</td><td>${sel(CTYPES(), c.type, `data-tb="cases" data-i="${i}" data-f="type"`)}</td><td><input type="checkbox" data-tb="cases" data-i="${i}" data-f="sw" ${c.sw ? 'checked' : ''} aria-label="self-weight"></td><td class="mono"><button class="linkbtn" data-act="an-gocase" data-c="${esc(c.id)}">${m.loads.filter(l => l.case === c.id).length} →</button></td><td>${del('cases', i)}</td></tr>`).join('')}</tbody></table>`) + addBtn('cases', T('Add load case', 'เพิ่มกรณีน้ำหนัก'));
+      return `<div class="an-list">${m.cases.map((c, i) => `<div class="an-li an-case ${A.lcase === c.id ? 'on' : ''}"><div class="an-caserow">${inp(c.id, `data-tb="cases" data-i="${i}" data-f="id" aria-label="ID"`)}${inp(c.name, `data-tb="cases" data-i="${i}" data-f="name" aria-label="${T('Description', 'คำอธิบาย')}"`)}${sel(CTYPES().map(q => [q[0], q[0]]), c.type, `data-tb="cases" data-i="${i}" data-f="type" aria-label="${T('Type', 'ประเภท')}" title="${esc((CTYPES().find(q => q[0] === c.type) || [])[1] || '')}"`)}<label class="an-sw" title="${T('Self-weight', 'น้ำหนักตัวเอง')}"><input type="checkbox" data-tb="cases" data-i="${i}" data-f="sw" ${c.sw ? 'checked' : ''}> SW</label><button class="linkbtn" data-act="an-gocase" data-c="${esc(c.id)}" title="${T('Loads in this case', 'แรงในกรณีนี้')}">${m.loads.filter(l => l.case === c.id).length}→</button>${liDel('cases', i)}</div></div>`).join('')}</div>` + hint(T('ID · description · type (G, Q, W, E, O) · SW = self-weight · number of loads.', 'ID · คำอธิบาย · ประเภท (G, Q, W, E, O) · SW = น้ำหนักตัวเอง · จำนวนแรง')) + addBtn('cases', T('Add load case', 'เพิ่มกรณีน้ำหนัก'));
     }
     function loadTable(cs) {
-      const m = A.model, rowsN = m.loads.map((l, i) => [l, i]).filter(([l]) => l.case === cs && l.kind === 'node'), rowsM = m.loads.map((l, i) => [l, i]).filter(([l]) => l.case === cs && l.kind !== 'node'), no = nodeOpts(), mo = m.members.map(q => [q.id, q.id]);
-      const tN = rowsN.length ? wrap(`<table class="an-t"><thead><tr><th>${T('Node', 'จุดต่อ')}</th><th>Fx</th><th>Fy</th><th>Fz</th><th>Mx</th><th>My</th><th>Mz</th><th></th></tr></thead><tbody>${rowsN.slice(0, 300).map(([l, i]) => `<tr class="${A.sel.n.includes(l.node) ? 'on' : ''}"><td>${sel(no, l.node, `data-tb="loads" data-i="${i}" data-f="node"`)}</td>${['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].map(q => `<td>${cell('loads', i, q, l[q] || 0, 'n', 50)}</td>`).join('')}<td>${del('loads', i)}</td></tr>`).join('')}</tbody></table>`) : '';
-      const tM = rowsM.length ? wrap(`<table class="an-t"><thead><tr><th>${T('Element', 'ชิ้นส่วน')}</th><th>${T('Load', 'ชนิด')}</th><th>${T('Direction', 'ทิศทาง')}</th><th>w₁ / P / M</th><th>w₂</th><th>a</th><th>b</th><th></th></tr></thead><tbody>${rowsM.slice(0, 300).map(([l, i]) => `<tr class="${A.sel.m.includes(l.member) ? 'on' : ''}"><td>${sel(mo, l.member, `data-tb="loads" data-i="${i}" data-f="member"`)}</td><td>${sel(LKIND(), l.kind, `data-tb="loads" data-i="${i}" data-f="kind"`)}</td><td>${sel(l.kind === 'moment' ? MDIRS() : DIRS(), l.dir || (l.kind === 'moment' ? 'lz' : 'grav'), `data-tb="loads" data-i="${i}" data-f="dir"`)}</td><td>${cell('loads', i, l.kind === 'udl' ? 'w1' : l.kind === 'point' ? 'P' : 'M', l.kind === 'udl' ? l.w1 : l.kind === 'point' ? l.P : l.M, 'n', 60)}</td><td>${l.kind === 'udl' ? cell('loads', i, 'w2', l.w2, 'n', 52) : ''}</td><td>${cell('loads', i, 'a', l.a, 'n', 46)}</td><td>${l.kind === 'udl' ? cell('loads', i, 'b', l.b, 'n', 46) : ''}</td><td>${del('loads', i)}</td></tr>`).join('')}</tbody></table>`) : '';
-      return (tN ? `<h4>${T('Nodal loads', 'แรงที่จุดต่อ')} <span class="muted small">kN, kNm · ${T('global axes', 'แกนหลัก')}</span></h4>` + tN : '') + (tM ? `<h4>${T('Element loads', 'แรงบนชิ้นส่วน')} <span class="muted small">kN/m, kN, kNm · a, b ${T('from end i (m)', 'จากปลาย i (ม.)')}</span></h4>` + tM : '') + (!tN && !tM ? hint(T('No loads in this case yet.', 'ยังไม่มีแรงในกรณีนี้')) : '');
+      const m = A.model, rows = m.loads.map((l, i) => [l, i]).filter(([l]) => l.case === cs);
+      if (!rows.length) return hint(T('No loads in this case yet.', 'ยังไม่มีแรงในกรณีนี้'));
+      const dl = l => ((l.kind === 'moment' ? MDIRS() : DIRS()).find(d => d[0] === (l.dir || (l.kind === 'moment' ? 'lz' : 'grav'))) || ['', ''])[1].split(' (')[0];
+      const desc = l => l.kind === 'node' ? ['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].filter(q => +l[q]).map(q => q + ' ' + f(+l[q], 2)).join(', ') || '0'
+        : l.kind === 'udl' ? `w ${f(+l.w1 || 0, 2)}${l.w2 !== '' && l.w2 != null ? '→' + f(+l.w2, 2) : ''} kN/m · ${dl(l)}${+l.a || (l.b !== '' && l.b != null) ? ` · ${f(+l.a || 0, 2)}–${l.b !== '' && l.b != null ? f(+l.b, 2) : 'L'} m` : ''}`
+          : l.kind === 'point' ? `P ${f(+l.P || 0, 2)} kN @ ${f(+l.a || 0, 2)} m · ${dl(l)}` : `M ${f(+l.M || 0, 2)} kNm @ ${f(+l.a || 0, 2)} m · ${dl(l)}`;
+      return `<h4>${T('Loads in ', 'แรงในกรณี ')}${esc(cs)} (${rows.length})</h4><div class="an-list">${rows.slice(0, 400).map(([l, i]) => {
+        const open = isOpen('load', i), tgt = l.kind === 'node' ? l.node : l.member, on = l.kind === 'node' ? A.sel.n.includes(l.node) : A.sel.m.includes(l.member);
+        let ed = '';
+        if (open) ed = l.kind === 'node' ? `<div class="an-lied"><div class="an-row3">${['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].map(q => cf(q, 'loads', i, q, l[q] || 0, 'n')).join('')}</div></div>`
+          : `<div class="an-lied">${grid2(cs2(T('Load', 'ชนิด'), LKIND(), l.kind, 'loads', i, 'kind') + cs2(T('Direction', 'ทิศทาง'), l.kind === 'moment' ? MDIRS() : DIRS(), l.dir || (l.kind === 'moment' ? 'lz' : 'grav'), 'loads', i, 'dir'))}<div class="an-row4">${cf(l.kind === 'udl' ? 'w₁' : l.kind === 'point' ? 'P' : 'M', 'loads', i, l.kind === 'udl' ? 'w1' : l.kind === 'point' ? 'P' : 'M', l.kind === 'udl' ? l.w1 : l.kind === 'point' ? l.P : l.M, 'n')}${l.kind === 'udl' ? cf('w₂', 'loads', i, 'w2', l.w2, 'n') : '<span></span>'}${cf('a (m)', 'loads', i, 'a', l.a, 'n')}${l.kind === 'udl' ? cf('b (m)', 'loads', i, 'b', l.b, 'n') : '<span></span>'}</div></div>`;
+        return `<div class="an-li ${open ? 'open' : ''} ${on ? 'on' : ''}"><div class="an-lirow">${liHead('load', i, esc(tgt), desc(l))}${liDel('loads', i)}</div>${ed}</div>`;
+      }).join('')}</div>`;
     }
     function comboTable() {
       const m = A.model;
-      return wrap(`<table class="an-t"><thead><tr><th>ID</th><th>${T('Name', 'ชื่อ')}</th><th>${T('Type', 'ชนิด')}</th>${m.cases.map(c => `<th>${esc(c.id)}</th>`).join('')}<th></th></tr></thead><tbody>${m.combos.map((c, i) => `<tr><td>${cell('combos', i, 'id', c.id, '', 44)}</td><td>${cell('combos', i, 'name', c.name, '', 150)}</td><td>${sel([['ULS', 'ULS'], ['SLS', 'SLS']], c.type, `data-tb="combos" data-i="${i}" data-f="type"`)}</td>${m.cases.map(cs => `<td>${inp((c.f || {})[cs.id] || '', `data-tb="combos" data-i="${i}" data-f="f.${esc(cs.id)}" type="number" step="any"`, 48)}</td>`).join('')}<td>${del('combos', i)}</td></tr>`).join('')}</tbody></table>`);
+      return `<div class="an-list">${m.combos.map((c, i) => {
+        const open = isOpen('combo', c.id), txt = Object.entries(c.f || {}).map(([k, v]) => f(v, 2).replace(/\.?0+$/, '') + k).join(' + ');
+        const ed = open ? `<div class="an-lied">${grid2(cf('ID', 'combos', i, 'id', c.id) + cs2(T('Type', 'ชนิด'), [['ULS', 'ULS'], ['SLS', 'SLS']], c.type, 'combos', i, 'type'))}${cf(T('Name', 'ชื่อ'), 'combos', i, 'name', c.name)}<div class="an-row4">${m.cases.map(cs => fld(esc(cs.id) + ' ×', inp((c.f || {})[cs.id] || '', `data-tb="combos" data-i="${i}" data-f="f.${esc(cs.id)}" type="number" step="any"`))).join('')}</div></div>` : '';
+        return `<div class="an-li ${open ? 'open' : ''}"><div class="an-lirow">${liHead('combo', c.id, esc(c.id) + ` <span class="pill ${c.type === 'ULS' ? '' : 'free'}">${c.type}</span>`, esc(c.name !== txt ? c.name + ' = ' + txt : txt))}${liDel('combos', i)}</div>${ed}</div>`;
+      }).join('')}</div>`;
     }
 
     // ------------------------------------------------------------------ selection editors
@@ -918,32 +946,32 @@
 
     // ------------------------------------------------------------------ page
     function view() {
-      const lv = levels(), ax = cutAxis(), showRes = A.step === 'res' && fresh();
-      return `<main class="wrap page an">
-        <div class="page-head"><div><p class="eyebrow">Structural Analysis · ${T('3D frame & truss', 'โครงข้อแข็งและโครงถัก 3 มิติ')} · ${esc(stdInfo(A.model.std).codes)}</p><h1>${T('Frame analysis', 'วิเคราะห์โครงสร้าง')}</h1><p class="muted">${T('Work down the model tree on the left: standard, materials, sections, nodes, elements, supports, load cases, loads, combinations — then run the analysis and read the results.', 'ทำตามลำดับในเมนูด้านซ้าย: มาตรฐาน วัสดุ หน้าตัด จุดต่อ ชิ้นส่วน จุดรองรับ กรณีน้ำหนัก แรง การรวมน้ำหนัก — แล้ววิเคราะห์และดูผลลัพธ์')}</p></div>
-          <div class="dz-actions an-acts"><button class="btn btn-ghost sm" data-act="an-tplopen">${T('New from template', 'สร้างจากแม่แบบ')}</button><button class="btn btn-ghost sm" data-act="an-save">${T('Save model', 'บันทึกแบบจำลอง')}</button><label class="btn btn-ghost sm an-open">${T('Open model', 'เปิดแบบจำลอง')}<input type="file" accept=".json,application/json" id="an-file" hidden></label><button class="btn ${pro() ? 'btn-ghost' : 'btn-lock'} sm" data-act="an-report">${pro() ? T('Analysis report', 'รายงานการวิเคราะห์') : '🔒 ' + T('Report (Pro)', 'รายงาน (Pro)')}</button></div></div>
-        ${A.tplOpen ? tplHTML() : ''}
-        <div class="an-grid">
-          <aside class="an-side card" id="anSide">${treeHTML()}</aside>
-          <section class="an-main">
-            <div class="card an-view">
-              <div class="an-tools">
-                <div class="seg" role="group" aria-label="${T('Tool', 'เครื่องมือ')}">${[['select', T('Select', 'เลือก')], ['box', T('Box', 'กรอบ')], ['node', T('Node', 'จุดต่อ')], ['member', T('Element', 'ชิ้นส่วน')]].map(([k, l]) => `<button data-act="an-tool" data-t="${k}" aria-pressed="${A.tool === k}">${l}</button>`).join('')}</div>
-                <div class="seg" role="group" aria-label="${T('View', 'มุมมอง')}">${[['3d', '3D'], ['plan', T('Plan', 'แปลน')], ['xz', 'X–Z'], ['yz', 'Y–Z']].map(([k, l]) => `<button data-act="an-cam" data-v="${k}" aria-pressed="${A.cam.v === k}">${l}</button>`).join('')}</div>
-                ${ax ? `<label class="an-lv">${ax.toUpperCase()} = ${sel([['all', T('all', 'ทั้งหมด')]].concat(lv.map(v => [v, f(v, 2)])), A.cut, 'id="an-cut"')}</label>` : ''}
-                <span class="grow"></span>
-                <label class="chkl sm an-inl"><input type="checkbox" id="an-loadson" ${A.loadsOn ? 'checked' : ''}> ${T('Loads', 'แรง')}</label>
-                <button class="btn btn-ghost xs" data-act="an-fit" title="${T('Zoom to fit', 'ซูมให้พอดี')}">⤢</button><button class="btn btn-ghost xs" data-act="an-undo" ${A.hist.length ? '' : 'disabled'} title="Ctrl+Z" aria-label="Undo">↶</button><button class="btn btn-ghost xs" data-act="an-redo" ${A.fut.length ? '' : 'disabled'} title="Ctrl+Y" aria-label="Redo">↷</button>
-                <button class="btn btn-hot xs" data-act="an-run">▶ ${T('Run', 'วิเคราะห์')}</button>
-              </div>
-              <div class="an-canvas"><canvas id="anCv" tabindex="0" aria-label="${T('3D model view', 'มุมมองแบบจำลอง 3 มิติ')}"></canvas><span class="an-tag" id="anViewTag">${viewTag()}</span></div>
-              <p class="hint">${A.cam.v === '3d' ? T('Drag to rotate · right-drag or Shift-drag to pan · wheel or pinch to zoom · click to select.', 'ลากเพื่อหมุน · คลิกขวาลากหรือ Shift ลากเพื่อเลื่อน · ล้อเมาส์หรือถ่างนิ้วเพื่อซูม · คลิกเพื่อเลือก') : T('Drag to pan · wheel or pinch to zoom · click to select · pick a level to edit one plane at a time.', 'ลากเพื่อเลื่อน · ล้อเมาส์หรือถ่างนิ้วเพื่อซูม · คลิกเพื่อเลือก · เลือกระดับเพื่อแก้ไขทีละระนาบ')} ${T('Units: kN, m, kNm.', 'หน่วย kN, m, kNm')}</p>
+      const lv = levels(), ax = cutAxis(), showRes = A.step === 'res' && fresh(), sd = stdInfo(A.model.std);
+      return `<main class="an an-app">
+          <aside class="an-side" id="anSide">${treeHTML()}</aside>
+          <section class="an-work">
+            <div class="an-tools">
+              <div class="seg" role="group" aria-label="${T('Tool', 'เครื่องมือ')}">${[['select', T('Select', 'เลือก')], ['box', T('Box', 'กรอบ')], ['node', T('Node', 'จุดต่อ')], ['member', T('Element', 'ชิ้นส่วน')]].map(([k, l]) => `<button data-act="an-tool" data-t="${k}" aria-pressed="${A.tool === k}">${l}</button>`).join('')}</div>
+              <div class="seg" role="group" aria-label="${T('View', 'มุมมอง')}">${[['3d', '3D'], ['plan', T('Plan', 'แปลน')], ['xz', 'X–Z'], ['yz', 'Y–Z']].map(([k, l]) => `<button data-act="an-cam" data-v="${k}" aria-pressed="${A.cam.v === k}">${l}</button>`).join('')}</div>
+              ${ax ? `<label class="an-lv">${ax.toUpperCase()} = ${sel([['all', T('all', 'ทั้งหมด')]].concat(lv.map(v => [v, f(v, 2)])), A.cut, 'id="an-cut"')}</label>` : ''}
+              <label class="chkl sm an-inl"><input type="checkbox" id="an-loadson" ${A.loadsOn ? 'checked' : ''}> ${T('Loads', 'แรง')}</label>
+              <span class="grow"></span>
+              <button class="btn btn-ghost xs" data-act="an-fit" title="${T('Zoom to fit', 'ซูมให้พอดี')}" aria-label="${T('Zoom to fit', 'ซูมให้พอดี')}">⤢</button><button class="btn btn-ghost xs" data-act="an-undo" ${A.hist.length ? '' : 'disabled'} title="Ctrl+Z" aria-label="Undo">↶</button><button class="btn btn-ghost xs" data-act="an-redo" ${A.fut.length ? '' : 'disabled'} title="Ctrl+Y" aria-label="Redo">↷</button>
+              <span class="an-sep"></span>
+              <button class="btn btn-ghost xs" data-act="an-tplopen">${T('Template', 'แม่แบบ')}</button><button class="btn btn-ghost xs" data-act="an-save">${T('Save', 'บันทึก')}</button><label class="btn btn-ghost xs an-open">${T('Open', 'เปิด')}<input type="file" accept=".json,application/json" id="an-file" hidden></label><button class="btn ${pro() ? 'btn-ghost' : 'btn-lock'} xs" data-act="an-report">${pro() ? T('Report', 'รายงาน') : '🔒 ' + T('Report', 'รายงาน')}</button>
+              <button class="btn btn-hot xs" data-act="an-run">▶ ${T('Run', 'วิเคราะห์')}</button>
             </div>
-            <div id="anMember">${memberHTML()}</div>
-            ${showRes ? `<div class="card an-results" id="anRes">${resultsHTML()}</div>` : '<div id="anRes"></div>'}
+            <div class="an-canvas"><canvas id="anCv" tabindex="0" aria-label="${T('3D model view', 'มุมมองแบบจำลอง 3 มิติ')}"></canvas><span class="an-tag" id="anViewTag">${viewTag()}</span>
+              <p class="an-hintbar">${A.cam.v === '3d' ? T('Drag: rotate · right-drag / Shift: pan · wheel: zoom · click: select', 'ลาก: หมุน · คลิกขวา/Shift: เลื่อน · ล้อเมาส์: ซูม · คลิก: เลือก') : T('Drag: pan · wheel: zoom · click: select', 'ลาก: เลื่อน · ล้อเมาส์: ซูม · คลิก: เลือก')} · kN, m</p></div>
+            <div class="an-drawer ${showRes ? 'on' : ''}" id="anDrawer">${drawerHTML()}</div>
           </section>
-        </div>
-        <div id="reportWrap"></div></main>`;
+        ${A.tplOpen ? `<div class="modal-bg an-tplbg">${tplHTML()}</div>` : ''}
+        <div id="reportWrap" class="an-report"></div></main>`;
+    }
+    function drawerHTML() {
+      if (!(A.step === 'res' && fresh())) return '';
+      return `<div class="an-drawhead"><b>${T('Results', 'ผลลัพธ์')}</b><span class="muted small">${esc((srcList().find(q => q[0] === A.src) || [])[1] || '')}</span><span class="grow"></span><button class="btn btn-ghost xs" data-act="an-drawer">${A.drawerMin ? T('Show ▴', 'แสดง ▴') : T('Hide ▾', 'ซ่อน ▾')}</button></div>
+        ${A.drawerMin ? '' : `<div class="an-drawbody"><div id="anMember">${memberHTML()}</div><div class="an-results" id="anRes">${resultsHTML()}</div></div>`}`;
     }
     function tplHTML() {
       const p = Object.assign({}, TPL[A.tpl].p, A.tplP || {});
@@ -953,18 +981,17 @@
           : A.tpl === 'beam' ? fl('spans', T('Spans (m), comma separated', 'ช่วงคาน (ม.) คั่นด้วยจุลภาค')) + fl('g', T('Dead UDL G (kN/m, plus self-weight)', 'น้ำหนักคงที่ G (kN/m ไม่รวมน้ำหนักตัวเอง)'), 'n') + fl('q', T('Live UDL Q (kN/m)', 'น้ำหนักจร Q (kN/m)'), 'n')
             : A.tpl === 'truss' ? `<label>${T('Type', 'ชนิด')}${sel([['pratt', 'Pratt'], ['howe', 'Howe'], ['warren', 'Warren']], p.kind, 'data-tp="kind"')}</label>` + fl('span', T('Span (m)', 'ช่วงกว้าง (ม.)'), 'n') + fl('depth', T('Depth (m)', 'ความลึก (ม.)'), 'n') + fl('panels', T('Panels (even)', 'จำนวนช่อง (คู่)'), 'n') + fl('load', T('Dead load per top node (kN)', 'น้ำหนักคงที่ต่อจุดต่อบน (kN)'), 'n')
               : `<p class="muted">${T('An empty 3D model with a concrete grade, a steel grade, a rectangle and a steel section from the chosen standard, and G and Q load cases.', 'โมเดล 3 มิติว่าง มีคอนกรีต เหล็ก หน้าตัดสี่เหลี่ยมและหน้าตัดเหล็กตามมาตรฐานที่เลือก และกรณีน้ำหนัก G และ Q')}</p>`;
-      return `<div class="card an-tpl"><div class="seg" role="group">${Object.entries(TPL).map(([k, v]) => `<button data-act="an-tpl" data-t="${k}" aria-pressed="${A.tpl === k}">${T(v.n[0], v.n[1])}</button>`).join('')}</div><div class="mgrid an-tplf">${form}</div><div class="mfoot"><span class="muted small">${T('Uses the current design standard (' + A.model.std + ') for materials, sections and combinations. Replaces the current model — Undo brings it back.', 'ใช้มาตรฐานปัจจุบัน (' + A.model.std + ') สำหรับวัสดุ หน้าตัด และการรวมน้ำหนัก แทนที่แบบจำลองปัจจุบัน — กดย้อนกลับได้')}</span><span class="grow"></span><button class="btn btn-ghost sm" data-act="an-tplclose">${T('Cancel', 'ยกเลิก')}</button><button class="btn btn-hot sm" data-act="an-tplgo">${T('Create model', 'สร้างแบบจำลอง')}</button></div></div>`;
+      return `<div class="modal an-tpl" data-stop="1"><h3>${T('New model from a template', 'สร้างแบบจำลองจากแม่แบบ')}</h3><div class="seg" role="group">${Object.entries(TPL).map(([k, v]) => `<button data-act="an-tpl" data-t="${k}" aria-pressed="${A.tpl === k}">${T(v.n[0], v.n[1])}</button>`).join('')}</div><div class="mgrid an-tplf">${form}</div><div class="mfoot"><span class="muted small">${T('Uses the current design standard (' + A.model.std + ') for materials, sections and combinations. Replaces the current model — Undo brings it back.', 'ใช้มาตรฐานปัจจุบัน (' + A.model.std + ') สำหรับวัสดุ หน้าตัด และการรวมน้ำหนัก แทนที่แบบจำลองปัจจุบัน — กดย้อนกลับได้')}</span><span class="grow"></span><button class="btn btn-ghost sm" data-act="an-tplclose">${T('Cancel', 'ยกเลิก')}</button><button class="btn btn-hot sm" data-act="an-tplgo">${T('Create model', 'สร้างแบบจำลอง')}</button></div></div>`;
     }
     function drawAll() {
       redraw(); updCounts();
-      const r = $('#anRes'); if (r) { r.innerHTML = resultsHTML(); r.className = A.step === 'res' && fresh() ? 'card an-results' : ''; }
-      const mm = $('#anMember'); if (mm) mm.innerHTML = memberHTML();
+      const d = $('#anDrawer'); if (d) { const on = A.step === 'res' && fresh(); d.className = 'an-drawer' + (on ? ' on' : '') + (A.drawerMin ? ' min' : ''); d.innerHTML = drawerHTML(); }
       const u = document.querySelector('[data-act=an-undo]'), rd = document.querySelector('[data-act=an-redo]'); if (u) u.disabled = !A.hist.length; if (rd) rd.disabled = !A.fut.length;
     }
     let resizeBound = false, keyBound = false;
     function mount() {
       const cv = $('#anCv'); if (!cv) return;
-      if (!cv._b) { cv._b = true; bindCanvas(cv); }
+      if (!cv._b) { cv._b = true; bindCanvas(cv); if (G.ResizeObserver) { let raf = 0; let last = [0, 0]; new G.ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { if (!cv.isConnected) return; const w = cv.clientWidth, h = cv.clientHeight; if (Math.abs(w - last[0]) > 30 || Math.abs(h - last[1]) > 30) { if (last[0]) A.cam.k = null; last = [w, h]; } redraw(); }); }).observe(cv); } }
       redraw();
       if (!resizeBound) { resizeBound = true; let rt = null; G.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if ($('#anCv')) redraw(); }, 120); }); }
       if (!keyBound) {
@@ -1012,7 +1039,7 @@
       const v = t.type === 'checkbox' ? t.checked : t.value;
       let side = false;
       if (fd.startsWith('f.')) { row.f = row.f || {}; const k = fd.slice(2); if (v === '' || +v === 0) delete row.f[k]; else row.f[k] = +v; }
-      else if (fd === 'id') { const nid = String(v).trim(); if (!nid || A.model[tb].some((o, k) => k !== i && o.id === nid)) { t.classList.add('bad'); return true; } t.classList.remove('bad'); renameRefs(tb, row.id, nid); row.id = nid; }
+      else if (fd === 'id') { const nid = String(v).trim(); if (!nid || A.model[tb].some((o, k) => k !== i && o.id === nid)) { t.classList.add('bad'); return true; } t.classList.remove('bad'); renameRefs(tb, row.id, nid); const ok = { materials: 'mat', sections: 'sec', combos: 'combo' }[tb]; if (ok && OPEN[ok] === String(row.id)) OPEN[ok] = nid; row.id = nid; }
       else if (['x', 'y', 'z', 'b', 'h', 'd', 'bf', 'tf', 'tw', 'D', 'A', 'I', 'Iz', 'Iy', 'J', 'E', 'nu', 'rho', 'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz', 'w1', 'P', 'M', 'beta'].includes(fd)) row[fd] = v === '' ? '' : +v;
       else row[fd] = v;
       if (tb === 'nodes' && fd === 'sup' && v === 'custom' && !row.fix) row.fix = F.SUPS.pin.slice();
@@ -1021,7 +1048,8 @@
       if (tb === 'sections' && fd === 'size' && row.type === 'std') row.name = v;
       if (tb === 'sections' && fd === 'type') { const ser0 = stdInfo(A.model.std).series[0]; Object.assign(row, { rect: { b: 300, h: 500 }, I: { d: 356, bf: 171, tf: 11.5, tw: 7.3 }, circ: { D: 400 }, std: { series: ser0, size: SL.sizes(ser0)[0] }, tube: { shape: 'SHS', size: (G.GANTRY ? G.GANTRY.sizeOptions('SHS')[0][0] : '') }, user: { A: 10000, Iz: 100e6, Iy: 50e6, J: 20e6 } }[v]); side = true; }
       if (tb === 'loads' && fd === 'kind') { Object.assign(row, v === 'udl' ? { w1: row.w1 || 5, dir: row.dir && !/^l?[xyz]$/.test(row.dir) || /^l[yz]$/.test(row.dir) ? row.dir : 'grav' } : v === 'point' ? { P: row.P || 10, a: row.a || 1, dir: GDIR[row.dir] || /^l[yz]$/.test(row.dir) ? row.dir : 'grav' } : { M: row.M || 10, a: row.a || 1, dir: 'lz' }); side = true; }
-      if ((tb === 'members' && (fd === 'type' || fd === 'i' || fd === 'j')) || (tb === 'cases' && fd === 'id') || (tb === 'materials' && fd === 'id') || (tb === 'sections' && fd === 'id')) side = true;
+      if (tb === 'members' && (fd === 'type' || fd === 'i' || fd === 'j')) side = true;
+      if ((tb === 'materials' || tb === 'sections') && ['E', 'nu', 'rho', 'b', 'h', 'D', 'd', 'bf', 'tf', 'tw', 'A', 'Iz', 'Iy', 'J'].includes(fd)) { const li = t.closest('.an-li'); if (li) { const sb = li.querySelector('.an-lis'); if (sb && tb === 'materials') sb.textContent = (row.name || '') + ' · E ' + f(+row.E || 0, 0); } }
       changed(side);
       return true;
     }
@@ -1048,6 +1076,7 @@
       else if (a === 'an-selbase') { const z0 = Math.min(...m.nodes.map(n => +n.z || 0)); A.sel = { n: m.nodes.filter(n => Math.abs((+n.z || 0) - z0) < 1e-4).map(n => n.id), m: [] }; selChanged(); }
       else if (a === 'an-pickn') { A.sel = { n: [b.dataset.n], m: [] }; selChanged(); }
       else if (a === 'an-delsel') deleteSel();
+      else if (a === 'an-open') { const k = b.dataset.k, id = b.dataset.id; OPEN[k] = OPEN[k] === id ? null : id; if (k === 'load') { const l = m.loads[+id]; if (l && OPEN[k] !== null) A.sel = l.kind === 'node' ? { n: [l.node], m: [] } : { n: [], m: [l.member] }; redraw(); } sideRefresh(); }
       else if (a === 'an-gocase') { A.lcase = b.dataset.c; A.step = 'load'; ctx.render(); }
       else if (a === 'an-add') { snap(true); addRow(b.dataset.tb); changed(true); }
       else if (a === 'an-del') { snap(true); const tb = b.dataset.tb, i = +b.dataset.i, row = m[tb][i]; m[tb].splice(i, 1); if (tb === 'nodes') { m.members = m.members.filter(x => x.i !== row.id && x.j !== row.id); m.loads = m.loads.filter(l => l.node !== row.id); } if (tb === 'members') m.loads = m.loads.filter(l => l.member !== row.id); if (tb === 'cases') { m.loads = m.loads.filter(l => l.case !== row.id); m.combos.forEach(c => { if (c.f) delete c.f[row.id]; }); } A.sel = { n: A.sel.n.filter(id => m.nodes.some(q => q.id === id)), m: A.sel.m.filter(id => m.members.some(q => q.id === id)) }; changed(true); }
@@ -1072,6 +1101,7 @@
       }
       else if (a === 'an-tplopen') { A.tplOpen = true; ctx.render(); }
       else if (a === 'an-tplclose') { A.tplOpen = false; ctx.render(); }
+      else if (a === 'an-drawer') { A.drawerMin = !A.drawerMin; drawAll(); }
       else if (a === 'an-tpl') { A.tpl = b.dataset.t; A.tplP = null; ctx.render(); }
       else if (a === 'an-tplgo') { const p = Object.assign({}, TPL[A.tpl].p, A.tplP || {}); try { const nm = build(A.tpl, p, m.std); snap(true); A.model = nm; A.tplOpen = false; afterNewModel(); toast(T('Model created', 'สร้างแบบจำลองแล้ว'), 'ok'); } catch (e) { toast(T('Check the template values.', 'ตรวจสอบค่าที่กรอก'), 'bad'); } }
       else if (a === 'an-save') { const blob = new Blob([JSON.stringify({ app: 'StructCap', kind: 'frame3d', version: 4, model: m, opt: A.opt }, null, 1)], { type: 'application/json' }); ctx.saveFile((m.name || 'model').replace(/[^\w\-]+/g, '_') + '_' + today() + '.json', blob); }

@@ -459,9 +459,10 @@
       : S.role === 'pro' ? '<span class="chip chip-pro">PRO · ' + esc(S.user.username) + '</span>'
         : S.role === 'free' ? (S.promo ? '<span class="chip chip-pro">PRO · ' + T('free now', 'ฟรี') + '</span>' : '<span class="chip">Free' + (S.user && S.user.member ? ' · ' + esc(S.user.username) : '') + '</span>') : '';
     return `<header class="nav"><div class="nav-in">
-      <button class="brand" data-act="nav" data-v="${S.role === 'guest' ? 'landing' : 'home'}" aria-label="StructCap home">${logoMark(32)}<span class="wordmark">Struct<b>Cap</b></span></button>
+      <button class="brand" data-act="nav" data-v="landing" aria-label="StructCap home">${logoMark(32)}<span class="wordmark">Struct<b>Cap</b></span></button>
       <nav class="nav-links">
-        ${S.role !== 'guest' ? `<button data-act="nav" data-v="home">${T('RC design', 'ออกแบบ RC')}</button><button data-act="nav" data-v="analysis">${T('Analysis', 'วิเคราะห์')}</button>` :`<button data-act="nav" data-v="landing">${T('Home', 'หน้าแรก')}</button><button data-act="scroll" data-t="plans">${T('Plans', 'แพ็กเกจ')}</button>`}
+        <button data-act="nav" data-v="landing" aria-current="${S.view === 'landing' ? 'page' : 'false'}">⌂ ${T('Home', 'หน้าแรก')}</button>
+        ${S.role !== 'guest' ? `<button data-act="nav" data-v="home" aria-current="${S.view === 'home' ? 'page' : 'false'}">${T('Main menu', 'เมนูหลัก')}</button>` : `<button data-act="scroll" data-t="plans">${T('Plans', 'แพ็กเกจ')}</button>`}
         ${S.role === 'admin' ? `<button data-act="nav" data-v="admin">${T('Admin', 'จัดการระบบ')}</button>` : ''}
       </nav>
       <div class="nav-right">${langToggle()}${who}
@@ -500,7 +501,7 @@
         <div class="hero-copy">
           <h1 class="mega" aria-label="StructCap">${logoMark(96).replace('class="logo"', 'class="logo mega-logo"')}<span class="mega-word">Struct<span>Cap</span></span></h1>
           <p class="tagline">${T('Structural Design and Analysis', 'ออกแบบและวิเคราะห์โครงสร้าง')}</p>
-          <p class="lead">${T('Check reinforced concrete beams, columns and pile caps against three design codes, with section sketches, column interaction diagrams and a full calculation report you can export to PDF.', 'ตรวจสอบคาน เสา และฐานรากบนเสาเข็ม คอนกรีตเสริมเหล็ก ตามสามมาตรฐานการออกแบบ พร้อมภาพหน้าตัด แผนภาพปฏิสัมพันธ์ของเสา และรายการคำนวณฉบับเต็มส่งออกเป็น PDF')}</p>
+          <p class="lead">${T('Design reinforced concrete, steel and masonry members to three design codes, and analyse 3D frames and trusses — with section sketches, 3D results and full calculation reports you can export to PDF.', 'ออกแบบชิ้นส่วนคอนกรีตเสริมเหล็ก เหล็ก และงานก่อ ตามสามมาตรฐาน และวิเคราะห์โครงข้อแข็งและโครงถัก 3 มิติ — พร้อมภาพหน้าตัด ผลลัพธ์ 3 มิติ และรายการคำนวณฉบับเต็มส่งออกเป็น PDF')}</p>
           <ul class="code-list">${codes.map(c => `<li class="tone-${c[1]}"><span class="code-tag">${c[0]}</span><div><b>${c[2]}</b> <span class="mono">${c[3]}</span><p>${c[4]}</p></div></li>`).join('')}</ul>
           <div class="cta-row">${S.promo ? `
             <span class="btn btn-glass struck" aria-hidden="true">${T('Start free', 'เริ่มใช้งานฟรี')}</span><span class="btn btn-glass struck" aria-hidden="true">${T('Register for Pro', 'สมัคร Pro')}</span>
@@ -520,6 +521,15 @@
         </div>
       </div>
     </section>
+
+    <section class="band two-band"><div class="wrap two-grid">
+      <article class="two-card"><p class="eyebrow">1 · ${T('Structural design', 'ออกแบบโครงสร้าง')}</p><h2>${T('Design to Eurocode, AS and Thai EIT', 'ออกแบบตาม Eurocode, AS และ วสท.')}</h2>
+        <ul>${[T('RC beams, columns and pile caps', 'คาน เสา และฐานรากบนเสาเข็ม คสล.'), T('3D strut-and-tie for pile caps', 'Strut-and-tie 3 มิติ สำหรับฐานราก'), T('Steel sign gantries (AS 4100)', 'โครงป้ายเหล็ก (AS 4100)'), T('Limestone block retaining walls (AS 4678)', 'กำแพงกันดินหินบล็อก (AS 4678)'), T('Calculation report and PDF', 'รายการคำนวณและ PDF')].map(x => `<li>${x}</li>`).join('')}</ul>
+        <button class="btn btn-hot sm" data-act="free">${T('Open design →', 'เริ่มออกแบบ →')}</button></article>
+      <article class="two-card an-card">${analysisIcon()}<p class="eyebrow">2 · ${T('Structural analysis', 'วิเคราะห์โครงสร้าง')}</p><h2>${T('3D frame & truss analysis', 'วิเคราะห์โครงข้อแข็งและโครงถัก 3 มิติ')}</h2>
+        <ul>${[T('Model tree: standard → materials → sections → nodes → elements → supports → loads → combinations', 'เมนูขั้นตอน: มาตรฐาน → วัสดุ → หน้าตัด → จุดต่อ → ชิ้นส่วน → จุดรองรับ → แรง → การรวมน้ำหนัก'), T('Click to select and edit in the 3D view', 'คลิกเลือกและแก้ไขในมุมมอง 3 มิติ'), T('Code concrete and steel grades, UB/UC, IPE/HE and JIS H sections', 'คอนกรีตและเหล็กตามมาตรฐาน หน้าตัด UB/UC, IPE/HE, JIS H'), T('Linear static, P-Delta, modal and buckling', 'สถิตเชิงเส้น P-Delta โหมด และการโก่งเดาะ'), T('3D diagrams, reactions, drift — forces straight to RC design', 'แผนภาพ 3 มิติ แรงปฏิกิริยา ดริฟต์ — ส่งแรงไปออกแบบ RC')].map(x => `<li>${x}</li>`).join('')}</ul>
+        <button class="btn btn-hot sm" data-act="nav" data-v="analysis">${T('Open 3D analysis →', 'เปิดการวิเคราะห์ 3 มิติ →')}</button></article>
+    </div></section>
 
     <section class="band steps-band"><div class="wrap">
       <h2>${T('How it works', 'ทำงานอย่างไร')}</h2>
@@ -739,9 +749,10 @@
     const plan = S.promo && S.role !== 'admin' ? T('Pro is free right now · all features unlocked', 'ตอนนี้ใช้งาน Pro ได้ฟรี · เปิดทุกฟังก์ชัน') : S.role === 'pro' ? T('Pro plan', 'แพ็กเกจ Pro') + (days !== null ? T(` · ${days} days left (until ${S.user.expiry})`, ` · เหลือ ${days} วัน (ถึง ${S.user.expiry})`) : '')
       : S.role === 'admin' ? T('Administrator · all features', 'ผู้ดูแลระบบ · เข้าถึงทุกฟังก์ชัน') : T('Free plan · RC beams to all codes', 'แพ็กเกจ Free · ออกแบบคาน คสล. ได้ทุกมาตรฐาน');
     const sel = S.codeSel;
-    return `${navBar()}<main class="wrap page">
-      <div class="page-head"><div><p class="eyebrow">Structural Capacity · ${T('RC design', 'ออกแบบคอนกรีตเสริมเหล็ก')}</p><h1>${T('Select design code', 'เลือกมาตรฐานการออกแบบ')}</h1><p class="muted">${S.user ? esc(S.user.name || S.user.username) + ' · ' : ''}${plan}</p></div></div>
-      <section class="flow">
+    return `${navBar()}<main class="wrap page menu">
+      <div class="page-head"><div><p class="eyebrow">StructCap</p><h1>${T('Main menu', 'เมนูหลัก')}</h1><p class="muted">${S.user ? esc(S.user.name || S.user.username) + ' · ' : ''}${plan}</p></div></div>
+      <section class="menu-box box-design">
+        <div class="menu-hd"><span class="menu-n">1</span><div><p class="eyebrow">${T('Structural design', 'ออกแบบโครงสร้าง')}</p><h2>${T('Select a design code', 'เลือกมาตรฐานการออกแบบ')}</h2><p class="muted">${T('RC beams, columns and pile caps, 3D strut-and-tie, steel sign gantries and limestone block walls — with calculation reports.', 'คาน เสา ฐานรากบนเสาเข็ม คสล. strut-and-tie 3 มิติ โครงป้ายเหล็ก และกำแพงหินบล็อก — พร้อมรายการคำนวณ')}</p></div></div>
         <div class="pick-grid">${Object.keys(CODES).map(k => `<button class="pick code-pick tone-${CODES[k].tone} ${sel === k ? 'on' : ''}" data-act="code" data-c="${k}" aria-pressed="${sel === k}">
           <span class="code-top"><span class="pick-t">${cName(k)}</span><span class="code-big" aria-hidden="true">${CODES[k].tag}</span></span><span class="mono">${cStd(k)}</span><span class="pick-s">${cSub(k)}</span>
           <span class="pick-go">${sel === k ? T('Selected ✓', 'เลือกแล้ว ✓') : T('Select →', 'เลือก →')}</span></button>`).join('')}</div>
@@ -754,7 +765,10 @@
             ${elemIcon(k)}<span class="pick-t">${T(e.en, e.th)} <span class="pill ${e.free || S.promo ? 'free' : 'pro'}">${e.free ? 'Free' : S.promo ? T('Pro · free now', 'Pro · ฟรี') : 'Pro'}</span></span><span class="pick-s">${T(e.den, e.dth)}</span>
             <span class="pick-go">${locked ? T('Sign in with Pro to unlock', 'เข้าสู่ระบบ Pro เพื่อใช้งาน') : T('Open designer →', 'เปิดหน้าออกแบบ →')}</span></button>`;
       }).join('')}</div></div></div>` : ''}
-      <button class="analysis-strip go" data-act="nav" data-v="analysis">${analysisIcon()}<div><p class="eyebrow">Structural Analysis</p><h2>${T('Frame analysis', 'วิเคราะห์โครงสร้าง')}</h2><p class="muted">${T('3D frames and trusses you edit by clicking in the 3D view — load cases, AS / EC / ASCE combinations, envelopes, P-Delta, modal and buckling analysis. Send member forces straight to RC design.', 'โครงข้อแข็งและโครงถัก 3 มิติ แก้ไขได้โดยคลิกในมุมมอง 3 มิติ — กรณีแรง การรวมแรงตาม AS / EC / ASCE ค่าสูงสุด/ต่ำสุด P-Delta โหมด และการโก่งเดาะ ส่งแรงในชิ้นส่วนไปออกแบบ RC ได้ทันที')}</p></div><span class="pill free">${T('Open analysis →', 'เปิดหน้าวิเคราะห์ →')}</span></button>
+      <section class="menu-box box-analysis">
+        <div class="menu-hd"><span class="menu-n">2</span><div><p class="eyebrow">${T('Structural analysis', 'วิเคราะห์โครงสร้าง')}</p><h2>${T('3D frame & truss analysis', 'วิเคราะห์โครงข้อแข็งและโครงถัก 3 มิติ')}</h2><p class="muted">${T('Build the model step by step — standard, materials, sections, nodes, elements, supports, loads and combinations — then analyse and read the results in 3D.', 'สร้างแบบจำลองทีละขั้น — มาตรฐาน วัสดุ หน้าตัด จุดต่อ ชิ้นส่วน จุดรองรับ แรง และการรวมน้ำหนัก — แล้ววิเคราะห์และดูผลใน 3 มิติ')}</p></div></div>
+        <button class="an-entry" data-act="nav" data-v="analysis">${analysisIcon()}<div class="an-entry-tx"><b>${T('Open 3D analysis', 'เปิดหน้าวิเคราะห์ 3 มิติ')}</b><span class="an-chips">${[T('AS · Eurocode · Thai EIT', 'AS · Eurocode · วสท.'), T('Linear static', 'สถิตเชิงเส้น'), 'P-Delta', T('Modal', 'โหมด'), T('Buckling', 'การโก่งเดาะ'), T('Envelopes', 'ค่าสูงสุด/ต่ำสุด'), T('Results → RC design', 'ผล → ออกแบบ RC')].map(c => `<i>${c}</i>`).join('')}</span></div><span class="pick-go">${T('Open →', 'เปิด →')}</span></button>
+      </section>
     </main>`;
   }
   // Line-sketch icons in drafting style: ink outlines, accent for loads / struts
@@ -1796,7 +1810,7 @@
     else if (S.view === 'home') root.innerHTML = viewHome() + siteFoot();
     else if (S.view === 'design') { root.innerHTML = viewDesign() + siteFoot(); compute(); }
     else if (S.view === 'admin') { root.innerHTML = viewAdmin() + siteFoot(); if (S.role === 'admin') { adminSubscribe(); adminBody(); } }
-    else if (S.view === 'analysis') { const an = anUI(); if (!an) { S.view = 'home'; root.innerHTML = viewHome() + siteFoot(); return; } root.innerHTML = navBar() + an.view() + siteFoot(); an.mount(); }
+    else if (S.view === 'analysis') { const an = anUI(); if (!an) { S.view = 'home'; root.innerHTML = viewHome() + siteFoot(); return; } root.innerHTML = navBar() + an.view(); an.mount(); }
   }
 
   // ------------------------------------------------------------------ ANALYSIS (frame.js engine + analysis.js page)
