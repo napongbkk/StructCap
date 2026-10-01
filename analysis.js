@@ -304,12 +304,14 @@
         g.restore();
       }
       // members
-      const scr = { n: [], m: [] }, resMode = view !== 'model';
+      const scr = { n: [], m: [] }, resMode = view !== 'model', solidOn = !!A.solid && !resMode && !rep;
+      if (solidOn) drawSolid();
       m.members.forEach(mb => {
         const a = nd[mb.i], b = nd[mb.j]; if (!a || !b) return;
         const pa = P(P3(a)), pb = P(P3(b)), vis = memVis(mb), sel = selM.has(mb.id), hov = !rep && A.hover && A.hover.k === 'm' && A.hover.id === mb.id;
         if (!vis) { g.save(); g.globalAlpha = 0.14; line(pa, pb, pal.muted, 1.2); g.restore(); return; }
         const col = sel ? pal.acc : hov ? pal.blue : resMode ? pal.soft : mb.type === 'truss' ? pal.teal : pal.ink;
+        if (solidOn) { scr.m.push({ id: mb.id, a: pa, b: pb }); return; }
         line(pa, pb, col, sel ? 4 : resMode ? 1.6 : mb.type === 'truss' ? 1.6 : 2.4);
         scr.m.push({ id: mb.id, a: pa, b: pb });
         if (mb.type !== 'truss' && !resMode) [[mb.relI, pa, pb], [mb.relJ, pb, pa]].forEach(([r, p, q]) => { if (!r) return; const L = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1, d = Math.min(11, L / 3); g.beginPath(); g.arc(p[0] + (q[0] - p[0]) / L * d, p[1] + (q[1] - p[1]) / L * d, 3.4, 0, 2 * PI); g.fillStyle = pal.bg; g.fill(); g.strokeStyle = col; g.lineWidth = 1.4; g.stroke(); });
@@ -337,7 +339,7 @@
         scr.n.push({ id: n.id, p });
       });
       // loads
-      if (view === 'model' && (A.loadsOn || rep || ['case', 'load', 'combo'].includes(A.step))) drawLoads(o.lcase || A.lcase || 'all');
+      if (view === 'model' && (A.loadsOn || rep)) drawLoads(o.lcase || A.lcase || 'all');
       // local axes of selected members
       if (!rep && selM.size && selM.size <= 24) m.members.forEach(mb => {
         if (!selM.has(mb.id)) return; const a = nd[mb.i], b = nd[mb.j]; if (!a || !b) return;
@@ -352,13 +354,35 @@
       }
       // drawing a member: rubber band
       if (!rep && A.tool === 'member' && A.draw && A.mouse && nd[A.draw]) { const p = P(P3(nd[A.draw])); line(p, A.mouse, pal.acc, 1.5, [6, 4]); }
-      if (!rep && A.box) { g.strokeStyle = pal.blue; g.lineWidth = 1; g.setLineDash([5, 3]); g.strokeRect(Math.min(A.box[0], A.box[2]), Math.min(A.box[1], A.box[3]), Math.abs(A.box[2] - A.box[0]), Math.abs(A.box[3] - A.box[1])); g.setLineDash([]); g.fillStyle = 'rgba(46,107,255,0.06)'; g.fillRect(Math.min(A.box[0], A.box[2]), Math.min(A.box[1], A.box[3]), Math.abs(A.box[2] - A.box[0]), Math.abs(A.box[3] - A.box[1])); }
+      if (!rep && A.box) { const cr = A.box[2] < A.box[0], bx = [Math.min(A.box[0], A.box[2]), Math.min(A.box[1], A.box[3]), Math.abs(A.box[2] - A.box[0]), Math.abs(A.box[3] - A.box[1])]; g.fillStyle = cr ? 'rgba(22,163,74,0.08)' : 'rgba(46,107,255,0.07)'; g.fillRect(...bx); g.strokeStyle = cr ? pal.ok : pal.blue; g.lineWidth = 1.2; g.setLineDash(cr ? [6, 4] : []); g.strokeRect(...bx); g.setLineDash([]); text(cr ? T('crossing', 'ตัดผ่าน') : T('window', 'หน้าต่าง'), bx[0] + 4, bx[1] - 5, cr ? pal.ok : pal.blue, { font: '10.5px system-ui, sans-serif' }) + (A.boxHow === 'add' ? text('+', bx[0] + bx[2] - 10, bx[1] - 5, pal.blue, { font: '700 12px system-ui' }) : A.boxHow === 'sub' ? text('−', bx[0] + bx[2] - 10, bx[1] - 5, pal.pink, { font: '700 12px system-ui' }) : 0); }
       // axis triad
       const o0 = [34, H - 30];
       [[[1, 0, 0], 'X', pal.pink], [[0, 1, 0], 'Y', pal.ok], [[0, 0, 1], 'Z', pal.blue]].forEach(([e, lb, col]) => { const dx = dot(e, B.r), dy = dot(e, B.u); if (Math.hypot(dx, dy) < 0.08) { text(lb, o0[0] + 2, o0[1] - 2, col, { font: '600 10px ui-monospace, monospace' }); return; } const q = [o0[0] + 22 * dx, o0[1] - 22 * dy]; arrow(o0, q, col, 1.6); text(lb, q[0] + 3, q[1] + 3, col, { font: '600 10px ui-monospace, monospace' }); });
       notes.forEach((s, i) => text(s, 14, 22 + i * 16, pal.muted, { font: '12px system-ui, sans-serif' }));
       return scr;
 
+      function drawSolid() {
+        const faces = [], cache = {}, Ld = (v => { const l = Math.hypot(...v); return v.map(x => x / l); })(addv([0.25, 0.35, 0.9], B.d, 0.8));
+        const dark = (pal.bg || '').trim().toLowerCase() !== '#ffffff' && /^#([0-3])/.test((pal.bg || '').trim());
+        const BASE = { conc: dark ? [150, 156, 166] : [190, 194, 200], steel: dark ? [110, 140, 190] : [126, 150, 188], sel: [255, 120, 40], hov: [60, 120, 255] };
+        m.members.forEach(mb => {
+          const a = nd[mb.i], b = nd[mb.j]; if (!a || !b || !memVis(mb)) return;
+          const poly = cache[mb.sec] || (cache[mb.sec] = secPoly(mb.sec)); if (!poly) return;
+          const pa = P3(a), pb = P3(b), ax = F.axes(pa, pb, mb.beta), W3 = (p0, q) => addv(addv(p0, ax.ez, q[0] / 1000), ax.ey, q[1] / 1000);
+          const ri = poly.pts.map(q => W3(pa, q)), rj = poly.pts.map(q => W3(pb, q)), n = ri.length;
+          const mat = m.materials.find(q => q.id === mb.mat), kind = mat ? mat.kind : poly.steel ? 'steel' : 'conc';
+          const rgb = selM.has(mb.id) ? BASE.sel : A.hover && A.hover.k === 'm' && A.hover.id === mb.id ? BASE.hov : BASE[kind === 'steel' ? 'steel' : 'conc'];
+          const push = (pts, nrm, edge) => { if (dot(nrm, B.d) <= 1e-9) return; const sp = pts.map(P); faces.push({ sp, z: sp.reduce((t, q) => t + q[2], 0) / sp.length, l: 0.42 + 0.58 * Math.abs(dot(nrm, Ld)), rgb, edge }); };
+          for (let i = 0; i < n; i++) { const i2 = (i + 1) % n, dz = poly.pts[i2][0] - poly.pts[i][0], dy = poly.pts[i2][1] - poly.pts[i][1], h = Math.hypot(dz, dy) || 1; push([ri[i], ri[i2], rj[i2], rj[i]], addv(addv([0, 0, 0], ax.ez, dy / h), ax.ey, -dz / h), !poly.round); }
+          push(ri, ax.ex.map(v => -v), true); push(rj, ax.ex, true);
+        });
+        faces.sort((p, q) => p.z - q.z);
+        g.lineJoin = 'round';
+        faces.forEach(fc => {
+          const c = fc.rgb.map(v => Math.round(Math.min(255, v * fc.l))); g.beginPath(); fc.sp.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.closePath();
+          g.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`; g.fill(); g.strokeStyle = fc.edge ? `rgba(20,24,32,${dark ? 0.55 : 0.35})` : g.fillStyle; g.lineWidth = fc.edge ? 0.6 : 0.8; g.stroke();
+        });
+      }
       function drawLoads(lc) {
         const ls = m.loads.filter(l => lc === 'all' || l.case === lc);
         const maxW = Math.max(1e-9, ...ls.filter(l => l.kind === 'udl').map(l => Math.max(Math.abs(+l.w1 || 0), Math.abs(l.w2 === '' || l.w2 == null ? 0 : +l.w2))));
@@ -477,10 +501,30 @@
       s.m.forEach(q => { const dx = q.b[0] - q.a[0], dy = q.b[1] - q.a[1], L2 = dx * dx + dy * dy || 1, tt = Math.max(0, Math.min(1, ((x - q.a[0]) * dx + (y - q.a[1]) * dy) / L2)), d = (q.a[0] + tt * dx - x) ** 2 + (q.a[1] + tt * dy - y) ** 2; if (d < bd) { bd = d; best = { k: 'm', id: q.id }; } });
       return best;
     }
-    function boxSelect(b, add) {
-      const x0 = Math.min(b[0], b[2]), x1 = Math.max(b[0], b[2]), y0 = Math.min(b[1], b[3]), y1 = Math.max(b[1], b[3]), inside = p => p[0] >= x0 && p[0] <= x1 && p[1] >= y0 && p[1] <= y1;
-      const n = A.scr.n.filter(q => inside(q.p)).map(q => q.id), m = A.scr.m.filter(q => inside(q.a) && inside(q.b)).map(q => q.id);
-      A.sel = add ? { n: [...new Set(A.sel.n.concat(n))], m: [...new Set(A.sel.m.concat(m))] } : { n, m };
+    // window (drag to the right): only items fully inside · crossing (drag to the left): anything the box touches
+    function boxSelect(b, how) {
+      const x0 = Math.min(b[0], b[2]), x1 = Math.max(b[0], b[2]), y0 = Math.min(b[1], b[3]), y1 = Math.max(b[1], b[3]), inside = p => p[0] >= x0 && p[0] <= x1 && p[1] >= y0 && p[1] <= y1, cross = b[2] < b[0];
+      const segX = (p, q, r, s2) => { const d = (q[0] - p[0]) * (s2[1] - r[1]) - (q[1] - p[1]) * (s2[0] - r[0]); if (!d) return false; const u = ((r[0] - p[0]) * (s2[1] - r[1]) - (r[1] - p[1]) * (s2[0] - r[0])) / d, v = ((r[0] - p[0]) * (q[1] - p[1]) - (r[1] - p[1]) * (q[0] - p[0])) / d; return u >= 0 && u <= 1 && v >= 0 && v <= 1; };
+      const touches = (a, c) => inside(a) || inside(c) || [[[x0, y0], [x1, y0]], [[x1, y0], [x1, y1]], [[x1, y1], [x0, y1]], [[x0, y1], [x0, y0]]].some(([r, s2]) => segX(a, c, r, s2));
+      const n = A.scr.n.filter(q => inside(q.p)).map(q => q.id), m = A.scr.m.filter(q => cross ? touches(q.a, q.b) : inside(q.a) && inside(q.b)).map(q => q.id);
+      if (how === 'add') A.sel = { n: [...new Set(A.sel.n.concat(n))], m: [...new Set(A.sel.m.concat(m))] };
+      else if (how === 'sub') { const sn = new Set(n), sm = new Set(m); A.sel = { n: A.sel.n.filter(q => !sn.has(q)), m: A.sel.m.filter(q => !sm.has(q)) }; }
+      else A.sel = { n, m };
+    }
+    function selectBy(k) {
+      const m = A.model, nd = nodeMap(), vis = new Set(m.nodes.filter(nodeVisible).map(n => n.id)), mv = m.members.filter(q => vis.has(q.i) && vis.has(q.j));
+      const kind = q => { const a = nd[q.i], b = nd[q.j]; if (!a || !b) return ''; const v = sub(P3(b), P3(a)), L = Math.hypot(...v) || 1, c = Math.abs(v[2]) / L; return c > 0.97 ? 'col' : c < 0.03 ? 'beam' : 'brace'; };
+      if (k === 'all') A.sel = { n: [...vis], m: mv.map(q => q.id) };
+      else if (k === 'none') A.sel = { n: [], m: [] };
+      else if (k === 'inv') { const sn = new Set(A.sel.n), sm = new Set(A.sel.m); A.sel = { n: [...vis].filter(q => !sn.has(q)), m: mv.filter(q => !sm.has(q.id)).map(q => q.id) }; }
+      else if (k === 'nodes') A.sel = { n: [...vis], m: [] };
+      else if (k === 'elems') A.sel = { n: [], m: mv.map(q => q.id) };
+      else if (k === 'col' || k === 'beam' || k === 'brace') A.sel = { n: [], m: mv.filter(q => kind(q) === k).map(q => q.id) };
+      else if (k === 'sup') A.sel = { n: m.nodes.filter(n => vis.has(n.id) && F.fixOf(n).some(Boolean)).map(n => n.id), m: [] };
+      else if (k === 'samesec' || k === 'samemat') { const f0 = k === 'samesec' ? 'sec' : 'mat', want = new Set(m.members.filter(q => A.sel.m.includes(q.id)).map(q => q[f0])); if (!want.size) { toast(T('Select an element first.', 'เลือกชิ้นส่วนก่อน'), ''); return; } A.sel = { n: [], m: mv.filter(q => want.has(q[f0])).map(q => q.id) }; }
+      else if (k.startsWith('sec:')) A.sel = { n: [], m: mv.filter(q => q.sec === k.slice(4)).map(q => q.id) };
+      selChanged();
+      toast(A.sel.n.length || A.sel.m.length ? (A.sel.n.length ? A.sel.n.length + T(' node(s) ', ' จุดต่อ ') : '') + (A.sel.m.length ? A.sel.m.length + T(' element(s) ', ' ชิ้นส่วน ') : '') + T('selected', 'ที่เลือก') : T('Selection cleared', 'ล้างการเลือกแล้ว'), '');
     }
     function selChanged() {
       if (A.step !== 'res') { if (A.sel.n.length && !['node', 'sup', 'load'].includes(A.step)) A.step = 'node'; else if (!A.sel.n.length && A.sel.m.length && !['elem', 'sup', 'load'].includes(A.step)) A.step = 'elem'; }
@@ -493,7 +537,13 @@
         cv.focus({ preventScroll: true }); cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, rel(e));
         const [x, y] = rel(e); sx = lx = x; sy = ly = y; moved = false;
         if (pts.size === 2) { const [a, b] = [...pts.values()]; pd = Math.hypot(a[0] - b[0], a[1] - b[1]); mode = 'pinch'; A.box = null; return; }
-        mode = (A.tool === 'box' || e.ctrlKey || e.metaKey) && e.button === 0 ? 'box' : e.button === 2 || e.button === 1 || e.shiftKey || A.cam.v !== '3d' ? 'pan' : 'rot';
+        const is3 = A.cam.v === '3d', touch = e.pointerType === 'touch';
+        if (e.button === 1 || (e.button === 2 && e.shiftKey)) mode = 'pan';
+        else if (e.button === 2) mode = is3 ? 'rot' : 'pan';
+        else if (A.tool === 'orbit') mode = is3 && !e.shiftKey ? 'rot' : 'pan';
+        else if (A.tool === 'select' || (!touch && (e.ctrlKey || e.metaKey || e.shiftKey))) mode = 'box';
+        else mode = is3 ? 'rot' : 'pan';
+        A.boxHow = e.shiftKey ? 'add' : e.ctrlKey || e.metaKey ? 'sub' : 'new';
       });
       cv.addEventListener('pointermove', e => {
         const [x, y] = rel(e);
@@ -510,7 +560,7 @@
       const up = e => {
         const [x, y] = rel(e), had = pts.has(e.pointerId); pts.delete(e.pointerId); if (!had) return;
         if (pts.size) return;
-        if (mode === 'box' && moved && A.box) { boxSelect(A.box, e.shiftKey); A.box = null; selChanged(); mode = null; return; }
+        if (mode === 'box' && moved && A.box) { boxSelect(A.box, A.boxHow); A.box = null; selChanged(); mode = null; return; }
         A.box = null;
         if (!moved && e.type === 'pointerup' && mode !== 'pinch') clickAt(x, y, e);
         mode = null;
@@ -518,7 +568,7 @@
       cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
       cv.addEventListener('pointerleave', () => { if (!pts.size && A.hover) { A.hover = null; A.mouse = null; redraw(); } });
       cv.addEventListener('wheel', e => { e.preventDefault(); const [x, y] = rel(e); zoomAt(x, y, Math.exp(-e.deltaY * 0.0012)); }, { passive: false });
-      cv.addEventListener('contextmenu', e => { e.preventDefault(); if (A.draw) { A.draw = null; redraw(); } });
+      cv.addEventListener('contextmenu', e => { e.preventDefault(); if (A.draw && !moved) { A.draw = null; redraw(); } });
       // drop a property dragged from the tree
       cv.addEventListener('dragover', e => { if (!A.dnd) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; const [x, y] = rel(e), h = pickAt(x, y), want = A.dnd.startsWith('sup:') ? 'n' : 'm', ok = h && h.k === want ? h : null; if ((ok && (!A.hover || A.hover.id !== ok.id || A.hover.k !== ok.k)) || (!ok && A.hover)) { A.hover = ok; redraw(); } });
       cv.addEventListener('dragleave', () => { if (A.hover) { A.hover = null; redraw(); } });
@@ -759,6 +809,16 @@
       if (s.type === 'tube') { const q = String(s.size || '').split('x').map(Number); return s.shape === 'CHS' ? { k: 'chs', D: q[0], t: q[1] } : { k: 'box', h: q[0], b: q[1], t: q[2] }; }
       return null;
     }
+    function secPoly(id) {
+      const s = A.model.sections.find(q => q.id === id); if (!s) return null;
+      const gd = secDims(s), R = (b, h) => [[-b / 2, -h / 2], [b / 2, -h / 2], [b / 2, h / 2], [-b / 2, h / 2]], C = D => Array.from({ length: 18 }, (_, i) => [D / 2 * Math.cos(2 * PI * i / 18), D / 2 * Math.sin(2 * PI * i / 18)]);
+      if (!gd) { const a = Math.sqrt(Math.max(1, F.secProps(s).A)); return { pts: R(a, a) }; }
+      if (gd.k === 'rect') return { pts: R(gd.b, gd.h) };
+      if (gd.k === 'box') return { pts: R(gd.b, gd.h), steel: true };
+      if (gd.k === 'circ' || gd.k === 'chs') return { pts: C(gd.D), round: true, steel: gd.k === 'chs' };
+      const b = gd.bf / 2, d = gd.d / 2, w = gd.tw / 2, t = gd.tf;
+      return { pts: [[-b, -d], [b, -d], [b, -d + t], [w, -d + t], [w, d - t], [b, d - t], [b, d], [-b, d], [-b, d - t], [-w, d - t], [-w, -d + t], [-b, -d + t]], steel: true };
+    }
     function secSVG(s, W, H) {
       W = W || 220; H = H || 170;
       const g = secDims(s), cx = W / 2 + 8, cy = H / 2 - 4, n = v => (+v).toFixed(1);
@@ -923,7 +983,7 @@
       ];
     };
     function treeHTML() {
-      return `<nav class="an-tree" aria-label="${T('Model tree', 'โครงสร้างข้อมูลแบบจำลอง')}">${STEPS().map(([k, l, c], i) => { const open = A.step === k, st = k === 'run' || k === 'res' ? (fresh() ? 'ok' : A.err && A.resVer === A.ver && k === 'run' ? 'bad' : '') : ''; return `<div class="an-node ${open ? 'open' : ''}"><div class="an-throw"><button class="an-th" data-act="an-step" data-s="${k}" aria-expanded="${open}"><span class="an-num">${i}</span><span class="an-tl">${l}</span><span class="an-cnt ${st}" data-s="${k}">${esc(String(c))}</span><span class="an-chev" aria-hidden="true">›</span></button>${WADD.includes(k) ? `<button class="an-plus" data-act="an-win" data-k="${k}" title="${esc(WIN_T()[k])}" aria-label="${esc(WIN_T()[k])}">+</button>` : '<span class="an-plus0"></span>'}</div>${open ? `<div class="an-panel">${panel(k)}</div>` : ''}</div>`; }).join('')}</nav>`;
+      return `<nav class="an-tree" aria-label="${T('Main menu', 'เมนูหลัก')}"><div class="an-treehead">${T('MAIN MENU', 'เมนูหลัก')}</div>${STEPS().map(([k, l, c], i) => { const open = A.step === k, st = k === 'run' || k === 'res' ? (fresh() ? 'ok' : A.err && A.resVer === A.ver && k === 'run' ? 'bad' : '') : ''; return `<div class="an-node ${open ? 'open' : ''}"><div class="an-throw"><button class="an-th" data-act="an-step" data-s="${k}" aria-expanded="${open}"><span class="an-num">${i}</span><span class="an-tl">${l}</span><span class="an-cnt ${st}" data-s="${k}">${esc(String(c))}</span><span class="an-chev" aria-hidden="true">›</span></button>${WADD.includes(k) ? `<button class="an-plus" data-act="an-win" data-k="${k}" title="${esc(WIN_T()[k])}" aria-label="${esc(WIN_T()[k])}">+</button>` : '<span class="an-plus0"></span>'}</div>${open ? `<div class="an-panel">${panel(k)}</div>` : ''}</div>`; }).join('')}</nav>`;
     }
     function updCounts() { STEPS().forEach(([k, , c]) => { const e = document.querySelector('.an-cnt[data-s="' + k + '"]'); if (e) { e.textContent = String(c); e.classList.toggle('ok', (k === 'run' || k === 'res') && fresh()); } }); }
     function sideRefresh() { const s = $('#anSide'); if (!s) return; const sc = s.scrollTop; s.innerHTML = treeHTML(); s.scrollTop = sc; }
@@ -957,9 +1017,9 @@
         if (mems.length) { const q = mems[0], one = mems.length === 1; ed += blk(T('End releases of ', 'การปลดแรงปลายของ ') + (one ? T('element ', 'ชิ้นส่วน ') + esc(q.id) : mems.length + ' ' + T('elements', 'ชิ้นส่วน')), one ? `<div class="an-chk"><label class="chkl"><input type="checkbox" data-ins="relI" ${q.relI ? 'checked' : ''} ${q.type === 'truss' ? 'disabled' : ''}> ${T('Pin (moment release) at end i', 'หมุด (ปลดโมเมนต์) ที่ปลาย i')} — ${esc(q.i)}</label></div><div class="an-chk"><label class="chkl"><input type="checkbox" data-ins="relJ" ${q.relJ ? 'checked' : ''} ${q.type === 'truss' ? 'disabled' : ''}> ${T('Pin (moment release) at end j', 'หมุด (ปลดโมเมนต์) ที่ปลาย j')} — ${esc(q.j)}</label></div>${fld(T('Element type', 'ชนิดชิ้นส่วน'), sel([['frame', T('Frame', 'โครงข้อแข็ง')], ['truss', T('Truss — both ends pinned, axial force only', 'โครงถัก — หมุดทั้งสองปลาย รับแรงตามแนวแกน')]], q.type || 'frame', 'data-ins="type"'))}`
           : `<div class="an-row2">${fld(T('Moment releases', 'การปลดโมเมนต์'), sel([['', T('— keep —', '— คงเดิม —')], ['none', T('None (rigid)', 'ไม่มี (ยึดแน่น)')], ['i', T('End i', 'ปลาย i')], ['j', T('End j', 'ปลาย j')], ['both', T('Both ends', 'ทั้งสองปลาย')]], '', 'data-ins="hinge"'))}${fld(T('Type', 'ชนิด'), sel([['', T('— keep —', '— คงเดิม —')], ['frame', T('Frame', 'โครงข้อแข็ง')], ['truss', T('Truss', 'โครงถัก')]], '', 'data-ins="type"'))}</div>`); }
         const supN = m.nodes.filter(n => F.fixOf(n).some(Boolean)), relM = m.members.filter(q => q.relI || q.relJ || q.type === 'truss');
-        return hint(T('Select nodes in the view (click or Ctrl-drag) to set their support. Select elements to release their end moments (pins) or make them truss members.', 'เลือกจุดต่อในมุมมอง (คลิก หรือลากพร้อม Ctrl) เพื่อกำหนดจุดรองรับ เลือกชิ้นส่วนเพื่อปลดโมเมนต์ที่ปลาย (หมุด) หรือกำหนดเป็นโครงถัก')) +
+        return hint(T('Select nodes in the view (click, or drag a box) to set their support. Select elements to release their end moments (pins) or make them truss members.', 'เลือกจุดต่อในมุมมอง (คลิก หรือลากกรอบ) เพื่อกำหนดจุดรองรับ เลือกชิ้นส่วนเพื่อปลดโมเมนต์ที่ปลาย (หมุด) หรือกำหนดเป็นโครงถัก')) +
           `<h4>${T('Drag onto a node', 'ลากไปวางบนจุดต่อ')}</h4>` + chips('sup', DRAG_SUPS()) + `<h4>${T('Drag onto an element', 'ลากไปวางบนชิ้นส่วน')}</h4>` + chips('rel', DRAG_RELS()) +
-          `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-selbase">${T('Select all base nodes', 'เลือกจุดต่อที่ฐานทั้งหมด')}</button><button class="btn btn-ghost xs" data-act="an-tool" data-t="box">${T('Box select', 'เลือกแบบกรอบ')}</button></div>` + selCount() + ed +
+          `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-selbase">${T('Select all base nodes', 'เลือกจุดต่อที่ฐานทั้งหมด')}</button></div>` + selCount() + ed +
           `<details class="an-blk an-det" open><summary><b>${T('Supports', 'จุดรองรับ')} (${supN.length})</b></summary>${supN.length ? wrap(`<table class="an-t"><thead><tr><th>${T('Node', 'จุดต่อ')}</th><th>${T('Support', 'จุดรองรับ')}</th><th>Ux Uy Uz Rx Ry Rz</th></tr></thead><tbody>${supN.slice(0, 200).map(n => `<tr><td><button class="linkbtn" data-act="an-pickn" data-n="${esc(n.id)}">${esc(n.id)}</button></td><td>${esc((SUP().find(q => q[0] === (n.sup || 'free')) || [])[1] || n.sup)}</td><td class="mono">${F.fixOf(n).map(v => (v ? '■' : '□')).join(' ')}</td></tr>`).join('')}</tbody></table>`) : hint(T('No supports yet.', 'ยังไม่มีจุดรองรับ'))}</details>` +
           `<details class="an-blk an-det"><summary><b>${T('Released / truss elements', 'ชิ้นส่วนที่ปลดแรง / โครงถัก')} (${relM.length})</b></summary>${relM.length ? wrap(`<table class="an-t"><thead><tr><th>${T('Element', 'ชิ้นส่วน')}</th><th>${T('Release', 'การปลด')}</th></tr></thead><tbody>${relM.slice(0, 200).map(q => `<tr><td><button class="linkbtn" data-act="an-pick" data-m="${esc(q.id)}">${esc(q.id)}</button></td><td>${q.type === 'truss' ? T('truss (axial only)', 'โครงถัก') : (q.relI ? T('pin at i ', 'หมุดที่ i ') : '') + (q.relJ ? T('pin at j', 'หมุดที่ j') : '')}</td></tr>`).join('')}</tbody></table>`) : hint(T('All elements are rigidly connected.', 'ชิ้นส่วนทั้งหมดต่อแบบยึดแน่น'))}</details>`;
       }
@@ -972,9 +1032,13 @@
         if (A.sel.m.length) forms += blk(T('Element load on ', 'แรงบนชิ้นส่วน ') + A.sel.m.length + ' ' + T('selected element(s)', 'ชิ้นที่เลือก'), `<div class="an-row2">${fld(T('Load', 'ชนิด'), sel(LKIND(), A.mlk || 'udl', 'id="an-mlk"'))}${fld(T('Direction', 'ทิศทาง'), sel((A.mlk || 'udl') === 'moment' ? MDIRS() : DIRS(), (A.mlk || 'udl') === 'moment' ? 'lz' : 'grav', 'id="an-mld"'))}</div>
           <div class="an-row4">${fld((A.mlk || 'udl') === 'udl' ? 'w₁ (kN/m)' : (A.mlk === 'point' ? 'P (kN)' : 'M (kNm)'), num('an-mlv', 10))}${(A.mlk || 'udl') === 'udl' ? fld(T('w₂ (blank = w₁)', 'w₂ (ว่าง = w₁)'), `<input id="an-mlv2" type="number" step="any">`) : '<span></span>'}${fld(T('a (m from i)', 'a (ม. จาก i)'), `<input id="an-mla" type="number" step="any" placeholder="${(A.mlk || 'udl') === 'udl' ? '0' : T('mid', 'กึ่งกลาง')}">`)}${(A.mlk || 'udl') === 'udl' ? fld(T('b (blank = end j)', 'b (ว่าง = ปลาย j)'), `<input id="an-mlb" type="number" step="any">`) : '<span></span>'}</div>
           <div class="an-adds"><button class="btn btn-hot xs" data-act="an-ml">${T('Apply to ', 'ใส่แรงใน ') + esc(cs)}</button><button class="btn btn-ghost xs" data-act="an-mlclear">${T('Remove ', 'ลบแรง ') + esc(cs) + T(' loads from selection', ' ของส่วนที่เลือก')}</button></div>`);
-        return `<div class="an-row2">${fld(T('Load case', 'กรณีน้ำหนัก'), sel(caseOpts(), cs, 'id="an-lcase"'))}<span class="an-f"><span>&nbsp;</span><button class="btn btn-ghost xs" data-act="an-step" data-s="case">${T('Edit load cases', 'แก้ไขกรณีน้ำหนัก')}</button></span></div>` +
-          (forms || hint(T('Select nodes or elements in the view (click, Shift-click or Ctrl-drag), then apply nodal loads, distributed loads, point loads or moments to this load case.', 'เลือกจุดต่อหรือชิ้นส่วนในมุมมอง (คลิก, Shift-คลิก หรือลากพร้อม Ctrl) แล้วใส่แรงที่จุดต่อ แรงแผ่กระจาย แรงจุด หรือโมเมนต์ในกรณีน้ำหนักนี้'))) + selCount() +
-          `<div class="an-blk">${loadTable(cs)}</div>`;
+        const pal0 = palette(), nIn = id => m.loads.filter(l => l.case === id).length, shown = A.loadsOn ? A.lcase : '';
+        const cards = `<div class="an-lcards" role="listbox" aria-label="${T('Load cases', 'กรณีน้ำหนัก')}">${m.cases.map(c => `<button class="an-lcard ${shown === c.id || (shown === 'all') ? 'on' : ''} ${cs === c.id ? 'cur' : ''}" role="option" aria-selected="${cs === c.id}" data-act="an-lpick" data-c="${esc(c.id)}"><i style="background:${caseCol(pal0, c.id)}"></i><b>${esc(c.id)}</b><span>${esc(c.name)}</span><em>${c.type}${c.sw ? ' · SW' : ''}</em><small>${nIn(c.id)}</small></button>`).join('')}</div>`;
+        const nl = nIn(cs);
+        return `<div class="an-lhead"><b>${T('Load cases', 'กรณีน้ำหนัก')}</b><span class="muted small">${T('click one to show only its loads', 'คลิกเพื่อแสดงเฉพาะแรงของกรณีนั้น')}</span><button class="linkbtn" data-act="an-step" data-s="case">${T('Edit', 'แก้ไข')}</button></div>` + cards +
+          `<div class="an-lnow">${T('Applying to ', 'ใส่แรงใน ')}<b>${esc(cs)}</b> — ${esc((m.cases.find(c => c.id === cs) || {}).name || '')} · ${nl} ${T('load(s)', 'แรง')}</div>` +
+          (forms || hint(T('Select nodes or elements in the view (click, Shift-click or drag a box), then apply nodal loads, distributed loads, point loads or moments to this load case.', 'เลือกจุดต่อหรือชิ้นส่วนในมุมมอง (คลิก, Shift-คลิก หรือลากกรอบ) แล้วใส่แรงที่จุดต่อ แรงแผ่กระจาย แรงจุด หรือโมเมนต์ในกรณีน้ำหนักนี้'))) + selCount() +
+          (nl ? `<button class="linkbtn an-llist" data-act="an-llist" aria-expanded="${!!A.llist}">${A.llist ? '▾ ' + T('Hide individual loads', 'ซ่อนรายการแรง') : '▸ ' + T('Show individual loads', 'แสดงรายการแรง')} (${nl})</button>${A.llist ? `<div class="an-blk">${loadTable(cs)}</div>` : ''}` : '');
       }
       if (k === 'combo') {
         const cb = A.cb || (A.cb = { name: '', type: 'ULS', rows: m.cases.slice(0, 2).map((c, i) => ({ c: c.id, f: i ? 1.5 : 1.2 })) });
@@ -1103,10 +1167,12 @@
           <aside class="an-side" id="anSide">${treeHTML()}</aside>
           <section class="an-work">
             <div class="an-tools">
-              <div class="seg" role="group" aria-label="${T('Tool', 'เครื่องมือ')}">${[['select', T('Select', 'เลือก')], ['box', T('Box', 'กรอบ')], ['node', T('Node', 'จุดต่อ')], ['member', T('Element', 'ชิ้นส่วน')]].map(([k, l]) => `<button data-act="an-tool" data-t="${k}" aria-pressed="${A.tool === k}">${l}</button>`).join('')}</div>
+              <div class="seg" role="group" aria-label="${T('Tool', 'เครื่องมือ')}">${[['select', T('Select', 'เลือก'), T('Click to pick · drag a box: → window, ← crossing · Shift adds · Ctrl removes', 'คลิกเพื่อเลือก · ลากกรอบ: → หน้าต่าง, ← ตัดผ่าน · Shift เพิ่ม · Ctrl ลบออก')], ['orbit', T('Orbit', 'หมุน'), T('Drag to rotate the 3D view', 'ลากเพื่อหมุนมุมมอง 3 มิติ')], ['node', T('Node', 'จุดต่อ'), ''], ['member', T('Element', 'ชิ้นส่วน'), '']].map(([k, l, tt]) => `<button data-act="an-tool" data-t="${k}" aria-pressed="${A.tool === k}" ${tt ? `title="${esc(tt)}"` : ''}>${l}</button>`).join('')}</div>
+              ${sel([['', T('Select…', 'เลือก…')], ['all', T('All', 'ทั้งหมด')], ['none', T('None', 'ไม่เลือก')], ['inv', T('Invert', 'กลับการเลือก')], ['nodes', T('All nodes', 'จุดต่อทั้งหมด')], ['elems', T('All elements', 'ชิ้นส่วนทั้งหมด')], ['col', T('Columns', 'เสา')], ['beam', T('Beams', 'คาน')], ['brace', T('Bracing', 'ค้ำยัน')], ['sup', T('Supports', 'จุดรองรับ')], ['samesec', T('Same section as selected', 'หน้าตัดเดียวกับที่เลือก')], ['samemat', T('Same material as selected', 'วัสดุเดียวกับที่เลือก')]].concat(A.model.sections.map(q => ['sec:' + q.id, T('Section ', 'หน้าตัด ') + q.id])), '', `id="an-selby" class="an-selby" aria-label="${T('Select by', 'เลือกตาม')}"`)}
+              <div class="seg" role="group" aria-label="${T('Display', 'การแสดงผล')}">${[['wire', T('Wire', 'เส้น'), T('Centre-line view', 'แสดงเส้นแกน')], ['solid', T('Solid', 'ทรงตัน'), T('Render the actual section shapes', 'แสดงรูปหน้าตัดจริง')]].map(([k, l, tt]) => `<button data-act="an-disp" data-d="${k}" aria-pressed="${(k === 'solid') === !!A.solid}" title="${esc(tt)}">${l}</button>`).join('')}</div>
               <div class="seg" role="group" aria-label="${T('View', 'มุมมอง')}">${[['3d', '3D'], ['plan', T('Plan', 'แปลน')], ['xz', 'X–Z'], ['yz', 'Y–Z']].map(([k, l]) => `<button data-act="an-cam" data-v="${k}" aria-pressed="${A.cam.v === k}">${l}</button>`).join('')}</div>
               ${ax ? `<label class="an-lv">${ax.toUpperCase()} = ${sel([['all', T('all', 'ทั้งหมด')]].concat(lv.map(v => [v, f(v, 2)])), A.cut, 'id="an-cut"')}</label>` : ''}
-              <label class="chkl sm an-inl"><input type="checkbox" id="an-loadson" ${A.loadsOn ? 'checked' : ''}> ${T('Loads', 'แรง')}</label>
+              ${sel([['', T('Loads: off', 'แรง: ปิด')]].concat(A.model.cases.map(c => [c.id, T('Loads: ', 'แรง: ') + c.id + ' — ' + c.name]), [['all', T('Loads: all cases', 'แรง: ทุกกรณี')]]), A.loadsOn ? A.lcase : '', `id="an-lshow" class="an-lshow" aria-label="${T('Show loads of', 'แสดงแรงของ')}"`)}
               <span class="grow"></span>
               <button class="btn btn-ghost xs" data-act="an-fit" title="${T('Zoom to fit', 'ซูมให้พอดี')}" aria-label="${T('Zoom to fit', 'ซูมให้พอดี')}">⤢</button><button class="btn btn-ghost xs" data-act="an-undo" ${A.hist.length ? '' : 'disabled'} title="Ctrl+Z" aria-label="Undo">↶</button><button class="btn btn-ghost xs" data-act="an-redo" ${A.fut.length ? '' : 'disabled'} title="Ctrl+Y" aria-label="Redo">↷</button>
               <span class="an-sep"></span>
@@ -1114,12 +1180,18 @@
               <button class="btn btn-hot xs" data-act="an-run">▶ ${T('Run', 'วิเคราะห์')}</button>
             </div>
             <div class="an-canvas"><canvas id="anCv" tabindex="0" aria-label="${T('3D model view', 'มุมมองแบบจำลอง 3 มิติ')}"></canvas><span class="an-tag" id="anViewTag">${viewTag()}</span>
-              <p class="an-hintbar">${A.cam.v === '3d' ? T('Drag: rotate · right-drag / Shift: pan · wheel: zoom · click: select', 'ลาก: หมุน · คลิกขวา/Shift: เลื่อน · ล้อเมาส์: ซูม · คลิก: เลือก') : T('Drag: pan · wheel: zoom · click: select', 'ลาก: เลื่อน · ล้อเมาส์: ซูม · คลิก: เลือก')} · kN, m</p></div>
+              <p class="an-hintbar"><span id="anHint">${hintBar()}</span> · kN, m</p></div>
             <div class="an-drawer ${showRes ? 'on' : ''}" id="anDrawer">${drawerHTML()}</div>
           </section>
         ${A.tplOpen ? `<div class="modal-bg an-tplbg">${tplHTML()}</div>` : ''}
         <div id="anWinHost"></div>
         <div id="reportWrap" class="an-report"></div></main>`;
+    }
+    function syncLshow() { const e = $('#an-lshow'); if (e) e.value = A.loadsOn ? A.lcase : ''; }
+    function hintBar() {
+      const rot = A.cam.v === '3d' ? T('right-drag: rotate', 'ลากคลิกขวา: หมุน') : T('right-drag: pan', 'ลากคลิกขวา: เลื่อน');
+      if (A.tool === 'select') return T('Drag box: → window / ← crossing · Shift: add · Ctrl: remove', 'ลากกรอบ: → หน้าต่าง / ← ตัดผ่าน · Shift: เพิ่ม · Ctrl: ลบออก') + ' · ' + rot + ' · ' + T('middle-drag: pan · wheel: zoom', 'ลากปุ่มกลาง: เลื่อน · ล้อเมาส์: ซูม');
+      return (A.cam.v === '3d' ? T('Drag: rotate', 'ลาก: หมุน') : T('Drag: pan', 'ลาก: เลื่อน')) + ' · ' + T('Shift-drag: select area · middle/right-drag: pan · wheel: zoom', 'Shift-ลาก: เลือกพื้นที่ · ลากปุ่มกลาง/ขวา: เลื่อน · ล้อเมาส์: ซูม');
     }
     function drawerHTML() {
       if (!(A.step === 'res' && fresh())) return '';
@@ -1187,8 +1259,9 @@
       if (t.id === 'an-ss') { A.ss = t.value; const z = $('#an-sz'); if (z) z.innerHTML = (SL.LIB[t.value] ? SL.sizes(t.value).map(q => [q, q]) : (G.GANTRY ? G.GANTRY.sizeOptions(t.value) : [])).map(o => `<option value="${esc(o[0])}">${esc(o[1])}</option>`).join(''); return true; }
       if (t.id === 'an-mlk') { A.mlk = t.value; sideRefresh(); return true; }
       if (t.id === 'an-src') { A.src = t.value; drawAll(); return true; }
-      if (t.id === 'an-lcase') { A.lcase = t.value; redraw(); sideRefresh(); return true; }
-      if (t.id === 'an-loadson') { A.loadsOn = t.checked; redraw(); return true; }
+      if (t.id === 'an-lcase') { A.lcase = t.value; A.loadsOn = true; syncLshow(); redraw(); sideRefresh(); return true; }
+      if (t.id === 'an-lshow') { if (t.value) { A.lcase = t.value; A.loadsOn = true; } else A.loadsOn = false; redraw(); if (['case', 'load'].includes(A.step)) sideRefresh(); return true; }
+      if (t.id === 'an-selby') { const v = t.value; t.value = ''; if (v) selectBy(v); return true; }
       if (t.id === 'an-modesel') { A.mode = +t.value; redraw(); return true; }
       if (t.id === 'an-scale') { A.dscale = +t.value; redraw(); return true; }
       if (t.id === 'an-labels') { A.labels = t.checked; redraw(); return true; }
@@ -1227,11 +1300,14 @@
     }
     function onClick(a, b) {
       const m = A.model;
-      if (a === 'an-step') { const s0 = b.dataset.s; A.step = A.step === s0 && b.classList.contains('an-th') ? null : s0; if (A.step === 'load' && !m.cases.some(c => c.id === A.lcase)) A.lcase = (m.cases[0] || {}).id || ''; ctx.render(); }
+      if (a === 'an-step') { const s0 = b.dataset.s; A.step = A.step === s0 && b.classList.contains('an-th') ? null : s0; if (A.step === 'load' && !m.cases.some(c => c.id === A.lcase)) A.lcase = (m.cases[0] || {}).id || ''; if (A.step === 'load' || A.step === 'case') A.loadsOn = true; ctx.render(); }
       else if (a === 'an-std') { const k = b.dataset.k; if (k === m.std) return true; snap(true); m.std = k; A.ss = null; changed(true); ctx.render(); toast(T('Design standard: ', 'มาตรฐาน: ') + T(stdInfo(k).name[0], stdInfo(k).name[1]) + T(' — new materials, sections and combinations follow it.', ' — วัสดุ หน้าตัด และการรวมน้ำหนักใหม่จะเป็นไปตามมาตรฐานนี้'), 'ok'); }
       else if (a === 'an-rtab') { A.rtab = b.dataset.t; const r = $('#anRes'); if (r) r.innerHTML = resultsHTML(); }
       else if (a === 'an-rv') { A.rview = b.dataset.v; if (A.rview === 'buck' && !(A.src || '').startsWith('combo:')) { const c = m.combos.find(q => q.type === 'ULS'); if (c) A.src = 'combo:' + c.id; } sideRefresh(); drawAll(); }
-      else if (a === 'an-tool') { A.tool = b.dataset.t; A.draw = null; document.querySelectorAll('.an-tools [data-act=an-tool]').forEach(x => x.setAttribute('aria-pressed', x.dataset.t === A.tool)); if ((A.tool === 'node' || A.tool === 'member') && A.cam.v === '3d') toast(T('Tip: in Plan or an Elevation you can click empty grid points to create nodes.', 'เคล็ดลับ: ในแปลนหรือรูปด้าน คลิกตำแหน่งว่างเพื่อสร้างจุดต่อ'), ''); if (b.closest('.an-panel')) sideRefresh(); redraw(); }
+      else if (a === 'an-disp') { A.solid = b.dataset.d === 'solid'; document.querySelectorAll('.an-tools [data-act=an-disp]').forEach(x => x.setAttribute('aria-pressed', (x.dataset.d === 'solid') === A.solid)); if (A.solid && A.step === 'res') toast(T('Solid view shows in model mode; results are drawn on the centre-lines.', 'มุมมองทรงตันแสดงในโหมดแบบจำลอง ผลลัพธ์แสดงบนเส้นแกน'), ''); redraw(); }
+      else if (a === 'an-lpick') { A.lcase = b.dataset.c; A.loadsOn = true; syncLshow(); sideRefresh(); redraw(); }
+      else if (a === 'an-llist') { A.llist = !A.llist; sideRefresh(); }
+      else if (a === 'an-tool') { A.tool = b.dataset.t === 'box' ? 'select' : b.dataset.t; const hb = $('#anHint'); if (hb) hb.textContent = hintBar(); A.draw = null; document.querySelectorAll('.an-tools [data-act=an-tool]').forEach(x => x.setAttribute('aria-pressed', x.dataset.t === A.tool)); if ((A.tool === 'node' || A.tool === 'member') && A.cam.v === '3d') toast(T('Tip: in Plan or an Elevation you can click empty grid points to create nodes.', 'เคล็ดลับ: ในแปลนหรือรูปด้าน คลิกตำแหน่งว่างเพื่อสร้างจุดต่อ'), ''); if (b.closest('.an-panel')) sideRefresh(); redraw(); }
       else if (a === 'an-cam') { setView(b.dataset.v); ctx.render(); }
       else if (a === 'an-fit') { A.cam.k = null; redraw(); }
       else if (a === 'an-undo') undo(false);
@@ -1242,7 +1318,7 @@
       else if (a === 'an-pickn') { A.sel = { n: [b.dataset.n], m: [] }; selChanged(); }
       else if (a === 'an-delsel') deleteSel();
       else if (a === 'an-open') { const k = b.dataset.k, id = b.dataset.id; OPEN[k] = OPEN[k] === id ? null : id; if (k === 'load') { const l = m.loads[+id]; if (l && OPEN[k] !== null) A.sel = l.kind === 'node' ? { n: [l.node], m: [] } : { n: [], m: [l.member] }; redraw(); } sideRefresh(); }
-      else if (a === 'an-gocase') { A.lcase = b.dataset.c; A.step = 'load'; ctx.render(); }
+      else if (a === 'an-gocase') { A.lcase = b.dataset.c; A.step = 'load'; A.loadsOn = true; ctx.render(); }
       else if (a === 'an-add') { snap(true); addRow(b.dataset.tb); changed(true); }
       else if (a === 'an-del') { snap(true); const tb = b.dataset.tb, i = +b.dataset.i, row = m[tb][i]; m[tb].splice(i, 1); if (tb === 'nodes') { m.members = m.members.filter(x => x.i !== row.id && x.j !== row.id); m.loads = m.loads.filter(l => l.node !== row.id); } if (tb === 'members') m.loads = m.loads.filter(l => l.member !== row.id); if (tb === 'cases') { m.loads = m.loads.filter(l => l.case !== row.id); m.combos.forEach(c => { if (c.f) delete c.f[row.id]; }); } A.sel = { n: A.sel.n.filter(id => m.nodes.some(q => q.id === id)), m: A.sel.m.filter(id => m.members.some(q => q.id === id)) }; changed(true); }
       else if (a === 'an-mat') { snap(true); const mt = clone(MAT[b.dataset.m]); let id = mt.id, k = 2; while (m.materials.some(q => q.id === id)) id = mt.id + k++; mt.id = id; m.materials.push(mt); changed(true); }

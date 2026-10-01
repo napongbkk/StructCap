@@ -772,6 +772,24 @@ button.an-pickrow:hover{border-color:var(--line2)} button.an-pickrow.on{border-c
 .an-chip:hover{border-color:var(--acc);color:var(--acc)}
 body.an-dragging .an-canvas{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--acc) 55%,transparent)}
 @media (max-width:560px){.an-wsec{grid-template-columns:1fr}}
+
+/* main menu title, select-by, load case cards */
+.an-treehead{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--muted);padding:6px 8px 5px;border-bottom:1px solid var(--line);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.an-treehead::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--acc)}
+.an-selby,.an-lshow{font-size:12.5px;padding:4px 6px;border:1px solid var(--line2);border-radius:8px;background:var(--card);color:var(--ink);max-width:150px}.an-selby{max-width:96px}
+.an-lhead{display:flex;align-items:baseline;gap:8px;margin:2px 0 6px}.an-lhead .linkbtn{margin-left:auto;font-size:12px}
+.an-lhead .small{font-size:11.5px}
+.an-lcards{display:grid;gap:4px;margin-bottom:8px}
+.an-lcard{display:grid;grid-template-columns:10px auto minmax(0,1fr) auto auto;gap:8px;align-items:center;text-align:left;padding:6px 9px;border:1px solid var(--line2);border-radius:8px;background:var(--card);color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer}
+.an-lcard i{width:10px;height:10px;border-radius:3px}
+.an-lcard span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.an-lcard em{font-style:normal;font-size:11px;color:var(--muted)}
+.an-lcard small{font-size:11px;min-width:22px;text-align:center;padding:1px 6px;border-radius:9px;background:var(--line);color:var(--ink)}
+.an-lcard:hover{border-color:var(--blue)}
+.an-lcard.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.an-lcard.cur{background:color-mix(in srgb,var(--acc) 8%,var(--card))}
+.an-lnow{font-size:12.5px;padding:6px 8px;border-radius:8px;background:var(--line);margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.an-llist{display:block;margin-top:8px;font-size:12.5px}
 </style>
 </head>
 <body>
