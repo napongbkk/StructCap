@@ -456,8 +456,8 @@
 
   function navBar() {
     const who = S.role === 'admin' ? '<span class="chip chip-admin">Admin · ' + esc(S.user.username) + '</span>'
-      : S.role === 'pro' ? '<span class="chip chip-pro">PRO · ' + esc(S.user.name || S.user.username) + '</span>'
-        : S.role === 'free' ? (S.promo ? '<span class="chip chip-pro">PRO · ' + T('free now', 'ฟรี') + '</span>' : '<span class="chip">Free' + (S.user && S.user.member ? ' · ' + esc(S.user.name || S.user.username) : '') + '</span>') : '';
+      : S.role === 'pro' ? '<span class="chip chip-pro">PRO · ' + esc(S.user.username) + '</span>'
+        : S.role === 'free' ? (S.promo ? '<span class="chip chip-pro">PRO · ' + T('free now', 'ฟรี') + '</span>' : '<span class="chip">Free' + (S.user && S.user.member ? ' · ' + esc(S.user.username) : '') + '</span>') : '';
     return `<header class="nav"><div class="nav-in">
       <button class="brand" data-act="nav" data-v="${S.role === 'guest' ? 'landing' : 'home'}" aria-label="StructCap home">${logoMark(32)}<span class="wordmark">Struct<b>Cap</b></span></button>
       <nav class="nav-links">
@@ -630,7 +630,7 @@
           <label>${T('Password (min. 8 characters)', 'รหัสผ่าน (อย่างน้อย 8 ตัว)')} *<input id="r-pass" type="password" autocomplete="new-password" required minlength="8"></label>
           <label>${T('Confirm password', 'ยืนยันรหัสผ่าน')} *<input id="r-pass2" type="password" autocomplete="new-password" required minlength="8"></label>
         </div>
-        <p class="muted small">${T('We send a confirmation to this email. Name, phone and company can be added later in My account.', 'เราจะส่งอีเมลยืนยันไปยังอีเมลนี้ ชื่อ โทรศัพท์ และบริษัท เพิ่มภายหลังได้ที่ บัญชีของฉัน')}</p>
+        <p class="muted small">${T('We send a confirmation to this email.', 'เราจะส่งอีเมลยืนยันไปยังอีเมลนี้')}</p>
         ${pro ? proFields('rp') : ''}
         ${pro ? `<label>${T('Note to the administrator (optional)', 'ข้อความถึงผู้ดูแลระบบ (ถ้ามี)')}<input id="r-note" maxlength="500"></label>` : ''}
         <input id="r-web" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -676,7 +676,7 @@
     const sent = S.mailed ? T(' A confirmation has been emailed to ' + u.username + '.', ' ส่งอีเมลยืนยันไปที่ ' + u.username + ' แล้ว') : '';
     const notice = { freeOk: ['ok', T('Registration complete — your free account is ready. Sign in any time with your email and password.', 'สมัครสมาชิกเรียบร้อย — บัญชี Free พร้อมใช้งาน เข้าสู่ระบบได้ทุกเมื่อด้วยอีเมลและรหัสผ่าน') + sent], proSent: ['ok', T('Thank you — your registration and payment slip were received. Pro will be switched on within 2 hours and you will get an email when it is on.', 'ขอบคุณ — ได้รับข้อมูลการสมัครและสลิปแล้ว จะเปิดใช้ Pro ภายใน 2 ชั่วโมง และแจ้งทางอีเมลเมื่อเปิดใช้แล้ว') + sent], proFail: ['bad', T('Your account was created, but the slip did not upload. Send it again with “Apply for Pro” below.', 'สร้างบัญชีแล้ว แต่ส่งสลิปไม่สำเร็จ กรุณาส่งอีกครั้งด้วยปุ่ม “สมัคร Pro” ด้านล่าง')], applied: ['ok', T('Payment slip received. Pro will be switched on within 2 hours and you will get an email when it is on.', 'ได้รับสลิปแล้ว จะเปิดใช้ Pro ภายใน 2 ชั่วโมง และแจ้งทางอีเมลเมื่อเปิดใช้แล้ว') + sent] }[S.notice];
     return `${navBar()}<main class="wrap page account">
-      <div class="page-head"><div><p class="eyebrow">${T('My account', 'บัญชีของฉัน')}</p><h1>${esc(u.name || u.username)}</h1>${u.name ? `<p class="muted">${esc(u.username)}</p>` : ''}</div>
+      <div class="page-head"><div><p class="eyebrow">${T('My account', 'บัญชีของฉัน')}</p><h1>${esc(u.username)}</h1></div>
         <div class="dz-actions"><button class="btn btn-hot sm" data-act="nav" data-v="home">${T('Open designers', 'ไปหน้าออกแบบ')} →</button></div></div>
       ${notice ? `<p class="notice ${notice[0]}">${notice[1]}</p>` : ''}
       <div class="acc-grid">
@@ -689,15 +689,8 @@
             : `<button class="btn btn-hot" data-act="applyOpen">${pro ? T('Renew / extend Pro', 'ต่ออายุ Pro') : T('Register for Pro', 'สมัคร Pro')} · ${priceTxt()}</button>`}
           ${(u.requests || []).length ? `<h3>${T('Applications', 'ประวัติคำขอ')}</h3><table class="chk mini"><tbody>${u.requests.map(r => { const st = RQS[r.status] || [r.status, r.status, '']; return `<tr><td class="mono">${esc((r.created || '').slice(0, 10))}</td><td>${r.months} ${T('mo', 'ด.')}</td><td class="num mono">${money(r.amount, r.currency)}</td><td><span class="pill st-${st[2]}">${T(st[0], st[1])}</span></td></tr>`; }).join('')}</tbody></table>` : ''}
         </section>
-        <section class="card"><h2 class="card-h">${T('Profile', 'ข้อมูลส่วนตัว')}</h2>
-          <form id="profForm" class="mgrid" novalidate>
-            <label>${T('Full name', 'ชื่อ-นามสกุล')}<input id="pf-name" value="${esc(u.name)}" maxlength="120"></label>
-            <label>${T('Email (sign-in)', 'อีเมล (ใช้เข้าสู่ระบบ)')}<input id="pf-email" type="email" value="${esc(u.email || u.username)}" maxlength="254" ${u.username.includes('@') ? 'disabled' : ''}></label>
-            <label>${T('Phone', 'โทรศัพท์')}<input id="pf-phone" value="${esc(u.phone)}" maxlength="40"></label>
-            <label>${T('Company / organisation', 'บริษัท / หน่วยงาน')}<input id="pf-company" value="${esc(u.company)}" maxlength="120"></label>
-            <label>${T('Country', 'ประเทศ')}<input id="pf-country" value="${esc(u.country)}" maxlength="60"></label>
-            <p class="form-err full" id="pf-err" hidden></p>
-            <div class="mfoot full"><span class="grow"></span><button class="btn btn-ghost sm" type="submit">${T('Save profile', 'บันทึกข้อมูล')}</button></div></form>
+        <section class="card"><h2 class="card-h">${T('Sign-in', 'การเข้าสู่ระบบ')}</h2>
+          <div class="mgrid"><label class="full">${T('Email', 'อีเมล')}<input value="${esc(u.username)}" disabled></label></div>
           <h2 class="card-h">${T('Change password', 'เปลี่ยนรหัสผ่าน')}</h2>
           <form id="pwForm" class="mgrid" novalidate>
             <label class="full">${T('Current password', 'รหัสผ่านปัจจุบัน')}<input id="pw-old" type="password" autocomplete="current-password"></label>
@@ -719,13 +712,6 @@
     let pro; try { pro = await readPro('ap'); } catch (x) { return fail(x.message); }
     try { const j = await Ops.applyPro(pro); if (j.account) setUser(j.account); S.applyOpen = false; S.notice = 'applied'; S.mailed = !!j.emailedUser; render(); toast(T('Application sent', 'ส่งคำขอแล้ว'), 'ok'); }
     catch (x) { fail(x.msg === 'Too many pending applications' ? T('You already have applications waiting for review.', 'มีคำขอที่รอตรวจสอบอยู่แล้ว') : T('Could not send. Check the connection and try again.', 'ส่งไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง')); }
-  }
-  async function doProfile() {
-    const v = id => $('#' + id).value.trim(), err = $('#pf-err');
-    const p = { name: v('pf-name'), email: v('pf-email'), phone: v('pf-phone'), company: v('pf-company'), country: v('pf-country') };
-    if (p.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(p.email)) { err.textContent = T('Enter a valid email address.', 'กรอกอีเมลให้ถูกต้อง'); err.hidden = false; return; }
-    try { const acc = await Ops.updateProfile(p); if (acc) setUser(acc); S.notice = null; render(); toast(T('Profile saved', 'บันทึกข้อมูลแล้ว'), 'ok'); }
-    catch (x) { err.textContent = T('Could not save. Try again.', 'บันทึกไม่สำเร็จ ลองอีกครั้ง'); err.hidden = false; }
   }
   async function doPassword() {
     const err = $('#pw-err'), fail = m => { err.textContent = m; err.hidden = false; };
@@ -1662,7 +1648,7 @@
       <p class="mail-state ${A.mail ? 'ok' : ''}">${A.mail ? T('Email to ' + ADMIN_EMAIL + ': sent by the server.', 'อีเมลถึง ' + ADMIN_EMAIL + ': ส่งจากเซิร์ฟเวอร์') : T('Email to ' + ADMIN_EMAIL + ': sent through the browser relay (FormSubmit) — confirm the address once from the first FormSubmit email. For server email with the slip attached, set RESEND_API_KEY in Supabase.', 'อีเมลถึง ' + ADMIN_EMAIL + ': ส่งผ่านตัวส่งต่อในเบราว์เซอร์ (FormSubmit) — ยืนยันที่อยู่อีเมลครั้งแรกจากอีเมลของ FormSubmit หากต้องการส่งจากเซิร์ฟเวอร์พร้อมแนบสลิป ให้ตั้งค่า RESEND_API_KEY ใน Supabase')}</p>
       ${A.tab === 'req' ? reqTab() : A.tab === 'msg' ? msgTab() : A.tab === 'users' ? `<div class="card"><div class="tbl-tools"><input id="adm-q" placeholder="${T('Search username, name or email', 'ค้นหาชื่อผู้ใช้ ชื่อ หรืออีเมล')}" value="${esc(A.q)}" aria-label="${T('Search', 'ค้นหา')}"><div class="seg">${filters.map(([k, l]) => `<button data-act="filter" data-f="${k}" aria-pressed="${A.filter === k}">${l}</button>`).join('')}</div></div>
         ${acc.length ? (list.length ? `<div class="tbl-wrap"><table class="chk adm"><thead><tr><th>${T('User', 'ผู้ใช้')}</th><th>${T('Plan', 'แพ็กเกจ')}</th><th>${T('Start', 'เริ่ม')}</th><th>${T('Expiry', 'หมดอายุ')}</th><th>${T('Status', 'สถานะ')}</th><th></th></tr></thead><tbody>
-        ${list.map(a => { const [c, l] = stat(a), dl = daysLeft(a); return `<tr><td><b>${esc(a.username)}</b><br><span class="muted small">${esc(a.name || '')}${mem(a._id).email ? ' · ' + esc(mem(a._id).email) : ''}${mem(a._id).company ? ' · ' + esc(mem(a._id).company) : ''}${mem(a._id).country ? ' · ' + esc(mem(a._id).country) : ''}</span></td><td>${a.plan === 'pro' ? '<span class="pill pro">Pro</span>' : '<span class="pill free">Free</span>'}</td><td class="mono">${esc(a.start || '')}</td><td class="mono">${esc(a.expiry || '—')}${dl !== null ? `<br><span class="muted small">${dl >= 0 ? T(dl + ' days left', 'เหลือ ' + dl + ' วัน') : T(-dl + ' days ago', 'เกินมา ' + -dl + ' วัน')}</span>` : ''}</td><td><span class="pill st-${c}">${l}</span></td>
+        ${list.map(a => { const [c, l] = stat(a), dl = daysLeft(a); return `<tr><td><b>${esc(a.username)}</b><br>${mem(a._id).email && mem(a._id).email !== a.username ? `<span class="muted small">${esc(mem(a._id).email)}</span>` : ''}</td><td>${a.plan === 'pro' ? '<span class="pill pro">Pro</span>' : '<span class="pill free">Free</span>'}</td><td class="mono">${esc(a.start || '')}</td><td class="mono">${esc(a.expiry || '—')}${dl !== null ? `<br><span class="muted small">${dl >= 0 ? T(dl + ' days left', 'เหลือ ' + dl + ' วัน') : T(-dl + ' days ago', 'เกินมา ' + -dl + ' วัน')}</span>` : ''}</td><td><span class="pill st-${c}">${l}</span></td>
           <td class="act"><button class="btn btn-ghost xs" data-act="ext" data-u="${esc(a._id)}" data-d="30">+30 ${T('d', 'วัน')}</button><button class="btn btn-ghost xs" data-act="ext" data-u="${esc(a._id)}" data-d="365">+1 ${T('yr', 'ปี')}</button><button class="btn btn-ghost xs" data-act="editUser" data-u="${esc(a._id)}">${T('Edit', 'แก้ไข')}</button></td></tr>`; }).join('')}
         </tbody></table></div>` : `<p class="muted pad">${T('No users match this search.', 'ไม่พบผู้ใช้ตามเงื่อนไข')}</p>`)
           : `<div class="empty"><b>${T('No users yet', 'ยังไม่มีผู้ใช้')}</b><p>${T('Create the first account with “New user”: set the password, plan and expiry date in one step.', 'สร้างบัญชีแรกด้วยปุ่ม “สร้างผู้ใช้” กำหนดรหัสผ่าน แพ็กเกจ และวันหมดอายุได้ทันที')}</p><button class="btn btn-hot sm" data-act="newUser">+ ${T('New user', 'สร้างผู้ใช้')}</button></div>`}</div>`
@@ -1678,7 +1664,7 @@
     if (!rs.length) return `<div class="card"><div class="empty"><b>${T('No Pro applications yet', 'ยังไม่มีคำขอ Pro')}</b><p>${T('Members who register for Pro or apply from their account page appear here with their payment slip.', 'สมาชิกที่สมัคร Pro หรือยื่นคำขอจากหน้าบัญชี จะแสดงที่นี่พร้อมสลิป')}</p></div></div>`;
     const acc = id => A.accounts.find(a => a._id === id) || {}, mem = id => A.members.find(m => m._id === id) || {};
     return `<div class="card"><div class="tbl-wrap"><table class="chk adm"><thead><tr><th>${T('Received', 'วันที่')}</th><th>${T('Member', 'สมาชิก')}</th><th>${T('Period', 'ระยะเวลา')}</th><th class="num">${T('Amount', 'จำนวนเงิน')}</th><th>${T('Paid by / ref.', 'ชำระโดย / อ้างอิง')}</th><th>${T('Slip', 'สลิป')}</th><th>${T('Status', 'สถานะ')}</th><th></th></tr></thead><tbody>
-      ${rs.map(r => { const st = RQS[r.status] || [r.status, r.status, ''], m = PAY_METHODS.find(x => x[0] === r.method); return `<tr class="${r.status === 'pending' ? 'rq-open' : ''}"><td class="mono small">${esc((r.created || '').slice(0, 16).replace('T', ' '))}</td><td><b>${esc(r.username)}</b><br><span class="muted small">${esc(acc(r.username).name || '')}${mem(r.username).email ? ' · ' + esc(mem(r.username).email) : ''}</span></td>
+      ${rs.map(r => { const st = RQS[r.status] || [r.status, r.status, ''], m = PAY_METHODS.find(x => x[0] === r.method); return `<tr class="${r.status === 'pending' ? 'rq-open' : ''}"><td class="mono small">${esc((r.created || '').slice(0, 16).replace('T', ' '))}</td><td><b>${esc(r.username)}</b></td>
         <td>${r.months} ${T('month(s)', 'เดือน')}</td><td class="num mono">${money(+r.amount, r.currency)}</td><td>${m ? T(m[1], m[2]) : esc(r.method || '')}<br><span class="mono small">${esc(r.ref || '')}</span></td>
         <td><button class="btn btn-ghost xs" data-act="slip" data-r="${esc(r._id)}">${T('View', 'ดู')}</button><br><span class="muted small">${esc(r.slip_name || '')}</span></td><td><span class="pill st-${st[2]}">${T(st[0], st[1])}</span></td>
         <td class="act">${r.status === 'pending' ? `<label class="days-in">${T('Days', 'วัน')} <input type="number" min="1" id="rd-${esc(r._id)}" value="${r.months * 30}"></label><button class="btn btn-hot xs" data-act="approve" data-r="${esc(r._id)}">${T('Approve · turn on Pro', 'อนุมัติ · เปิด Pro')}</button><button class="btn btn-danger-ghost xs" data-act="reject" data-r="${esc(r._id)}">${T('Reject', 'ไม่อนุมัติ')}</button>` : `<span class="muted small">${esc((r.decided || '').slice(0, 10))}</span>`}</td></tr>`; }).join('')}
@@ -1700,11 +1686,6 @@
       el.innerHTML = `<div class="modal-bg"><form class="modal" id="userForm" novalidate><h2>${e.isNew ? T('New user', 'สร้างผู้ใช้ใหม่') : T('Edit user ', 'แก้ไขผู้ใช้ ') + esc(a.username)}</h2>
         <div class="mgrid">
           <label>${T('Email (sign-in)', 'อีเมล (ใช้เข้าสู่ระบบ)')}<input id="u-username" value="${esc(a.username)}" ${e.isNew ? '' : 'disabled'} required autocomplete="off" placeholder="name@example.com"></label>
-          <label>${T('Full name', 'ชื่อ-นามสกุล')}<input id="u-name" value="${esc(a.name)}"></label>
-          <label>${T('Email', 'อีเมล')}<input id="u-email" type="email" value="${esc(a.email)}"></label>
-          <label>${T('Phone', 'โทรศัพท์')}<input id="u-phone" value="${esc(a.phone)}"></label>
-          <label>${T('Company', 'บริษัท')}<input id="u-company" value="${esc(a.company)}"></label>
-          <label>${T('Country', 'ประเทศ')}<input id="u-country" value="${esc(a.country)}"></label>
           <label>${T('Plan', 'แพ็กเกจ')}<select id="u-plan"><option value="pro" ${a.plan === 'pro' ? 'selected' : ''}>Pro</option><option value="free" ${a.plan !== 'pro' ? 'selected' : ''}>Free</option></select></label>
           <label>${T('Status', 'สถานะ')}<select id="u-status"><option value="active" ${a.status !== 'suspended' ? 'selected' : ''}>${T('Active', 'ใช้งาน')}</option><option value="suspended" ${a.status === 'suspended' ? 'selected' : ''}>${T('Suspended', 'ระงับ')}</option></select></label>
           <label>${T('Start date', 'วันเริ่ม')}<input id="u-start" type="date" value="${esc(a.start)}"></label>
@@ -1754,14 +1735,13 @@
     const pass = $('#u-pass').value;
     if (e.isNew && pass.length < 8) return fail(T('The password must be at least 8 characters.', 'รหัสผ่านต้องยาวอย่างน้อย 8 ตัวอักษร'));
     if (!e.isNew && pass && pass.length < 8) return fail(T('The new password must be at least 8 characters.', 'รหัสผ่านใหม่ต้องยาวอย่างน้อย 8 ตัวอักษร'));
-    const email = v('u-email');
-    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail(T('Enter a valid email address, or leave it blank.', 'กรอกอีเมลให้ถูกต้อง หรือเว้นว่าง'));
+    const email = username.includes('@') ? username : '';
     const plan = v('u-plan'), expiry = v('u-expiry'), start = v('u-start');
     if (plan === 'pro' && !expiry) return fail(T('Set an expiry date for a Pro plan.', 'กำหนดวันหมดอายุสำหรับแพ็กเกจ Pro'));
     if (start && expiry && expiry < start) return fail(T('The expiry date is before the start date.', 'วันหมดอายุอยู่ก่อนวันเริ่ม'));
     const btn = $('#u-save'); btn.disabled = true; btn.textContent = T('Saving…', 'กำลังบันทึก…');
     try {
-      await Ops.saveUser(e.isNew, { username, name: v('u-name'), plan, status: v('u-status'), start, expiry }, { email, phone: v('u-phone'), company: v('u-company'), country: v('u-country'), note: v('u-note') }, pass);
+      await Ops.saveUser(e.isNew, { username, name: e.data.name || '', plan, status: v('u-status'), start, expiry }, { email, note: v('u-note') }, pass);
       A.edit = null; renderModal(); toast(e.isNew ? T('User ' + username + ' created', 'สร้างผู้ใช้ ' + username + ' แล้ว') : T('Changes saved', 'บันทึกการเปลี่ยนแปลงแล้ว'), 'ok');
       if (pass) toast(T('Send the password to the user through a secure channel.', 'ส่งรหัสผ่านให้ผู้ใช้ผ่านช่องทางที่ปลอดภัย'));
     } catch (x) { btn.disabled = false; btn.textContent = T('Save', 'บันทึก'); fail(opErr(x)); }
@@ -1787,7 +1767,7 @@
   function syncModalDraft() {
     const e = A.edit; if (!e) return;
     const g = id => { const el = $('#' + id); return el ? el.value : undefined; };
-    if (e.kind === 'user') ['username', 'name', 'email', 'phone', 'company', 'country', 'plan', 'status', 'start', 'expiry', 'note'].forEach(k => { const v = g('u-' + k); if (v !== undefined) e.data[k] = v; });
+    if (e.kind === 'user') ['username', 'plan', 'status', 'start', 'expiry', 'note'].forEach(k => { const v = g('u-' + k); if (v !== undefined) e.data[k] = v; });
     else ['username', 'date', 'amount', 'currency', 'method', 'ref', 'days', 'status'].forEach(k => { const v = g(k === 'username' ? 'p-user' : 'p-' + k); if (v !== undefined) e.data[k] = v; });
   }
 
@@ -1896,7 +1876,6 @@
     else if (fm.id === 'userForm') saveUser();
     else if (fm.id === 'regForm') doRegister();
     else if (fm.id === 'applyForm') doApply();
-    else if (fm.id === 'profForm') doProfile();
     else if (fm.id === 'pwForm') doPassword();
     else if (fm.id === 'contactForm') doContact();
     else if (fm.id === 'payForm') savePay();
