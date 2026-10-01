@@ -111,13 +111,18 @@
       F('Ns', 'sls', 'N service', 'N ใช้งาน', 'force'), F('Mxs', 'sls', 'M_x service', 'M_x ใช้งาน', 'moment'), F('Mys', 'sls', 'M_y service', 'M_y ใช้งาน', 'moment')]);
   }
   SCHEMA.lwall = [
-    F('courses', 'wall', 'Blocks per course, bottom → top', 'จำนวนก้อนต่อชั้น ล่าง → บน', 'none', { type: 'txt' }),
     F('bx', 'wall', 'Block width x (into the wall)', 'ความกว้างก้อน x (ตามความหนากำแพง)', 'len'), F('by', 'wall', 'Block height y', 'ความสูงก้อน y', 'len'),
     F('set', 'wall', 'Front setback per course', 'ระยะถอยด้านหน้าต่อชั้น', 'len'), F('e', 'wall', 'Embedment below front ground e', 'ความลึกฝังใต้ดินด้านหน้า e', 'len'),
     F('gb', 'wall', 'Block unit weight γ_b', 'หน่วยน้ำหนักหิน γ_b', 'density'),
+    F('ds', 'top', 'Retained ground below top of stone d_s', 'ผิวดินถมต่ำกว่าหลังหิน d_s', 'len'),
     F('Lc', 'top', 'Level crest width (from wall front)', 'ความกว้างลานราบด้านบน (จากหน้ากำแพง)', 'len'), F('beta', 'top', 'Back slope β', 'มุมลาดด้านหลัง β', 'deg'),
     F('gs', 'soil', 'Retained soil unit weight γ', 'หน่วยน้ำหนักดินถม γ', 'density'), F('phi', 'soil', 'Retained soil friction angle φ\'', 'มุมเสียดทานดินถม φ\'', 'deg'),
     F('dv', 'soil', 'Wall friction on virtual back δ', 'แรงเสียดทานที่ระนาบสมมติ δ', 'none', { type: 'sel', opts: [['beta', 'δ = β (≤ φ*)', 'δ = β (≤ φ*)'], ['twothirds', 'δ = 2/3 φ*', 'δ = 2/3 φ*'], ['zero', 'δ = 0', 'δ = 0']] }),
+    F('water', 'wat', 'Groundwater behind the wall', 'น้ำใต้ดินหลังกำแพง', 'none', { type: 'sel', opts: [['no', 'No (drained)', 'ไม่มี (ระบายน้ำ)'], ['yes', 'Yes', 'มี']], re: true }),
+    F('hw', 'wat', 'Water level behind, above wall base h_w', 'ระดับน้ำด้านหลังเหนือฐาน h_w', 'len', { when: v => v.water === 'yes' }),
+    F('hwf', 'wat', 'Water level in front, above wall base h_wf', 'ระดับน้ำด้านหน้าเหนือฐาน h_wf', 'len', { when: v => v.water === 'yes' }),
+    F('gsat', 'wat', 'Saturated unit weight γ_sat', 'หน่วยน้ำหนักอิ่มตัว γ_sat', 'density', { when: v => v.water === 'yes' }),
+    F('gW', 'wat', 'Load factor on water γ_W', 'ตัวคูณแรงดันน้ำ γ_W', 'none', { when: v => v.water === 'yes' }),
     F('phib', 'fnd', 'Foundation friction angle φ_b', 'มุมเสียดทานดินฐาน φ_b', 'deg'), F('cb', 'fnd', 'Foundation cohesion c_b', 'แรงยึดเหนี่ยวดินฐาน c_b', 'kpa'), F('qbear', 'fnd', 'Design bearing capacity φq_u', 'กำลังรับน้ำหนักออกแบบ φq_u', 'kpa'),
     F('mu', 'joint', 'Block-to-block friction coefficient μ', 'สัมประสิทธิ์แรงเสียดทานระหว่างก้อน μ', 'none'), F('cj', 'joint', 'Joint adhesion c_j (0 = dry-stacked)', 'แรงยึดเกาะรอยต่อ c_j (0 = วางแห้ง)', 'kpa'),
     F('q', 'lds', 'UDL surcharge q', 'น้ำหนักแผ่กระจาย q', 'kpa'), F('qext', 'lds', 'Surcharge applies on', 'ตำแหน่งน้ำหนักแผ่', 'none', { type: 'sel', opts: [['crest', 'Level crest only', 'เฉพาะลานราบด้านบน'], ['all', 'Crest and back slope', 'ลานราบและลาดด้านหลัง']] }),
@@ -184,7 +189,7 @@
     geo: ['Geometry', 'รูปทรงหน้าตัด'], mat: ['Materials', 'วัสดุ'], coef: ['Code coefficients', 'ค่าสัมประสิทธิ์'], link: ['Shear links', 'เหล็กปลอก'],
     bars: ['Reinforcement', 'เหล็กเสริม'], uls: ['Design actions — ULS', 'แรงประลัย (ULS)'], sls: ['Service actions — SLS', 'แรงใช้งาน (SLS)'], piles: ['Pile group', 'กลุ่มเสาเข็ม'],
     sign: ['Sign panel', 'แผ่นป้าย'], col: ['Column section', 'หน้าตัดเสา'], arm: ['Cantilever arm section', 'หน้าตัดคานยื่น'], wind: ['Wind (AS/NZS 1170.2)', 'ลม (AS/NZS 1170.2)'],
-    wall: ['Wall and blocks', 'กำแพงและก้อนหิน'], top: ['Top of wall and back slope', 'ด้านบนกำแพงและลาดด้านหลัง'], soil: ['Retained soil', 'ดินถม'], fnd: ['Foundation', 'ดินฐานราก'], joint: ['Bed joints between blocks', 'รอยต่อระหว่างชั้นก้อนหิน'], lds: ['Loads', 'น้ำหนักบรรทุก'], fac: ['Factors (AS 4678)', 'ตัวคูณ (AS 4678)'],
+    wall: ['Wall and blocks', 'กำแพงและก้อนหิน'], wat: ['Groundwater', 'น้ำใต้ดิน'], top: ['Top of wall and back slope', 'ด้านบนกำแพงและลาดด้านหลัง'], soil: ['Retained soil', 'ดินถม'], fnd: ['Foundation', 'ดินฐานราก'], joint: ['Bed joints between blocks', 'รอยต่อระหว่างชั้นก้อนหิน'], lds: ['Loads', 'น้ำหนักบรรทุก'], fac: ['Factors (AS 4678)', 'ตัวคูณ (AS 4678)'],
     conn: ['Arm-to-column connection', 'รอยต่อคาน-เสา'], base: ['Base plate and anchor bolts', 'แผ่นฐานและสลักยึด'], fat: ['Fatigue (AS 4100 §11)', 'ความล้า (AS 4100 §11)'], lim: ['Serviceability limits', 'ขีดจำกัดสภาวะใช้งาน']
   };
   const DEF = {
@@ -206,7 +211,7 @@
   };
 
   Object.values(DEF.pilecap).forEach(d => { d.tieN = 5; d.tieD = 20; });
-  DEF.lwall = { AS: { courses: '4,3,2,2', bx: 500, by: 500, set: 0, e: 300, gb: 22, Lc: 1500, beta: 18.4, gs: 19, phi: 30, dv: 'beta', phib: 30, cb: 0, qbear: 300, mu: 0.6, cj: 0, q: 5, qext: 'crest', Hr: 0.75, hr: 1000, kh: 0, Pphi: 0.85, Pc: 0.65, gGd: 1.25, gGs: 0.8, gQ: 1.5, psiE: 0.3 } };
+  DEF.lwall = { AS: { crs: [{ n: 4 }, { n: 3 }, { n: 2 }, { n: 2 }], ds: 300, water: 'no', hw: 600, hwf: 0, gsat: 20, gW: 1.0, bx: 500, by: 500, set: 0, e: 300, gb: 22, Lc: 1500, beta: 18.4, gs: 19, phi: 30, dv: 'beta', phib: 30, cb: 0, qbear: 300, mu: 0.6, cj: 0, q: 5, qext: 'crest', Hr: 0.75, hr: 1000, kh: 0, Pphi: 0.85, Pc: 0.65, gGd: 1.25, gGs: 0.8, gQ: 1.5, psiE: 0.3 } };
   DEF.stm3d = { AS: { layout: '4', nx: 3, ny: 2, s: 1500, sy: 1500, Dp: 500, edge: 500, Pallow: 1100, H: 1400, cb: 100, cs: 75, cx: 600, cy: 600, fc: 32, fy: 500, dg: 20, tN: 6, tD: 24, zd: 0.85, gG: 1.2, gc: 25, N: 3500, Mx: 150, My: 80, Ns: 2500, Mxs: 100, Mys: 50 } };
   DEF.gantry = { AS: {
     H: 7.0, L: 6.5, ke: 2.2, Bs: 3.0, Hs: 2.0, xs: 4.5, ez: 0, ey: 350, gs: 0.35, Gadd: 1.0,
@@ -565,6 +570,14 @@
     else ctrl = `<input id="${id}" data-k="${fd.k}" type="number" inputmode="decimal" step="any" value="${esc(v[fd.k])}">`;
     return `<div class="fld"><label for="${id}">${fmLabel(fieldLabel(fd))}</label><div class="ctl">${ctrl}${u ? `<span class="unit">${u}</span>` : ''}</div></div>`;
   }
+  function courseRowsHTML(rows) {
+    const n = rows.length;
+    return `<div class="rows" data-rows="crs">${rows.slice().reverse().map((r, j) => { const i = n - 1 - j; return `<div class="brow crow"><span class="rlab">${T('Course', 'ชั้น')} ${i + 1}${i === n - 1 ? ' · ' + T('top', 'บน') : i === 0 ? ' · ' + T('base', 'ฐาน') : ''}</span>
+      <input type="number" min="1" step="1" id="r-crs-${i}-n" data-row="crs" data-i="${i}" data-f="n" value="${r.n}" aria-label="${T('Blocks in course', 'จำนวนก้อนในชั้น')} ${i + 1}">
+      <span class="x">${T('blocks', 'ก้อน')}</span><span></span>
+      ${n > 1 ? `<button class="icon-btn" data-act="rowdel" data-row="crs" data-i="${i}" aria-label="${T('Remove course', 'ลบชั้น')} ${i + 1}">×</button>` : '<span></span>'}</div>`; }).join('')}
+      <button class="linkbtn" data-act="rowadd" data-row="crs">+ ${T('Add a course on top', 'เพิ่มชั้นด้านบน')}</button></div>`;
+  }
   function barRowsHTML(key, rows) {
     return `<div class="rows" data-rows="${key}">${rows.map((r, i) => `<div class="brow"><span class="rlab">${T('Layer', 'ชั้น')} ${i + 1}</span>
       <input type="number" min="0" step="1" id="r-${key}-${i}-n" data-row="${key}" data-i="${i}" data-f="n" value="${r.n}" aria-label="${T('Number of bars', 'จำนวนเส้น')}">
@@ -574,7 +587,7 @@
   }
   function inputsHTML() {
     const v = inp(), sch = SCHEMA[S.elem].filter(fd => (!fd.codes || fd.codes.includes(S.code)) && (!fd.when || fd.when(v)));
-    const order = S.elem === 'lwall' ? ['wall', 'top', 'soil', 'fnd', 'joint', 'lds', 'fac'] : S.elem === 'gantry' ? ['geo', 'sign', 'col', 'arm', 'wind', 'conn', 'base', 'fat', 'lim'] : S.elem === 'pilecap' || S.elem === 'stm3d' ? ['piles', 'geo', 'mat', 'bars', 'coef', 'uls', 'sls'] : ['geo', 'mat', 'coef', 'bars', 'link', 'uls', 'sls'];
+    const order = S.elem === 'lwall' ? ['wall', 'top', 'soil', 'wat', 'fnd', 'joint', 'lds', 'fac'] : S.elem === 'gantry' ? ['geo', 'sign', 'col', 'arm', 'wind', 'conn', 'base', 'fat', 'lim'] : S.elem === 'pilecap' || S.elem === 'stm3d' ? ['piles', 'geo', 'mat', 'bars', 'coef', 'uls', 'sls'] : ['geo', 'mat', 'coef', 'bars', 'link', 'uls', 'sls'];
     let html = '';
     order.forEach(g => {
       const fs = sch.filter(fd => fd.g === g);
@@ -587,7 +600,8 @@
       if (S.elem === 'gantry' && (g === 'col' || g === 'arm')) body += secProps(GA.section(v[g + 'Shape'], v[g + 'Size'], v[g + 'Grade']));
       if (S.elem === 'gantry' && g === 'wind') body += `<p class="hint">${T('Wind acts normal to the sign face. e/B_s = 0.2 models oblique wind (AS/NZS 1170.2 App. B).', 'ลมกระทำตั้งฉากกับหน้าป้าย ใช้ e/B_s = 0.2 สำหรับลมเฉียง (AS/NZS 1170.2 ภาคผนวก B)')}</p>`;
       if (S.elem === 'gantry' && g === 'fat') body += `<p class="hint">${T('Equivalent static fatigue pressures after AASHTO LTS; defaults 250 Pa natural gust, 900 Pa truck gust, 1000 Pa galloping. Adopt the road authority’s values.', 'แรงดันความล้าสถิตเทียบเท่าตาม AASHTO LTS ค่าเริ่มต้น 250 Pa ลมกระโชก 900 Pa ลมรถบรรทุก 1000 Pa แกลลอปปิง ใช้ค่าตามหน่วยงานทางหลวง')}</p>`;
-      if (S.elem === 'lwall' && g === 'wall') body += `<p class="hint">${T('Blocks per course from the bottom, e.g. 4,3,2,2. The front face is at the left; courses step back into the retained soil.', 'จำนวนก้อนต่อชั้นจากล่างขึ้นบน เช่น 4,3,2,2 หน้ากำแพงอยู่ด้านซ้าย ชั้นถัดขึ้นไปถอยเข้าหาดินถม')}</p>`;
+      if (S.elem === 'lwall' && g === 'wall') body = `<p class="sub-h">${T('Blocks in each course (course 1 = bottom)', 'จำนวนก้อนในแต่ละชั้น (ชั้น 1 = ล่างสุด)')}</p>${courseRowsHTML(v.crs)}` + body + `<p class="hint">${T('The front face is at the left; courses step back into the retained soil.', 'หน้ากำแพงอยู่ด้านซ้าย ชั้นถัดขึ้นไปถอยเข้าหาดินถม')}</p>`;
+      if (S.elem === 'lwall' && g === 'wat' && v.water === 'yes') body += `<p class="hint">${T('Use the design (worst credible) water level. AS 4678 asks for drainage behind walls; a drained wall can be checked with water at a reduced level.', 'ใช้ระดับน้ำออกแบบ (กรณีเลวร้ายที่เป็นไปได้) AS 4678 กำหนดให้มีการระบายน้ำหลังกำแพง')}</p>`;
       if (S.elem === 'lwall' && g === 'lds') body += `<p class="hint">${T('AS/NZS 1170.1 Table 3.3: handrail top load typically 0.35–0.75 kN/m (by occupancy). AS 4678 §4.2: live surcharge at least 5 kPa.', 'AS/NZS 1170.1 ตาราง 3.3: แรงที่ราวกันตกโดยทั่วไป 0.35–0.75 kN/m ตามการใช้งาน AS 4678 §4.2: น้ำหนักจรขั้นต่ำ 5 kPa')}</p>`;
       if (S.elem === 'stm3d' && g === 'bars') body += `<p class="hint">${T('Each tie is a band of bars over the piles, between neighbouring piles (all three sides for a 3-pile cap). Add a distributed mesh for crack control.', 'ตัวยึดแต่ละตัวเป็นแถบเหล็กเหนือหัวเข็มระหว่างเข็มข้างเคียง (ครบสามด้านสำหรับเข็ม 3 ต้น) ควรมีตะแกรงเหล็กกระจายเพื่อควบคุมรอยร้าว')}</p>`;
       if (g === 'coef' && !fs.length && S.elem !== 'pilecap') body = `<p class="hint">${S.code === 'AS' ? T('Capacity reduction factors φ follow Table 2.2.2 and are set automatically from k_uo.', 'ตัวคูณลดกำลัง φ ตามตาราง 2.2.2 คำนวณอัตโนมัติจาก k_uo') : T('Strength reduction factors φ are set from the steel strain (0.65–0.90); 0.75 for shear and torsion.', 'ตัวคูณลดกำลัง φ คำนวณอัตโนมัติจากความเครียดเหล็ก (0.65–0.90) และ 0.75 สำหรับแรงเฉือน/แรงบิด')}</p>`;
@@ -638,10 +652,10 @@
     if (S.elem === 'lwall') {
       const n = k => +v[k] || 0;
       return {
-        geo: { courses: String(v.courses).split(/[^0-9]+/).filter(Boolean).map(Number).filter(c => c > 0), bx: val('bx'), by: val('by'), set: val('set'), e: val('e'), gb: n('gb'), Lc: val('Lc') },
-        soil: { beta: n('beta'), phi: n('phi'), dv: v.dv, gs: n('gs'), phib: n('phib'), cb: n('cb'), mu: n('mu'), cj: n('cj') },
-        load: { q: n('q'), qext: v.qext, Hr: n('Hr'), hr: val('hr'), kh: n('kh'), qbear: n('qbear') },
-        fac: { Pphi: n('Pphi'), Pc: n('Pc'), gGd: n('gGd'), gGs: n('gGs'), gQ: n('gQ'), psiE: n('psiE') }
+        geo: { courses: (v.crs || String(v.courses || '').split(/[^0-9]+/).filter(Boolean).map(n => ({ n: +n }))).map(r => Math.max(1, Math.round(+r.n) || 1)), ds: val('ds'), bx: val('bx'), by: val('by'), set: val('set'), e: val('e'), gb: n('gb'), Lc: val('Lc') },
+        soil: { beta: n('beta'), phi: n('phi'), dv: v.dv, gs: n('gs'), gsat: n('gsat'), phib: n('phib'), cb: n('cb'), mu: n('mu'), cj: n('cj') },
+        load: { water: v.water === 'yes', hw: val('hw'), hwf: val('hwf'), q: n('q'), qext: v.qext, Hr: n('Hr'), hr: val('hr'), kh: n('kh'), qbear: n('qbear') },
+        fac: { gW: n('gW') || 1, Pphi: n('Pphi'), Pc: n('Pc'), gGd: n('gGd'), gGs: n('gGs'), gQ: n('gQ'), psiE: n('psiE') }
       };
     }
     if (S.elem === 'stm3d') return {
@@ -680,7 +694,9 @@
       return errs;
     }
     if (S.elem === 'lwall') {
-      if (!g.courses.length) errs.push(T('Enter the blocks per course, e.g. 4,3,2,2.', 'กรอกจำนวนก้อนต่อชั้น เช่น 4,3,2,2'));
+      if (!g.courses.length) errs.push(T('Add at least one course.', 'เพิ่มอย่างน้อยหนึ่งชั้น'));
+      if (!(g.ds >= 0 && g.ds < g.courses.length * g.by)) errs.push(T('The retained ground must lie between the base and the top of the wall.', 'ผิวดินถมต้องอยู่ระหว่างฐานและหลังกำแพง'));
+      if (x.load.water && !(x.load.hw >= 0 && x.load.hwf >= 0 && x.soil.gsat > 9.81)) errs.push(T('Check the water levels and γ_sat.', 'ตรวจสอบระดับน้ำและ γ_sat'));
       if (g.courses.length > 20) errs.push(T('At most 20 courses.', 'ไม่เกิน 20 ชั้น'));
       if (!(g.bx > 50 && g.by > 50 && g.gb > 0)) errs.push(T('Check the block size and unit weight.', 'ตรวจสอบขนาดและหน่วยน้ำหนักก้อนหิน'));
       if (!(x.soil.phi > 0 && x.soil.phi < 60 && x.soil.gs > 0)) errs.push(T('Check the retained soil properties.', 'ตรวจสอบคุณสมบัติดินถม'));
@@ -1095,21 +1111,29 @@
   // ------------------------------------------------------------------ limestone block wall
   function wallSketch(r) {
     const cs = r.cs, H = r.H, top = cs[cs.length - 1], inp0 = r.input, b0 = r.parts[0], ld = inp0.load;
-    const tb = Math.tan((r.beta || 0) * Math.PI / 180), zs = x => x <= r.xs0 ? H : H + (x - r.xs0) * tb;
+    const tb = Math.tan((r.beta || 0) * Math.PI / 180), Hs = r.Hs, zs = x => x <= r.xs0 ? Hs : Hs + (x - r.xs0) * tb;
     const xL = -Math.max(700, 0.45 * H), xR = Math.max(b0.xv, r.xs0) + Math.max(1200, 0.9 * H), zmin = -Math.max(250, 0.15 * H);
     const zmax = Math.max(zs(xR), H + (ld.Hr > 0 ? ld.hr : 0)) + 350;
-    const W = 360, Hs = 320, pl = 30, pr = 12, pt = 16, pb = 30, k = Math.min((W - pl - pr) / (xR - xL), (Hs - pt - pb) / (zmax - zmin));
-    const X = x => pl + (x - xL) * k, Y = z => Hs - pb - (z - zmin) * k;
-    let s = `<svg viewBox="0 0 ${W} ${Hs}" class="sec-svg" role="img" aria-label="${T('Limestone wall section', 'รูปตัดกำแพงหินปูน')}"><defs><pattern id="wsoil" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7L7 0" class="w-hatch"/></pattern></defs>`;
+    const W = 360, SH = 320, pl = 30, pr = 12, pt = 16, pb = 30, k = Math.min((W - pl - pr) / (xR - xL), (SH - pt - pb) / (zmax - zmin));
+    const X = x => pl + (x - xL) * k, Y = z => SH - pb - (z - zmin) * k;
+    let s = `<svg viewBox="0 0 ${W} ${SH}" class="sec-svg" role="img" aria-label="${T('Limestone wall section', 'รูปตัดกำแพงหินปูน')}"><defs><pattern id="wsoil" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7L7 0" class="w-hatch"/></pattern></defs>`;
     // foundation and front ground
     s += `<rect x="${X(xL)}" y="${Y(0)}" width="${(xR - xL) * k}" height="${(0 - zmin) * k}" class="w-found"/>`;
     s += `<rect x="${X(xL)}" y="${Y(inp0.geo.e)}" width="${(cs[0].xf - xL) * k}" height="${inp0.geo.e * k}" class="w-soil"/>`;
     // retained soil
     const back = [];
     cs.forEach((c, i) => { back.push([c.xb, c.z0], [c.xb, c.z1]); });
-    const pts = back.concat(r.xs0 > top.xb ? [[r.xs0, H]] : []).concat([[xR, zs(xR)], [xR, 0]]);
-    s += `<path d="M${pts.map(p => X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' L')} Z" class="w-soil"/>`;
-    s += `<path d="M${X(top.xf)} ${Y(H)} L${X(Math.max(top.xb, r.xs0))} ${Y(H)} L${X(xR)} ${Y(zs(xR))}" class="w-ground"/><line x1="${X(xL)}" x2="${X(cs[0].xf)}" y1="${Y(inp0.geo.e)}" y2="${Y(inp0.geo.e)}" class="w-ground"/>`;
+    const back2 = []; back.forEach(p => { if (p[1] <= Hs) back2.push(p); else if (!back2.some(q => q[1] === Hs && q[0] === p[0])) back2.push([p[0], Hs]); });
+    const pts = back2.concat(r.xs0 > top.xb ? [[r.xs0, Hs]] : []).concat([[xR, zs(xR)], [xR, 0]]);
+    const soilD = `M${pts.map(p => X(p[0]).toFixed(1) + ' ' + Y(p[1]).toFixed(1)).join(' L')} Z`;
+    s += `<defs><clipPath id="wsclip"><path d="${soilD}"/></clipPath></defs><path d="${soilD}" class="w-soil"/>`;
+    s += `<path d="M${X(top.xb)} ${Y(Hs)} L${X(Math.max(top.xb, r.xs0))} ${Y(Hs)} L${X(xR)} ${Y(zs(xR))}" class="w-ground"/><line x1="${X(xL)}" x2="${X(cs[0].xf)}" y1="${Y(inp0.geo.e)}" y2="${Y(inp0.geo.e)}" class="w-ground"/>`;
+    // groundwater
+    if (r.wat && r.hw > 0) {
+      s += `<g clip-path="url(#wsclip)"><rect x="${X(cs[0].xf)}" y="${Y(r.hw)}" width="${(xR - cs[0].xf) * k}" height="${r.hw * k}" class="w-water"/><line x1="${X(cs[0].xf)}" x2="${X(xR)}" y1="${Y(r.hw)}" y2="${Y(r.hw)}" class="w-wline"/></g>`;
+      const xm = X(xR) - 26; s += `<path d="M${xm - 5} ${Y(r.hw) - 8}h10l-5 7z" class="w-wtri"/><text x="${xm - 8}" y="${Y(r.hw) - 10}" text-anchor="end" class="s-lbl w-wt">h_w ${f(r.hw, 0)}</text>`.replace('h_w', 'hw');
+      if (r.hwf > 0) s += `<line x1="${X(xL)}" x2="${X(cs[0].xf)}" y1="${Y(r.hwf)}" y2="${Y(r.hwf)}" class="w-wline"/><path d="M${X(xL) + 22} ${Y(r.hwf) - 8}h10l-5 7z" class="w-wtri"/>`;
+    }
     // blocks
     const bx = inp0.geo.bx;
     cs.forEach(c => { for (let j = 0; j < c.n; j++) s += `<rect x="${X(c.xf + j * bx) + 0.6}" y="${Y(c.z1) + 0.6}" width="${bx * k - 1.2}" height="${(c.z1 - c.z0) * k - 1.2}" rx="1.5" class="w-block"/>`; });
@@ -1119,12 +1143,15 @@
     // surcharge
     if (ld.q > 0) {
       const xa = Math.max(top.xf, xL), xb2 = ld.qext === 'crest' ? r.xs0 : xR - 60, n = Math.max(3, Math.round((xb2 - xa) * k / 16));
-      for (let i = 0; i <= n; i++) { const x = xa + (xb2 - xa) * i / n, y0 = Y(zs(x)); s += `<path d="M${X(x)} ${y0 - 16}v13M${X(x) - 3} ${y0 - 7}l3 4 3-4" class="w-load"/>`; }
-      s += `<path d="M${X(xa)} ${Y(zs(xa)) - 16}L${X(xb2)} ${Y(zs(xb2)) - 16}" class="w-load"/><text x="${X(xb2)}" y="${Y(zs(xb2)) - 20}" text-anchor="end" class="s-lbl w-lt">q = ${f(ld.q, 1)} kPa</text>`;
+      const zq = x => (x >= top.xf && x <= top.xb) ? H : zs(x);
+      for (let i = 0; i <= n; i++) { const x = xa + (xb2 - xa) * i / n, y0 = Y(zq(x)); s += `<path d="M${X(x)} ${y0 - 16}v13M${X(x) - 3} ${y0 - 7}l3 4 3-4" class="w-load"/>`; }
+      const qpts = []; for (let i = 0; i <= n; i++) { const x = xa + (xb2 - xa) * i / n; qpts.push(X(x).toFixed(1) + ' ' + (Y(zq(x)) - 16).toFixed(1)); }
+      s += `<path d="M${qpts.join(' L')}" class="w-load"/><text x="${X(xa) + 4}" y="${Y(H) - 21}" class="s-lbl w-lt">q = ${f(ld.q, 1)} kPa</text>`;
     }
     // handrail
     if (ld.Hr > 0) {
       const xh = X(top.xf + 40), y0 = Y(H), y1 = Y(H + ld.hr);
+      const dxr = xh - 10; s += `<line x1="${dxr}" x2="${dxr}" y1="${y0}" y2="${y1}" class="s-dim"/><path d="M${dxr - 4} ${y0}h8M${dxr - 4} ${y1}h8" class="s-dim"/><text transform="translate(${dxr - 4} ${(y0 + y1) / 2}) rotate(-90)" text-anchor="middle" class="s-lbl">${f(ld.hr, 0)}</text>`;
       s += `<line x1="${xh}" x2="${xh}" y1="${y0}" y2="${y1}" class="w-rail"/><path d="M${xh + 26} ${y1}h-22M${xh + 9} ${y1 - 4}l-5 4 5 4" class="w-load"/><text x="${xh + 30}" y="${y1 + 4}" class="s-lbl w-lt">H_r ${f(ld.Hr, 2)} kN/m</text>`.replace('H_r', 'Hᵣ');
     }
     // virtual back and thrust at the base
@@ -1135,9 +1162,11 @@
     const dx = X(xL) + 14;
     s += `<line x1="${dx}" x2="${dx}" y1="${Y(0)}" y2="${Y(H)}" class="s-dim"/><path d="M${dx - 4} ${Y(0)}h8M${dx - 4} ${Y(H)}h8" class="s-dim"/><text transform="translate(${dx - 4} ${(Y(0) + Y(H)) / 2}) rotate(-90)" text-anchor="middle" class="s-lbl">H = ${f(H, 0)}</text>`;
     s += `<line x1="${X(cs[0].xf)}" x2="${X(cs[0].xb)}" y1="${Y(zmin) - 8}" y2="${Y(zmin) - 8}" class="s-dim"/><text x="${(X(cs[0].xf) + X(cs[0].xb)) / 2}" y="${Y(zmin) - 12}" text-anchor="middle" class="s-lbl">B = ${f(cs[0].xb - cs[0].xf, 0)}</text>`;
+    if (r.ds > 0) { const xd = X(top.xb) + 7; s += `<line x1="${xd}" x2="${xd}" y1="${Y(H)}" y2="${Y(Hs)}" class="s-dim"/><path d="M${xd - 4} ${Y(H)}h8M${xd - 4} ${Y(Hs)}h8" class="s-dim"/><text x="${xd + 5}" y="${Y(Hs) + 12}" class="s-lbl">d<tspan font-size="8" dy="2">s</tspan><tspan dy="-2"> ${f(r.ds, 0)}</tspan></text>`; }
+    if (r.Lc > 0 && r.beta > 0) { const yd = Y(Math.max(H, zs(r.xs0))) - 40; s += `<line x1="${X(top.xf)}" x2="${X(r.xs0)}" y1="${yd}" y2="${yd}" class="s-dim w-dimc"/><path d="M${X(top.xf)} ${yd - 4}v8M${X(r.xs0)} ${yd - 4}v8" class="s-dim"/><text x="${X(r.xs0) + 4}" y="${yd + 4}" class="s-lbl">Lc ${f(r.Lc, 0)}</text>`; }
     if (r.beta > 0) s += `<text x="${X(xR) - 6}" y="${Y(zs(xR)) + 14}" text-anchor="end" class="s-lbl">β = ${f(r.beta, 1)}°</text>`;
     s += '</svg>';
-    return s + `<ul class="legend"><li><i class="w-block-k"></i>${T('Limestone blocks', 'ก้อนหินปูน')} ${f(inp0.geo.bx, 0)}×${f(inp0.geo.by, 0)}</li><li><i class="w-soil-k"></i>${T('Retained soil', 'ดินถม')}</li><li><i class="w-virt-k"></i>${T('Virtual back', 'ระนาบด้านหลังสมมติ')}</li>${wj ? `<li><i class="w-joint-k"></i>${T('Critical bed joint', 'รอยต่อวิกฤต')}</li>` : ''}</ul>`;
+    return s + `<ul class="legend"><li><i class="w-block-k"></i>${T('Limestone blocks', 'ก้อนหินปูน')} ${f(inp0.geo.bx, 0)}×${f(inp0.geo.by, 0)}</li><li><i class="w-soil-k"></i>${T('Retained soil', 'ดินถม')}</li><li><i class="w-virt-k"></i>${T('Virtual back', 'ระนาบด้านหลังสมมติ')}</li>${r.wat && r.hw > 0 ? `<li><i class="w-water-k"></i>${T('Groundwater', 'น้ำใต้ดิน')}</li>` : ''}${wj ? `<li><i class="w-joint-k"></i>${T('Critical bed joint', 'รอยต่อวิกฤต')}</li>` : ''}</ul>`;
   }
   function wallTable(r) {
     const row = p => { const b = p.k === 0, u = Math.max(p.ot.urOT, p.sl.urSL, b ? p.br.urB : 0);
@@ -1228,6 +1257,7 @@
   function inputTable() {
     const v = inp(), sch = SCHEMA[S.elem].filter(fd => (!fd.codes || fd.codes.includes(S.code)) && (!fd.when || fd.when(v)));
     let rows = sch.map(fd => { const [u] = unitOf(fd.u); let val = v[fd.k]; if (fd.type === 'dia') val = RC.barName(S.code, val); if (fd.type === 'sel') { const o = (typeof fd.opts === 'function' ? fd.opts(v) : fd.opts).find(o => o[0] === val); val = o ? T(o[1], o[2]) : val; } return `<tr><td>${fmLabel(fieldLabel(fd))}</td><td class="num mono">${esc(val)}</td><td>${u}</td></tr>`; }).join('');
+    if (S.elem === 'lwall') rows = `<tr><td>${T('Blocks per course (bottom → top)', 'จำนวนก้อนต่อชั้น (ล่าง → บน)')}</td><td class="num mono">${(v.crs || []).map(r => r.n).join(' / ')}</td><td></td></tr>` + rows;
     if (S.elem === 'beam') rows += `<tr><td>${T('Top bars', 'เหล็กบน')}</td><td class="num mono">${v.top.map(r => r.n + RC.barName(S.code, r.d)).join(' / ')}</td><td></td></tr><tr><td>${T('Bottom bars', 'เหล็กล่าง')}</td><td class="num mono">${v.bot.map(r => r.n + RC.barName(S.code, r.d)).join(' / ')}</td><td></td></tr><tr><td>${T('Side bars per face', 'เหล็กข้างต่อด้าน')}</td><td class="num mono">${v.sideN + RC.barName(S.code, v.sideD)}</td><td></td></tr>`;
     return `<table class="rp-in">${rows}</table>`;
   }
@@ -1496,6 +1526,7 @@
     else if (a === 'code') { S.codeSel = b.dataset.c; S.code = b.dataset.c; S.codePop = true; render(); const p = $('.elem-pop .pick'); if (p) p.focus(); }
     else if (a === 'elem') { const e = b.dataset.e; if (!ELEMS[e].free && !isPro()) { toast(T('This designer is part of Pro. Sign in with a Pro account to use it.', 'ฟังก์ชันนี้สำหรับสมาชิก Pro กรุณาเข้าสู่ระบบด้วยบัญชี Pro'), 'bad'); return; } go('design', { elem: e, code: S.codeSel || S.code }); }
     else if (a === 'reset') { delete S.inputs[S.elem + ':' + S.code]; $('#dzIn').innerHTML = inputsHTML(); compute(); }
+    else if (a === 'rowadd' && b.dataset.row === 'crs') { const v = inp(); if (v.crs.length < 20) v.crs.push({ n: Math.max(1, v.crs[v.crs.length - 1].n) }); $('#dzIn').innerHTML = inputsHTML(); schedule(); }
     else if (a === 'rowadd') { const v = inp(), k = b.dataset.row; v[k].push({ n: 2, d: v[k][v[k].length - 1].d }); $('#dzIn').innerHTML = inputsHTML(); schedule(); }
     else if (a === 'rowdel') { const v = inp(), k = b.dataset.row; v[k].splice(+b.dataset.i, 1); $('#dzIn').innerHTML = inputsHTML(); schedule(); }
     else if (a === 'report') { if (!isPro()) { toast(T('The full calculation report and PDF export are Pro features.', 'รายการคำนวณฉบับเต็มและ PDF สำหรับสมาชิก Pro'), 'bad'); return; } S.reportOpen = true; renderReport(); $('#reportWrap').scrollIntoView({ behavior: 'smooth' }); }
