@@ -305,19 +305,22 @@
       }
       // members
       const scr = { n: [], m: [] }, resMode = view !== 'model', solidOn = !!A.solid && !resMode && !rep;
+      const RED = '#dc2626'; let nBad = 0;
       if (solidOn) drawSolid();
       m.members.forEach(mb => {
         const a = nd[mb.i], b = nd[mb.j]; if (!a || !b) return;
         const pa = P(P3(a)), pb = P(P3(b)), vis = memVis(mb), sel = selM.has(mb.id), hov = !rep && A.hover && A.hover.k === 'm' && A.hover.id === mb.id;
         if (!vis) { g.save(); g.globalAlpha = 0.14; line(pa, pb, pal.muted, 1.2); g.restore(); return; }
-        const col = sel ? pal.acc : hov ? pal.blue : resMode ? pal.soft : mb.type === 'truss' ? pal.teal : pal.ink;
-        if (solidOn) { scr.m.push({ id: mb.id, a: pa, b: pb }); return; }
+        const bad = !resMode && !memOK(mb); if (bad) nBad++;
+        const col = sel ? pal.acc : hov ? pal.blue : resMode ? pal.soft : bad ? RED : mb.type === 'truss' ? pal.teal : pal.ink;
+        if (solidOn && !(bad && !secPoly(mb.sec))) { scr.m.push({ id: mb.id, a: pa, b: pb }); return; }
         line(pa, pb, col, sel ? 4 : resMode ? 1.6 : mb.type === 'truss' ? 1.6 : 2.4);
         scr.m.push({ id: mb.id, a: pa, b: pb });
         if (mb.type !== 'truss' && !resMode) [[mb.relI, pa, pb], [mb.relJ, pb, pa]].forEach(([r, p, q]) => { if (!r) return; const L = Math.hypot(q[0] - p[0], q[1] - p[1]) || 1, d = Math.min(11, L / 3); g.beginPath(); g.arc(p[0] + (q[0] - p[0]) / L * d, p[1] + (q[1] - p[1]) / L * d, 3.4, 0, 2 * PI); g.fillStyle = pal.bg; g.fill(); g.strokeStyle = col; g.lineWidth = 1.4; g.stroke(); });
       });
       // results
       const notes = [];
+      if (nBad && !rep) notes.push('● ' + nBad + T(' element(s) without section or material (red)', ' ชิ้นส่วนยังไม่มีหน้าตัดหรือวัสดุ (สีแดง)'));
       if (view !== 'model' && A.res && A.resVer === A.ver) drawResults();
       else if (view !== 'model' && A.resVer !== A.ver) notes.push(T('Updating…', 'กำลังคำนวณ…'));
       // nodes and supports
@@ -358,7 +361,7 @@
       // axis triad
       const o0 = [34, H - 30];
       [[[1, 0, 0], 'X', pal.pink], [[0, 1, 0], 'Y', pal.ok], [[0, 0, 1], 'Z', pal.blue]].forEach(([e, lb, col]) => { const dx = dot(e, B.r), dy = dot(e, B.u); if (Math.hypot(dx, dy) < 0.08) { text(lb, o0[0] + 2, o0[1] - 2, col, { font: '600 10px ui-monospace, monospace' }); return; } const q = [o0[0] + 22 * dx, o0[1] - 22 * dy]; arrow(o0, q, col, 1.6); text(lb, q[0] + 3, q[1] + 3, col, { font: '600 10px ui-monospace, monospace' }); });
-      notes.forEach((s, i) => text(s, 14, 22 + i * 16, pal.muted, { font: '12px system-ui, sans-serif' }));
+      notes.forEach((s, i) => text(s, 14, 22 + i * 16, s[0] === '●' ? RED : pal.muted, { font: '12px system-ui, sans-serif' }));
       return scr;
 
       function drawSolid() {
@@ -371,7 +374,7 @@
           const pa = P3(a), pb = P3(b), ax = F.axes(pa, pb, mb.beta), W3 = (p0, q) => addv(addv(p0, ax.ez, q[0] / 1000), ax.ey, q[1] / 1000);
           const ri = poly.pts.map(q => W3(pa, q)), rj = poly.pts.map(q => W3(pb, q)), n = ri.length;
           const mat = m.materials.find(q => q.id === mb.mat), kind = mat ? mat.kind : poly.steel ? 'steel' : 'conc';
-          const rgb = selM.has(mb.id) ? BASE.sel : A.hover && A.hover.k === 'm' && A.hover.id === mb.id ? BASE.hov : BASE[kind === 'steel' ? 'steel' : 'conc'];
+          const rgb = selM.has(mb.id) ? BASE.sel : A.hover && A.hover.k === 'm' && A.hover.id === mb.id ? BASE.hov : !memOK(mb) ? [225, 45, 45] : BASE[kind === 'steel' ? 'steel' : 'conc'];
           const push = (pts, nrm, edge) => { if (dot(nrm, B.d) <= 1e-9) return; const sp = pts.map(P); faces.push({ sp, z: sp.reduce((t, q) => t + q[2], 0) / sp.length, l: 0.42 + 0.58 * Math.abs(dot(nrm, Ld)), rgb, edge }); };
           for (let i = 0; i < n; i++) { const i2 = (i + 1) % n, dz = poly.pts[i2][0] - poly.pts[i][0], dy = poly.pts[i2][1] - poly.pts[i][1], h = Math.hypot(dz, dy) || 1; push([ri[i], ri[i2], rj[i2], rj[i]], addv(addv([0, 0, 0], ax.ez, dy / h), ax.ey, -dz / h), !poly.round); }
           push(ri, ax.ex.map(v => -v), true); push(rj, ax.ex, true);
@@ -527,7 +530,7 @@
       toast(A.sel.n.length || A.sel.m.length ? (A.sel.n.length ? A.sel.n.length + T(' node(s) ', ' จุดต่อ ') : '') + (A.sel.m.length ? A.sel.m.length + T(' element(s) ', ' ชิ้นส่วน ') : '') + T('selected', 'ที่เลือก') : T('Selection cleared', 'ล้างการเลือกแล้ว'), '');
     }
     function selChanged() {
-      if (A.step !== 'res') { if (A.sel.n.length && !['node', 'sup', 'load'].includes(A.step)) A.step = 'node'; else if (!A.sel.n.length && A.sel.m.length && !['elem', 'sup', 'load'].includes(A.step)) A.step = 'elem'; }
+      if (A.step !== 'res') { if (A.sel.n.length && !['node', 'sup', 'load', 'mat', 'sec'].includes(A.step)) A.step = 'node'; else if (!A.sel.n.length && A.sel.m.length && !['elem', 'sup', 'load', 'mat', 'sec'].includes(A.step)) A.step = 'elem'; }
       sideRefresh(); redraw(); const mm = $('#anMember'); if (mm) mm.innerHTML = memberHTML();
     }
     function bindCanvas(cv) {
@@ -570,7 +573,7 @@
       cv.addEventListener('wheel', e => { e.preventDefault(); const [x, y] = rel(e); zoomAt(x, y, Math.exp(-e.deltaY * 0.0012)); }, { passive: false });
       cv.addEventListener('contextmenu', e => { e.preventDefault(); if (A.draw && !moved) { A.draw = null; redraw(); } });
       // drop a property dragged from the tree
-      cv.addEventListener('dragover', e => { if (!A.dnd) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; const [x, y] = rel(e), h = pickAt(x, y), want = A.dnd.startsWith('sup:') ? 'n' : 'm', ok = h && h.k === want ? h : null; if ((ok && (!A.hover || A.hover.id !== ok.id || A.hover.k !== ok.k)) || (!ok && A.hover)) { A.hover = ok; redraw(); } });
+      cv.addEventListener('dragover', e => { if (!A.dnd) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if ((A.dnd.startsWith('sup:') ? A.sel.n : A.sel.m).length) { if (A.hover) { A.hover = null; redraw(); } return; } const [x, y] = rel(e), h = pickAt(x, y), want = A.dnd.startsWith('sup:') ? 'n' : 'm', ok = h && h.k === want ? h : null; if ((ok && (!A.hover || A.hover.id !== ok.id || A.hover.k !== ok.k)) || (!ok && A.hover)) { A.hover = ok; redraw(); } });
       cv.addEventListener('dragleave', () => { if (A.hover) { A.hover = null; redraw(); } });
       cv.addEventListener('drop', e => { if (!A.dnd) return; e.preventDefault(); const [x, y] = rel(e), h = pickAt(x, y), v = A.dnd; A.dnd = null; A.hover = null; dropApply(v, h); });
     }
@@ -809,6 +812,7 @@
       if (s.type === 'tube') { const q = String(s.size || '').split('x').map(Number); return s.shape === 'CHS' ? { k: 'chs', D: q[0], t: q[1] } : { k: 'box', h: q[0], b: q[1], t: q[2] }; }
       return null;
     }
+    function memOK(mb) { const m = A.model; return !!mb.sec && !!mb.mat && m.sections.some(q => q.id === mb.sec) && m.materials.some(q => q.id === mb.mat); }
     function secPoly(id) {
       const s = A.model.sections.find(q => q.id === id); if (!s) return null;
       const gd = secDims(s), R = (b, h) => [[-b / 2, -h / 2], [b / 2, -h / 2], [b / 2, h / 2], [-b / 2, h / 2]], C = D => Array.from({ length: 18 }, (_, i) => [D / 2 * Math.cos(2 * PI * i / 18), D / 2 * Math.sin(2 * PI * i / 18)]);
@@ -983,22 +987,29 @@
     function dropApply(val, hit) {
       const m = A.model, i = val.indexOf(':'), k = val.slice(0, i), id = val.slice(i + 1);
       if (k === 'sec' || k === 'mat' || k === 'rel') {
-        if (!hit || hit.k !== 'm') { toast(T('Drop it onto an element.', 'วางบนชิ้นส่วน'), ''); return; }
-        const ids = A.sel.m.includes(hit.id) ? A.sel.m : [hit.id], mems = ids.map(q => m.members.find(z => z.id === q)).filter(Boolean);
+        const ids = A.sel.m.length ? A.sel.m.slice() : hit && hit.k === 'm' ? [hit.id] : null;
+        if (!ids) { toast(T('Select elements first, then drag the property onto the view.', 'เลือกชิ้นส่วนก่อน แล้วลากคุณสมบัติไปวางบนมุมมอง'), 'bad'); return; }
+        const mems = ids.map(q => m.members.find(z => z.id === q)).filter(Boolean);
         snap(true);
         mems.forEach(q => { if (k === 'sec') q.sec = id; else if (k === 'mat') q.mat = id; else if (id === 'truss') q.type = 'truss'; else { q.type = 'frame'; q.relI = id === 'i' || id === 'both'; q.relJ = id === 'j' || id === 'both'; } });
         A.sel = { n: [], m: ids }; changed(true);
         toast((k === 'sec' ? T('Section ', 'หน้าตัด ') : k === 'mat' ? T('Material ', 'วัสดุ ') : T('End release ', 'การปลดแรงปลาย ')) + id + T(' → ' + mems.length + ' element(s)', ' → ' + mems.length + ' ชิ้นส่วน'), 'ok');
       } else if (k === 'sup') {
-        if (!hit || hit.k !== 'n') { toast(T('Drop it onto a node.', 'วางบนจุดต่อ'), ''); return; }
-        const ids = A.sel.n.includes(hit.id) ? A.sel.n : [hit.id]; snap(true);
+        const ids = A.sel.n.length ? A.sel.n.slice() : hit && hit.k === 'n' ? [hit.id] : null;
+        if (!ids) { toast(T('Select nodes first, then drag the support onto the view.', 'เลือกจุดต่อก่อน แล้วลากจุดรองรับไปวางบนมุมมอง'), 'bad'); return; }
+        snap(true);
         ids.forEach(q => { const n = m.nodes.find(z => z.id === q); if (n) n.sup = id; }); A.sel = { n: ids, m: [] }; changed(true);
         toast(T('Support ', 'จุดรองรับ ') + id + T(' → ' + ids.length + ' node(s)', ' → ' + ids.length + ' จุด'), 'ok');
       }
     }
+    function dndHint(k) {
+      const n = k === 'sup' ? A.sel.n.length : A.sel.m.length, what = { mat: T('material', 'วัสดุ'), sec: T('section', 'หน้าตัด'), sup: T('support', 'จุดรองรับ'), rel: T('end release', 'การปลดแรงปลาย') }[k];
+      const miss = k === 'mat' || k === 'sec' ? A.model.members.filter(q => !memOK(q)).length : 0;
+      return `<div class="an-dnd ${n ? 'on' : ''}">${n ? `<b>${n} ${k === 'sup' ? T('node(s)', 'จุดต่อ') : T('element(s)', 'ชิ้นส่วน')} ${T('selected', 'ที่เลือก')}</b> — ${T('drag a ' + what + ' from the list and drop it anywhere on the view to apply it to them.', 'ลาก' + what + 'จากรายการไปวางที่ใดก็ได้บนมุมมองเพื่อกำหนดให้')}` : `1. ${T('Select ' + (k === 'sup' ? 'nodes' : 'elements') + ' in the view (click, Shift-click or drag a box).', 'เลือก' + (k === 'sup' ? 'จุดต่อ' : 'ชิ้นส่วน') + 'ในมุมมอง (คลิก Shift-คลิก หรือลากกรอบ)')}<br>2. ${T('Drag a ' + what + ' from the list and drop it on the view.', 'ลาก' + what + 'จากรายการไปวางบนมุมมอง')}`}${miss ? `<br><span class="an-miss">● ${miss} ${T('element(s) without section or material are shown in red.', 'ชิ้นส่วนที่ยังไม่มีหน้าตัดหรือวัสดุแสดงเป็นสีแดง')}</span>` : ''}</div>`;
+    }
     const DRAG_SUPS = () => [['fixed', T('Fixed', 'ยึดแน่น')], ['pin', T('Pinned', 'หมุด')], ['roller', T('Roller Z', 'ล้อเลื่อน Z')], ['rollerX', T('Roller, X free', 'ล้อเลื่อน X')], ['rollerY', T('Roller, Y free', 'ล้อเลื่อน Y')], ['free', T('Free', 'อิสระ')]];
     const DRAG_RELS = () => [['none', T('Rigid', 'ยึดแน่น')], ['i', T('Pin at i', 'หมุดที่ i')], ['j', T('Pin at j', 'หมุดที่ j')], ['both', T('Pin both ends', 'หมุดสองปลาย')], ['truss', T('Truss', 'โครงถัก')]];
-    const chips = (k, list) => `<div class="an-chips2">${list.map(([v, l]) => `<span class="an-chip" draggable="true" data-dnd="${k}:${esc(v)}" title="${T('Drag onto the model', 'ลากไปวางบนแบบจำลอง')}">⠿ ${l}</span>`).join('')}</div>`;
+    const chips = (k, list) => `<div class="an-chips2">${list.map(([v, l]) => `<span class="an-chip" draggable="true" data-dnd="${k}:${esc(v)}" title="${T('Drag onto the view to apply to the selection', 'ลากไปวางบนมุมมองเพื่อกำหนดให้ส่วนที่เลือก')}">⠿ ${l}</span>`).join('')}</div>`;
 
     // ------------------------------------------------------------------ model tree (left): steps 0–10
     const STEPS = () => {
@@ -1028,10 +1039,10 @@
         `<div class="an-stds">${STDS.map(q => { const v = stdInfo(q); return `<button class="an-std ${m.std === q ? 'on' : ''}" data-act="an-std" data-k="${q}" aria-pressed="${m.std === q}"><b>${T(v.name[0], v.name[1])}</b><span class="mono">${esc(v.codes)}</span><small>${T('Concrete', 'คอนกรีต')} ${esc(v.conc[0][0])}–${esc(v.conc[v.conc.length - 1][0])} · ${T('steel', 'เหล็ก')} ${v.steel.map(s => esc(s[0])).join(', ')} · ${v.series.join(', ')}</small></button>`; }).join('')}</div>` +
         hint(T('Units: kN, m, kNm (sections in mm, E in MPa). Global axes: X, Y horizontal, Z up.', 'หน่วย: kN, m, kNm (หน้าตัดเป็น มม., E เป็น MPa) แกนหลัก: X, Y แนวราบ, Z ชี้ขึ้น')) +
         `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-tplopen">${T('Start from a template…', 'เริ่มจากแม่แบบ…')}</button><button class="btn btn-ghost xs" data-act="an-gen" data-code="${d.combo}">${T('Use this standard’s load combinations', 'ใช้การรวมน้ำหนักตามมาตรฐานนี้')}</button><button class="btn btn-hot xs" data-act="an-step" data-s="mat">${T('Next: materials →', 'ถัดไป: วัสดุ →')}</button></div>`;
-      if (k === 'mat') return hint(T('Drag a material onto an element in the view to assign it (onto a selected element: all selected).', 'ลากวัสดุไปวางบนชิ้นส่วนในมุมมองเพื่อกำหนด (วางบนชิ้นที่เลือก: กำหนดให้ทุกชิ้นที่เลือก)')) + matTable() +
+      if (k === 'mat') return dndHint('mat') + matTable() +
         `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-win" data-k="mat">+ ${T('Add material…', 'เพิ่มวัสดุ…')}</button></div>` +
         hint(T('E for concrete follows the standard (AS 3600 Table 3.1.2, EN 1992-1-1 Table 3.1, EIT/ACI 15 100√f\'c). Unit weight γ is used for self-weight and mass.', 'ค่า E ของคอนกรีตตามมาตรฐาน (AS 3600 ตาราง 3.1.2, EN 1992-1-1 ตาราง 3.1, วสท./ACI 15,100√f\'c) หน่วยน้ำหนัก γ ใช้คำนวณน้ำหนักตัวเองและมวล'));
-      if (k === 'sec') return hint(T('Drag a section onto an element in the view to assign it (onto a selected element: all selected).', 'ลากหน้าตัดไปวางบนชิ้นส่วนในมุมมองเพื่อกำหนด (วางบนชิ้นที่เลือก: กำหนดให้ทุกชิ้นที่เลือก)')) + secTable() +
+      if (k === 'sec') return dndHint('sec') + secTable() +
         `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-win" data-k="sec">+ ${T('Add section…', 'เพิ่มหน้าตัด…')}</button></div>` +
         hint(T('Depth h (d, D) lies along the element local y axis, so I_z is the major axis. Rotate an element with β (step 4). Steel tables: ', 'ความลึก h (d, D) อยู่ตามแกน y เฉพาะที่ของชิ้นส่วน I_z จึงเป็นแกนหลัก หมุนชิ้นส่วนด้วย β (ขั้นที่ 4) ตารางเหล็ก: ') + ({ AS: 'AS/NZS 3679.1, AS/NZS 1163', EC: 'EN 10365, EN 10219', TH: 'TIS 1227 / JIS G 3192, AS/NZS 1163 sizes' })[m.std]);
       if (k === 'node') return hint(T('Pick the Node tool and click grid points in Plan or an Elevation (they snap to the grid), or type coordinates below. Click nodes in the view to select and edit them.', 'เลือกเครื่องมือจุดต่อแล้วคลิกตำแหน่งในแปลนหรือรูปด้าน (สแนปตามกริด) หรือพิมพ์พิกัดด้านล่าง คลิกจุดต่อในมุมมองเพื่อเลือกและแก้ไข')) +
@@ -1053,7 +1064,7 @@
           : `<div class="an-row2">${fld(T('Moment releases', 'การปลดโมเมนต์'), sel([['', T('— keep —', '— คงเดิม —')], ['none', T('None (rigid)', 'ไม่มี (ยึดแน่น)')], ['i', T('End i', 'ปลาย i')], ['j', T('End j', 'ปลาย j')], ['both', T('Both ends', 'ทั้งสองปลาย')]], '', 'data-ins="hinge"'))}${fld(T('Type', 'ชนิด'), sel([['', T('— keep —', '— คงเดิม —')], ['frame', T('Frame', 'โครงข้อแข็ง')], ['truss', T('Truss', 'โครงถัก')]], '', 'data-ins="type"'))}</div>`); }
         const supN = m.nodes.filter(n => F.fixOf(n).some(Boolean)), relM = m.members.filter(q => q.relI || q.relJ || q.type === 'truss');
         return hint(T('Select nodes in the view (click, or drag a box) to set their support. Select elements to release their end moments (pins) or make them truss members.', 'เลือกจุดต่อในมุมมอง (คลิก หรือลากกรอบ) เพื่อกำหนดจุดรองรับ เลือกชิ้นส่วนเพื่อปลดโมเมนต์ที่ปลาย (หมุด) หรือกำหนดเป็นโครงถัก')) +
-          `<h4>${T('Drag onto a node', 'ลากไปวางบนจุดต่อ')}</h4>` + chips('sup', DRAG_SUPS()) + `<h4>${T('Drag onto an element', 'ลากไปวางบนชิ้นส่วน')}</h4>` + chips('rel', DRAG_RELS()) +
+          dndHint(A.sel.n.length || !A.sel.m.length ? 'sup' : 'rel') + `<h4>${T('Supports — for selected nodes', 'จุดรองรับ — สำหรับจุดต่อที่เลือก')}</h4>` + chips('sup', DRAG_SUPS()) + `<h4>${T('End releases — for selected elements', 'การปลดแรงปลาย — สำหรับชิ้นส่วนที่เลือก')}</h4>` + chips('rel', DRAG_RELS()) +
           `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-selbase">${T('Select all base nodes', 'เลือกจุดต่อที่ฐานทั้งหมด')}</button></div>` + selCount() + ed +
           `<details class="an-blk an-det" open><summary><b>${T('Supports', 'จุดรองรับ')} (${supN.length})</b></summary>${supN.length ? wrap(`<table class="an-t"><thead><tr><th>${T('Node', 'จุดต่อ')}</th><th>${T('Support', 'จุดรองรับ')}</th><th>Ux Uy Uz Rx Ry Rz</th></tr></thead><tbody>${supN.slice(0, 200).map(n => `<tr><td><button class="linkbtn" data-act="an-pickn" data-n="${esc(n.id)}">${esc(n.id)}</button></td><td>${esc((SUP().find(q => q[0] === (n.sup || 'free')) || [])[1] || n.sup)}</td><td class="mono">${F.fixOf(n).map(v => (v ? '■' : '□')).join(' ')}</td></tr>`).join('')}</tbody></table>`) : hint(T('No supports yet.', 'ยังไม่มีจุดรองรับ'))}</details>` +
           `<details class="an-blk an-det"><summary><b>${T('Released / truss elements', 'ชิ้นส่วนที่ปลดแรง / โครงถัก')} (${relM.length})</b></summary>${relM.length ? wrap(`<table class="an-t"><thead><tr><th>${T('Element', 'ชิ้นส่วน')}</th><th>${T('Release', 'การปลด')}</th></tr></thead><tbody>${relM.slice(0, 200).map(q => `<tr><td><button class="linkbtn" data-act="an-pick" data-m="${esc(q.id)}">${esc(q.id)}</button></td><td>${q.type === 'truss' ? T('truss (axial only)', 'โครงถัก') : (q.relI ? T('pin at i ', 'หมุดที่ i ') : '') + (q.relJ ? T('pin at j', 'หมุดที่ j') : '')}</td></tr>`).join('')}</tbody></table>`) : hint(T('All elements are rigidly connected.', 'ชิ้นส่วนทั้งหมดต่อแบบยึดแน่น'))}</details>`;
