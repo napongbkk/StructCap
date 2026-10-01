@@ -1073,21 +1073,22 @@
         <td class="num mono">${f(outVal(e.N, 'kN')[0], 1)}</td><td class="num mono">${f(outVal(e.cap, 'kN')[0], 1)}</td><td><div class="urb"><div class="ur"><i style="width:${Math.min(100, e.ur * 100)}%"></i></div><b class="mono">${f(e.ur, 2)}</b></div></td></tr>`).join('')}
       </tbody></table></div><p class="hint">${T('Forces: − compression, + tension. Struts: φ_st·β_s·0.9f′c·A_c on the smallest section (at the pile or the column node); ties: φ·A_st·f_sy.', 'แรง: − อัด, + ดึง ค้ำ: φ_st·β_s·0.9f′c·A_c ที่หน้าตัดเล็กสุด (ที่หัวเข็มหรือจุดต่อใต้เสา) ตัวยึด: φ·A_st·f_sy')}</p>`;
   }
-  S.v3s = { mode: 'ur', cam: null };
+  S.v3s = { mode: 'ur', shape: 'bottle', cam: null };
   let sviewer = null;
   function stmTheme() { const t = themeColors(), cs = getComputedStyle(document.documentElement), hx = (k, d) => { try { const v = cs.getPropertyValue(k).trim(); return v.startsWith('#') ? SC3D.hex(v) : d; } catch (e) { return d; } }; return Object.assign(t, { strut: hx('--acc', [255, 106, 43]), tie: hx('--blue', [58, 107, 255]), top: [150, 92, 220], idle: [150, 156, 170], edge: [118, 128, 148], pile: [176, 168, 150], node: [40, 48, 66] }); }
   function stmCard(r) {
     const st = S.v3s;
     return `<div class="card v3"><div class="v3-head"><h2 class="card-h">${T('3D strut-and-tie model', 'แบบจำลองโครงถักค้ำ-ยึด 3 มิติ')}</h2></div>
       <div class="v3-tools"><label for="v3smode">${T('Colour by', 'ระบายสีตาม')}</label><select id="v3smode"><option value="ur" ${st.mode === 'ur' ? 'selected' : ''}>${T('Utilisation (UR)', 'อัตราส่วนการใช้งาน (UR)')}</option><option value="type" ${st.mode === 'type' ? 'selected' : ''}>${T('Member type', 'ชนิดชิ้นส่วน')}</option></select>
+        <label for="v3sshape">${T('Show', 'แสดง')}</label><select id="v3sshape"><option value="bottle" ${st.shape !== 'line' ? 'selected' : ''}>${T('Actual strut widths (bottle-shaped)', 'ความกว้างค้ำจริง (รูปขวด)')}</option><option value="line" ${st.shape === 'line' ? 'selected' : ''}>${T('Line model (thickness ∝ force)', 'แบบเส้น (ความหนา ∝ แรง)')}</option></select>
         <button class="btn btn-ghost xs" data-act="v3sreset">${T('Reset view', 'รีเซ็ตมุมมอง')}</button></div>
       <canvas id="v3s" class="v3c" tabindex="0" aria-label="${T('3D strut-and-tie model. Drag to rotate, shift-drag or two fingers to pan, scroll or pinch to zoom; click a member to read its force.', 'แบบจำลองโครงถัก 3 มิติ ลากเพื่อหมุน shift+ลากหรือสองนิ้วเพื่อเลื่อน เลื่อนล้อหรือบีบนิ้วเพื่อซูม คลิกชิ้นส่วนเพื่ออ่านแรง')}"></canvas>
       <div id="v3sleg" class="v3-leg"></div><div id="v3spick" class="v3-pick" aria-live="polite"></div>
-      <p class="hint">${T('Rod thickness is proportional to the member force. Struts and ties meet at the nodes: top nodes in the column, bottom nodes at the tie level over each pile.', 'ความหนาของแท่งแปรผันตามแรงในชิ้นส่วน ค้ำและตัวยึดพบกันที่จุดต่อ: จุดต่อบนอยู่ใต้เสา จุดต่อล่างที่ระดับตัวยึดเหนือหัวเข็มแต่ละต้น')}</p></div>`;
+      <p class="hint">${S.v3s.shape !== 'line' ? T('Inclined struts are drawn bottle-shaped: end widths are the sections used in the check (A_top at the column node, A_bot at the pile), spreading at mid-length; top struts are prisms of the node depth h_t; ties show the bar band. ', 'ค้ำเอียงแสดงเป็นรูปขวด: ความกว้างที่ปลายคือหน้าตัดที่ใช้ตรวจสอบ (A_top ที่จุดต่อใต้เสา A_bot ที่หัวเข็ม) และขยายตัวกลางความยาว ค้ำบนเป็นปริซึมลึก h_t ตัวยึดแสดงแถบเหล็ก ') : ''}${S.v3s.shape === 'line' ? T('Rod thickness is proportional to the member force. ', 'ความหนาของแท่งแปรผันตามแรงในชิ้นส่วน ') : ''}${T('Struts and ties meet at the nodes: top nodes in the column, bottom nodes at the tie level over each pile.', 'ค้ำและตัวยึดพบกันที่จุดต่อ: จุดต่อบนอยู่ใต้เสา จุดต่อล่างที่ระดับตัวยึดเหนือหัวเข็มแต่ละต้น')}</p></div>`;
   }
   const stmLines = (r, e) => [e.id + ' · ' + MT()[e.type] + ' ' + r.nodes[e.a].id + '–' + r.nodes[e.b].id, (e.N < 0 ? 'C = ' : 'T = ') + f(Math.abs(outVal(e.N, 'kN')[0]), 1) + ' ' + outVal(1, 'kN')[1] + ' · UR ' + f(e.ur, 2)];
-  function stmSetup(v, r, mode, theme) {
-    const sc = SC3D.stmScene(r, { mode }, theme);
+  function stmSetup(v, r, mode, theme, shape) {
+    const sc = SC3D.stmScene(r, { mode, shape }, theme);
     v.mesh = sc.mesh; v.bg = theme.bg;
     v.color = mode === 'ur' ? (s => SC3D.ramp(s[0].ur)) : null;
     v.marks = sc.maxU ? [{ p: sc.maxU.p, kind: 'max', lines: [T('MAX UR', 'UR สูงสุด') + ' ' + f(sc.maxU.e.ur, 2)].concat(stmLines(r, sc.maxU.e)) }] : [];
@@ -1103,7 +1104,7 @@
     sviewer = cv._v || new SC3D.Viewer(cv, st.cam); cv._v = sviewer;
     sviewer.cam = Object.assign({}, sviewer.cam, st.cam); sviewer.sel = null;
     sviewer.onchange = c => { st.cam = Object.assign({}, c); };
-    stmSetup(sviewer, r, st.mode, theme);
+    stmSetup(sviewer, r, st.mode, theme, st.shape);
     const box = $('#v3spick');
     const show = sel => { if (!box) return; const e = sviewer.memOf(sel); box.innerHTML = e ? `<b>${T('Selected', 'ที่เลือก')}:</b> <span class="mono">${esc(stmLines(r, e).join(' · '))}</span> <button class="linkbtn" data-act="v3sclear">${T('Clear', 'ล้าง')}</button>` : `<span class="muted">${T('Click a strut or tie to read its force and utilisation.', 'คลิกค้ำหรือตัวยึดเพื่ออ่านแรงและอัตราส่วนการใช้งาน')}</span>`; };
     sviewer.onpick = show; show(null);
@@ -1140,7 +1141,7 @@
     const summary = `<table class="rp-sum"><thead><tr><th>${T('Check', 'รายการ')}</th><th class="num">${T('Action', 'แรงกระทำ')}</th><th class="num">${T('Capacity', 'กำลัง')}</th><th class="num">UR</th><th>${T('Result', 'ผล')}</th></tr></thead><tbody>${r.checks.map(x => { const [a, u] = outVal(x.Ed, x.unit), [b] = outVal(x.Rd, x.unit); return `<tr><td>${fmLabel(x.name)}</td><td class="num mono">${x.unit ? f(a, 2) : ''}</td><td class="num mono">${x.unit ? f(b, 2) + ' ' + esc(u) : ''}</td><td class="num mono">${f(x.ur, 3)}</td><td>${x.ur <= 1.0001 ? T('OK', 'ผ่าน') : T('NOT OK', 'ไม่ผ่าน')}</td></tr>`; }).join('')}</tbody></table>`;
     const drawing = S.elem === 'stm3d' ? stmPlan(r) : S.elem === 'gantry' ? gantrySketch(r) : S.elem === 'pilecap' ? capSketch(r) : sectionSketch(r);
     let charts = S.elem === 'column' ? columnChartsInner(r) : S.elem === 'gantry' ? gantryDetails(r) : '';
-    if (S.elem === 'stm3d') { const src = snapshotSTM(r); charts = (src ? `<div class="rp-3d one"><figure><img src="${src}" alt="${T('3D strut-and-tie model', 'แบบจำลองโครงถัก 3 มิติ')}"><figcaption>${T('3D strut-and-tie model — colour = utilisation, thickness ∝ force', 'แบบจำลองโครงถัก 3 มิติ — สี = อัตราส่วนการใช้งาน ความหนา ∝ แรง')}</figcaption></figure></div>` : '') + stmTable(r); }
+    if (S.elem === 'stm3d') { const src = snapshotSTM(r); charts = (src ? `<div class="rp-3d one"><figure><img src="${src}" alt="${T('3D strut-and-tie model', 'แบบจำลองโครงถัก 3 มิติ')}"><figcaption>${T('3D strut-and-tie model — bottle-shaped struts at the checked widths, colour = utilisation', 'แบบจำลองโครงถัก 3 มิติ — ค้ำรูปขวดตามความกว้างที่ตรวจสอบ สี = อัตราส่วนการใช้งาน')}</figcaption></figure></div>` : '') + stmTable(r); }
     if (S.elem === 'gantry') {
       const wc = worstCase(r), cs = wc === 'none' ? null : wc, cn = cs ? r.fat.caseObjs.find(c => c.id === cs).nm : '';
       const shots = [['overall', null, T('Overall', 'ภาพรวม')], ['base', cs, T('Base connection', 'รอยต่อฐาน') + (cs ? ' — ' + cn : '')], ['arm', cs, T('Arm connection', 'รอยต่อคาน') + (cs ? ' — ' + cn : '')]];
@@ -1433,6 +1434,7 @@
       schedule();
     }
     else if (t.dataset.row) { inp()[t.dataset.row][+t.dataset.i][t.dataset.f] = +t.value; schedule(); }
+    else if (t.id === 'v3sshape') { S.v3s.shape = t.value; if (S.res && S.elem === 'stm3d') { $('#charts').querySelector('.card.v3').outerHTML = stmCard(S.res); mountSTM(S.res); } }
     else if (t.id === 'v3smode') { S.v3s.mode = t.value; if (S.res && S.elem === 'stm3d') mountSTM(S.res); }
     else if (t.id === 'v3case' || t.id === 'v3mode') { if (t.id === 'v3case') S.v3.cs = t.value; else S.v3.mode = t.value; const md = $('#v3mode'); if (md) md.disabled = S.v3.cs === 'none'; if (S.res) mount3D(S.res); }
     else if (t.dataset.meta) { S.meta[t.dataset.meta] = t.value; const o = $('#rv-' + t.dataset.meta); if (o) o.textContent = t.value; }

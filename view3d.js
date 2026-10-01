@@ -32,6 +32,18 @@
       const d = norm(sub(b, a)), ref = Math.abs(d[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0], e1 = norm(cross(d, ref)), e2 = cross(d, e1), v = sub(b, a);
       this.tube(circle(r, n || 10), [0, 1], (u, w, t) => [0, 1, 2].map(k => a[k] + t * v[k] + u * e1[k] + w * e2[k]), col, s ? () => s : null, true);
     }
+    // bottle-shaped strut: circular section, radius r0 at a, r1 at b, bulging by rb at mid-length
+    bottle(a, b, r0, r1, rb, col, s, nst, nseg) {
+      nst = nst || 14; nseg = nseg || 18;
+      const d = norm(sub(b, a)), ref = Math.abs(d[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0], e1 = norm(cross(d, ref)), e2 = cross(d, e1), v = sub(b, a);
+      const rows = [];
+      for (let i = 0; i <= nst; i++) {
+        const t = i / nst, r = r0 * (1 - t) + r1 * t + rb * Math.sin(PI * t);
+        rows.push(Array.from({ length: nseg }, (_, j) => { const an = 2 * PI * j / nseg, c = r * Math.cos(an), w = r * Math.sin(an); return [0, 1, 2].map(k => a[k] + t * v[k] + c * e1[k] + w * e2[k]); }));
+      }
+      for (let i = 0; i < nst; i++) for (let j = 0; j < nseg; j++) { const k = (j + 1) % nseg; this.quad(rows[i][j], rows[i][k], rows[i + 1][k], rows[i + 1][j], col, s, s, s, s); }
+      [0, nst].forEach(i => { for (let j = 0; j < nseg; j++) this.tri(i ? b : a, rows[i][j], rows[i][(j + 1) % nseg], col, s, s, s); });
+    }
     // octahedron marker
     blob(c, r, col, s) {
       const P = [[r, 0, 0], [-r, 0, 0], [0, r, 0], [0, -r, 0], [0, 0, r], [0, 0, -r]].map(q => [c[0] + q[0], c[1] + q[1], c[2] + q[2]]);
@@ -221,7 +233,7 @@
         list.push({ q, z: (z0 + z1) / 2 - 0.02, line: true, w: l.w, c: 'rgb(' + l.col.join(',') + ')' });
       }
       list.sort((a, b) => b.z - a.z);
-      this.last = list.filter(t => !t.line && !t.a);
+      this.last = list.filter(t => !t.line && !(t.t.a != null && t.t.a < 0.5));
       ctx.lineJoin = 'round';
       for (const t of list) {
         if (t.line) { ctx.lineWidth = t.w; ctx.strokeStyle = t.c; ctx.beginPath(); ctx.moveTo(t.q[0][0], t.q[0][1]); ctx.lineTo(t.q[1][0], t.q[1][1]); ctx.stroke(); continue; }
@@ -398,15 +410,26 @@
     const Nmax = Math.max(...r.members.map(e => Math.abs(e.N)), 1), rmin = 0.012, rmax = Math.max(0.035, mm(g.Dp) * 0.12);
     const nodeP = i => [mm(r.nodes[i].x), mm(r.nodes[i].y), mm(r.nodes[i].z)];
     let maxU = null;
+    const bottle = opts.shape !== 'line', Ast = (g.tN || 1) * Math.PI * Math.pow(g.tD || 20, 2) / 4;
     r.members.forEach((e, k) => {
       m.tag = 'm' + k;
       const s = { mpa: Math.abs(e.N), ur: e.ur, m: k }, rr = rmin + (rmax - rmin) * Math.sqrt(Math.abs(e.N) / Nmax);
       const col = e.type === 'tie' ? (e.N > 0 ? theme.tie : theme.idle) : e.type === 'top' ? theme.top : theme.strut;
-      m.rod(nodeP(e.a), nodeP(e.b), rr, col, s, 12);
+      if (bottle && e.type === 'strut' && e.Atop && e.Abot) {
+        // end radii from the strut sections used in the check; bottle bulge ≈ L/6 (1:2 spread), at most the larger end radius
+        const r0 = mm(Math.sqrt(e.Atop / Math.PI)), r1 = mm(Math.sqrt(e.Abot / Math.PI)), rb = Math.min(mm(e.L) / 12, 0.5 * Math.max(r0, r1));
+        m.alpha = 0.78; m.bottle(nodeP(e.a), nodeP(e.b), r0, r1, rb, col, s); m.alpha = null;
+      } else if (bottle && e.type === 'top' && e.Ac > 0) {
+        // prismatic strut in the compression zone: depth h_t, width min(c_x, c_y)/2
+        const A0 = nodeP(e.a), B0 = nodeP(e.b), dx = B0[0] - A0[0], dy = B0[1] - A0[1], l = Math.hypot(dx, dy) || 1;
+        const w = mm(Math.min(g.cx, g.cy) / 2), hh = mm(e.Ac) / 1000 / w;
+        m.box([(A0[0] + B0[0]) / 2, (A0[1] + B0[1]) / 2, A0[2]], [l / 2, w / 2, hh / 2], [dx / l, dy / l, 0], [-dy / l, dx / l, 0], [0, 0, 1], col, () => s);
+      } else if (bottle && e.type === 'tie') m.rod(nodeP(e.a), nodeP(e.b), Math.max(0.012, mm(Math.sqrt(4 * Ast / Math.PI)) / 2 * 1.6), col, s, 12);
+      else m.rod(nodeP(e.a), nodeP(e.b), rr, col, s, 12);
       if (!maxU || e.ur > maxU.e.ur) maxU = { e, k, p: nodeP(e.a).map((v, i) => (v + nodeP(e.b)[i]) / 2) };
     });
     m.tag = 'node';
-    r.nodes.forEach(q => m.blob([mm(q.x), mm(q.y), mm(q.z)], rmax * 1.25, theme.node || [40, 48, 66]));
+    r.nodes.forEach(q => m.blob([mm(q.x), mm(q.y), mm(q.z)], bottle ? 0.03 : rmax * 1.25, theme.node || [40, 48, 66]));
     return { mesh: m, maxU };
   }
   function stmPreset(r) {
