@@ -461,7 +461,7 @@
     return `<header class="nav"><div class="nav-in">
       <button class="brand" data-act="nav" data-v="${S.role === 'guest' ? 'landing' : 'home'}" aria-label="StructCap home">${logoMark(32)}<span class="wordmark">Struct<b>Cap</b></span></button>
       <nav class="nav-links">
-        ${S.role !== 'guest' ? `<button data-act="nav" data-v="home">${T('RC design', 'ออกแบบ RC')}</button>` : `<button data-act="nav" data-v="landing">${T('Home', 'หน้าแรก')}</button><button data-act="scroll" data-t="plans">${T('Plans', 'แพ็กเกจ')}</button>`}
+        ${S.role !== 'guest' ? `<button data-act="nav" data-v="home">${T('RC design', 'ออกแบบ RC')}</button><button data-act="nav" data-v="analysis">${T('Analysis', 'วิเคราะห์')}</button>` :`<button data-act="nav" data-v="landing">${T('Home', 'หน้าแรก')}</button><button data-act="scroll" data-t="plans">${T('Plans', 'แพ็กเกจ')}</button>`}
         ${S.role === 'admin' ? `<button data-act="nav" data-v="admin">${T('Admin', 'จัดการระบบ')}</button>` : ''}
       </nav>
       <div class="nav-right">${langToggle()}${who}
@@ -754,7 +754,7 @@
             ${elemIcon(k)}<span class="pick-t">${T(e.en, e.th)} <span class="pill ${e.free || S.promo ? 'free' : 'pro'}">${e.free ? 'Free' : S.promo ? T('Pro · free now', 'Pro · ฟรี') : 'Pro'}</span></span><span class="pick-s">${T(e.den, e.dth)}</span>
             <span class="pick-go">${locked ? T('Sign in with Pro to unlock', 'เข้าสู่ระบบ Pro เพื่อใช้งาน') : T('Open designer →', 'เปิดหน้าออกแบบ →')}</span></button>`;
       }).join('')}</div></div></div>` : ''}
-      <section class="analysis-strip">${analysisIcon()}<div><p class="eyebrow">Structural Analysis</p><h2>${T('Analysis tools', 'เครื่องมือวิเคราะห์โครงสร้าง')}</h2><p class="muted">${T('Continuous beams, 2D frames and load combinations.', 'คานต่อเนื่อง โครงข้อแข็ง 2 มิติ และการรวมแรง')}</p></div><span class="pill soon">${T('Phase 2 · in development', 'ระยะที่ 2 · กำลังพัฒนา')}</span></section>
+      <button class="analysis-strip go" data-act="nav" data-v="analysis">${analysisIcon()}<div><p class="eyebrow">Structural Analysis</p><h2>${T('Frame analysis', 'วิเคราะห์โครงสร้าง')}</h2><p class="muted">${T('Continuous beams, 2D frames and trusses — load cases, AS / EC / ASCE combinations, envelopes, P-Delta, modal and buckling analysis. Send member forces straight to RC design.', 'คานต่อเนื่อง โครงข้อแข็งและโครงถัก 2 มิติ — กรณีแรง การรวมแรงตาม AS / EC / ASCE ค่าสูงสุด/ต่ำสุด P-Delta โหมด และการโก่งเดาะ ส่งแรงในชิ้นส่วนไปออกแบบ RC ได้ทันที')}</p></div><span class="pill free">${T('Open analysis →', 'เปิดหน้าวิเคราะห์ →')}</span></button>
     </main>`;
   }
   // Line-sketch icons in drafting style: ink outlines, accent for loads / struts
@@ -1594,7 +1594,7 @@
         pdf.text('Page ' + (i + 1) + ' of ' + n, 210 - mm.r, 297 - mm.b + 8.5, { align: 'right' });
       }
       const blob = pdf.output('blob');
-      const name = (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
+      const name = S.view === 'analysis' ? (S.meta.ref || 'analysis').replace(/[^\w\-]+/g, '_') + '_frame-analysis_' + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
       if (dl) await dl.save({ filename: name, data: blob }); else pdf.save(name);
       toast(T('PDF saved', 'บันทึก PDF แล้ว'), 'ok');
     } catch (e) {
@@ -1796,13 +1796,44 @@
     else if (S.view === 'home') root.innerHTML = viewHome() + siteFoot();
     else if (S.view === 'design') { root.innerHTML = viewDesign() + siteFoot(); compute(); }
     else if (S.view === 'admin') { root.innerHTML = viewAdmin() + siteFoot(); if (S.role === 'admin') { adminSubscribe(); adminBody(); } }
+    else if (S.view === 'analysis') { const an = anUI(); if (!an) { S.view = 'home'; root.innerHTML = viewHome() + siteFoot(); return; } root.innerHTML = navBar() + an.view() + siteFoot(); an.mount(); }
+  }
+
+  // ------------------------------------------------------------------ ANALYSIS (frame.js engine + analysis.js page)
+  let AN = null;
+  function anUI() {
+    if (AN) return AN;
+    if (!window.SC_ANALYSIS_UI || !window.FRAME) return null;
+    AN = window.SC_ANALYSIS_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, toDesign });
+    return AN;
+  }
+  async function saveFile(name, blob) {
+    try {
+      const dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null;
+      if (dl) await dl.save({ filename: name, data: blob });
+      else { const u = URL.createObjectURL(blob), a = document.createElement('a'); a.href = u; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 1500); }
+      toast(T('Saved ', 'บันทึกแล้ว ') + name, 'ok');
+    } catch (e) { toast(e && e.code === 'declined' ? T('Download cancelled', 'ยกเลิกการดาวน์โหลด') : T('Could not save the file.', 'บันทึกไฟล์ไม่สำเร็จ'), e && e.code === 'declined' ? '' : 'bad'); }
+  }
+  // member forces from the analysis → prefilled RC beam / column design (kN, kNm; Thai code in t, t·m)
+  function toDesign(elem, a) {
+    if (!ELEMS[elem].free && !isPro()) { toast(T('Column design is part of Pro.', 'การออกแบบเสาสำหรับสมาชิก Pro'), 'bad'); return; }
+    const code = S.codeSel || (ELEMS[elem].codes ? ELEMS[elem].codes[0] : S.code) || 'AS', k = elem + ':' + code;
+    const u = code === 'TH' ? 1 / 9.807 : 1, r = v => Math.round(v * u * 10) / 10;
+    if (!S.inputs[k]) S.inputs[k] = JSON.parse(JSON.stringify(DEF[elem][code]));
+    const v = S.inputs[k];
+    if (elem === 'beam') Object.assign(v, { Mx: r(a.M), Vy: r(a.V), My: 0, Vx: 0, T: 0 });
+    else Object.assign(v, { N: r(a.N), Mx: r(Math.abs(a.M)), My: 0, Vy: r(a.V), Vx: 0 });
+    go('design', { elem, code });
+    toast(T('Forces of member ' + a.id + ' copied — check the section and serviceability inputs.', 'คัดลอกแรงของชิ้นส่วน ' + a.id + ' แล้ว — ตรวจสอบหน้าตัดและค่าสภาวะใช้งาน'), 'ok');
   }
 
   document.addEventListener('click', ev => {
     const b = ev.target.closest('[data-act]'); if (!b) return;
     const a = b.dataset.act;
+    if (a.startsWith('an-') && S.view === 'analysis' && AN) { AN.onClick(a, b); return; }
     if (a === 'lang') { if (A.edit) syncModalDraft(); const wasReport = S.reportOpen; setLang(b.dataset.l); if (wasReport && S.view === 'design') { S.reportOpen = true; renderReport(); } }
-    else if (a === 'nav') { const v = b.dataset.v; if ((v === 'home' || v === 'codes') && S.role === 'guest') { S.role = 'free'; saveSession(); } go(v); }
+    else if (a === 'nav') { const v = b.dataset.v; if ((v === 'home' || v === 'codes' || v === 'analysis') && S.role === 'guest') { S.role = 'free'; saveSession(); } go(v); }
     else if (a === 'scroll') { const t = document.getElementById(b.dataset.t); if (t) t.scrollIntoView({ behavior: 'smooth' }); }
     else if (a === 'free') { if (S.role === 'guest') { S.role = 'free'; saveSession(); } go('home'); }
     else if (a === 'logout') logout();
@@ -1854,6 +1885,7 @@
   });
   document.addEventListener('input', ev => {
     const t = ev.target;
+    if (S.view === 'analysis' && AN && t.closest('.an') && AN.onInput(t)) return;
     if (t.dataset.k && S.view === 'design') {
       const v = inp(), fd = SCHEMA[S.elem].find(x => x.k === t.dataset.k);
       v[t.dataset.k] = t.value;
