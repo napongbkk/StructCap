@@ -23,6 +23,7 @@
       const Iz = (bf * d * d * d - (bf - tw) * hw * hw * hw) / 12;
       return { A: 2 * bf * tf + hw * tw, Iz, Iy: (2 * tf * bf * bf * bf + hw * tw * tw * tw) / 12, J: (2 * bf * tf * tf * tf + (d - tf) * tw * tw * tw) / 3, I: Iz, d, w: bf };
     }
+    if (t === 'std' && G.STEELLIB) { const p = G.STEELLIB.find(s.series, s.size); if (p) return { A: p.A, Iz: p.Iz, Iy: p.Iy, J: p.J, I: p.Iz, d: p.d, w: p.bf }; }
     if (t === 'tube' && G.GANTRY) { const p = G.GANTRY.section(s.shape, s.size, 'C350L0'); return { A: p.A, Iz: p.Ix, Iy: p.Iy, J: p.J, I: p.Ix, d: p.D, w: p.B }; }
     const Iz = +s.Iz || +s.I || 1, Iy = +s.Iy || Iz;
     return { A: +s.A || 1, Iz, Iy, J: +s.J || (Iz + Iy) / 50, I: Iz, d: +s.dd || 300, w: +s.ww || +s.dd || 300 };
@@ -429,8 +430,9 @@
           const c = vp[np] / l; return vp.map((v, i) => v - c * xs[i]);
         };
         const qs = xs.map(x => loadsUpTo(loads, x));
-        const vpart = part(xs.map((x, i) => fl[5] - x * fl[1] + qs[i].Mz), rec.E * rec.Iz);
-        const wpart = part(xs.map((x, i) => -fl[4] - x * fl[2] + qs[i].My), rec.E * rec.Iy);
+        // truss members: no local sag (their transverse loads only go to the joints)
+        const vpart = rec.truss ? xs.map(() => 0) : part(xs.map((x, i) => fl[5] - x * fl[1] + qs[i].Mz), rec.E * rec.Iz);
+        const wpart = rec.truss ? xs.map(() => 0) : part(xs.map((x, i) => -fl[4] - x * fl[2] + qs[i].My), rec.E * rec.Iy);
         xs.forEach((x, i) => {
           if (k > 0 && i === 0) return;
           const q = qs[i], xi = x / l, h = H(xi, l);
@@ -438,8 +440,8 @@
           out.N.push(-f[0] - q.Q[0]); out.Vy.push(f[1] + q.Q[1]); out.Vz.push(f[2] + q.Q[2]); out.T.push(-f[3] - q.Tq);
           out.Mz.push(-f[5] + x * f[1] + q.Mz); out.My.push(f[4] + x * f[2] + q.My);
           const u = ul[0] * (1 - xi) + ul[6] * xi;
-          const v = ul[1] * h[0] + ul[5] * h[1] + ul[7] * h[2] + ul[11] * h[3] + vpart[i];
-          const w = ul[2] * h[0] - ul[4] * h[1] + ul[8] * h[2] - ul[10] * h[3] + wpart[i];
+          const v = rec.truss ? ul[1] * (1 - xi) + ul[7] * xi : ul[1] * h[0] + ul[5] * h[1] + ul[7] * h[2] + ul[11] * h[3] + vpart[i];
+          const w = rec.truss ? ul[2] * (1 - xi) + ul[8] * xi : ul[2] * h[0] - ul[4] * h[1] + ul[8] * h[2] - ul[10] * h[3] + wpart[i];
           out.dx.push(u * ex[0] + v * ey[0] + w * ez[0]); out.dy.push(u * ex[1] + v * ey[1] + w * ez[1]); out.dz.push(u * ex[2] + v * ey[2] + w * ez[2]);
           out.dv.push(v); out.dw.push(w);
         });

@@ -1819,7 +1819,7 @@
   // member forces from the analysis → prefilled RC beam / column design (kN, kNm; Thai code in t, t·m)
   function toDesign(elem, a) {
     if (!ELEMS[elem].free && !isPro()) { toast(T('Column design is part of Pro.', 'การออกแบบเสาสำหรับสมาชิก Pro'), 'bad'); return; }
-    const code = S.codeSel || (ELEMS[elem].codes ? ELEMS[elem].codes[0] : S.code) || 'AS', k = elem + ':' + code;
+    const code = a.code || S.codeSel || (ELEMS[elem].codes ? ELEMS[elem].codes[0] : S.code) || 'AS', k = elem + ':' + code;
     const u = code === 'TH' ? 1 / 9.807 : 1, r = v => Math.round(v * u * 10) / 10;
     if (!S.inputs[k]) S.inputs[k] = JSON.parse(JSON.stringify(DEF[elem][code]));
     const v = S.inputs[k];

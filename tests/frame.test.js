@@ -103,5 +103,10 @@ m.nodes = n2; m.members = m2; m.loads = m2.filter(q => q.sec !== 'C').map(q => (
 let t = Date.now(); r = run(m); console.log('15 linear,', m2.length, 'members:', Date.now() - t, 'ms');
 for (const o of [{ pdelta: true }, { modes: 6 }, { buckling: true }]) { t = Date.now(); run(m, Object.assign({ nseg: 2 }, o)); console.log('15', JSON.stringify(o), Date.now() - t, 'ms'); }
 t = Date.now(); r = run(m, { pdelta: true, nseg: 2, modes: 6, buckling: true }); console.log('15 P-Delta + modal + buckling:', Date.now() - t, 'ms; T1 =', r.modal.modes[0].T.toFixed(3), 's; λcr =', r.buckling.C2.modes[0].lam.toFixed(2));
+// 16 standard steel sections (properties computed from dimensions) against published tables
+require(require('path').join(__dirname, '..', 'steelsec.js')); const SL = globalThis.STEELLIB;
+[['UB', '310UB40.4', 5210, 86.4e6, 7.65e6, 157e3], ['IPE', 'IPE 300', 5381, 83.56e6, 6.038e6, 201.2e3], ['HEB', 'HEB 300', 14910, 251.7e6, 85.63e6, 1850e3], ['H', 'H 300×150', 4678, 72.1e6, 5.08e6, null]].forEach(([sr, nm, A0, Iz0, Iy0, J0]) => {
+  const p = SL.find(sr, nm); P('16 ' + nm + ' A', p.A, A0, 0.01); P('16 ' + nm + ' Iz', p.Iz, Iz0, 0.01); P('16 ' + nm + ' Iy', p.Iy, Iy0, 0.01); if (J0) P('16 ' + nm + ' J', p.J, J0, 0.03);
+});
 console.log(bad ? bad + ' check(s) FAILED' : 'all checks passed');
 process.exitCode = bad ? 1 : 0;

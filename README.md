@@ -12,6 +12,9 @@ full calculation report with PDF export.
 
 ### Analysis module (Free up to 80 members; Pro: larger models, P-Delta, modal, buckling, report)
 
+- Model tree workflow: 0 design standard → 1 materials → 2 sections → 3 nodes → 4 elements → 5 supports & end releases → 6 load cases → 7 loads → 8 load combinations → 9 run analysis → 10 results
+- Concrete grades with E per AS 3600 / EN 1992-1-1 / EIT (ACI); steel grades per AS/NZS 3679.1 & 1163, EN 10025, TIS 1227 / ASTM; standard sections UB, UC, IPE, HEA, HEB, JIS / TIS H, CHS, SHS, RHS; rectangles and circles
+- Load combination builder (pick load cases, give factors) and standard sets: AS/NZS 1170.0, EN 1990, EIT 1008 / ACI 318, ASCE 7
 - 3D frame and truss members (or 2D frames in the X–Z plane), member end hinges, β rotation, fixed / pinned / roller / custom supports and springs
 - Edit in 3D: click to select, Shift-click / Ctrl-drag box selection, inspector panel, draw members node to node, place nodes on a snapped grid in plan or elevation, replicate / extrude, split, undo / redo
 - Rectangle, I, circle, CHS / SHS / RHS and user sections; steel, concrete and timber materials
@@ -31,6 +34,7 @@ full calculation report with PDF export.
 | `stm3d.js` | 3D strut-and-tie check of pile caps to AS 3600 Section 7 (space truss, struts, ties, nodes, anchorage) |
 | `wall.js` | Limestone block gravity wall to AS 4678: trial-wedge earth pressure, overturning, sliding, shear between blocks, bearing |
 | `gantry.js` | Steel sign gantry engine: AS/NZS 1163 sections, AS 4100 members and connections, AS/NZS 1170.2 wind, AS 4100 §11 fatigue |
+| `steelsec.js` | Design standards for analysis: concrete and steel grades (AS, Eurocode, Thai EIT / TIS), standard I / H section tables (UB, UC, IPE, HEA, HEB, JIS / TIS H) with computed properties |
 | `frame.js` | 3D frame and truss analysis engine (6 DOF per node, local axes with β rotation): stiffness method with exact member-load fixed-end actions, end releases, springs, skyline solver with RCM ordering, load combinations and envelopes, P-Delta, modal (consistent mass) and elastic buckling; optional 2D mode in the X–Z plane |
 | `analysis.js` | Analysis page: interactive 3D view (orbit, plan, elevations, levels), click to select and edit nodes / members, draw members, box select, replicate / extrude, split, undo / redo, templates, tables, AS / EC / ASCE combination generator, 3D diagrams, results, report, send member forces to RC design |
 | `tests/frame.test.js` | Engine checks against closed-form results (`node tests/frame.test.js`) |
