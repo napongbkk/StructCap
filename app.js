@@ -138,7 +138,7 @@
     F('eb', 'wind', 'Wind eccentricity on sign e/B_s', 'ความเยื้องศูนย์ของลมบนป้าย e/B_s', 'none'),
     F('ctype', 'conn', 'Arm connection', 'รูปแบบรอยต่อคาน', 'none', { type: 'sel', opts: [['weld', 'Arm welded to column', 'เชื่อมคานเข้ากับเสา'], ['bolt', 'Stub + bolted end plates', 'ท่อสั้น + แผ่นปลายยึดสลัก']], re: true }),
     F('cweld', 'conn', 'Tube weld', 'รอยเชื่อมท่อ', 'none', { type: 'sel', opts: WELD_OPTS, re: true }), F('sa', 'conn', 'Fillet weld size', 'ขนาดรอยเชื่อมพอก', 'len', { when: v => v.cweld === 'fillet' }),
-    F('Lst', 'conn', 'Stub length from column face', 'ความยาวท่อสั้นจากผิวเสา', 'len', { when: isBolt }), F('tep', 'conn', 'End plate thickness', 'ความหนาแผ่นปลาย', 'len', { when: isBolt }),
+    F('Lst', 'conn', 'Stub length from column face', 'ความยาวท่อสั้นจากผิวเสา', 'len', { when: isBolt }), F('tep', 'conn', 'End plate thickness', 'ความหนาแผ่นปลาย', 'len', { when: isBolt }), F('epshape', 'conn', 'End plate shape', 'รูปทรงแผ่นปลาย', 'none', { type: 'sel', opts: [['square', 'Square', 'สี่เหลี่ยมจัตุรัส'], ['circle', 'Circular', 'วงกลม']], when: isBolt }),
     F('nf', 'conn', 'Flange bolts (number)', 'จำนวนสลักหน้าแปลน', 'none', { type: 'int', when: isBolt }), F('fb', 'conn', 'Flange bolt size', 'ขนาดสลักหน้าแปลน', 'none', { type: 'sel', opts: BOLT_OPTS, when: isBolt }),
     F('fg', 'conn', 'Flange bolt grade', 'เกรดสลักหน้าแปลน', 'none', { type: 'sel', opts: BGR_OPTS, when: isBolt }), F('af', 'conn', 'Bolt offset from tube face', 'ระยะสลักจากผิวท่อ', 'len', { when: isBolt }),
     F('pshape', 'base', 'Base plate shape', 'รูปทรงแผ่นฐาน', 'none', { type: 'sel', opts: [['square', 'Square', 'สี่เหลี่ยมจัตุรัส'], ['circle', 'Circular', 'วงกลม']] }),
@@ -192,7 +192,7 @@
     H: 7.0, L: 6.5, ke: 2.2, Bs: 3.0, Hs: 2.0, xs: 4.5, ez: 0, ey: 350, gs: 0.35, Gadd: 1.0,
     colShape: 'CHS', colSize: '457x12.7', colGrade: 'C350L0', armShape: 'CHS', armSize: '323.9x9.5', armGrade: 'C350L0',
     mode: 'V', Vu: 45, Vs: 30, qu: 1.2, qs: 0.54, Cfig: 1.4, Cdc: 1.2, Cda: 1.2, Cdyn: 1.0, eb: 0,
-    ctype: 'weld', cweld: 'cjp', sa: 10, Lst: 400, tep: 32, nf: 8, fb: 'M24', fg: '8.8', af: 45,
+    ctype: 'weld', cweld: 'cjp', sa: 10, Lst: 400, tep: 32, epshape: 'square', nf: 8, fb: 'M24', fg: '8.8', af: 45,
     pshape: 'square', nb: 12, db: 'M36', bg: '8.8', ab: 75, ep: 60, tp: 40, fyp: 340, bweld: 'cjp', sb: 12, stiff: 'yes', ts: 16, hs: 300, sst: 8,
     fon: 'yes', IF: 1.0, phiF: 0.7, PNW: 250, Vm: 5.0, tg: 'yes', PTG: 900, xTG: 4.5, LTG: 3700, dsh: 300, ga: 'no', PG: 1000,
     cB: 'auto', cS: 'auto', cR: 'auto', cA: 'auto', limH: 100, limV: 150 } };
@@ -600,7 +600,7 @@
         geo: { H: val('H'), L: val('L'), xs: val('xs'), Bs: val('Bs'), Hs: val('Hs'), ez: +v.ez || 0, ey: +v.ey || 0, eb: +v.eb || 0, gs: +v.gs, Gadd: +v.Gadd || 0, ke: +v.ke || 2.2 },
         col: { shape: v.colShape, size: v.colSize, grade: v.colGrade }, arm: { shape: v.armShape, size: v.armSize, grade: v.armGrade },
         wind: { mode: v.mode, Vu: +v.Vu, Vs: +v.Vs, qu: +v.qu, qs: +v.qs, Cfig: +v.Cfig, Cdc: +v.Cdc, Cda: +v.Cda, Cdyn: +v.Cdyn || 1 },
-        conn: { type: v.ctype, weld: v.cweld, sa: +v.sa, Lst: +v.Lst, tep: +v.tep, nf: v.nf | 0, af: +v.af, fb: v.fb, fg: v.fg },
+        conn: { pshape: v.epshape === 'circle' ? 'circle' : 'square', type: v.ctype, weld: v.cweld, sa: +v.sa, Lst: +v.Lst, tep: +v.tep, nf: v.nf | 0, af: +v.af, fb: v.fb, fg: v.fg },
         base: { shape: v.pshape === 'circle' ? 'circle' : 'square', nb: v.nb | 0, db: v.db, bg: v.bg, ab: +v.ab, ep: +v.ep, tp: +v.tp, fyp: +v.fyp, stiff: on('stiff'), ts: +v.ts, hs: +v.hs, sst: +v.sst, weld: v.bweld, sb: +v.sb },
         fat: { on: on('fon'), IF: +v.IF, phi: +v.phiF, PNW: +v.PNW, Vm: +v.Vm, tg: on('tg'), PTG: +v.PTG, xTG: val('xTG'), LTG: +v.LTG, dsh: +v.dsh, ga: on('ga'), PG: +v.PG, cB: v.cB, cS: v.cS, cR: v.cR, cA: v.cA },
         sls: { limH: +v.limH || 100, limV: +v.limV || 150 }
@@ -946,7 +946,18 @@
         ${dets.map(d => { const rows = r.fat.rows.filter(q => q.det === d), u = Math.max(...rows.map(q => q.ur)); return `<tr class="${urClass(u)}"><td>${esc(d)}</td><td class="num mono">${rows[0].cat}</td><td class="num mono">${f(rows[0].cap, 1)}</td>${cases.map(cs => { const q = rows.find(z => z.cs === cs); return `<td class="num mono">${q ? f(q.ds, 1) : '—'}</td>`; }).join('')}<td><div class="urb"><div class="ur"><i style="width:${Math.min(100, u * 100)}%"></i></div><b class="mono">${f(u, 2)}</b></div></td></tr>`; }).join('')}
       </tbody></table></div><p class="hint">${T('Stress ranges in MPa. Infinite-life check: Δσ ≤ φ_f·f₃ with f₃ = 0.737·FAT (AS 4100 §11.6).', 'ช่วงหน่วยแรงหน่วย MPa ตรวจอายุไม่จำกัด: Δσ ≤ φ_f·f₃, f₃ = 0.737·FAT (AS 4100 §11.6)')}</p>`;
     }
-    return `<div class="gx"><figure class="det"><figcaption>${T('Base plate plan', 'ผังแผ่นฐาน')}</figcaption>${s}</figure><figure class="det"><figcaption>${T('Base plate elevation', 'รูปตัดแผ่นฐาน')}</figcaption>${el}</figure><figure class="det"><figcaption>${cn.type === 'bolt' ? T('Stub and bolted end plates', 'ท่อสั้นและแผ่นปลายยึดสลัก') : T('Arm welded to column', 'คานเชื่อมเข้ากับเสา')}</figcaption>${cst}</figure></div>${ft}`;
+    let epf = '';
+    const fp = r.flange && r.flange.plate;
+    if (cn.type === 'bolt' && fp) {
+      const We2 = 230, kk = (We2 - 40) / fp.size, c2 = We2 / 2;
+      epf = `<svg viewBox="0 0 ${We2} ${We2}" class="det-svg" role="img" aria-label="${T('End plate face', 'หน้าแผ่นปลาย')}">`;
+      epf += fp.shape === 'circle' ? `<circle cx="${c2}" cy="${c2}" r="${fp.size / 2 * kk}" class="g-plate2"/>` : `<rect x="${c2 - fp.size / 2 * kk}" y="${c2 - fp.size / 2 * kk}" width="${fp.size * kk}" height="${fp.size * kk}" class="g-plate2"/>`;
+      epf += arm.shape === 'CHS' ? `<circle cx="${c2}" cy="${c2}" r="${arm.D / 2 * kk}" class="g-tube"/>` : `<rect x="${c2 - arm.B / 2 * kk}" y="${c2 - arm.D / 2 * kk}" width="${arm.B * kk}" height="${arm.D * kk}" rx="${arm.ro * kk}" class="g-tube"/>`;
+      r.flange.pts.forEach(q => { epf += `<circle cx="${c2 + q.u * kk}" cy="${c2 - q.v * kk}" r="${Math.max(3, (+cn.fb.slice(1)) / 2 * kk)}" class="g-bolt"/>`; });
+      epf += `<text x="${c2}" y="${We2 - 6}" text-anchor="middle" class="s-lbl">${fp.shape === 'circle' ? 'Ø' + f(fp.size, 0) : f(fp.size, 0) + ' × ' + f(fp.size, 0)} × ${cn.tep} · ${cn.nf}×${cn.fb} ${cn.fg}</text></svg>`;
+      epf = `<figure class="det"><figcaption>${T('End plate (stub / arm)', 'แผ่นปลาย (ท่อสั้น / คาน)')}</figcaption>${epf}</figure>`;
+    }
+    return `<div class="gx"><figure class="det"><figcaption>${T('Base plate plan', 'ผังแผ่นฐาน')}</figcaption>${s}</figure><figure class="det"><figcaption>${T('Base plate elevation', 'รูปตัดแผ่นฐาน')}</figcaption>${el}</figure><figure class="det"><figcaption>${cn.type === 'bolt' ? T('Stub and bolted end plates', 'ท่อสั้นและแผ่นปลายยึดสลัก') : T('Arm welded to column', 'คานเชื่อมเข้ากับเสา')}</figcaption>${cst}</figure>${epf}</div>${ft}`;
   }
 
   // ------------------------------------------------------------------ 3D view (gantry)

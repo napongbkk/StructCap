@@ -377,6 +377,11 @@
       return out;
     }
     const flBolts = boltPattern(arm, cn.nf, cn.af);
+    // end plates: square or circular, edge distance e_f beyond the outermost bolt
+    const ef = Math.max(45, 1.5 * (+String(cn.fb).slice(1) || 24));
+    const epCirc = cn.pshape === 'circle';
+    const epSize = epCirc ? 2 * (Math.max(...flBolts.pts.map(q => Math.hypot(q.u, q.v))) + ef) : 2 * (Math.max(...flBolts.pts.map(q => Math.max(Math.abs(q.u), Math.abs(q.v)))) + ef);
+    flBolts.plate = { shape: epCirc ? 'circle' : 'square', size: epSize, ef };
     governing(cn.type === 'bolt' ? L('Stub-to-column joint', 'รอยต่อท่อสั้น-เสา') : L('Arm-to-column welded joint', 'รอยต่อเชื่อมคาน-เสา'), 'EN 1993-1-8 §7 / CIDECT DG 1, 3; AS 4100 §9.7', 'jnt',
       (Rx, c) => joint(Rx, c.a.root).map(x => Object.assign(x, { name: L('Connection: ', 'รอยต่อ: ') + x.name })));
     if (cn.type === 'bolt') {
@@ -385,6 +390,7 @@
         const fa = c.a.flange, bd = BOLTS[cn.fb], fuf = BGRADE[cn.fg];
         const bg = boltGroup(flBolts.pts, 0, fa.Mh, fa.Mv, Math.hypot(fa.Vv, fa.Vh), fa.T);
         Rx.eq(L('Flange position from column face', 'ตำแหน่งหน้าแปลนจากผิวเสา'), 'L_stub', cn.Lst, 'mm');
+        Rx.eq(L(epCirc ? 'End plates (circular)' : 'End plates (square)', epCirc ? 'แผ่นปลาย (วงกลม)' : 'แผ่นปลาย (สี่เหลี่ยม)'), (epCirc ? 'Ø' + f(epSize, 0) : f(epSize, 0) + ' × ' + f(epSize, 0)) + ' × ' + cn.tep + ' mm, e_f = ' + f(ef, 0) + ' mm ' + L('beyond the outermost bolt', 'จากสลักตัวนอกสุด'), '', '');
         Rx.eq(L('Actions at flange', 'แรงที่หน้าแปลน'), 'M*_v, M*_h, V*, T*', f(fa.Mv / 1e6, 1) + ', ' + f(fa.Mh / 1e6, 1) + ' kNm, ' + f(Math.hypot(fa.Vv, fa.Vh) / 1e3, 1) + ' kN, ' + f(fa.T / 1e6, 2) + ' kNm', '');
         Rx.eq(L('Bolt group', 'กลุ่มสลักเกลียว'), cn.nf + ' × ' + cn.fb + ' ' + cn.fg + ', ' + (flBolts.shape === 'circle' ? 'PCD = ' + f(2 * flBolts.R, 0) + ' mm' : L('offset ', 'ระยะ ') + cn.af + ' mm'), '', '');
         Rx.eq('N*_tf', 'M*_v·v_i/Σv² + M*_h·u_i/Σu²  (' + L('rigid plate, elastic', 'แผ่นแข็ง ยืดหยุ่น') + ')', bg.Tmax / 1e3, 'kN');

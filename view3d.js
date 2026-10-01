@@ -341,9 +341,10 @@
       m.tube(aprof, xs2.filter(v => v <= xf - tp), placeArm, steel, armS, true);
       m.tag = 'arm';
       m.tube(aprof, [xf + tp].concat(xs2.filter(v => v > xf + tp)), placeArm, steel, armS, true);
-      const ext = Math.max(...r.flange.pts.map(q => Math.max(Math.abs(q.u), Math.abs(q.v)))) + 45;
+      const pl0 = r.flange.plate || { shape: 'square', size: 2 * (Math.max(...r.flange.pts.map(q => Math.max(Math.abs(q.u), Math.abs(q.v)))) + 45) }, ext = pl0.size / 2;
       m.tag = 'eplate';
-      [-1, 1].forEach(sg => m.box([xf + sg * tp / 2, 0, H], [tp / 2, mm(ext), mm(ext)], [1, 0, 0], [0, 1, 0], [0, 0, 1], dark));
+      if (pl0.shape === 'circle') [-1, 1].forEach(sg => { const x0 = xf + (sg < 0 ? -tp : 0); m.tube(circle(mm(ext), 40), [x0, x0 + tp], (a, c, t) => [t, a, H + c], dark, null, true); });
+      else [-1, 1].forEach(sg => m.box([xf + sg * tp / 2, 0, H], [tp / 2, mm(ext), mm(ext)], [1, 0, 0], [0, 1, 0], [0, 0, 1], dark));
       const fb = +cn.fb.slice(1) / 1000, Mh0 = cs ? cs.Fs * Math.max(0, g.xsw - (g.x0 + cn.Lst)) + cs.wa * Math.pow(Lr0 - g.x0 - cn.Lst, 2) / 2 : 0, Mv0 = cs ? cs.Fz * Math.max(0, cs.xz - g.x0 - cn.Lst) : 0;
       const FF = FAST(fb), washer = theme.washer || [196, 202, 212];
       r.flange.pts.forEach(q => {
