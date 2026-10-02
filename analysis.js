@@ -575,8 +575,8 @@
         A.boxHow = e.ctrlKey || e.metaKey ? 'add' : e.altKey ? 'sub' : 'new';
       });
       cv.addEventListener('pointermove', e => {
-        const [x, y] = rel(e);
-        if (!pts.size) { A.mouse = [x, y]; const h = pickAt(x, y), same = (h && A.hover && h.k === A.hover.k && h.id === A.hover.id) || (!h && !A.hover); if (!same || (A.tool === 'member' && A.draw)) { A.hover = h; cv.style.cursor = h ? 'pointer' : A.tool === 'select' ? 'grab' : 'crosshair'; redraw(); } return; }
+        const [x, y] = rel(e); drawGuide(x, y);
+        if (!pts.size) { A.mouse = [x, y]; const h = pickAt(x, y), same = (h && A.hover && h.k === A.hover.k && h.id === A.hover.id) || (!h && !A.hover); if (!same || (A.tool === 'member' && A.draw)) { A.hover = h; cv.style.cursor = curFor(); redraw(); } return; }
         pts.set(e.pointerId, [x, y]);
         if (Math.hypot(x - sx, y - sy) > 4) moved = true; if (!moved) return;
         if (mode === 'pinch' && pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pd) zoomAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, d / pd); pd = d; return; }
@@ -597,7 +597,7 @@
         mode = null;
       };
       cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
-      cv.addEventListener('pointerleave', () => { if (!pts.size && A.hover) { A.hover = null; A.mouse = null; redraw(); } });
+      cv.addEventListener('pointerleave', () => { drawGuide(null); if (!pts.size && A.hover) { A.hover = null; A.mouse = null; redraw(); } });
       let wheelT = 0;
       cv.addEventListener('wheel', e => { e.preventDefault(); if (Date.now() - wheelT > 700) camPush(); wheelT = Date.now(); const [x, y] = rel(e); zoomAt(x, y, Math.exp(-e.deltaY * 0.0012)); }, { passive: false });
       cv.addEventListener('contextmenu', e => { e.preventDefault(); if (A.draw && !moved) { A.draw = null; redraw(); } });
@@ -935,7 +935,7 @@
           ['3', T('3D view', 'มุมมอง 3D')], ['P', T('Plan view', 'แปลน')], ['X', T('Elevation X–Z', 'รูปด้าน X–Z')], ['Y', T('Elevation Y–Z', 'รูปด้าน Y–Z')],
           ['F', T('Zoom to fit', 'ซูมให้พอดี')], ['+ / -', T('Zoom in / out', 'ซูมเข้า / ออก')], ['← / → / ↑ / ↓', T('Rotate the 3D view (pan in 2D)', 'หมุนมุมมอง 3D (เลื่อนใน 2D)')],
           ['W', T('Toggle wire / solid sections', 'สลับเส้น / หน้าตัดทรงตัน')], ['L', T('Loads on / off', 'แสดง / ซ่อนแรง')], ['T', T('Labels on / off', 'แสดง / ซ่อนป้ายชื่อ')],
-          ['Ctrl+A', T('Select all', 'เลือกทั้งหมด')], ['I', T('Invert the selection', 'กลับการเลือก')], ['Esc', T('Cancel drawing · clear selection · close window', 'ยกเลิกการวาด · ล้างการเลือก · ปิดหน้าต่าง')],
+          ['Ctrl+A', T('Select all', 'เลือกทั้งหมด')], ['I', T('Invert the selection', 'กลับการเลือก')], ['Esc', T('Cancel all: the whole selection, drawing and temporary tools (press again to close the window)', 'ยกเลิกทั้งหมด: การเลือก การวาด และเครื่องมือชั่วคราว (กดอีกครั้งเพื่อปิดหน้าต่าง)')],
           ['Delete / Backspace', T('Delete the selection', 'ลบรายการที่เลือก')],
           ['Ctrl+Z', T('Undo', 'เลิกทำ')], ['Ctrl+Y / Ctrl+Shift+Z', T('Redo', 'ทำซ้ำ')],
           ['Ctrl+Enter', T('Run the analysis', 'วิเคราะห์โครงสร้าง')]]) +
@@ -1087,6 +1087,7 @@
       if (k === 'std') return hint(T('Choose the design standard first. It sets the concrete and steel grades (step 1), the steel section tables (step 2) and the load combination rules (step 8).', 'เลือกมาตรฐานก่อน มาตรฐานจะกำหนดชั้นคุณภาพคอนกรีตและเหล็ก (ขั้นที่ 1) ตารางหน้าตัดเหล็ก (ขั้นที่ 2) และกฎการรวมน้ำหนัก (ขั้นที่ 8)')) +
         `<div class="an-stds">${STDS.map(q => { const v = stdInfo(q); return `<button class="an-std ${m.std === q ? 'on' : ''}" data-act="an-std" data-k="${q}" aria-pressed="${m.std === q}"><b>${T(v.name[0], v.name[1])}</b><span class="mono">${esc(v.codes)}</span><small>${T('Concrete', 'คอนกรีต')} ${esc(v.conc[0][0])}–${esc(v.conc[v.conc.length - 1][0])} · ${T('steel', 'เหล็ก')} ${v.steel.map(s => esc(s[0])).join(', ')} · ${v.series.join(', ')}</small></button>`; }).join('')}</div>` +
         hint(T('Units: ', 'หน่วย: ') + ulab('F') + ', ' + ulab('L') + ', ' + ulab('M') + ', ' + ulab('T') + T(' (change them at the bottom right of the view; sections in mm, E in MPa). Global axes: X, Y horizontal, Z up.', ' (เปลี่ยนได้ที่มุมขวาล่างของมุมมอง; หน้าตัดเป็น มม., E เป็น MPa) แกนหลัก: X, Y แนวราบ, Z ชี้ขึ้น')) +
+        `<div class="an-quick"><span>${T('Quick start', 'เริ่มต้นด่วน')}</span><button class="btn btn-hot xs" data-act="an-rb" data-c="sample">${T('Load sample building', 'โหลดอาคารตัวอย่าง')}</button>${[['shed', T('Steel shed', 'โรงงานเหล็ก')], ['portal', T('Portal frame', 'โครงข้อแข็ง')], ['beam', T('Continuous beam', 'คานต่อเนื่อง')], ['truss', T('Truss', 'โครงถัก')], ['blank', T('Empty', 'ว่าง')]].map(([k, l]) => `<button class="btn btn-ghost xs" data-act="an-rb" data-c="qt" data-v="${k}">${l}</button>`).join('')}</div>` +
         `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-tplopen">${T('Start from a template…', 'เริ่มจากแม่แบบ…')}</button><button class="btn btn-ghost xs" data-act="an-gen" data-code="${d.combo}">${T('Use this standard’s load combinations', 'ใช้การรวมน้ำหนักตามมาตรฐานนี้')}</button><button class="btn btn-hot xs" data-act="an-step" data-s="mat">${T('Next: materials →', 'ถัดไป: วัสดุ →')}</button></div>`;
       if (k === 'mat') return dndHint('mat') + matTable() +
         `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-win" data-k="mat">+ ${T('Add material…', 'เพิ่มวัสดุ…')}</button></div>` +
@@ -1265,7 +1266,7 @@
           ${ribHTML()}
           <aside class="an-side" id="anSide">${treeHTML()}</aside>
           <section class="an-work">
-            <div class="an-canvas"><canvas id="anCv" tabindex="0" aria-label="${T('3D model view', 'มุมมองแบบจำลอง 3 มิติ')}"></canvas><span class="an-tag" id="anViewTag">${viewTag()}</span>${ax ? `<label class="an-lv an-lvbox">${T('Level', 'ระดับ')} ${ax.toUpperCase()} = ${sel([['all', T('all', 'ทั้งหมด')]].concat(lv.map(v => [v, fu(v, 'L', 2)])), A.cut, 'id="an-cut"')}</label>` : ''}
+            <div class="an-canvas"><canvas id="anGuide" class="an-guide" aria-hidden="true"></canvas><canvas id="anCv" tabindex="0" aria-label="${T('3D model view', 'มุมมองแบบจำลอง 3 มิติ')}"></canvas><span class="an-tag" id="anViewTag">${viewTag()}</span>${ax ? `<label class="an-lv an-lvbox">${T('Level', 'ระดับ')} ${ax.toUpperCase()} = ${sel([['all', T('all', 'ทั้งหมด')]].concat(lv.map(v => [v, fu(v, 'L', 2)])), A.cut, 'id="an-cut"')}</label>` : ''}
               <p class="an-hintbar"><span id="anHint">${hintBar()}</span></p>${unitBar()}</div>
             <div class="an-drawer ${showRes ? 'on' : ''}" id="anDrawer">${drawerHTML()}</div>
           </section>
@@ -1329,6 +1330,7 @@
           if ((e.ctrlKey || e.metaKey) && !typing && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); undo(true); return; }
           if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); doRun(); return; }
           if (e.key === 'F1') { e.preventDefault(); openWin('help'); return; }
+          if (e.key === 'Escape') { if (typing && tg.blur) tg.blur(); escAll(); return; }
           if (typing) return;
           if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) { e.preventDefault(); selectBy('all'); return; }
           if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -1637,7 +1639,15 @@
       pencil: '<path d="M4 20l1-5L16 4l4 4L9 19z"/><path class="ac" d="M14 6l4 4"/>',
       range: '<path d="M3 20L20 3"/><path class="ac" d="M3 20l5-1M3 20l1-5"/><circle class="acf" cx="20" cy="3" r="1.6"/>',
       list: '<path d="M8 6h13M8 12h13M8 18h13"/><circle class="acf" cx="4" cy="6" r="1.4"/><circle class="acf" cx="4" cy="12" r="1.4"/><circle class="acf" cx="4" cy="18" r="1.4"/>',
-      fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect class="ac" x="8" y="8" width="8" height="8" rx="1"/>'
+      fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect class="ac" x="8" y="8" width="8" height="8" rx="1"/>',
+      bldg: '<path d="M3 21h18"/><path d="M5 21V5h9v16M14 9h5v12"/><path class="ac" d="M5 10h9M5 15h9M14 14h5M9.5 5v16"/>',
+      sample: '<path d="M3 21h18"/><path d="M5 21V7h8v14M13 11h6v10"/><path class="ac" d="M5 12h8M5 16.5h8"/><circle class="acf" cx="18" cy="5" r="3"/><path class="ac" d="M16.8 5l.9.9 1.6-1.8"/>',
+      shed: '<path d="M2 20h20"/><path d="M4 20V10l8-5 8 5v10"/><path class="ac" d="M8 20V12M16 20V12M4 10h16"/>',
+      portal: '<path d="M2 20h20"/><path d="M4 20V9l8-4 8 4v11"/><path class="ac" d="M3 21.5l1-1.5 1 1.5M19 21.5l1-1.5 1 1.5"/>',
+      cbeam: '<path d="M2 11h20"/><path class="ac" d="M3 14l1.5-3 1.5 3zM10.5 14l1.5-3 1.5 3zM18 14l1.5-3 1.5 3z"/><path d="M2 7h20" stroke-dasharray="1.5 2"/>',
+      truss: '<path d="M2 17h20M5 9h14"/><path d="M2 17L5 9M22 17l-3-8"/><path class="ac" d="M5 9l3 8 3-8 3 8 3-8 2 8"/>',
+      blank: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" stroke-dasharray="2 2"/><path class="ac" d="M12 9v6M9 12h6"/>',
+      guide: '<path class="ac" d="M12 2v20M2 12h20" stroke-dasharray="2 2"/><path d="M8 4l8 8-3.5 1L11 17z"/>'
     };
     const icon = (k, big) => `<svg class="an-ic ${big ? 'big' : ''}" viewBox="0 0 24 24" aria-hidden="true">${IC[k] || IC.list}</svg>`;
 
@@ -1658,6 +1668,8 @@
           [T('Display', 'การแสดง'), [B('dispm', 'palette', T('Display', 'ตัวเลือกการแสดง'), { m: 1 })]]
         ]],
         ['struct', T('Structure', 'โครงสร้าง'), [
+          [T('Sample', 'ตัวอย่าง'), [B('sample', 'sample', T('Sample Building', 'อาคารตัวอย่าง'))]],
+          [T('Quick Templates', 'แม่แบบด่วน'), [B('qt', 'bldg', T('Building 3D', 'อาคาร 3 มิติ'), { v: 'building' }), B('qt', 'shed', T('Steel Shed', 'โรงงานเหล็ก'), { v: 'shed' }), B('qt', 'portal', T('Portal Frame', 'โครงข้อแข็ง'), { v: 'portal' }), B('qt', 'cbeam', T('Continuous Beam', 'คานต่อเนื่อง'), { v: 'beam' }), B('qt', 'truss', T('Truss', 'โครงถัก'), { v: 'truss' }), B('qt', 'blank', T('Empty Model', 'โมเดลว่าง'), { v: 'blank' })]],
           [T('Wizard', 'ตัวช่วยสร้าง'), [B('wizard', 'wand', T('Structure Wizard', 'สร้างจากแม่แบบ'))]],
           [T('Structure Type', 'ชนิดโครงสร้าง'), [B('type3d', 'cube', T('3D Frame', 'โครง 3 มิติ'), { on: () => A.model.plane !== 'XZ' }), B('type2d', 'plane', T('2D Frame (X–Z)', 'โครง 2 มิติ (X–Z)'), { on: () => A.model.plane === 'XZ' })]],
           [T('Design Standard', 'มาตรฐาน'), [B('stdm', 'book', stdInfo(A.model.std).name[0].split(' ')[0] + ' ' + T('Standard', 'มาตรฐาน'), { m: 1 })]],
@@ -1714,7 +1726,7 @@
         ]],
         ['tools', T('Tools', 'เครื่องมือ'), [
           [T('Setting', 'ตั้งค่า'), [B('unitm', 'units', T('Unit System', 'ระบบหน่วย') + ' · ' + ulab('F') + ', ' + ulab('L'), { m: 1 })]],
-          [T('Model File', 'ไฟล์แบบจำลอง'), [B('save', 'save', T('Save', 'บันทึก')), B('open', 'open', T('Open', 'เปิด'), { file: 1 }), B('wizard', 'wand', T('Template', 'แม่แบบ'))]],
+          [T('Model File', 'ไฟล์แบบจำลอง'), [B('save', 'save', T('Save', 'บันทึก')), B('open', 'open', T('Open', 'เปิด'), { file: 1 }), B('sample', 'sample', T('Sample Building', 'อาคารตัวอย่าง')), B('wizard', 'wand', T('Template', 'แม่แบบ'))]],
           [T('Help', 'วิธีใช้'), [B('help', 'help', T('Shortcuts & Help', 'ปุ่มลัดและวิธีใช้'))]]
         ]]
       ];
@@ -1744,7 +1756,7 @@
         case 'selm': return [it('tsel', T('Select tool — click / drag box', 'เครื่องมือเลือก — คลิก / ลากกรอบ'), '', A.tool === 'select'), sep, ...[['all', T('All', 'ทั้งหมด')], ['nodes', T('All nodes', 'จุดต่อทั้งหมด')], ['elems', T('All elements', 'ชิ้นส่วนทั้งหมด')], ['col', T('Columns', 'เสา')], ['beam', T('Beams', 'คาน')], ['brace', T('Bracing', 'ค้ำยัน')], ['sup', T('Supported nodes', 'จุดรองรับ')], ['samesec', T('Same section as selected', 'หน้าตัดเดียวกับที่เลือก')], ['samemat', T('Same material as selected', 'วัสดุเดียวกับที่เลือก')], ['inv', T('Invert selection', 'กลับการเลือก')]].map(([v, l]) => it('sby', l, v)), sep, ...A.model.sections.map(s => it('sby', T('Section ', 'หน้าตัด ') + s.id, 'sec:' + s.id))];
         case 'unselm': return [it('sby', T('Unselect all (Esc)', 'ยกเลิกทั้งหมด (Esc)'), 'none'), it('unsn', T('Unselect nodes', 'ยกเลิกจุดต่อ')), it('unsm', T('Unselect elements', 'ยกเลิกชิ้นส่วน'))];
         case 'snapm': return [0, 0.05, 0.1, 0.25, 0.5, 1].map(v => it('snap', v ? fu(v, 'L', 3) + ul('L') : T('Off', 'ปิด'), String(v), Math.abs((+A.opt.snap || 0) - v) < 1e-9));
-        case 'dispm': return [it('tog', T('Node numbers', 'หมายเลขจุดต่อ'), 'lblN', A.lblN !== false), it('tog', T('Element numbers', 'หมายเลขชิ้นส่วน'), 'lblM', A.lblM !== false), it('tog', T('Supports', 'จุดรองรับ'), 'showSup', A.showSup !== false), it('tog', T('Local axes of all elements', 'แกนเฉพาะที่ทุกชิ้นส่วน'), 'allAxes', !!A.allAxes), it('tog', T('Grid lines', 'เส้นกริด'), 'grid', A.grid !== false), it('tog', T('Loads', 'แรง'), 'loadsOn', !!A.loadsOn), it('tog', T('Solid sections (W)', 'หน้าตัดทรงตัน (W)'), 'solid', !!A.solid), it('tog', T('Result values', 'ค่าผลลัพธ์'), 'labels', !!A.labels)];
+        case 'dispm': return [it('tog', T('Node numbers', 'หมายเลขจุดต่อ'), 'lblN', A.lblN !== false), it('tog', T('Element numbers', 'หมายเลขชิ้นส่วน'), 'lblM', A.lblM !== false), it('tog', T('Supports', 'จุดรองรับ'), 'showSup', A.showSup !== false), it('tog', T('Local axes of all elements', 'แกนเฉพาะที่ทุกชิ้นส่วน'), 'allAxes', !!A.allAxes), it('tog', T('Grid lines', 'เส้นกริด'), 'grid', A.grid !== false), it('tog', T('Loads', 'แรง'), 'loadsOn', !!A.loadsOn), it('tog', T('Solid sections (W)', 'หน้าตัดทรงตัน (W)'), 'solid', !!A.solid), it('tog', T('Result values', 'ค่าผลลัพธ์'), 'labels', !!A.labels), it('guides', T('Cursor guide lines', 'เส้นนำเคอร์เซอร์'), '', A.guides !== false)];
         case 'stdm': return STDS.map(k => it('std', T(stdInfo(k).name[0], stdInfo(k).name[1]), k, A.model.std === k));
         case 'ptabm': return [it('ptab', T('Material table', 'ตารางวัสดุ'), 'mat'), it('ptab', T('Section table', 'ตารางหน้าตัด'), 'sec')];
         case 'lshowm': return [it('lshow', T('Off', 'ปิด'), '', !A.loadsOn), ...A.model.cases.map(c => it('lshow', c.id + ' — ' + c.name, c.id, A.loadsOn && A.lcase === c.id)), it('lshow', T('All cases', 'ทุกกรณี'), 'all', A.loadsOn && A.lcase === 'all')];
@@ -1756,6 +1768,43 @@
         case 'unitm': return [['SI', 'kN · m · °C'], ['SImm', 'N · mm · °C'], ['MKS', 'tf · m · °C'], ['MKScm', 'kgf · cm · °C'], ['US', 'kip · ft · °F']].map(([v, l]) => it('units', l, v, ['F', 'L', 'T'].every(q => UPRE[v][q] === UU()[q])));
       }
       return [];
+    }
+    // Esc: close menus, stop drawing, leave temporary tools and cancel the whole selection
+    function escAll() {
+      const had = A.sel.n.length || A.sel.m.length;
+      closeMenu(); A.draw = null; A.box = null; A.dnd = null;
+      if (['pan', 'zoomw', 'qnode', 'qelem', 'orbit', 'node', 'member'].includes(A.tool)) A.tool = 'select';
+      if (had) { A.sel = { n: [], m: [] }; selChanged(); toast(T('Selection cancelled', 'ยกเลิกการเลือกแล้ว'), ''); }
+      else if (A.win) { A.win = null; winRefresh(); }
+      else if (A.tplOpen) { A.tplOpen = false; ctx.render(); return; }
+      const cv = $('#anCv'); if (cv) cv.style.cursor = 'default';
+      ribRefresh(); redraw();
+    }
+    const curFor = () => (A.tool === 'pan' ? 'move' : A.tool === 'zoomw' || A.tool === 'node' || A.tool === 'member' ? 'crosshair' : A.tool === 'qnode' || A.tool === 'qelem' ? 'help' : 'default');
+    // cursor guide lines (overlay canvas, so the model is not redrawn on every mouse move)
+    function drawGuide(x, y) {
+      const cv = $('#anCv'), gc = $('#anGuide'); if (!cv || !gc) return;
+      const W = cv.clientWidth, H = cv.clientHeight, dpr = Math.min(2, G.devicePixelRatio || 1);
+      Object.assign(gc.style, { left: cv.offsetLeft + 'px', top: cv.offsetTop + 'px', width: W + 'px', height: H + 'px' });
+      if (gc.width !== Math.round(W * dpr) || gc.height !== Math.round(H * dpr)) { gc.width = Math.round(W * dpr); gc.height = Math.round(H * dpr); }
+      const g = gc.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+      if (x == null || A.guides === false) return;
+      const pal = palette(); x = Math.round(x) + 0.5; y = Math.round(y) + 0.5;
+      g.strokeStyle = pal.blue; g.globalAlpha = 0.55; g.lineWidth = 1; g.setLineDash([6, 4]);
+      g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); g.setLineDash([]); g.globalAlpha = 1;
+      if (A.cam.v !== '3d') {
+        const p = planePoint(x, y, W, H); if (!p) return;
+        const ax = { plan: ['X', 0, 'Y', 1], xz: ['X', 0, 'Z', 2], yz: ['Y', 1, 'Z', 2] }[A.cam.v], lab = ax[0] + ' ' + fu(p[ax[1]], 'L', 2) + '   ' + ax[2] + ' ' + fu(p[ax[3]], 'L', 2) + ul('L');
+        g.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace'; const tw = g.measureText(lab).width, lx = Math.min(x + 12, W - tw - 10), ly = y + 20 > H - 6 ? y - 10 : y + 20;
+        g.fillStyle = pal.bg; g.globalAlpha = 0.9; g.fillRect(lx - 4, ly - 12, tw + 8, 16); g.globalAlpha = 1; g.fillStyle = pal.ink; g.fillText(lab, lx, ly);
+      }
+    }
+    function quickModel(kind) {
+      if (!TPL[kind]) return;
+      try {
+        const nm = build(kind, Object.assign({}, TPL[kind].p), A.model.std); snap(true); A.model = nm; A.tpl = kind; A.tplP = null; A.tplOpen = false; A.hidN = new Set(); A.hidM = new Set(); afterNewModel();
+        toast(T(TPL[kind].n[0] + ' loaded — ' + nm.nodes.length + ' nodes, ' + nm.members.length + ' elements. Ctrl+Z to undo; Structure Wizard to change its size.', 'โหลด' + TPL[kind].n[1] + 'แล้ว — ' + nm.nodes.length + ' จุดต่อ ' + nm.members.length + ' ชิ้นส่วน กด Ctrl+Z เพื่อย้อนกลับ'), 'ok');
+      } catch (e) { toast(e.message || String(e), 'bad'); }
     }
     function closeMenu() { if (!A.ribMenu) return; A.ribMenu = null; const h = $('#anRibMenu'); if (h) h.innerHTML = ''; }
     function openMenu(id, btn) {
@@ -1778,7 +1827,7 @@
     }
     function setTool(t) {
       A.tool = t; A.draw = null; A.box = null;
-      const cv = $('#anCv'); if (cv) cv.style.cursor = t === 'pan' ? 'move' : t === 'zoomw' || t === 'node' || t === 'member' ? 'crosshair' : t === 'qnode' || t === 'qelem' ? 'help' : '';
+      const cv = $('#anCv'); if (cv) cv.style.cursor = curFor();
       if ((t === 'node' || t === 'member') && A.cam.v === '3d') toast(T('Tip: in Plan or an Elevation you can click empty grid points to create nodes.', 'เคล็ดลับ: ในแปลนหรือรูปด้าน คลิกตำแหน่งว่างเพื่อสร้างจุดต่อ'), '');
       if (t === 'qnode' || t === 'qelem') toast(T('Click a ' + (t === 'qnode' ? 'node' : 'element') + ' in the view to see its data.', 'คลิก' + (t === 'qnode' ? 'จุดต่อ' : 'ชิ้นส่วน') + 'ในมุมมองเพื่อดูข้อมูล'), '');
       ribRefresh(); sideRefresh(); redraw();
@@ -2068,6 +2117,8 @@
         case 'tog': if (v === 'solid' || v === 'labels' || v === 'loadsOn' || v === 'allAxes') A[v] = !A[v]; else A[v] = A[v] === false; if (v === 'loadsOn') syncLshow(); ribRefresh(); redraw(); return;
         // structure
         case 'wizard': A.tplOpen = true; ctx.render(); return;
+        case 'sample': case 'qt': quickModel(c === 'sample' ? 'building' : v); return;
+        case 'guides': A.guides = A.guides === false; drawGuide(null); ribRefresh(); return;
         case 'type3d': case 'type2d': { const p = c === 'type2d' ? 'XZ' : ''; if ((m.plane || '') === p) return; snap(true); m.plane = p; changed(false); setView(p ? 'xz' : '3d'); ctx.render(); toast(p ? T('2D frame in the X–Z plane', 'โครง 2 มิติ ระนาบ X–Z') : T('3D frame', 'โครง 3 มิติ'), ''); return; }
         case 'std': onClick('an-std', { dataset: { k: v }, classList: { contains: () => false }, closest: () => null }); return;
         case 'save': onClick('an-save', { dataset: {}, classList: { contains: () => false }, closest: () => null }); return;
