@@ -818,15 +818,15 @@ body.an-dragging .an-canvas{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--a
 .an-app{grid-template-rows:auto minmax(0,1fr)}
 .an-app>#anWinHost,.an-app>#anRibMenu{position:absolute;width:0;height:0}
 .an-rib{grid-column:1/-1;min-width:0;background:var(--card);border-bottom:1px solid var(--line2)}
-.an-ribtabs{display:flex;align-items:flex-end;gap:1px;padding:4px 8px 0;background:color-mix(in srgb,var(--ink) 7%,var(--card));border-bottom:1px solid var(--line2);overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+.an-ribtabs{display:flex;flex-wrap:wrap;align-items:flex-end;gap:1px;padding:4px 8px 0;background:color-mix(in srgb,var(--ink) 7%,var(--card));border-bottom:1px solid var(--line2)}
 .an-ribtabs::-webkit-scrollbar{display:none}
 .an-rtab{font:inherit;font-size:12.5px;padding:5px 12px 6px;border:1px solid transparent;border-bottom:0;border-radius:7px 7px 0 0;background:none;color:var(--ink);cursor:pointer;white-space:nowrap;margin-bottom:-1px}
 .an-rtab:hover{background:color-mix(in srgb,var(--card) 65%,transparent)}
 .an-rtab[aria-selected=true]{background:var(--card);border-color:var(--line2);box-shadow:inset 0 2px 0 var(--acc);font-weight:700}
-.an-qat{display:flex;gap:1px;align-items:center;padding:0 0 3px 8px}
+.an-qat{display:flex;gap:1px;align-items:center;padding:0 0 3px 8px;margin-left:auto}
 .an-qb{width:28px;height:26px;display:grid;place-items:center;border:0;background:none;border-radius:6px;color:var(--ink);cursor:pointer;font-size:11px}
 .an-qb:hover{background:var(--line)}.an-qb:disabled{opacity:.3;cursor:default}.an-qb.hot{color:var(--acc)}
-.an-ribbar{display:flex;align-items:stretch;overflow-x:auto;overflow-y:hidden;padding:3px 2px 0;scrollbar-width:thin}
+.an-ribbar{display:flex;flex-wrap:wrap;align-items:stretch;row-gap:4px;padding:3px 2px 3px}
 .an-rg{display:flex;flex-direction:column;flex:none;border-right:1px solid var(--line);margin-right:2px}
 .an-rgi{display:flex;align-items:flex-start;gap:1px;padding:1px 4px 3px;flex:1}
 .an-rgt{font-size:10.5px;line-height:1;text-align:center;padding:3px 6px 4px;white-space:nowrap;color:var(--card);background:color-mix(in srgb,var(--ink) 70%,var(--card))}
@@ -865,6 +865,22 @@ body.an-dragging .an-canvas{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--a
 .an-wsel{font-size:12px;color:var(--muted);margin:0 0 6px}
 .an-stat{display:grid;gap:0}.an-stat>div{display:grid;grid-template-columns:minmax(120px,38%) minmax(0,1fr);gap:8px;padding:4px 0;border-bottom:1px solid var(--line);font-size:12.5px}.an-stat dt{color:var(--muted)}.an-stat dd{margin:0}
 @media (max-width:900px){.an-app{grid-template-rows:auto auto auto}.an-rb.big{height:58px}}
+
+/* ribbon: compact buttons on narrower screens so every group stays visible */
+@media (max-width:1280px){
+  .an-rb.big{height:54px;min-width:44px;max-width:72px;font-size:10.8px;padding:3px 3px 2px;gap:2px}
+  .an-ic.big{width:22px;height:22px}
+  .an-rb.sm{font-size:11.5px;height:19px;padding:1px 5px 1px 3px}
+  .an-rgi{padding:1px 3px 2px}
+  .an-rgt{font-size:10px;padding:2px 5px 3px}
+  .an-rtab{padding:5px 9px 6px;font-size:12px}
+}
+@media (max-width:760px){
+  .an-rb.big{height:50px;min-width:42px;max-width:64px;font-size:10.3px}
+  .an-ic.big{width:20px;height:20px}
+  .an-rtab{padding:4px 7px 5px;font-size:11.5px}
+  .an-qb{width:26px;height:24px}
+}
 </style>
 </head>
 <body>
