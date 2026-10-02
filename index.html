@@ -600,7 +600,7 @@ button.analysis-strip:hover{border-color:var(--acc);border-style:solid;transform
 .an-dg.M{fill:var(--acc);stroke:var(--acc)} .an-dg.My{fill:var(--pink);stroke:var(--pink)} .an-dg.V{fill:var(--blue);stroke:var(--blue)} .an-dg.N{fill:var(--teal);stroke:var(--teal)} .an-dg.T{fill:var(--warn);stroke:var(--warn)} .an-dg.D{fill:var(--pink);stroke:var(--pink)}
 .an-dg.neg{fill-opacity:.1;stroke-dasharray:4 3}
 .an-results .tabs{overflow-x:auto} .an-results .tabs button{padding:7px 11px;font-size:13px;white-space:nowrap}
-.an-rb{overflow-x:auto} .an-r td,.an-r th{white-space:nowrap} .an-r tr[data-act]{cursor:pointer} .an-r tr.on td{background:color-mix(in srgb,var(--acc) 10%,transparent)}
+.an-rbody{overflow-x:auto} .an-r td,.an-r th{white-space:nowrap} .an-r tr[data-act]{cursor:pointer} .an-r tr.on td{background:color-mix(in srgb,var(--acc) 10%,transparent)}
 .an-r tr.tot td{font-weight:600;border-top:1.5px solid var(--line2)}
 .an-kv{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
 .an #reportWrap{margin-top:18px}
@@ -881,6 +881,11 @@ body.an-dragging .an-canvas{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--a
   .an-rtab{padding:4px 7px 5px;font-size:11.5px}
   .an-qb{width:26px;height:24px}
 }
+
+/* ribbon buttons never scroll; small rows grow with the font instead of clipping */
+.an-rib .an-rb{overflow:visible}
+.an-rb.sm{height:auto;min-height:20px;line-height:1.25}
+.an-rcol{overflow:visible}
 </style>
 </head>
 <body>
