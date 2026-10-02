@@ -228,7 +228,7 @@
     }
     const fresh = () => !!A.res && A.resVer === A.ver;
     const curView = () => (A.step === 'res' && fresh() ? A.rview : 'model');
-    function changed(side) { A.ver++; persist(); redraw(); updCounts(); if (side) sideRefresh(); }
+    function changed(side) { A.ver++; persist(); redraw(); updCounts(); if (side) sideRefresh(); const u = $('#anRib [data-c=undo]'), r = $('#anRib [data-c=redo]'); if (u) u.disabled = !A.hist.length; if (r) r.disabled = !A.fut.length; }
 
     // ------------------------------------------------------------------ results
     const COMPS = [['N', 'N', 'kN'], ['Vy', 'V<sub>y</sub>', 'kN'], ['Vz', 'V<sub>z</sub>', 'kN'], ['T', 'T', 'kNm'], ['My', 'M<sub>y</sub>', 'kNm'], ['Mz', 'M<sub>z</sub>', 'kNm']];
@@ -264,7 +264,7 @@
     }
     const cutAxis = () => ({ plan: 'z', xz: 'y', yz: 'x' }[A.cam.v] || null);
     function levels() { const ax = cutAxis(); if (!ax) return []; const s = new Set(A.model.nodes.map(n => r4(+n[ax] || 0))); return [...s].sort((a, b) => a - b); }
-    function nodeVisible(n) { const ax = cutAxis(); if (!ax || A.cut === 'all') return true; return Math.abs((+n[ax] || 0) - +A.cut) < 1e-3; }
+    function nodeVisible(n) { if (A.hidN && A.hidN.has(n.id)) return false; const ax = cutAxis(); if (!ax || A.cut === 'all') return true; return Math.abs((+n[ax] || 0) - +A.cut) < 1e-3; }
     function setView(v) { const [y, p] = VIEWS[v]; Object.assign(A.cam, { v, yaw: y, pitch: p, k: null }); A.cut = 'all'; }
     function fit(W, H) {
       const c = A.cam, B = basis(c), ns = A.model.nodes.filter(nodeVisible);
@@ -304,11 +304,11 @@
       const arrow = (a, b, col, w) => { if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 4) { g.strokeStyle = col; g.lineWidth = 1.2; g.beginPath(); g.arc(b[0], b[1], 4, 0, 2 * PI); g.moveTo(b[0] - 2.8, b[1] - 2.8); g.lineTo(b[0] + 2.8, b[1] + 2.8); g.moveTo(b[0] + 2.8, b[1] - 2.8); g.lineTo(b[0] - 2.8, b[1] + 2.8); g.stroke(); return; } line(a, b, col, w || 1.4); const an = Math.atan2(b[1] - a[1], b[0] - a[0]), hl = 7; g.fillStyle = col; g.beginPath(); g.moveTo(b[0], b[1]); g.lineTo(b[0] - hl * Math.cos(an - 0.42), b[1] - hl * Math.sin(an - 0.42)); g.lineTo(b[0] - hl * Math.cos(an + 0.42), b[1] - hl * Math.sin(an + 0.42)); g.closePath(); g.fill(); };
       const ext = extent(), cur = view === 'model' ? null : current();
       const visN = new Set(m.nodes.filter(nodeVisible).map(n => n.id)), selN = new Set(rep ? [] : A.sel.n), selM = new Set(rep ? [] : A.sel.m);
-      const memVis = mb => visN.has(mb.i) && visN.has(mb.j);
+      const memVis = mb => visN.has(mb.i) && visN.has(mb.j) && !(A.hidM && A.hidM.has(mb.id));
       // structural grid on the base plane / elevation plane
       const xs = [...new Set(m.nodes.map(n => r4(+n.x || 0)))], ys = [...new Set(m.nodes.map(n => r4(+n.y || 0)))], zs = [...new Set(m.nodes.map(n => r4(+n.z || 0)))];
       const mm = a => [Math.min(...a), Math.max(...a)], pad = Math.max(1, 0.06 * ext);
-      if (xs.length && xs.length < 60 && ys.length < 60) {
+      if ((rep || A.grid !== false) && xs.length && xs.length < 60 && ys.length < 60) {
         const [x0, x1] = mm(xs), [y0, y1] = mm(ys), [z0, z1] = mm(zs), v = c.v;
         g.save(); g.globalAlpha = 0.9;
         if (v === 'xz') { const yy = A.cut === 'all' ? y0 : +A.cut; xs.forEach(x => line(P([x, yy, z0 - pad]), P([x, yy, z1 + pad]), pal.grid, 1, [4, 4])); zs.forEach(z => line(P([x0 - pad, yy, z]), P([x1 + pad, yy, z]), pal.grid, 1, [4, 4])); }
@@ -323,7 +323,7 @@
       m.members.forEach(mb => {
         const a = nd[mb.i], b = nd[mb.j]; if (!a || !b) return;
         const pa = P(P3(a)), pb = P(P3(b)), vis = memVis(mb), sel = selM.has(mb.id), hov = !rep && A.hover && A.hover.k === 'm' && A.hover.id === mb.id;
-        if (!vis) { g.save(); g.globalAlpha = 0.14; line(pa, pb, pal.muted, 1.2); g.restore(); return; }
+        if (!vis) { g.save(); g.globalAlpha = A.hidM.has(mb.id) || A.hidN.has(mb.i) || A.hidN.has(mb.j) ? 0.07 : 0.14; line(pa, pb, pal.muted, 1.2); g.restore(); return; }
         const bad = !resMode && !memOK(mb); if (bad) nBad++;
         const col = sel ? pal.acc : hov ? pal.blue : resMode ? pal.soft : bad ? RED : mb.type === 'truss' ? pal.teal : pal.ink;
         if (solidOn && !(bad && !secPoly(mb.sec))) { scr.m.push({ id: mb.id, a: pa, b: pb }); return; }
@@ -333,6 +333,7 @@
       });
       // results
       const notes = [];
+      if (!rep && (A.hidM.size || A.hidN.size)) notes.push(T('Active: ', 'แสดง: ') + m.members.filter(memVis).length + ' / ' + m.members.length + T(' elements (View › Activities › All to show everything)', ' ชิ้นส่วน (มุมมอง › ทั้งหมด เพื่อแสดงทั้งหมด)'));
       if (nBad && !rep) notes.push('● ' + nBad + T(' element(s) without section or material (red)', ' ชิ้นส่วนยังไม่มีหน้าตัดหรือวัสดุ (สีแดง)'));
       if (view !== 'model' && A.res && A.resVer === A.ver) drawResults();
       else if (view !== 'model' && A.resVer !== A.ver) notes.push(T('Updating…', 'กำลังคำนวณ…'));
@@ -341,7 +342,7 @@
         if (!visN.has(n.id)) return;
         const p = P(P3(n)), sel = selN.has(n.id), hov = !rep && A.hover && A.hover.k === 'n' && A.hover.id === n.id, fx6 = F.fixOf(n), nt = fx6[0] + fx6[1] + fx6[2], nr = fx6[3] + fx6[4] + fx6[5];
         const sc = pal.muted;
-        if (nt + nr) {
+        if (nt + nr && (rep || A.showSup !== false)) {
           g.strokeStyle = sc; g.lineWidth = 1.4; g.fillStyle = pal.bg;
           if (nt === 3 && nr === 3) { g.beginPath(); g.moveTo(p[0] - 11, p[1] + 2); g.lineTo(p[0] + 11, p[1] + 2); g.stroke(); for (let i = -9; i <= 9; i += 5) { g.beginPath(); g.moveTo(p[0] + i, p[1] + 2); g.lineTo(p[0] + i - 5, p[1] + 8); g.stroke(); } }
           else if (nt === 3) { g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(p[0] - 8, p[1] + 12); g.lineTo(p[0] + 8, p[1] + 12); g.closePath(); g.stroke(); g.beginPath(); g.moveTo(p[0] - 11, p[1] + 14); g.lineTo(p[0] + 11, p[1] + 14); g.stroke(); }
@@ -357,16 +358,16 @@
       // loads
       if (view === 'model' && (A.loadsOn || rep)) drawLoads(o.lcase || A.lcase || 'all');
       // local axes of selected members
-      if (!rep && selM.size && selM.size <= 24) m.members.forEach(mb => {
-        if (!selM.has(mb.id)) return; const a = nd[mb.i], b = nd[mb.j]; if (!a || !b) return;
+      if (!rep && ((selM.size && selM.size <= 24) || A.allAxes)) m.members.forEach(mb => {
+        if (!(A.allAxes ? memVis(mb) : selM.has(mb.id))) return; const a = nd[mb.i], b = nd[mb.j]; if (!a || !b) return;
         const ax = F.axes(P3(a), P3(b), mb.beta), mid = addv(P3(a), sub(P3(b), P3(a)), 0.5), L = 34 / k, pm = P(mid);
         [[ax.ex, pal.pink, 'x'], [ax.ey, pal.ok, 'y'], [ax.ez, pal.blue, 'z']].forEach(([e, col, lb]) => { const q = P(addv(mid, e, L)); arrow(pm, q, col, 1.8); text(lb, q[0] + 3, q[1] - 3, col, { font: '600 11px ui-monospace, monospace' }); });
       });
       // labels
       if (A.labels || rep) {
         const vm = m.members.filter(memVis).length, many = vm > 70;
-        m.members.forEach(mb => { if (!memVis(mb) || (many && !selM.has(mb.id))) return; const a = nd[mb.i], b = nd[mb.j]; if (!a || !b) return; const p = P(addv(P3(a), sub(P3(b), P3(a)), 0.5)); text(mb.id, p[0] + 4, p[1] - 4, pal.blue, { font: '10.5px ui-monospace, monospace' }); });
-        m.nodes.forEach(n => { if (!visN.has(n.id) || (many && !selN.has(n.id))) return; const p = P(P3(n)); text(n.id, p[0] + 6, p[1] + 13, pal.muted, { font: '10.5px ui-monospace, monospace' }); });
+        if (rep || A.lblM !== false) m.members.forEach(mb => { if (!memVis(mb) || (many && !selM.has(mb.id))) return; const a = nd[mb.i], b = nd[mb.j]; if (!a || !b) return; const p = P(addv(P3(a), sub(P3(b), P3(a)), 0.5)); text(mb.id, p[0] + 4, p[1] - 4, pal.blue, { font: '10.5px ui-monospace, monospace' }); });
+        if (rep || A.lblN !== false) m.nodes.forEach(n => { if (!visN.has(n.id) || (many && !selN.has(n.id))) return; const p = P(P3(n)); text(n.id, p[0] + 6, p[1] + 13, pal.muted, { font: '10.5px ui-monospace, monospace' }); });
       }
       // drawing a member: rubber band
       if (!rep && A.tool === 'member' && A.draw && A.mouse && nd[A.draw]) { const p = P(P3(nd[A.draw])); line(p, A.mouse, pal.acc, 1.5, [6, 4]); }
@@ -537,7 +538,7 @@
       else A.sel = { n, m };
     }
     function selectBy(k) {
-      const m = A.model, nd = nodeMap(), vis = new Set(m.nodes.filter(nodeVisible).map(n => n.id)), mv = m.members.filter(q => vis.has(q.i) && vis.has(q.j));
+      const m = A.model, nd = nodeMap(), vis = new Set(m.nodes.filter(nodeVisible).map(n => n.id)), mv = m.members.filter(q => vis.has(q.i) && vis.has(q.j) && !A.hidM.has(q.id));
       const kind = q => { const a = nd[q.i], b = nd[q.j]; if (!a || !b) return ''; const v = sub(P3(b), P3(a)), L = Math.hypot(...v) || 1, c = Math.abs(v[2]) / L; return c > 0.97 ? 'col' : c < 0.03 ? 'beam' : 'brace'; };
       if (k === 'all') A.sel = { n: [...vis], m: mv.map(q => q.id) };
       else if (k === 'none') A.sel = { n: [], m: [] };
@@ -552,6 +553,7 @@
       toast(A.sel.n.length || A.sel.m.length ? (A.sel.n.length ? A.sel.n.length + T(' node(s) ', ' จุดต่อ ') : '') + (A.sel.m.length ? A.sel.m.length + T(' element(s) ', ' ชิ้นส่วน ') : '') + T('selected', 'ที่เลือก') : T('Selection cleared', 'ล้างการเลือกแล้ว'), '');
     }
     function selChanged() {
+      const sc = { n: A.sel.n.slice(), m: A.sel.m.slice() }; if (A.selCur && (A.selCur.n.join() !== sc.n.join() || A.selCur.m.join() !== sc.m.join())) A.prevSel = A.selCur; A.selCur = sc;
       if (A.step !== 'res') { if (A.sel.n.length && !['node', 'sup', 'load', 'mat', 'sec'].includes(A.step)) A.step = 'node'; else if (!A.sel.n.length && A.sel.m.length && !['elem', 'sup', 'load', 'mat', 'sec'].includes(A.step)) A.step = 'elem'; }
       sideRefresh(); redraw(); const mm = $('#anMember'); if (mm) mm.innerHTML = memberHTML();
     }
@@ -562,8 +564,10 @@
         cv.focus({ preventScroll: true }); cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, rel(e));
         const [x, y] = rel(e); sx = lx = x; sy = ly = y; moved = false;
         if (pts.size === 2) { const [a, b] = [...pts.values()]; pd = Math.hypot(a[0] - b[0], a[1] - b[1]); mode = 'pinch'; A.box = null; return; }
-        const is3 = A.cam.v === '3d', touch = e.pointerType === 'touch';
-        if (e.button === 1 || (e.button === 2 && e.shiftKey)) mode = 'pan';
+        const is3 = A.cam.v === '3d', touch = e.pointerType === 'touch'; A.camDown = camSnap();
+        if (A.tool === 'pan' && e.button === 0) mode = 'pan';
+        else if (A.tool === 'zoomw' && e.button === 0) mode = 'zbox';
+        else if (e.button === 1 || (e.button === 2 && e.shiftKey)) mode = 'pan';
         else if (e.button === 2) mode = is3 ? 'rot' : 'pan';
         else if (e.shiftKey || A.tool === 'orbit') mode = is3 ? 'rot' : 'pan';
         else if (A.tool === 'select' || (!touch && (e.ctrlKey || e.metaKey || e.altKey))) mode = 'box';
@@ -579,12 +583,14 @@
         const dx = x - lx, dy = y - ly; lx = x; ly = y;
         if (mode === 'rot') { const c = A.cam, pivot = c.t.slice(); c.yaw -= dx * 0.008; c.pitch = Math.max(-1.5, Math.min(1.5, c.pitch + dy * 0.008)); c.t = pivot; }
         else if (mode === 'pan') { const c = A.cam, B = basis(c); c.t = addv(addv(c.t, B.r, -dx / c.k), B.u, dy / c.k); }
-        else if (mode === 'box') A.box = [sx, sy, x, y];
+        else if (mode === 'box' || mode === 'zbox') A.box = [sx, sy, x, y];
         redraw();
       });
       const up = e => {
         const [x, y] = rel(e), had = pts.has(e.pointerId); pts.delete(e.pointerId); if (!had) return;
         if (pts.size) return;
+        if (mode === 'zbox') { const bx = A.box; A.box = null; mode = null; if (moved && bx) { zoomBox(bx); setTool('select'); } else redraw(); return; }
+        if ((mode === 'rot' || mode === 'pan') && moved && A.camDown) camPush(A.camDown);
         if (mode === 'box' && moved && A.box) { boxSelect(A.box, A.boxHow); A.box = null; selChanged(); mode = null; return; }
         A.box = null;
         if (!moved && e.type === 'pointerup' && mode !== 'pinch') clickAt(x, y, e);
@@ -592,7 +598,8 @@
       };
       cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
       cv.addEventListener('pointerleave', () => { if (!pts.size && A.hover) { A.hover = null; A.mouse = null; redraw(); } });
-      cv.addEventListener('wheel', e => { e.preventDefault(); const [x, y] = rel(e); zoomAt(x, y, Math.exp(-e.deltaY * 0.0012)); }, { passive: false });
+      let wheelT = 0;
+      cv.addEventListener('wheel', e => { e.preventDefault(); if (Date.now() - wheelT > 700) camPush(); wheelT = Date.now(); const [x, y] = rel(e); zoomAt(x, y, Math.exp(-e.deltaY * 0.0012)); }, { passive: false });
       cv.addEventListener('contextmenu', e => { e.preventDefault(); if (A.draw && !moved) { A.draw = null; redraw(); } });
       // drop a property dragged from the tree
       cv.addEventListener('dragover', e => { if (!A.dnd) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if ((A.dnd.startsWith('sup:') ? A.sel.n : A.sel.m).length) { if (A.hover) { A.hover = null; redraw(); } return; } const [x, y] = rel(e), h = pickAt(x, y), want = A.dnd.startsWith('sup:') ? 'n' : 'm', ok = h && h.k === want ? h : null; if ((ok && (!A.hover || A.hover.id !== ok.id || A.hover.k !== ok.k)) || (!ok && A.hover)) { A.hover = ok; redraw(); } });
@@ -606,6 +613,11 @@
     }
     function clickAt(x, y, e) {
       const hit = pickAt(x, y), W = cvEl.clientWidth, H = cvEl.clientHeight;
+      if (A.tool === 'qnode' || A.tool === 'qelem') {
+        const want = A.tool === 'qnode' ? 'n' : 'm'; if (!hit || hit.k !== want) { toast(T('Click on a ' + (want === 'n' ? 'node' : 'element') + '.', 'คลิกบน' + (want === 'n' ? 'จุดต่อ' : 'ชิ้นส่วน')), ''); return; }
+        A.qinfo = { k: want, id: hit.id }; A.sel = want === 'n' ? { n: [hit.id], m: [] } : { n: [], m: [hit.id] }; selChanged(); if (A.win && A.win.k === 'qinfo') winRefresh(); else openWin('qinfo'); return;
+      }
+      if (A.tool === 'pan' || A.tool === 'zoomw' || A.tool === 'orbit') { if (A.tool !== 'orbit' || !hit) return; }
       if (A.tool === 'member') {
         let id = hit && hit.k === 'n' ? hit.id : null;
         if (!id && !hit) { const p = planePoint(x, y, W, H); if (!p) { toast(T('Click an existing node, or switch to Plan / Elevation to place new nodes.', 'คลิกจุดต่อที่มีอยู่ หรือเปลี่ยนเป็นแปลน / รูปด้านเพื่อวางจุดต่อใหม่'), ''); return; } snap(true); id = ensureNode(p); }
@@ -657,14 +669,14 @@
       if (tb === 'materials') m.members.forEach(x => { if (x.mat === oldId) x.mat = nid; });
       if (tb === 'cases') { m.loads.forEach(l => { if (l.case === oldId) l.case = nid; }); m.combos.forEach(c => { if (c.f && oldId in c.f) { c.f[nid] = c.f[oldId]; delete c.f[oldId]; } }); }
     }
-    function replicate(d, nCopy, connect, withLoads) {
+    function replicate(d, nCopy, connect, withLoads, fn) {
       const m = A.model, nd = nodeMap(), nIds = new Set(A.sel.n); A.sel.m.forEach(id => { const q = m.members.find(z => z.id === id); if (q) { nIds.add(q.i); nIds.add(q.j); } });
       if (!nIds.size) return;
       snap(true);
       const newSel = { n: [], m: [] }; let prev = {}; nIds.forEach(id => { prev[id] = id; });
       for (let c = 1; c <= nCopy; c++) {
         const map = {};
-        nIds.forEach(id => { const n = nd[id], p = [(+n.x || 0) + d[0] * c, (+n.y || 0) + d[1] * c, (+n.z || 0) + d[2] * c], nid = ensureNode(p), nn = m.nodes.find(z => z.id === nid); if (n.sup && n.sup !== 'free' && nn.sup === 'free' && !connect) { nn.sup = n.sup; if (n.fix) nn.fix = n.fix.slice(); } map[id] = nid; newSel.n.push(nid); });
+        nIds.forEach(id => { const n = nd[id], p = fn ? fn(P3(n), c) : [(+n.x || 0) + d[0] * c, (+n.y || 0) + d[1] * c, (+n.z || 0) + d[2] * c], nid = ensureNode(p), nn = m.nodes.find(z => z.id === nid); if (n.sup && n.sup !== 'free' && nn.sup === 'free' && !connect) { nn.sup = n.sup; if (n.fix) nn.fix = n.fix.slice(); } map[id] = nid; newSel.n.push(nid); });
         A.sel.m.forEach(id => { const q = m.members.find(z => z.id === id); if (!q) return; const nm = addMember(map[q.i], map[q.j], q); if (nm) { newSel.m.push(nm); if (withLoads) m.loads.filter(l => l.member === q.id).forEach(l => m.loads.push(Object.assign({}, l, { member: nm }))); } });
         if (withLoads) m.loads.filter(l => l.kind === 'node' && A.sel.n.includes(l.node)).forEach(l => m.loads.push(Object.assign({}, l, { node: map[l.node] })));
         if (connect) A.sel.n.forEach(id => { const nm = addMember(prev[id], map[id]); if (nm) newSel.m.push(nm); });
@@ -874,11 +886,13 @@
 
     // ------------------------------------------------------------------ floating "add" windows (movable)
     const WIN_T = () => ({ mat: T('Add material', 'เพิ่มวัสดุ'), sec: T('Add section', 'เพิ่มหน้าตัด'), node: T('Add node', 'เพิ่มจุดต่อ'), elem: T('Add element', 'เพิ่มชิ้นส่วน'), sup: T('Assign support', 'กำหนดจุดรองรับ'), case: T('Add load case', 'เพิ่มกรณีน้ำหนัก'), load: T('Add load', 'เพิ่มแรง'), combo: T('Add load combination', 'เพิ่มการรวมน้ำหนัก'), help: T('Help — shortcuts and mouse', 'วิธีใช้ — ปุ่มลัดและเมาส์') });
+    const winTitle = k => (RW[k] ? RW[k].t() : WIN_T()[k] || '');
     const WADD = ['mat', 'sec', 'node', 'elem', 'sup', 'case', 'load', 'combo'];
     A.wv = {};
     function wdef(k) {
       const m = A.model, d = stdInfo(m.std);
       if (A.wv[k]) return A.wv[k];
+      if (RW[k]) { A.wv[k] = RW[k].def ? RW[k].def() : {}; return A.wv[k]; }
       const v = {
         mat: { kind: 'conc', grade: DEFS[m.std].conc, sgrade: DEFS[m.std].steel, id: '', name: '', E: 200000, nu: 0.3, rho: 78.5 },
         sec: { type: 'rect', b: 300, h: 600, D: 400, series: d.series[0], size: SL.LIB[d.series[0]] ? SL.sizes(d.series[0])[6] || SL.sizes(d.series[0])[0] : '', shape: 'SHS', tsize: '150x150x6', d: 400, bf: 200, tf: 12, tw: 8, A: 10000, Iz: 100e6, Iy: 50e6, J: 20e6, id: '' },
@@ -933,6 +947,7 @@
     }
     function winBody(k) {
       if (k === 'help') return helpHTML();
+      if (RW[k]) return RW[k].body(wdef(k));
       const m = A.model, d = stdInfo(m.std), v = wdef(k), add = (lbl, extra) => `<div class="an-wfoot">${extra || ''}<span class="grow"></span><button class="btn btn-ghost sm" data-act="an-wclose">${T('Close', 'ปิด')}</button><button class="btn btn-hot sm" data-act="an-wadd">${lbl || T('Add', 'เพิ่ม')}</button></div>`;
       if (k === 'mat') {
         const g = v.kind === 'conc' ? concMat(m.std, v.grade) : v.kind === 'steel' ? steelMat(m.std, v.sgrade) : null;
@@ -977,7 +992,7 @@
       const host = $('#anWinHost'); if (!host) return;
       if (!A.win) { host.innerHTML = ''; return; }
       const k = A.win.k;
-      host.innerHTML = `<div class="an-win" id="anWin" role="dialog" aria-label="${esc(WIN_T()[k])}" data-k="${k}" style="left:${A.win.x}px;top:${A.win.y}px"><div class="an-winhead" title="${T('Drag to move', 'ลากเพื่อย้าย')}"><span class="an-grip" aria-hidden="true">⋮⋮</span><b>${esc(WIN_T()[k])}</b><span class="grow"></span><button class="icon-btn" data-act="an-wclose" aria-label="${T('Close', 'ปิด')}">×</button></div><div class="an-winbody">${winBody(k)}</div></div>`;
+      host.innerHTML = `<div class="an-win" id="anWin" role="dialog" aria-label="${esc(winTitle(k))}" data-k="${k}" style="left:${A.win.x}px;top:${A.win.y}px"><div class="an-winhead" title="${T('Drag to move', 'ลากเพื่อย้าย')}"><span class="an-grip" aria-hidden="true">⋮⋮</span><b>${esc(winTitle(k))}</b><span class="grow"></span><button class="icon-btn" data-act="an-wclose" aria-label="${T('Close', 'ปิด')}">×</button></div><div class="an-winbody">${winBody(k)}</div></div>`;
       const w = host.firstChild, hd = w.querySelector('.an-winhead');
       hd.addEventListener('pointerdown', e => {
         if (e.target.closest('button')) return;
@@ -987,10 +1002,12 @@
         hd.addEventListener('pointermove', mv); hd.addEventListener('pointerup', upf); hd.addEventListener('pointercancel', upf);
       });
     }
-    function openWin(k) { const W0 = Math.min(k === 'help' ? 520 : 440, innerWidth - 20); A.win = { k, x: A.win ? A.win.x : Math.max(10, Math.min(innerWidth - W0 - 10, 400)), y: A.win ? A.win.y : 90 }; if (k === 'load') { delete A.wv.load; } winRefresh(); }
+    const WIDE = ['ntab', 'etab', 'ltab', 'lsum', 'qnt', 'qet', 'qwt', 'qms', 'pmt', 'pst', 'btab', 'actl', 'qinfo', 'stat', 'sw'];
+    function openWin(k) { const W0 = Math.min(WIDE.includes(k) ? (['actl', 'qinfo', 'stat', 'sw'].includes(k) ? 520 : 820) : k === 'help' ? 520 : 440, innerWidth - 20); A.win = { k, x: A.win ? A.win.x : Math.max(10, Math.min(innerWidth - W0 - 10, 400)), y: A.win ? A.win.y : (() => { const r = $('#anRib'); return r ? Math.round(r.getBoundingClientRect().bottom + 8) : 90; })() }; if (k === 'load') { delete A.wv.load; } winRefresh(); }
     const idList = s0 => String(s0 || '').split(/[,\s]+/).map(q => q.trim()).filter(Boolean);
     function winAdd() {
       const k = A.win.k, v = wdef(k), m = A.model;
+      if (RW[k] && RW[k].add) { RW[k].add(v); if (A.win) winRefresh(); return; }
       if (k === 'mat') {
         const g = v.kind === 'conc' ? concMat(m.std, v.grade) : v.kind === 'steel' ? steelMat(m.std, v.sgrade) : { id: (v.id || '').trim() || nextId(m.materials, 'MAT'), name: v.name || '', kind: 'other', E: +v.E || 200000, nu: +v.nu || 0.3, rho: +v.rho || 0 };
         if (m.materials.some(q => q.id === g.id)) { toast(T(g.id + ' is already in the list.', g.id + ' มีอยู่แล้ว'), ''); return; }
@@ -1061,7 +1078,7 @@
       ];
     };
     function treeHTML() {
-      return `<nav class="an-tree" aria-label="${T('Main menu', 'เมนูหลัก')}"><div class="an-treehead">${T('MAIN MENU', 'เมนูหลัก')}</div>${STEPS().map(([k, l, c], i) => { const open = A.step === k, st = k === 'run' || k === 'res' ? (fresh() ? 'ok' : A.err && A.resVer === A.ver && k === 'run' ? 'bad' : '') : ''; return `<div class="an-node ${open ? 'open' : ''}"><div class="an-throw"><button class="an-th" data-act="an-step" data-s="${k}" aria-expanded="${open}"><span class="an-num">${i}</span><span class="an-tl">${l}</span><span class="an-cnt ${st}" data-s="${k}">${esc(String(c))}</span><span class="an-chev" aria-hidden="true">›</span></button>${WADD.includes(k) ? `<button class="an-plus" data-act="an-win" data-k="${k}" title="${esc(WIN_T()[k])}" aria-label="${esc(WIN_T()[k])}">+</button>` : '<span class="an-plus0"></span>'}</div>${open ? `<div class="an-panel">${panel(k)}</div>` : ''}</div>`; }).join('')}</nav>`;
+      return `<nav class="an-tree" aria-label="${T('Main menu', 'เมนูหลัก')}"><div class="an-treehead">${T('MAIN MENU', 'เมนูหลัก')}</div>${STEPS().map(([k, l, c], i) => { const open = A.step === k, st = k === 'run' || k === 'res' ? (fresh() ? 'ok' : A.err && A.resVer === A.ver && k === 'run' ? 'bad' : '') : ''; return `<div class="an-node ${open ? 'open' : ''}"><div class="an-throw"><button class="an-th" data-act="an-step" data-s="${k}" aria-expanded="${open}"><span class="an-num">${i}</span><span class="an-tl">${l}</span><span class="an-cnt ${st}" data-s="${k}">${esc(String(c))}</span><span class="an-chev" aria-hidden="true">›</span></button>${WADD.includes(k) ? `<button class="an-plus" data-act="an-win" data-k="${k}" title="${esc(winTitle(k))}" aria-label="${esc(winTitle(k))}">+</button>` : '<span class="an-plus0"></span>'}</div>${open ? `<div class="an-panel">${panel(k)}</div>` : ''}</div>`; }).join('')}</nav>`;
     }
     function updCounts() { STEPS().forEach(([k, , c]) => { const e = document.querySelector('.an-cnt[data-s="' + k + '"]'); if (e) { e.textContent = String(c); e.classList.toggle('ok', (k === 'run' || k === 'res') && fresh()); } }); }
     function sideRefresh() { const s = $('#anSide'); if (!s) return; const sc = s.scrollTop; s.innerHTML = treeHTML(); s.scrollTop = sc; }
@@ -1245,28 +1262,15 @@
     function view() {
       const lv = levels(), ax = cutAxis(), showRes = A.step === 'res' && fresh(), sd = stdInfo(A.model.std);
       return `<main class="an an-app">
+          ${ribHTML()}
           <aside class="an-side" id="anSide">${treeHTML()}</aside>
           <section class="an-work">
-            <div class="an-tools">
-              <div class="seg" role="group" aria-label="${T('Tool', 'เครื่องมือ')}">${[['select', T('Select', 'เลือก'), T('Click to pick · drag a box: → window, ← crossing · Ctrl adds · Alt removes · Shift-drag rotates', 'คลิกเพื่อเลือก · ลากกรอบ: → หน้าต่าง, ← ตัดผ่าน · Ctrl เพิ่ม · Alt ลบออก · Shift-ลาก หมุน')], ['orbit', T('Orbit', 'หมุน'), T('Drag to rotate the 3D view', 'ลากเพื่อหมุนมุมมอง 3 มิติ')], ['node', T('Node', 'จุดต่อ'), ''], ['member', T('Element', 'ชิ้นส่วน'), '']].map(([k, l, tt]) => `<button data-act="an-tool" data-t="${k}" aria-pressed="${A.tool === k}" ${tt ? `title="${esc(tt)}"` : ''}>${l}</button>`).join('')}</div>
-              ${sel([['', T('Select…', 'เลือก…')], ['all', T('All', 'ทั้งหมด')], ['none', T('None', 'ไม่เลือก')], ['inv', T('Invert', 'กลับการเลือก')], ['nodes', T('All nodes', 'จุดต่อทั้งหมด')], ['elems', T('All elements', 'ชิ้นส่วนทั้งหมด')], ['col', T('Columns', 'เสา')], ['beam', T('Beams', 'คาน')], ['brace', T('Bracing', 'ค้ำยัน')], ['sup', T('Supports', 'จุดรองรับ')], ['samesec', T('Same section as selected', 'หน้าตัดเดียวกับที่เลือก')], ['samemat', T('Same material as selected', 'วัสดุเดียวกับที่เลือก')]].concat(A.model.sections.map(q => ['sec:' + q.id, T('Section ', 'หน้าตัด ') + q.id])), '', `id="an-selby" class="an-selby" aria-label="${T('Select by', 'เลือกตาม')}"`)}
-              <div class="seg" role="group" aria-label="${T('Display', 'การแสดงผล')}">${[['wire', T('Wire', 'เส้น'), T('Centre-line view', 'แสดงเส้นแกน')], ['solid', T('Solid', 'ทรงตัน'), T('Render the actual section shapes', 'แสดงรูปหน้าตัดจริง')]].map(([k, l, tt]) => `<button data-act="an-disp" data-d="${k}" aria-pressed="${(k === 'solid') === !!A.solid}" title="${esc(tt)}">${l}</button>`).join('')}</div>
-              <div class="seg" role="group" aria-label="${T('View', 'มุมมอง')}">${[['3d', '3D'], ['plan', T('Plan', 'แปลน')], ['xz', 'X–Z'], ['yz', 'Y–Z']].map(([k, l]) => `<button data-act="an-cam" data-v="${k}" aria-pressed="${A.cam.v === k}">${l}</button>`).join('')}</div>
-              ${ax ? `<label class="an-lv">${ax.toUpperCase()} = ${sel([['all', T('all', 'ทั้งหมด')]].concat(lv.map(v => [v, fu(v, 'L', 2)])), A.cut, 'id="an-cut"')}</label>` : ''}
-              ${sel([['', T('Loads: off', 'แรง: ปิด')]].concat(A.model.cases.map(c => [c.id, T('Loads: ', 'แรง: ') + c.id + ' — ' + c.name]), [['all', T('Loads: all cases', 'แรง: ทุกกรณี')]]), A.loadsOn ? A.lcase : '', `id="an-lshow" class="an-lshow" aria-label="${T('Show loads of', 'แสดงแรงของ')}"`)}
-              <span class="grow"></span>
-              <button class="btn btn-ghost xs" data-act="an-fit" title="${T('Zoom to fit', 'ซูมให้พอดี')}" aria-label="${T('Zoom to fit', 'ซูมให้พอดี')}">⤢</button><button class="btn btn-ghost xs" data-act="an-undo" ${A.hist.length ? '' : 'disabled'} title="Ctrl+Z" aria-label="Undo">↶</button><button class="btn btn-ghost xs" data-act="an-redo" ${A.fut.length ? '' : 'disabled'} title="Ctrl+Y" aria-label="Redo">↷</button>
-              <span class="an-sep"></span>
-              <button class="btn btn-ghost xs" data-act="an-tplopen">${T('Template', 'แม่แบบ')}</button><button class="btn btn-ghost xs" data-act="an-save">${T('Save', 'บันทึก')}</button><label class="btn btn-ghost xs an-open">${T('Open', 'เปิด')}<input type="file" accept=".json,application/json" id="an-file" hidden></label><button class="btn ${pro() ? 'btn-ghost' : 'btn-lock'} xs" data-act="an-report">${pro() ? T('Report', 'รายงาน') : '🔒 ' + T('Report', 'รายงาน')}</button>
-              <button class="btn btn-hot xs" data-act="an-run">▶ ${T('Run', 'วิเคราะห์')}</button>
-              <button class="btn btn-ghost xs an-helpbtn" data-act="an-win" data-k="help" title="${T('Help and shortcuts (?)', 'วิธีใช้และปุ่มลัด (?)')}" aria-label="${T('Help', 'วิธีใช้')}">? ${T('Help', 'วิธีใช้')}</button>
-            </div>
-            <div class="an-canvas"><canvas id="anCv" tabindex="0" aria-label="${T('3D model view', 'มุมมองแบบจำลอง 3 มิติ')}"></canvas><span class="an-tag" id="anViewTag">${viewTag()}</span>
+            <div class="an-canvas"><canvas id="anCv" tabindex="0" aria-label="${T('3D model view', 'มุมมองแบบจำลอง 3 มิติ')}"></canvas><span class="an-tag" id="anViewTag">${viewTag()}</span>${ax ? `<label class="an-lv an-lvbox">${T('Level', 'ระดับ')} ${ax.toUpperCase()} = ${sel([['all', T('all', 'ทั้งหมด')]].concat(lv.map(v => [v, fu(v, 'L', 2)])), A.cut, 'id="an-cut"')}</label>` : ''}
               <p class="an-hintbar"><span id="anHint">${hintBar()}</span></p>${unitBar()}</div>
             <div class="an-drawer ${showRes ? 'on' : ''}" id="anDrawer">${drawerHTML()}</div>
           </section>
         ${A.tplOpen ? `<div class="modal-bg an-tplbg">${tplHTML()}</div>` : ''}
-        <div id="anWinHost"></div>
+        <div id="anWinHost"></div><div id="anRibMenu"></div>
         <div id="reportWrap" class="an-report"></div></main>`;
     }
     function unitBar() {
@@ -1279,6 +1283,9 @@
     function hintBar() {
       const rot = A.cam.v === '3d' ? T('right-drag: rotate', 'ลากคลิกขวา: หมุน') : T('right-drag: pan', 'ลากคลิกขวา: เลื่อน');
       const sh = A.cam.v === '3d' ? T('Shift-drag: rotate', 'Shift-ลาก: หมุน') : T('Shift-drag: pan', 'Shift-ลาก: เลื่อน');
+      if (A.tool === 'pan') return T('Pan tool: drag to move the view · wheel: zoom · Esc: back to Select', 'เครื่องมือเลื่อน: ลากเพื่อเลื่อน · ล้อเมาส์: ซูม · Esc: กลับไปเลือก');
+      if (A.tool === 'zoomw') return T('Zoom window: drag a box around the area · Esc: cancel', 'ซูมกรอบ: ลากกรอบรอบพื้นที่ · Esc: ยกเลิก');
+      if (A.tool === 'qnode' || A.tool === 'qelem') return T('Query: click a ' + (A.tool === 'qnode' ? 'node' : 'element') + ' to see its data · drag: rotate · Esc: back to Select', 'สอบถาม: คลิก' + (A.tool === 'qnode' ? 'จุดต่อ' : 'ชิ้นส่วน') + 'เพื่อดูข้อมูล · ลาก: หมุน · Esc: กลับไปเลือก');
       if (A.tool === 'select') return T('Drag box: → window / ← crossing · Ctrl: add · Alt: remove · Shift-click: add/remove', 'ลากกรอบ: → หน้าต่าง / ← ตัดผ่าน · Ctrl: เพิ่ม · Alt: ลบออก · Shift-คลิก: เพิ่ม/ลบ') + ' · ' + sh + ' · ' + T('middle-drag: pan · wheel: zoom', 'ลากปุ่มกลาง: เลื่อน · ล้อเมาส์: ซูม');
       return (A.cam.v === '3d' ? T('Drag: rotate', 'ลาก: หมุน') : T('Drag: pan', 'ลาก: เลื่อน')) + ' · ' + T('Ctrl-drag: select area · middle-drag: pan · wheel: zoom', 'Ctrl-ลาก: เลือกพื้นที่ · ลากปุ่มกลาง: เลื่อน · ล้อเมาส์: ซูม');
     }
@@ -1311,6 +1318,8 @@
       if (!resizeBound) { resizeBound = true; let rt = null; G.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if ($('#anCv')) redraw(); }, 120); }); }
       if (!keyBound) {
         keyBound = true;
+        document.addEventListener('mousedown', e => { if (A.ribMenu && !(e.target.closest && (e.target.closest('.an-rmenu') || e.target.closest('[data-m]')))) closeMenu(); });
+        G.addEventListener('resize', () => closeMenu());
         document.addEventListener('dragstart', e => { const t = e.target.closest && e.target.closest('[data-dnd]'); if (!t || S.view !== 'analysis') return; A.dnd = t.dataset.dnd; try { e.dataTransfer.setData('text/plain', A.dnd); e.dataTransfer.effectAllowed = 'copy'; } catch (er) { } document.body.classList.add('an-dragging'); });
         document.addEventListener('dragend', () => { A.dnd = null; document.body.classList.remove('an-dragging'); if (A.hover) { A.hover = null; redraw(); } });
         document.addEventListener('keydown', e => {
@@ -1323,17 +1332,19 @@
           if (typing) return;
           if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) { e.preventDefault(); selectBy('all'); return; }
           if (e.ctrlKey || e.metaKey || e.altKey) return;
-          const tool = t => { const bt = document.querySelector(`.an-tools [data-act=an-tool][data-t=${t}]`); if (bt) bt.click(); };
+          const tool = t => setTool(t);
           const k = e.key.length === 1 ? e.key.toLowerCase() : e.key, c = A.cam, is3 = c.v === '3d';
+          if (k === 'Escape' && A.ribMenu) { closeMenu(); return; }
+          if (k === 'Escape' && ['pan', 'zoomw', 'qnode', 'qelem', 'orbit'].includes(A.tool)) { setTool('select'); return; }
           if (k === 'Escape') { if (A.draw) { A.draw = null; redraw(); } else if (A.sel.n.length || A.sel.m.length) { A.sel = { n: [], m: [] }; selChanged(); } else if (A.win) { A.win = null; winRefresh(); } }
           else if ((k === 'Delete' || k === 'Backspace') && (A.sel.n.length || A.sel.m.length)) { e.preventDefault(); deleteSel(); }
           else if (k === '?') openWin('help');
           else if (k === 's') tool('select'); else if (k === 'o') tool('orbit'); else if (k === 'n') tool('node'); else if (k === 'e') tool('member');
-          else if (k === '3' || k === 'p' || k === 'x' || k === 'y') { setView({ 3: '3d', p: 'plan', x: 'xz', y: 'yz' }[k]); ctx.render(); }
-          else if (k === 'f') { A.cam.k = null; redraw(); }
+          else if (k === '3' || k === 'p' || k === 'x' || k === 'y') { camPush(); setView({ 3: '3d', p: 'plan', x: 'xz', y: 'yz' }[k]); ctx.render(); }
+          else if (k === 'f') { camPush(); A.cam.k = null; redraw(); }
           else if (k === '+' || k === '=' || k === '-' || k === '_') { const cv = $('#anCv'); zoomAt(cv.clientWidth / 2, cv.clientHeight / 2, k === '+' || k === '=' ? 1.2 : 1 / 1.2); }
           else if (k.startsWith('Arrow')) { e.preventDefault(); const dx = k === 'ArrowLeft' ? -1 : k === 'ArrowRight' ? 1 : 0, dy = k === 'ArrowUp' ? -1 : k === 'ArrowDown' ? 1 : 0; if (is3) { c.yaw -= dx * 0.12; c.pitch = Math.max(-1.5, Math.min(1.5, c.pitch - dy * 0.12)); } else { const B = basis(c), st = 40 / c.k; c.t = addv(addv(c.t, B.r, dx * st), B.u, -dy * st); } redraw(); }
-          else if (k === 'w') { const bt = document.querySelector(`.an-tools [data-act=an-disp][data-d=${A.solid ? 'wire' : 'solid'}]`); if (bt) bt.click(); }
+          else if (k === 'w') { A.solid = !A.solid; ribRefresh(); redraw(); }
           else if (k === 'l') { if (!A.loadsOn && !A.model.cases.some(q => q.id === A.lcase) && A.lcase !== 'all') A.lcase = (A.model.cases[0] || {}).id || ''; A.loadsOn = !A.loadsOn; syncLshow(); redraw(); }
           else if (k === 't') { A.labels = !A.labels; redraw(); }
           else if (k === 'i') selectBy('inv');
@@ -1352,6 +1363,7 @@
         if (k === 'load' && fd === 'kind' && v.kind === 'moment') v.dir = 'lz'; else if (k === 'load' && fd === 'kind' && !DIRS().some(q => q[0] === v.dir)) v.dir = 'grav';
         if (['type', 'series', 'shape', 'kind', 'on', 'grade', 'sgrade', 'size', 'tsize'].includes(fd)) winRefresh();
         else if (k === 'sec') { const pv = $('#anWPrev'); if (pv) pv.innerHTML = secSVG(wsecObj(v)) + wsecProps(v); }
+        else if (RW[k] && RW[k].live && RW[k].live.includes(fd)) winRefresh();
         return true;
       }
       if (t.dataset.def) { const k = t.dataset.def; if (k === 'sec') A.lastSec = t.value; else if (k === 'mat') A.lastMat = t.value; else A.lastType = t.value; return true; }
@@ -1412,6 +1424,10 @@
     }
     function onClick(a, b) {
       const m = A.model;
+      if (a === 'an-rb') { ribCmd(b.dataset.c, b.dataset.v, b); return true; }
+      if (a === 'an-ribtab') { closeMenu(); A.rib = b.dataset.t; A.ribMin = false; ribRefresh(); return true; }
+      if (a === 'an-ribmin') { closeMenu(); A.ribMin = !A.ribMin; ribRefresh(); return true; }
+      closeMenu();
       if (a === 'an-step') { const s0 = b.dataset.s; A.step = A.step === s0 && b.classList.contains('an-th') ? null : s0; if (A.step === 'load' && !m.cases.some(c => c.id === A.lcase)) A.lcase = (m.cases[0] || {}).id || ''; if (A.step === 'load' || A.step === 'case') A.loadsOn = true; ctx.render(); }
       else if (a === 'an-std') { const k = b.dataset.k; if (k === m.std) return true; snap(true); m.std = k; A.ss = null; changed(true); ctx.render(); toast(T('Design standard: ', 'มาตรฐาน: ') + T(stdInfo(k).name[0], stdInfo(k).name[1]) + T(' — new materials, sections and combinations follow it.', ' — วัสดุ หน้าตัด และการรวมน้ำหนักใหม่จะเป็นไปตามมาตรฐานนี้'), 'ok'); }
       else if (a === 'an-rtab') { A.rtab = b.dataset.t; const r = $('#anRes'); if (r) r.innerHTML = resultsHTML(); }
@@ -1419,7 +1435,7 @@
       else if (a === 'an-disp') { A.solid = b.dataset.d === 'solid'; document.querySelectorAll('.an-tools [data-act=an-disp]').forEach(x => x.setAttribute('aria-pressed', (x.dataset.d === 'solid') === A.solid)); if (A.solid && A.step === 'res') toast(T('Solid view shows in model mode; results are drawn on the centre-lines.', 'มุมมองทรงตันแสดงในโหมดแบบจำลอง ผลลัพธ์แสดงบนเส้นแกน'), ''); redraw(); }
       else if (a === 'an-lpick') { A.lcase = b.dataset.c; A.loadsOn = true; syncLshow(); sideRefresh(); redraw(); }
       else if (a === 'an-llist') { A.llist = !A.llist; sideRefresh(); }
-      else if (a === 'an-tool') { A.tool = b.dataset.t === 'box' ? 'select' : b.dataset.t; const hb = $('#anHint'); if (hb) hb.textContent = hintBar(); A.draw = null; document.querySelectorAll('.an-tools [data-act=an-tool]').forEach(x => x.setAttribute('aria-pressed', x.dataset.t === A.tool)); if ((A.tool === 'node' || A.tool === 'member') && A.cam.v === '3d') toast(T('Tip: in Plan or an Elevation you can click empty grid points to create nodes.', 'เคล็ดลับ: ในแปลนหรือรูปด้าน คลิกตำแหน่งว่างเพื่อสร้างจุดต่อ'), ''); if (b.closest('.an-panel')) sideRefresh(); redraw(); }
+      else if (a === 'an-tool') { A.tool = b.dataset.t === 'box' ? 'select' : b.dataset.t; ribRefresh(); A.draw = null; document.querySelectorAll('.an-tools [data-act=an-tool]').forEach(x => x.setAttribute('aria-pressed', x.dataset.t === A.tool)); if ((A.tool === 'node' || A.tool === 'member') && A.cam.v === '3d') toast(T('Tip: in Plan or an Elevation you can click empty grid points to create nodes.', 'เคล็ดลับ: ในแปลนหรือรูปด้าน คลิกตำแหน่งว่างเพื่อสร้างจุดต่อ'), ''); if (b.closest('.an-panel')) sideRefresh(); redraw(); }
       else if (a === 'an-cam') { setView(b.dataset.v); ctx.render(); }
       else if (a === 'an-fit') { A.cam.k = null; redraw(); }
       else if (a === 'an-undo') undo(false);
@@ -1433,6 +1449,7 @@
       else if (a === 'an-gocase') { A.lcase = b.dataset.c; A.step = 'load'; A.loadsOn = true; ctx.render(); }
       else if (a === 'an-add') { snap(true); addRow(b.dataset.tb); changed(true); }
       else if (a === 'an-del') { snap(true); const tb = b.dataset.tb, i = +b.dataset.i, row = m[tb][i]; m[tb].splice(i, 1); if (tb === 'nodes') { m.members = m.members.filter(x => x.i !== row.id && x.j !== row.id); m.loads = m.loads.filter(l => l.node !== row.id); } if (tb === 'members') m.loads = m.loads.filter(l => l.member !== row.id); if (tb === 'cases') { m.loads = m.loads.filter(l => l.case !== row.id); m.combos.forEach(c => { if (c.f) delete c.f[row.id]; }); } A.sel = { n: A.sel.n.filter(id => m.nodes.some(q => q.id === id)), m: A.sel.m.filter(id => m.members.some(q => q.id === id)) }; changed(true); }
+      if (a === 'an-del' && A.win) winRefresh();
       else if (a === 'an-mat') { snap(true); const mt = clone(MAT[b.dataset.m]); let id = mt.id, k = 2; while (m.materials.some(q => q.id === id)) id = mt.id + k++; mt.id = id; m.materials.push(mt); changed(true); }
       else if (a === 'an-addconc' || a === 'an-addsteel') { const g = a === 'an-addconc' ? concMat(m.std, $('#an-cg').value) : steelMat(m.std, $('#an-sg').value); if (m.materials.some(q => q.id === g.id)) { toast(T(g.id + ' is already in the list.', g.id + ' มีอยู่แล้ว'), ''); return true; } snap(true); m.materials.push(g); A.lastMat = g.id; changed(true); toast(T('Added ', 'เพิ่ม ') + g.name, 'ok'); }
       else if (a === 'an-addrect' || a === 'an-addcirc' || a === 'an-addstd') {
@@ -1534,6 +1551,600 @@
           ${html}
           <p class="rp-foot"><b>${COPY}</b> · ${T('Generated by StructCap. Units ' + ulab('F') + ', ' + ulab('L') + ', ' + ulab('M') + ', ' + ulab('T') + '. The engineer remains responsible for the model, loads and interpretation of results.', 'จัดทำโดย StructCap หน่วย ' + ulab('F') + ', ' + ulab('L') + ', ' + ulab('M') + '  วิศวกรต้องรับผิดชอบต่อแบบจำลอง แรง และการตีความผลลัพธ์')}</p>
         </article>`;
+    }
+
+
+    // ================================================================== ribbon menu (top) — tabs, groups, commands
+    Object.assign(A, { rib: 'view', ribMin: false, ribMenu: null, camHist: [], hidN: new Set(), hidM: new Set(), grid: true, lblN: true, lblM: true, showSup: true, allAxes: false, prevSel: null, selCur: null, ltype: 'static', qinfo: null });
+    if (!A.opt.views) A.opt.views = [];
+    // ---- icons (own drawings, 24 × 24, stroke = currentColor, .ac = accent)
+    const IC = {
+      redraw: '<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path class="ac" d="M20.5 4v5h-5"/>',
+      home: '<rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/><path class="ac" d="M8 12.5l4-3.5 4 3.5M9.5 11.5V15h5v-3.5"/>',
+      back: '<rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/><path class="ac" d="M14 7.5l-4 3 4 3"/>',
+      orbit: '<ellipse cx="12" cy="12" rx="9" ry="3.8"/><path d="M12 3v18"/><path class="ac" d="M17.5 6.5l2 1.8-2.4 1.2"/>',
+      zoom: '<circle cx="10" cy="10" r="6"/><path d="M14.5 14.5L21 21"/><path class="ac" d="M10 7v6M7 10h6"/>',
+      pan: '<path d="M12 3v18M3 12h18"/><path class="ac" d="M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>',
+      cube: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path class="ac" d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+      mark: '<path d="M6 3h12v18l-6-4.2L6 21z"/><path class="ac" d="M9 8h6"/>',
+      solid: '<path class="acf" d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+      wire: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path class="ac" stroke-dasharray="2 2" d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+      tag: '<path d="M3 12V4h8l10 10-8 8z"/><circle class="ac" cx="7.5" cy="8" r="1.6"/>',
+      cursor: '<path class="acf" d="M5 3l14 8-6.2 1.8L10 19z"/><path d="M5 3l14 8-6.2 1.8L10 19z"/>',
+      unsel: '<path d="M4 3l12 7-5.3 1.5L8.5 17z"/><path class="ac" d="M15 15l6 6M21 15l-6 6"/>',
+      prevsel: '<path d="M4 3l12 7-5.3 1.5L8.5 17z"/><path class="ac" d="M21 18a4 4 0 1 1-1.2-2.9M20.5 13.5v2.2h-2.2"/>',
+      eye: '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle class="ac" cx="12" cy="12" r="3"/>',
+      eyeoff: '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><path class="ac" d="M4 4l16 16"/>',
+      all: '<rect x="3" y="3" width="7.5" height="7.5" rx="1"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1"/><rect class="ac" x="13.5" y="13.5" width="7.5" height="7.5" rx="1"/>',
+      swap: '<path d="M4 8h15l-3.5-3.5"/><path class="ac" d="M20 16H5l3.5 3.5"/>',
+      grid: '<path d="M4 4h16v16H4zM4 9.3h16M4 14.6h16M9.3 4v16M14.6 4v16"/>',
+      magnet: '<path d="M6 4v8a6 6 0 0 0 12 0V4h-4v8a2 2 0 0 1-4 0V4z"/><path class="ac" d="M6 7h4M14 7h4"/>',
+      palette: '<path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-.9 2-2s-1-1.6-1-2.6c0-1 .8-1.6 2-1.6h2.5A3.5 3.5 0 0 0 21 11.5C21 6.8 17 3 12 3z"/><circle class="acf" cx="7.5" cy="11" r="1.4"/><circle class="acf" cx="10" cy="7" r="1.4"/><circle class="acf" cx="15" cy="7" r="1.4"/>',
+      wand: '<path d="M4 20L15 9"/><path class="ac" d="M15 3v3M18 6h3M19.5 3.5l-2 2M12.5 6h1.5M18 10.5V12"/>',
+      plane: '<rect x="3" y="5" width="18" height="14" rx="1"/><path class="ac" d="M6 16V9l6 4 6-4v7"/>',
+      book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5"/><path class="ac" d="M9 7h6"/>',
+      node: '<circle class="acf" cx="10" cy="14" r="4"/><circle cx="10" cy="14" r="4"/><path d="M17 3v6M14 6h6"/>',
+      elem: '<path d="M5 19L17 7"/><circle class="acf" cx="5" cy="19" r="2.4"/><circle class="acf" cx="17" cy="7" r="2.4"/><path d="M19 15v6M16 18h6"/>',
+      move: '<circle class="acf" cx="6" cy="18" r="2.5"/><path d="M8.5 15.5L18 6"/><path class="ac" d="M12.5 6H18v5.5"/>',
+      divide: '<path d="M3 12h18"/><circle class="acf" cx="4" cy="12" r="1.8"/><circle class="acf" cx="12" cy="12" r="1.8"/><circle class="acf" cx="20" cy="12" r="1.8"/><path class="ac" d="M8 7v3M16 7v3M8 14v3M16 14v3"/>',
+      merge: '<path d="M3 6l7 6-7 6"/><path d="M21 6l-7 6 7 6"/><circle class="acf" cx="12" cy="12" r="2"/>',
+      del: '<path class="ac" d="M6 6l12 12M18 6L6 18"/>',
+      rotate: '<path d="M20 12a8 8 0 1 1-8-8"/><path class="ac" d="M11 1l3 3-3 3"/>',
+      mirror: '<path class="ac" stroke-dasharray="2 2" d="M12 2v20"/><path d="M9 7L4 17h5zM15 7l5 10h-5z"/>',
+      scale: '<rect x="3" y="12" width="9" height="9"/><path stroke-dasharray="2 2" d="M3 12V3h18v18h-9"/><path class="ac" d="M12 12l7-7M14 5h5v5"/>',
+      table: '<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M3 9h18M3 14h18M9 9v11M15 9v11"/><path class="ac" d="M3 9h18"/>',
+      extrude: '<circle class="acf" cx="6" cy="19" r="2.2"/><path d="M6 17V5"/><path class="ac" d="M3.5 8L6 5l2.5 3"/><path d="M12 19h8M12 5h8M12 5v14M20 5v14"/>',
+      intersect: '<path d="M4 4l16 16M20 4L4 20"/><circle class="acf" cx="12" cy="12" r="2.6"/>',
+      params: '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle class="ac" cx="15" cy="7" r="2"/><circle class="ac" cx="9" cy="17" r="2"/>',
+      mat: '<path d="M3 8l9-5 9 5-9 5z"/><path class="ac" d="M3 12l9 5 9-5"/><path d="M3 16l9 5 9-5"/>',
+      sec: '<path class="acf" d="M5 4h14v3h-5v10h5v3H5v-3h5V7H5z"/><path d="M5 4h14v3h-5v10h5v3H5v-3h5V7H5z"/>',
+      secm: '<path d="M3 5h10v3H9.5v8H13v3H3v-3h3.5V8H3z"/><path class="ac" d="M16 7h5M16 12h5M16 17h5"/>',
+      support: '<path d="M12 4l7 11H5z"/><path class="ac" d="M3 19h18M6 19l-2 2.5M10 19l-2 2.5M14 19l-2 2.5M18 19l-2 2.5"/>',
+      spring: '<circle class="acf" cx="12" cy="3.5" r="1.8"/><path d="M12 5.5v2l5 1.5-10 3 10 3-10 3 5 1.5V21"/><path class="ac" d="M7 21h10"/>',
+      release: '<path d="M2 12h7M15 12h7"/><circle class="ac" cx="12" cy="12" r="3"/>',
+      beta: '<path d="M4 20h16M4 20V4"/><path class="ac" d="M4 20L17 9"/><path d="M11 20a7 7 0 0 0-1.5-4.4"/>',
+      lc: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8"/><path class="ac" d="M8 16h5"/>',
+      lcc: '<rect x="3" y="5" width="12" height="15" rx="1.5"/><path d="M7 3h12a2 2 0 0 1 2 2v12"/><path class="ac" d="M9 9.5v6M6 12.5h6"/>',
+      weight: '<path d="M8.5 8a3.5 3.5 0 1 1 7 0"/><path d="M5 8h14l2 12H3z"/><path class="ac" d="M12 11v5M10 14l2 2 2-2"/>',
+      nload: '<path class="ac" d="M12 2v11M8 9l4 4 4-4"/><circle class="acf" cx="12" cy="18.5" r="2.5"/><path d="M5 22h14"/>',
+      udl: '<path d="M3 20h18"/><path class="ac" d="M3 4h18M5 4v10M9.7 4v10M14.3 4v10M19 4v10M3.5 12l1.5 2.5L6.5 12M8.2 12l1.5 2.5 1.5-2.5M12.8 12l1.5 2.5 1.5-2.5M17.5 12l1.5 2.5 1.5-2.5"/>',
+      pload: '<path d="M3 20h18"/><path class="ac" d="M12 3v13M8.5 12.5L12 16l3.5-3.5"/>',
+      moment: '<path d="M3 20h18"/><path class="ac" d="M8 13a4.5 4.5 0 1 1 6.5 3.9M14 13.5v3.6h3.6"/>',
+      thermo: '<path d="M10 4a2 2 0 0 1 4 0v10.2a4 4 0 1 1-4 0z"/><circle class="acf" cx="12" cy="17" r="1.8"/><path class="ac" d="M12 8v7.5"/>',
+      tgrad: '<path d="M7 4a2 2 0 0 1 4 0v10.2a4 4 0 1 1-4 0z"/><circle class="acf" cx="9" cy="17" r="1.8"/><path class="ac" d="M15 5h6M15 9h5M15 13h4M15 17h3"/>',
+      play: '<path class="acf" d="M7 4l13 8-13 8z"/><path d="M7 4l13 8-13 8z"/>',
+      clear: '<path d="M4 7h16M9.5 7V4h5v3M6 7l1 13h10l1-13"/><path class="ac" d="M10 11v6M14 11v6"/>',
+      gear: '<circle class="ac" cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+      react: '<path d="M12 9l6 9H6z"/><path d="M3 21h18"/><path class="ac" d="M12 8V2M9 5l3-3 3 3"/>',
+      deform: '<path stroke-dasharray="2 2" d="M3 17h18"/><path class="ac" d="M3 17c4-10 14-10 18 0"/><path d="M3 20v-6M21 20v-6"/>',
+      forces: '<path d="M3 17h18"/><path class="acf" d="M3 17V9h18v8"/><path d="M3 17V9h18v8"/>',
+      diagram: '<path d="M3 8h18"/><path class="acf" d="M3 8c3 11 15 11 18 0z"/><path d="M3 8c3 11 15 11 18 0"/>',
+      detail: '<path d="M2 18h12"/><circle cx="16" cy="9" r="5"/><path d="M19.5 12.5L22 15"/><path class="ac" d="M13.5 10.5c1.5-3 3.5-3 5 0"/>',
+      mode: '<path d="M3 20h18"/><path class="ac" d="M6 20c-3-6 3-10 0-16M18 20c-3-6 3-10 0-16"/><path d="M6 4h12"/>',
+      buckle: '<path d="M3 21h18M3 3h18"/><path class="ac" d="M12 3c-6 6-6 12 0 18"/><path stroke-dasharray="2 2" d="M12 3v18"/>',
+      doc: '<path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/><path class="ac" d="M9 12h8M9 16h8"/>',
+      status: '<rect x="3" y="3" width="18" height="18" rx="2"/><path class="ac" d="M7 15l3-4 3 2.5 4-6"/>',
+      qnode: '<circle class="acf" cx="8" cy="16" r="3.5"/><path class="ac" d="M14 7a3 3 0 1 1 4 2.8c-.6.3-1 .8-1 1.5V13M17 16.5v.5"/>',
+      qelem: '<path d="M3 21L12 12"/><circle class="acf" cx="3.5" cy="20.5" r="1.8"/><circle class="acf" cx="12" cy="12" r="1.8"/><path class="ac" d="M14 5a3 3 0 1 1 4 2.8c-.6.3-1 .8-1 1.5V11M17 14.5v.5"/>',
+      units: '<rect x="2" y="8" width="20" height="8" rx="1.2"/><path class="ac" d="M6 8v3M10 8v4.5M14 8v3M18 8v4.5"/>',
+      help: '<circle cx="12" cy="12" r="9"/><path class="ac" d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .8-1 1.5V14M12 17v.5"/>',
+      save: '<path d="M4 4h12l4 4v12H4z"/><path d="M7 4v5h8V4"/><rect class="ac" x="7" y="13" width="10" height="7"/>',
+      open: '<path d="M3 6h6l2 2h10v11H3z"/><path class="ac" d="M3 11h18"/>',
+      undo: '<path d="M9 14L4 9l5-5"/><path class="ac" d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+      redo: '<path d="M15 14l5-5-5-5"/><path class="ac" d="M20 9H10a6 6 0 0 0 0 12h3"/>',
+      beam: '<rect x="2" y="8" width="20" height="8" rx="1"/><circle class="acf" cx="6" cy="13.5" r="1.2"/><circle class="acf" cx="12" cy="13.5" r="1.2"/><circle class="acf" cx="18" cy="13.5" r="1.2"/>',
+      column: '<rect x="8" y="2" width="8" height="20" rx="1"/><path class="ac" d="M10.5 4v16M13.5 4v16"/>',
+      pencil: '<path d="M4 20l1-5L16 4l4 4L9 19z"/><path class="ac" d="M14 6l4 4"/>',
+      range: '<path d="M3 20L20 3"/><path class="ac" d="M3 20l5-1M3 20l1-5"/><circle class="acf" cx="20" cy="3" r="1.6"/>',
+      list: '<path d="M8 6h13M8 12h13M8 18h13"/><circle class="acf" cx="4" cy="6" r="1.4"/><circle class="acf" cx="4" cy="12" r="1.4"/><circle class="acf" cx="4" cy="18" r="1.4"/>',
+      fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><rect class="ac" x="8" y="8" width="8" height="8" rx="1"/>'
+    };
+    const icon = (k, big) => `<svg class="an-ic ${big ? 'big' : ''}" viewBox="0 0 24 24" aria-hidden="true">${IC[k] || IC.list}</svg>`;
+
+    // ---- ribbon content: [id, label, groups]; group = [title, items]; item = button {c, i, l, m (menu), on} or {col: [...]}
+    const B = (c, i, l, o) => Object.assign({ c, i, l }, o || {});
+    const COL = (...items) => ({ col: items });
+    function RIB() {
+      const tool = t => () => A.tool === t, o = A.opt, temp = A.ltype === 'temp';
+      return [
+        ['view', T('View', 'มุมมอง'), [
+          [T('Dynamic View', 'มุมมองไดนามิก'), [B('redraw', 'redraw', T('Redraw', 'วาดใหม่')), B('initv', 'home', T('Initial View', 'มุมมองเริ่มต้น')), B('prevv', 'back', T('Previous View', 'มุมมองก่อนหน้า')),
+            COL(B('orbit', 'orbit', T('Dynamic', 'หมุนอิสระ'), { on: tool('orbit') }), B('zoomm', 'zoom', T('Zoom', 'ซูม'), { m: 1, on: tool('zoomw') }), B('pan', 'pan', T('Pan', 'เลื่อน'), { on: tool('pan') })),
+            COL(B('vpm', 'cube', T('View Point', 'จุดมอง'), { m: 1 }), B('namedv', 'mark', T('Named View', 'มุมมองที่บันทึก')), B('zfit', 'fit', T('Zoom Fit', 'ซูมพอดี')))]],
+          [T('Render View', 'การแสดงผล'), [B('hidden', 'solid', T('Hidden', 'ทรงตัน'), { on: () => !!A.solid }), COL(B('wire', 'wire', T('Wireframe', 'เส้นโครง'), { on: () => !A.solid }), B('lbls', 'tag', T('Labels', 'ป้ายชื่อ'), { on: () => A.lblN !== false || A.lblM !== false }))]],
+          [T('Select', 'การเลือก'), [COL(B('selm', 'cursor', T('Select', 'เลือก'), { m: 1, on: tool('select') }), B('unselm', 'unsel', T('Unselect', 'ยกเลิกการเลือก'), { m: 1 }), B('selprev', 'prevsel', T('Select Previous', 'เลือกชุดก่อนหน้า')))]],
+          [T('Activities', 'การแสดงบางส่วน'), [B('active', 'eye', T('Active', 'แสดงเฉพาะ')), B('inactive', 'eyeoff', T('Inactive', 'ซ่อน')), B('actall', 'all', T('All', 'ทั้งหมด'), { on: () => !A.hidN.size && !A.hidM.size }), B('inverse', 'swap', T('Inverse Active', 'สลับการแสดง'))]],
+          [T('Grids/Snap', 'กริด/สแนป'), [COL(B('grid', 'grid', T('Grids', 'กริด'), { on: () => A.grid !== false }), B('snapm', 'magnet', T('Snap', 'สแนป') + ' ' + (+o.snap > 0 ? fu(+o.snap, 'L', 2) : T('off', 'ปิด')), { m: 1 }))]],
+          [T('Display', 'การแสดง'), [B('dispm', 'palette', T('Display', 'ตัวเลือกการแสดง'), { m: 1 })]]
+        ]],
+        ['struct', T('Structure', 'โครงสร้าง'), [
+          [T('Wizard', 'ตัวช่วยสร้าง'), [B('wizard', 'wand', T('Structure Wizard', 'สร้างจากแม่แบบ'))]],
+          [T('Structure Type', 'ชนิดโครงสร้าง'), [B('type3d', 'cube', T('3D Frame', 'โครง 3 มิติ'), { on: () => A.model.plane !== 'XZ' }), B('type2d', 'plane', T('2D Frame (X–Z)', 'โครง 2 มิติ (X–Z)'), { on: () => A.model.plane === 'XZ' })]],
+          [T('Design Standard', 'มาตรฐาน'), [B('stdm', 'book', stdInfo(A.model.std).name[0].split(' ')[0] + ' ' + T('Standard', 'มาตรฐาน'), { m: 1 })]],
+          [T('Model', 'แบบจำลอง'), [B('save', 'save', T('Save', 'บันทึก')), B('open', 'open', T('Open', 'เปิด'), { file: 1 }), B('report', 'doc', T('Report', 'รายงาน'))]]
+        ]],
+        ['node', T('Node/Element', 'จุดต่อ/ชิ้นส่วน'), [
+          [T('Nodes', 'จุดต่อ'), [B('cnode', 'node', T('Create Nodes', 'สร้างจุดต่อ'), { on: tool('node') }), B('ntrans', 'move', T('Translate', 'เลื่อน/คัดลอก')), B('ndiv', 'divide', T('Divide', 'แบ่ง')), B('nmerge', 'merge', T('Merge', 'รวมจุด')),
+            COL(B('del', 'del', T('Delete', 'ลบ')), B('rot', 'rotate', T('Rotate', 'หมุน')), B('mir', 'mirror', T('Mirror', 'สะท้อน'))), COL(B('scl', 'scale', T('Scale', 'ปรับขนาด')), B('ext', 'extrude', T('Extrude', 'ยืดเป็นชิ้นส่วน'))), B('ntab', 'table', T('Nodes Table', 'ตารางจุดต่อ'))]],
+          [T('Elements', 'ชิ้นส่วน'), [B('celem', 'elem', T('Create Elements', 'สร้างชิ้นส่วน'), { on: tool('member') }), B('etrans', 'move', T('Translate', 'เลื่อน/คัดลอก')), B('ediv', 'divide', T('Divide', 'แบ่ง')), B('emerge', 'merge', T('Merge', 'รวม')), B('eint', 'intersect', T('Intersect', 'ตัดกัน')),
+            COL(B('del', 'del', T('Delete', 'ลบ')), B('rot', 'rotate', T('Rotate', 'หมุน')), B('mir', 'mirror', T('Mirror', 'สะท้อน'))), B('chg', 'params', T('Change Parameters', 'เปลี่ยนคุณสมบัติ')), B('etab', 'table', T('Elements Table', 'ตารางชิ้นส่วน'))]]
+        ]],
+        ['prop', T('Properties', 'คุณสมบัติ'), [
+          [T('Material', 'วัสดุ'), [B('pmat', 'mat', T('Material Properties', 'คุณสมบัติวัสดุ')), B('pmatl', 'list', T('Material List', 'รายการวัสดุ'))]],
+          [T('Section', 'หน้าตัด'), [B('psec', 'sec', T('Section Properties', 'คุณสมบัติหน้าตัด')), B('psecm', 'secm', T('Section Manager', 'จัดการหน้าตัด')), B('chg', 'params', T('Assign to Elements', 'กำหนดให้ชิ้นส่วน'))]],
+          [T('Tables', 'ตาราง'), [B('ptabm', 'table', T('Property Tables', 'ตารางคุณสมบัติ'), { m: 1 })]]
+        ]],
+        ['bnd', T('Boundary', 'เงื่อนไขขอบเขต'), [
+          [T('Supports', 'จุดรองรับ'), [B('bsup', 'support', T('Define Supports', 'กำหนดจุดรองรับ'))]],
+          [T('Spring Supports', 'สปริง'), [B('bspr', 'spring', T('Point Spring', 'สปริงที่จุด'))]],
+          [T('Release/Orientation', 'การปลดแรง/ทิศทาง'), [B('brel', 'release', T('Beam End Release', 'ปลดแรงปลายคาน')), B('bbeta', 'beta', T('Beta Angle', 'มุม β'))]],
+          [T('Tables', 'ตาราง'), [B('btab', 'table', T('Boundary Tables', 'ตารางจุดรองรับ'))]]
+        ]],
+        ['load', T('Load', 'น้ำหนัก'), [
+          [T('Load Type', 'ชนิดแรง'), [COL(B('ltype', null, T('Static Loads', 'แรงสถิต'), { v: 'static', radio: 1, on: () => !temp }), B('ltype', null, T('Temp. Loads', 'แรงจากอุณหภูมิ'), { v: 'temp', radio: 1, on: () => temp }))]],
+          [T('Create Load Cases', 'กรณีน้ำหนัก'), [B('lcases', 'lc', T('Static Load Cases', 'กรณีน้ำหนัก')), B('lcombo', 'lcc', T('Load Combinations', 'การรวมน้ำหนัก'))]],
+          temp ? [T('Temperature Loads', 'แรงจากอุณหภูมิ'), [B('ltemp', 'thermo', T('Element Temperature', 'อุณหภูมิชิ้นส่วน')), B('ltgrad', 'tgrad', T('Temperature Gradient', 'ผลต่างอุณหภูมิ'))]]
+            : [T('Structure Loads', 'แรงบนโครงสร้าง'), [B('lsw', 'weight', T('Self Weight', 'น้ำหนักตัวเอง')), B('lnode', 'nload', T('Nodal Loads', 'แรงที่จุดต่อ'))]],
+          ...(temp ? [] : [[T('Beam Load', 'แรงบนคาน'), [B('lbeam', 'udl', T('Element', 'แผ่กระจาย')), B('lpoint', 'pload', T('Point', 'แรงจุด')), B('lmom', 'moment', T('Moment', 'โมเมนต์'))]]]),
+          [T('Display', 'การแสดง'), [B('lshowm', 'eye', A.loadsOn ? T('Loads: ', 'แรง: ') + (A.lcase === 'all' ? T('all', 'ทั้งหมด') : A.lcase) : T('Show Loads', 'แสดงแรง'), { m: 1, on: () => !!A.loadsOn })]],
+          [T('Tables', 'ตาราง'), [B('ltab', 'table', T('Load Tables', 'ตารางแรง')), B('lsum', 'list', T('Load Summary', 'สรุปแรง'))]]
+        ]],
+        ['anl', T('Analysis', 'การวิเคราะห์'), [
+          [T('Perform', 'ดำเนินการ'), [B('run', 'play', T('Perform Analysis', 'วิเคราะห์')), B('clear', 'clear', T('Clear Results', 'ล้างผล'))]],
+          [T('Analysis Control', 'การควบคุมการวิเคราะห์'), [B('actl', 'gear', T('Main Control', 'ตั้งค่าหลัก')), COL(B('tpd', 'range', 'P-Delta', { on: () => !!o.pdelta }), B('tmode', 'mode', T('Modal', 'โหมด'), { on: () => !!o.modes }), B('tbuck', 'buckle', T('Buckling', 'การโก่งเดาะ'), { on: () => !!o.buckling }))]]
+        ]],
+        ['res', T('Results', 'ผลลัพธ์'), [
+          [T('Combination', 'การรวม'), [B('lcombo', 'lcc', T('Load Combination', 'การรวมน้ำหนัก')), B('rsrcm', 'list', T('Result for', 'ผลของ') + (A.src ? ': ' + A.src.split(':')[1] : ''), { m: 1 })]],
+          [T('Results', 'ผลลัพธ์'), [COL(B('rreact', 'react', T('Reactions', 'แรงปฏิกิริยา'), { on: () => A.step === 'res' && A.rview === 'react' }), B('rdef', 'deform', T('Deformations', 'การเสียรูป'), { on: () => A.step === 'res' && A.rview === 'def' }), B('rforce', 'forces', T('Forces', 'แรง'), { m: 1, on: () => A.step === 'res' && ['N', 'Vy', 'Vz', 'T'].includes(A.rview) })),
+            COL(B('rmom', 'diagram', T('Moments', 'โมเมนต์'), { m: 1, on: () => A.step === 'res' && ['My', 'Mz'].includes(A.rview) }), B('rscale', 'scale', T('Diagram Scale', 'มาตราส่วน'), { m: 1 }), B('rvals', 'tag', T('Values', 'ค่าตัวเลข'), { on: () => !!A.labels }))]],
+          [T('Detail', 'รายละเอียด'), [B('rdet', 'detail', T('Beam Detail', 'รายละเอียดคาน'))]],
+          [T('Mode Shape', 'รูปโหมด'), [B('rmode', 'mode', T('Mode Shapes', 'รูปโหมด'), { on: () => A.step === 'res' && A.rview === 'mode' }), B('rbuck', 'buckle', T('Buckling Modes', 'โหมดการโก่งเดาะ'), { on: () => A.step === 'res' && A.rview === 'buck' })]],
+          [T('Text', 'ข้อความ'), [B('report', 'doc', T('Text Output', 'รายงาน'))]],
+          [T('Tables', 'ตาราง'), [B('rtabm', 'table', T('Results Tables', 'ตารางผลลัพธ์'), { m: 1 })]]
+        ]],
+        ['design', T('Design', 'ออกแบบ'), [
+          [T('RC Design', 'ออกแบบ คสล.'), [B('dbeam', 'beam', T('RC Beam', 'คาน คสล.')), B('dcol', 'column', T('RC Column', 'เสา คสล.'))]],
+          [T('Code', 'มาตรฐาน'), [B('stdm', 'book', T('Design Code', 'มาตรฐานการออกแบบ'), { m: 1 })]]
+        ]],
+        ['query', T('Query', 'สอบถาม'), [
+          [T('Status', 'สถานะ'), [B('qstat', 'status', T('Project Status', 'สถานะโครงการ'))]],
+          [T('Query', 'สอบถาม'), [B('qnode', 'qnode', T('Query Nodes', 'สอบถามจุดต่อ'), { on: tool('qnode') }), B('qelem', 'qelem', T('Query Elements', 'สอบถามชิ้นส่วน'), { on: tool('qelem') })]],
+          [T('Detail Table', 'ตารางรายละเอียด'), [COL(B('qnt', 'table', T('Node Detail Table', 'ตารางจุดต่อ')), B('qet', 'table', T('Element Detail Table', 'ตารางชิ้นส่วน')), B('qwt', 'table', T('Element Weight Table', 'ตารางน้ำหนักชิ้นส่วน')))]],
+          [T('Mass/Load Table', 'ตารางมวล/แรง'), [COL(B('qms', 'table', T('Mass Summary Table', 'สรุปมวล')), B('lsum', 'table', T('Load Summary Table', 'สรุปแรง')))]]
+        ]],
+        ['tools', T('Tools', 'เครื่องมือ'), [
+          [T('Setting', 'ตั้งค่า'), [B('unitm', 'units', T('Unit System', 'ระบบหน่วย') + ' · ' + ulab('F') + ', ' + ulab('L'), { m: 1 })]],
+          [T('Model File', 'ไฟล์แบบจำลอง'), [B('save', 'save', T('Save', 'บันทึก')), B('open', 'open', T('Open', 'เปิด'), { file: 1 }), B('wizard', 'wand', T('Template', 'แม่แบบ'))]],
+          [T('Help', 'วิธีใช้'), [B('help', 'help', T('Shortcuts & Help', 'ปุ่มลัดและวิธีใช้'))]]
+        ]]
+      ];
+    }
+    function rbtn(it, big) {
+      const on = it.on ? it.on() : false, lab = esc(it.l) + (it.m ? ' <i class="an-rdd">▾</i>' : '');
+      if (it.file) return `<label class="an-rb ${big ? 'big' : 'sm'}" title="${esc(it.l)}">${icon(it.i, big)}<span>${lab}</span><input type="file" accept=".json,application/json" id="an-file" hidden></label>`;
+      if (it.radio) return `<button class="an-rb sm an-rradio" data-act="an-rb" data-c="${it.c}" data-v="${it.v}" aria-pressed="${on}"><i class="an-rdot"></i><span>${lab}</span></button>`;
+      return `<button class="an-rb ${big ? 'big' : 'sm'} ${it.m ? 'dd' : ''}" data-act="an-rb" data-c="${it.c}" ${it.v ? `data-v="${esc(it.v)}"` : ''} ${it.m ? 'data-m="1" aria-haspopup="menu"' : ''} aria-pressed="${on}" title="${esc(it.l)}">${icon(it.i, big)}<span>${lab}</span></button>`;
+    }
+    function ribHTML() {
+      const tabs = RIB(), cur = tabs.find(t => t[0] === A.rib) || tabs[0];
+      const qat = [['undo', 'undo', T('Undo (Ctrl+Z)', 'เลิกทำ')], ['redo', 'redo', T('Redo (Ctrl+Y)', 'ทำซ้ำ')], ['save', 'save', T('Save', 'บันทึก')], ['run', 'play', T('Run analysis (Ctrl+Enter)', 'วิเคราะห์')], ['help', 'help', T('Help (?)', 'วิธีใช้')]];
+      return `<div class="an-rib ${A.ribMin ? 'min' : ''}" id="anRib"><div class="an-ribtabs" role="tablist" aria-label="${T('Ribbon', 'ริบบอน')}">${tabs.map(t => `<button role="tab" class="an-rtab" data-act="an-ribtab" data-t="${t[0]}" aria-selected="${t[0] === cur[0]}">${t[1]}</button>`).join('')}<span class="grow"></span>
+          <span class="an-qat">${qat.map(([c, i, l]) => `<button class="an-qb ${c === 'run' ? 'hot' : ''}" data-act="an-rb" data-c="${c}" title="${esc(l)}" aria-label="${esc(l)}" ${c === 'undo' && !A.hist.length || c === 'redo' && !A.fut.length ? 'disabled' : ''}>${icon(i)}</button>`).join('')}<button class="an-qb" data-act="an-ribmin" title="${A.ribMin ? T('Show the ribbon', 'แสดงริบบอน') : T('Collapse the ribbon', 'ย่อริบบอน')}" aria-label="${T('Collapse the ribbon', 'ย่อริบบอน')}">${A.ribMin ? '▾' : '▴'}</button></span></div>
+        ${A.ribMin ? '' : `<div class="an-ribbar" role="toolbar">${cur[2].map(([title, items]) => `<div class="an-rg"><div class="an-rgi">${items.map(it => (it.col ? `<div class="an-rcol">${it.col.map(x => rbtn(x, false)).join('')}</div>` : rbtn(it, true))).join('')}</div><div class="an-rgt">${title}</div></div>`).join('')}</div>`}</div>`;
+    }
+    function ribRefresh() { const r = $('#anRib'); if (r) r.outerHTML = ribHTML(); const hb = $('#anHint'); if (hb) hb.textContent = hintBar(); }
+
+    // ---- dropdown menus
+    function MENU(id) {
+      const it = (c, l, v, on) => ({ c, l, v, on }), sep = { sep: 1 };
+      const VPS = [['3d', T('Isometric (default)', 'ไอโซเมตริก')], ['plan', T('Top (plan)', 'ด้านบน (แปลน)')], ['xz', T('Front (X–Z)', 'ด้านหน้า (X–Z)')], ['yz', T('Right (Y–Z)', 'ด้านขวา (Y–Z)')], ['back', T('Back', 'ด้านหลัง')], ['left', T('Left', 'ด้านซ้าย')], ['bottom', T('Bottom', 'ด้านล่าง')], ['ne', T('Isometric NE', 'ไอโซเมตริก NE')], ['nw', T('Isometric NW', 'ไอโซเมตริก NW')], ['sw', T('Isometric SW', 'ไอโซเมตริก SW')]];
+      switch (id) {
+        case 'zoomm': return [it('zfit', T('Zoom to fit (F)', 'ซูมพอดี (F)')), it('zin', T('Zoom in (+)', 'ซูมเข้า (+)')), it('zout', T('Zoom out (−)', 'ซูมออก (−)')), sep, it('zwin', T('Zoom window — drag a box', 'ซูมกรอบ — ลากกรอบ'), '', A.tool === 'zoomw')];
+        case 'vpm': return VPS.map(([v, l]) => it('vp', l, v)).concat([sep, ...A.opt.views.map((q, i) => it('vrestore', '★ ' + q.n, String(i))), it('namedv', T('Named views…', 'มุมมองที่บันทึก…'))]);
+        case 'selm': return [it('tsel', T('Select tool — click / drag box', 'เครื่องมือเลือก — คลิก / ลากกรอบ'), '', A.tool === 'select'), sep, ...[['all', T('All', 'ทั้งหมด')], ['nodes', T('All nodes', 'จุดต่อทั้งหมด')], ['elems', T('All elements', 'ชิ้นส่วนทั้งหมด')], ['col', T('Columns', 'เสา')], ['beam', T('Beams', 'คาน')], ['brace', T('Bracing', 'ค้ำยัน')], ['sup', T('Supported nodes', 'จุดรองรับ')], ['samesec', T('Same section as selected', 'หน้าตัดเดียวกับที่เลือก')], ['samemat', T('Same material as selected', 'วัสดุเดียวกับที่เลือก')], ['inv', T('Invert selection', 'กลับการเลือก')]].map(([v, l]) => it('sby', l, v)), sep, ...A.model.sections.map(s => it('sby', T('Section ', 'หน้าตัด ') + s.id, 'sec:' + s.id))];
+        case 'unselm': return [it('sby', T('Unselect all (Esc)', 'ยกเลิกทั้งหมด (Esc)'), 'none'), it('unsn', T('Unselect nodes', 'ยกเลิกจุดต่อ')), it('unsm', T('Unselect elements', 'ยกเลิกชิ้นส่วน'))];
+        case 'snapm': return [0, 0.05, 0.1, 0.25, 0.5, 1].map(v => it('snap', v ? fu(v, 'L', 3) + ul('L') : T('Off', 'ปิด'), String(v), Math.abs((+A.opt.snap || 0) - v) < 1e-9));
+        case 'dispm': return [it('tog', T('Node numbers', 'หมายเลขจุดต่อ'), 'lblN', A.lblN !== false), it('tog', T('Element numbers', 'หมายเลขชิ้นส่วน'), 'lblM', A.lblM !== false), it('tog', T('Supports', 'จุดรองรับ'), 'showSup', A.showSup !== false), it('tog', T('Local axes of all elements', 'แกนเฉพาะที่ทุกชิ้นส่วน'), 'allAxes', !!A.allAxes), it('tog', T('Grid lines', 'เส้นกริด'), 'grid', A.grid !== false), it('tog', T('Loads', 'แรง'), 'loadsOn', !!A.loadsOn), it('tog', T('Solid sections (W)', 'หน้าตัดทรงตัน (W)'), 'solid', !!A.solid), it('tog', T('Result values', 'ค่าผลลัพธ์'), 'labels', !!A.labels)];
+        case 'stdm': return STDS.map(k => it('std', T(stdInfo(k).name[0], stdInfo(k).name[1]), k, A.model.std === k));
+        case 'ptabm': return [it('ptab', T('Material table', 'ตารางวัสดุ'), 'mat'), it('ptab', T('Section table', 'ตารางหน้าตัด'), 'sec')];
+        case 'lshowm': return [it('lshow', T('Off', 'ปิด'), '', !A.loadsOn), ...A.model.cases.map(c => it('lshow', c.id + ' — ' + c.name, c.id, A.loadsOn && A.lcase === c.id)), it('lshow', T('All cases', 'ทุกกรณี'), 'all', A.loadsOn && A.lcase === 'all')];
+        case 'rforce': return [['N', T('Axial force N', 'แรงตามแนวแกน N')], ['Vy', T('Shear V_y', 'แรงเฉือน V_y')], ['Vz', T('Shear V_z', 'แรงเฉือน V_z')], ['T', T('Torsion T', 'แรงบิด T')]].map(([v, l]) => it('rv', l, v, A.step === 'res' && A.rview === v));
+        case 'rmom': return [['Mz', T('Moment M_z (major)', 'โมเมนต์ M_z (แกนหลัก)')], ['My', T('Moment M_y (minor)', 'โมเมนต์ M_y (แกนรอง)')]].map(([v, l]) => it('rv', l, v, A.step === 'res' && A.rview === v));
+        case 'rscale': return [0.25, 0.5, 1, 1.5, 2, 3, 4].map(v => it('dscale', '× ' + v, String(v), Math.abs(A.dscale - v) < 1e-9));
+        case 'rsrcm': return srcList().map(([v, l]) => it('src', l, v, A.src === v));
+        case 'rtabm': return [['sum', T('Summary', 'สรุป')], ['react', T('Reactions', 'แรงปฏิกิริยา')], ['forces', T('Element forces', 'แรงในชิ้นส่วน')], ['disp', T('Displacements', 'การเคลื่อนตัว')], ['drift', T('Storey drift', 'การเคลื่อนตัวระหว่างชั้น')], ['modal', T('Modal', 'โหมด')], ['buck', T('Buckling', 'การโก่งเดาะ')]].map(([v, l]) => it('rtab', l, v));
+        case 'unitm': return [['SI', 'kN · m · °C'], ['SImm', 'N · mm · °C'], ['MKS', 'tf · m · °C'], ['MKScm', 'kgf · cm · °C'], ['US', 'kip · ft · °F']].map(([v, l]) => it('units', l, v, ['F', 'L', 'T'].every(q => UPRE[v][q] === UU()[q])));
+      }
+      return [];
+    }
+    function closeMenu() { if (!A.ribMenu) return; A.ribMenu = null; const h = $('#anRibMenu'); if (h) h.innerHTML = ''; }
+    function openMenu(id, btn) {
+      if (A.ribMenu === id) { closeMenu(); return; }
+      const h = $('#anRibMenu'); if (!h) return; A.ribMenu = id;
+      const r = btn.getBoundingClientRect(), items = MENU(id), left = Math.max(6, Math.min(r.left, innerWidth - 270));
+      h.innerHTML = `<div class="an-rmenu" role="menu" style="left:${left}px;top:${r.bottom + 3}px;max-height:${Math.max(160, innerHeight - r.bottom - 20)}px">${items.length ? items.map(q => (q.sep ? '<hr>' : `<button role="menuitemcheckbox" aria-checked="${!!q.on}" data-act="an-rb" data-c="${q.c}" data-v="${esc(q.v == null ? '' : q.v)}" class="${q.on ? 'on' : ''}"><i>${q.on ? '✓' : ''}</i>${esc(q.l)}</button>`)).join('') : `<p class="muted small">${T('Nothing to show.', 'ไม่มีรายการ')}</p>`}</div>`;
+    }
+
+    // ---- view helpers
+    const camSnap = () => ({ v: A.cam.v, yaw: A.cam.yaw, pitch: A.cam.pitch, k: A.cam.k, t: A.cam.t.slice() });
+    function camPush(s) { const c = s || camSnap(), h = A.camHist, l = h[h.length - 1]; if (l && l.v === c.v && l.yaw === c.yaw && l.pitch === c.pitch && l.k === c.k && l.t.every((x, i) => x === c.t[i])) return; h.push(c); if (h.length > 40) h.shift(); }
+    function camApply(c) { const v0 = A.cam.v; Object.assign(A.cam, c, { t: c.t.slice() }); if (v0 !== c.v) { A.cut = 'all'; ctx.render(); } else { redraw(); ribRefresh(); } }
+    function camPrev() { const c = A.camHist.pop(); if (!c) { toast(T('No previous view.', 'ไม่มีมุมมองก่อนหน้า'), ''); return; } camApply(c); }
+    function viewPoint(v) {
+      camPush();
+      const VP = { back: [PI / 2, 0], left: [PI, 0], bottom: [-PI / 2 - 0.72, -0.42], ne: [-PI / 2 + 0.72 + PI / 2, 0.42], nw: [PI / 2 + 0.72, 0.42], sw: [PI + 0.72 + PI / 2, 0.42] };
+      if (VIEWS[v]) setView(v); else { const q = VP[v] || VIEWS['3d']; Object.assign(A.cam, { v: '3d', yaw: q[0], pitch: q[1], k: null }); A.cut = 'all'; }
+      ctx.render();
+    }
+    function setTool(t) {
+      A.tool = t; A.draw = null; A.box = null;
+      const cv = $('#anCv'); if (cv) cv.style.cursor = t === 'pan' ? 'move' : t === 'zoomw' || t === 'node' || t === 'member' ? 'crosshair' : t === 'qnode' || t === 'qelem' ? 'help' : '';
+      if ((t === 'node' || t === 'member') && A.cam.v === '3d') toast(T('Tip: in Plan or an Elevation you can click empty grid points to create nodes.', 'เคล็ดลับ: ในแปลนหรือรูปด้าน คลิกตำแหน่งว่างเพื่อสร้างจุดต่อ'), '');
+      if (t === 'qnode' || t === 'qelem') toast(T('Click a ' + (t === 'qnode' ? 'node' : 'element') + ' in the view to see its data.', 'คลิก' + (t === 'qnode' ? 'จุดต่อ' : 'ชิ้นส่วน') + 'ในมุมมองเพื่อดูข้อมูล'), '');
+      ribRefresh(); sideRefresh(); redraw();
+    }
+    function zoomStep(s) { const cv = $('#anCv'); if (!cv) return; camPush(); zoomAt(cv.clientWidth / 2, cv.clientHeight / 2, s); }
+    function zoomBox(b) {
+      const cv = $('#anCv'); if (!cv) return; const W = cv.clientWidth, H = cv.clientHeight, bw = Math.abs(b[2] - b[0]), bh = Math.abs(b[3] - b[1]); if (bw < 6 || bh < 6) return;
+      camPush(); const wp = screenToWorld((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, W, H); A.cam.k = Math.max(0.5, Math.min(5000, A.cam.k * Math.min(W / bw, H / bh) * 0.95)); A.cam.t = wp; redraw();
+    }
+    // ---- activities (show only part of the model)
+    function setActive(how) {
+      const m = A.model;
+      if (how === 'all') { A.hidN = new Set(); A.hidM = new Set(); }
+      else if (how === 'inverse') {
+        if (!A.hidN.size && !A.hidM.size) { toast(T('Everything is active.', 'ทุกส่วนแสดงอยู่แล้ว'), ''); return; }
+        const actM = new Set(m.members.filter(q => A.hidM.has(q.id) || A.hidN.has(q.i) || A.hidN.has(q.j)).map(q => q.id)), actN = new Set();
+        m.members.forEach(q => { if (actM.has(q.id)) { actN.add(q.i); actN.add(q.j); } });
+        A.hidN.forEach(id => { if (!m.members.some(q => q.i === id || q.j === id)) actN.add(id); });
+        A.hidM = new Set(m.members.filter(q => !actM.has(q.id)).map(q => q.id)); A.hidN = new Set(m.nodes.filter(n => !actN.has(n.id)).map(n => n.id));
+      } else {
+        if (!A.sel.n.length && !A.sel.m.length) { toast(T('Select nodes or elements first.', 'เลือกจุดต่อหรือชิ้นส่วนก่อน'), 'bad'); return; }
+        const sn = new Set(A.sel.n), sm = new Set(A.sel.m), used = new Set(sn);
+        m.members.forEach(q => { if (sn.has(q.i) && sn.has(q.j)) sm.add(q.id); });
+        m.members.forEach(q => { if (sm.has(q.id)) { used.add(q.i); used.add(q.j); } });
+        if (how === 'active') { A.hidM = new Set(m.members.filter(q => !sm.has(q.id)).map(q => q.id)); A.hidN = new Set(m.nodes.filter(n => !used.has(n.id)).map(n => n.id)); }
+        else { sm.forEach(id => A.hidM.add(id)); sn.forEach(id => A.hidN.add(id)); const vis = new Set(); m.members.forEach(q => { if (!A.hidM.has(q.id) && !A.hidN.has(q.i) && !A.hidN.has(q.j)) { vis.add(q.i); vis.add(q.j); } }); used.forEach(id => { if (!vis.has(id)) A.hidN.add(id); }); }
+      }
+      A.sel = { n: [], m: [] }; A.cam.k = null; selChanged(); ribRefresh();
+      if (A.hidM.size || A.hidN.size) toast(T('Showing ', 'แสดง ') + (m.members.length - A.hidM.size) + T(' of ' + m.members.length + ' elements', ' จาก ' + m.members.length + ' ชิ้นส่วน'), '');
+    }
+
+    // ---- geometry operations on the selection
+    function selNodeIds() { const m = A.model, s = new Set(A.sel.n); A.sel.m.forEach(id => { const q = m.members.find(z => z.id === id); if (q) { s.add(q.i); s.add(q.j); } }); return s; }
+    function selCentre() { const nd = nodeMap(), ids = [...selNodeIds()].filter(id => nd[id]); if (!ids.length) return [0, 0, 0]; const c = ids.reduce((s, id) => addv(s, P3(nd[id]), 1 / ids.length), [0, 0, 0]); return c.map(v => Number(v.toFixed(4))); }
+    function needSel(nodesOk) { if (A.sel.m.length || (nodesOk && A.sel.n.length)) return true; toast(nodesOk ? T('Select nodes or elements first.', 'เลือกจุดต่อหรือชิ้นส่วนก่อน') : T('Select elements first.', 'เลือกชิ้นส่วนก่อน'), 'bad'); return false; }
+    const rotFn = (ax, deg, c0) => (p, c) => { const t = deg * c * PI / 180, cs = Math.cos(t), sn = Math.sin(t), q = sub(p, c0); const r = ax === 'z' ? [q[0] * cs - q[1] * sn, q[0] * sn + q[1] * cs, q[2]] : ax === 'x' ? [q[0], q[1] * cs - q[2] * sn, q[1] * sn + q[2] * cs] : [q[0] * cs + q[2] * sn, q[1], -q[0] * sn + q[2] * cs]; return addv(c0, r, 1); };
+    const mirFn = (ax, v) => p => { const q = p.slice(), i = { x: 0, y: 1, z: 2 }[ax]; q[i] = 2 * v - q[i]; return q; };
+    const sclFn = (s, c0) => (p, c) => addv(c0, sub(p, c0), Math.pow(s, c));
+    function moveNodes(fn) {
+      const ids = selNodeIds(); if (!ids.size) return false;
+      snap(true); const nd = nodeMap(); ids.forEach(id => { const n = nd[id]; if (!n) return; const p = fn(P3(n), 1); n.x = r4(p[0]); n.y = r4(p[1]); n.z = r4(p[2]); });
+      changed(true); redraw(true); toast(T(ids.size + ' node(s) moved', 'ย้าย ' + ids.size + ' จุดต่อ'), 'ok'); return true;
+    }
+    function mergeNodes(scope, tol) {
+      const m = A.model, ids = scope === 'sel' ? selNodeIds() : new Set(m.nodes.map(n => n.id)); tol = Math.max(1e-6, +tol || 1e-3);
+      const list = m.nodes.filter(n => ids.has(n.id)), keep = {}, map = {};
+      list.forEach(n => { const k = [n.x, n.y, n.z].map(v => Math.round((+v || 0) / tol)).join(','); const a = keep[k]; if (!a) { keep[k] = n; return; } const sup = F.fixOf(n).some(Boolean) && !F.fixOf(a).some(Boolean); if (sup) { map[a.id] = n.id; keep[k] = n; } else map[n.id] = a.id; });
+      Object.keys(map).forEach(k => { let t = map[k]; while (map[t]) t = map[t]; map[k] = t; });
+      const n0 = Object.keys(map).length; if (!n0) { toast(T('No coincident nodes found.', 'ไม่พบจุดต่อที่ซ้อนกัน'), ''); return; }
+      snap(true);
+      m.members.forEach(q => { if (map[q.i]) q.i = map[q.i]; if (map[q.j]) q.j = map[q.j]; });
+      m.loads.forEach(l => { if (l.node && map[l.node]) l.node = map[l.node]; });
+      const seen = new Set(), dropM = new Set();
+      m.members.forEach(q => { const k = [q.i, q.j].sort().join('|'); if (q.i === q.j || seen.has(k)) dropM.add(q.id); else seen.add(k); });
+      m.members = m.members.filter(q => !dropM.has(q.id)); m.loads = m.loads.filter(l => l.kind === 'node' || !dropM.has(l.member));
+      m.nodes = m.nodes.filter(n => !map[n.id]);
+      A.sel = { n: [], m: [] }; changed(true);
+      toast(T(n0 + ' node(s) merged' + (dropM.size ? ', ' + dropM.size + ' duplicate element(s) removed' : ''), 'รวม ' + n0 + ' จุดต่อ' + (dropM.size ? ' ลบชิ้นส่วนซ้ำ ' + dropM.size : '')), 'ok');
+    }
+    function divideNodes(n) {
+      if (A.sel.n.length !== 2) { toast(T('Select exactly two nodes.', 'เลือกจุดต่อ 2 จุด'), 'bad'); return; }
+      const nd = nodeMap(), a = P3(nd[A.sel.n[0]]), b = P3(nd[A.sel.n[1]]); n = Math.max(2, Math.min(100, n | 0)); snap(true);
+      const ids = []; for (let k = 1; k < n; k++) ids.push(ensureNode(a.map((v, i) => v + (b[i] - v) * k / n)));
+      A.sel = { n: ids, m: [] }; changed(true); toast(T(ids.length + ' node(s) created between them', 'สร้างจุดต่อ ' + ids.length + ' จุดระหว่างกัน'), 'ok');
+    }
+    function splitAt(id, fr) { // split an element at fractions 0 < t < 1 (sorted, unique)
+      const m = A.model, q = m.members.find(z => z.id === id); if (!q) return [id];
+      const ts = [...new Set(fr.filter(t => t > 1e-6 && t < 1 - 1e-6).map(t => Math.round(t * 1e9) / 1e9))].sort((x, y) => x - y); if (!ts.length) return [id];
+      const nd = nodeMap(), a = P3(nd[q.i]), b = P3(nd[q.j]), L = Math.hypot(...sub(b, a)), cut = [0, ...ts, 1];
+      const ids = [q.i, ...ts.map(t => ensureNode(a.map((v, i) => v + (b[i] - v) * t))), q.j], n = cut.length - 1;
+      const segs = [], loads = m.loads.filter(l => l.member === id); m.loads = m.loads.filter(l => l.member !== id);
+      const idx = m.members.indexOf(q); m.members.splice(idx, 1);
+      for (let k = 0; k < n; k++) {
+        const s0 = L * cut[k], s1 = L * cut[k + 1], nid = k === 0 ? q.id : nextId(m.members, q.id + '_'), nm = Object.assign({}, q, { id: nid, i: ids[k], j: ids[k + 1], relI: k === 0 ? q.relI : false, relJ: k === n - 1 ? q.relJ : false });
+        m.members.splice(idx + k, 0, nm); segs.push(nid);
+        loads.forEach(l => {
+          if (l.kind === 'temp') { m.loads.push(Object.assign({}, l, { member: nid })); return; }
+          if (l.kind === 'udl') {
+            const a0 = +l.a || 0, b0 = l.b === '' || l.b == null || +l.b <= 0 ? L : +l.b, w1 = +l.w1 || 0, w2 = l.w2 === '' || l.w2 == null ? w1 : +l.w2, lo = Math.max(a0, s0), hi = Math.min(b0, s1); if (hi - lo < 1e-6) return;
+            const w = s => w1 + (w2 - w1) * (s - a0) / ((b0 - a0) || 1), full = Math.abs(lo - s0) < 1e-6 && Math.abs(hi - s1) < 1e-6;
+            m.loads.push(Object.assign({}, l, { member: nid, w1: r4(w(lo)), w2: w1 === w2 ? '' : r4(w(hi)), a: full ? '' : r4(lo - s0), b: full ? '' : r4(hi - s0) }));
+          } else { const p = +l.a || 0; if (p >= s0 - 1e-9 && (p < s1 - 1e-9 || (k === n - 1 && p <= s1 + 1e-9))) m.loads.push(Object.assign({}, l, { member: nid, a: r4(p - s0) })); }
+        });
+      }
+      return segs;
+    }
+    function divideElems(n) {
+      if (!needSel(false)) return; n = Math.max(2, Math.min(50, n | 0)); snap(true); const out = [];
+      A.sel.m.slice().forEach(id => { out.push(...splitAt(id, Array.from({ length: n - 1 }, (_, k) => (k + 1) / n))); });
+      A.sel = { n: [], m: out }; changed(true); toast(T('Divided into ' + out.length + ' elements', 'แบ่งเป็น ' + out.length + ' ชิ้นส่วน'), 'ok');
+    }
+    function intersectElems() {
+      const m = A.model, nd = nodeMap(), ids = A.sel.m.length ? A.sel.m.slice() : m.members.map(q => q.id), set = new Set(ids), segs = m.members.filter(q => set.has(q.id) && nd[q.i] && nd[q.j]);
+      const ext = Math.max(1, extent()), tol = 1e-6 * ext + 1e-5, cuts = {};
+      const add = (id, t) => { (cuts[id] = cuts[id] || []).push(t); };
+      for (let x = 0; x < segs.length; x++) for (let y = x + 1; y < segs.length; y++) {
+        const p = segs[x], q = segs[y], a = P3(nd[p.i]), b = P3(nd[p.j]), c = P3(nd[q.i]), d = P3(nd[q.j]), u = sub(b, a), v = sub(d, c), w = sub(a, c);
+        const A2 = dot(u, u), B2 = dot(u, v), C2 = dot(v, v), D2 = dot(u, w), E2 = dot(v, w), den = A2 * C2 - B2 * B2; if (den < 1e-12 * A2 * C2) continue; // parallel
+        const s = (B2 * E2 - C2 * D2) / den, t = (A2 * E2 - B2 * D2) / den; if (s < -1e-9 || s > 1 + 1e-9 || t < -1e-9 || t > 1 + 1e-9) continue;
+        const pp = addv(a, u, s), qq = addv(c, v, t); if (Math.hypot(...sub(pp, qq)) > tol) continue;
+        add(p.id, s); add(q.id, t);
+      }
+      // existing nodes lying on an element
+      m.nodes.forEach(n => { const P0 = P3(n); segs.forEach(q => { if (n.id === q.i || n.id === q.j) return; const a = P3(nd[q.i]), u = sub(P3(nd[q.j]), a), L2 = dot(u, u), t = dot(sub(P0, a), u) / L2; if (t <= 1e-6 || t >= 1 - 1e-6) return; if (Math.hypot(...sub(addv(a, u, t), P0)) < tol) add(q.id, t); }); });
+      const ks = Object.keys(cuts).filter(id => cuts[id].some(t => t > 1e-6 && t < 1 - 1e-6)); if (!ks.length) { toast(T('No intersections found.', 'ไม่พบจุดตัด'), ''); return; }
+      snap(true); const out = []; ks.forEach(id => out.push(...splitAt(id, cuts[id]))); A.sel = { n: [], m: out }; changed(true);
+      toast(T(ks.length + ' element(s) split at intersections', 'แบ่ง ' + ks.length + ' ชิ้นส่วนที่จุดตัด'), 'ok');
+    }
+    function mergeElems() {
+      if (A.sel.m.length < 2) { toast(T('Select two or more connected, collinear elements.', 'เลือกชิ้นส่วนที่ต่อกันและอยู่แนวเดียวกันอย่างน้อย 2 ชิ้น'), 'bad'); return; }
+      const m = A.model; let nm = 0; const sel = new Set(A.sel.m); snap(true);
+      for (let guard = 0; guard < 500; guard++) {
+        const nd = nodeMap(); let done = false;
+        for (const n of m.nodes) {
+          const at = m.members.filter(q => q.i === n.id || q.j === n.id); if (at.length !== 2 || !at.every(q => sel.has(q.id))) continue;
+          if (F.fixOf(n).some(Boolean) || m.loads.some(l => l.node === n.id)) continue;
+          const [p, q] = at; if (p.sec !== q.sec || p.mat !== q.mat || (p.type || 'frame') !== (q.type || 'frame') || (+p.beta || 0) !== (+q.beta || 0)) continue;
+          const far = (r, x) => (r.i === x ? r.j : r.i), A0 = far(p, n.id), B0 = far(q, n.id), u = sub(P3(nd[n.id]), P3(nd[A0])), v = sub(P3(nd[B0]), P3(nd[n.id]));
+          const revP = p.i !== A0, revQ = q.i !== n.id; if ((revP || revQ) && (+p.beta || 0)) continue;
+          if (Math.hypot(...cross(u, v)) > 1e-6 * Math.hypot(...u) * Math.hypot(...v) || dot(u, v) <= 0) continue;
+          if ((p.i === n.id ? p.relI : p.relJ) || (q.i === n.id ? q.relI : q.relJ)) continue;
+          const relA = p.i === A0 ? p.relI : p.relJ, relB = q.i === B0 ? q.relI : q.relJ;
+          // carry the element loads over to the merged element (positions measured from its new end i)
+          const Lp = Math.hypot(...u), Lq = Math.hypot(...v), moved = [];
+          [[p, revP, 0, Lp], [q, revQ, Lp, Lq]].forEach(([r, rev, off, L]) => m.loads.filter(l => l.member === r.id).forEach(l => {
+            const o2 = Object.assign({}, l, { member: p.id }), flip = rev && ['lx', 'lz'].includes(l.dir || (l.kind === 'moment' ? 'lz' : 'grav'));
+            if (l.kind === 'temp') { if (rev) o2.dTz = -(+l.dTz || 0); }
+            else if (l.kind === 'udl') { const a0 = +l.a || 0, b0 = l.b === '' || l.b == null || +l.b <= 0 ? L : +l.b, w1 = +l.w1 || 0, w2 = l.w2 === '' || l.w2 == null ? w1 : +l.w2, sg = flip ? -1 : 1;
+              Object.assign(o2, rev ? { a: r4(off + L - b0), b: r4(off + L - a0), w1: sg * w2, w2: w1 === w2 ? '' : sg * w1 } : { a: r4(off + a0), b: r4(off + b0), w1: sg * w1, w2: l.w2 === '' || l.w2 == null ? '' : sg * w2 }); }
+            else { const a0 = +l.a || 0; o2.a = r4(off + (rev ? L - a0 : a0)); if (flip) { if (l.kind === 'point') o2.P = -(+l.P || 0); else o2.M = -(+l.M || 0); } }
+            moved.push([l, o2]);
+          }));
+          moved.forEach(([l, o2]) => { const ix = m.loads.indexOf(l); if (ix >= 0) m.loads[ix] = o2; });
+          Object.assign(p, { i: A0, j: B0, relI: !!relA, relJ: !!relB }); m.members = m.members.filter(r => r !== q); m.nodes = m.nodes.filter(r => r.id !== n.id); sel.delete(q.id); nm++; done = true; break;
+        }
+        if (!done) break;
+      }
+      if (!nm) { A.hist.pop(); toast(T('Nothing merged — elements must be collinear, share a node with no support, nodal load or other element, and have the same properties.', 'ไม่สามารถรวม — ชิ้นส่วนต้องอยู่แนวเดียวกัน ใช้จุดต่อร่วมที่ไม่มีจุดรองรับ แรงที่จุด หรือชิ้นส่วนอื่น และมีคุณสมบัติเหมือนกัน'), 'bad'); return; }
+      A.sel = { n: [], m: [...sel] }; changed(true); toast(T(nm + ' joint(s) removed — elements merged', 'รวมชิ้นส่วนแล้ว ' + nm + ' จุด'), 'ok');
+    }
+    // ---- load / weight summaries
+    function memGeom(q) { const nd = nodeMap(), a = nd[q.i], b = nd[q.j]; if (!a || !b) return null; const pa = P3(a), pb = P3(b); return { pa, pb, L: Math.hypot(...sub(pb, pa)), ax: F.axes(pa, pb, q.beta) }; }
+    function memWeight(q) { const m = A.model, s = m.sections.find(z => z.id === q.sec), t = m.materials.find(z => z.id === q.mat), g = memGeom(q); if (!s || !t || !g) return null; const Am = F.secProps(s).A * 1e-6; return { L: g.L, A: Am, gam: +t.rho || 0, W: Am * (+t.rho || 0) * g.L }; }
+    function caseSum(cid) {
+      const m = A.model, R = [0, 0, 0], cs = m.cases.find(c => c.id === cid) || {}; let sw = 0, nT = 0;
+      m.loads.filter(l => l.case === cid).forEach(l => {
+        if (l.kind === 'node') { R[0] += +l.Fx || 0; R[1] += +l.Fy || 0; R[2] += +l.Fz || 0; return; }
+        if (l.kind === 'temp') { nT++; return; } if (l.kind === 'moment') return;
+        const q = m.members.find(z => z.id === l.member), g = q && memGeom(q); if (!g) return;
+        const dir = l.dir || 'grav', e = dir === 'lx' ? g.ax.ex : dir === 'ly' ? g.ax.ey : dir === 'lz' ? g.ax.ez : ({ gx: [1, 0, 0], gy: [0, 1, 0], gz: [0, 0, 1] })[dir] || [0, 0, -1];
+        let P; if (l.kind === 'udl') { const a0 = Math.max(0, +l.a || 0), b0 = l.b === '' || l.b == null || +l.b <= 0 ? g.L : Math.min(g.L, +l.b), w1 = +l.w1 || 0, w2 = l.w2 === '' || l.w2 == null ? w1 : +l.w2; P = (w1 + w2) / 2 * Math.max(0, b0 - a0) * (dir === 'gravp' ? Math.hypot(g.ax.ex[0], g.ax.ex[1]) : 1); } else P = +l.P || 0;
+        for (let k = 0; k < 3; k++) R[k] += P * e[k];
+      });
+      if (cs.sw) m.members.forEach(q => { const w = memWeight(q); if (w) { sw += w.W; R[2] -= w.W; } });
+      return { R, sw, nT, n: m.loads.filter(l => l.case === cid).length };
+    }
+
+    // ---- extra windows (registered with the movable window system)
+    const tblw = (head, rows, cls) => `<div class="an-wtbl ${cls || ''}"><table class="an-t"><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+    const wfoot = (lbl, extra) => `<div class="an-wfoot">${extra || ''}<span class="grow"></span><button class="btn btn-ghost sm" data-act="an-wclose">${T('Close', 'ปิด')}</button>${lbl ? `<button class="btn btn-hot sm" data-act="an-wadd">${lbl}</button>` : ''}</div>`;
+    const wck = (k, lbl, v) => `<label class="chkl"><input type="checkbox" data-w="${k}" ${v ? 'checked' : ''}> ${lbl}</label>`;
+    const selInfo = () => `<p class="an-wsel">${A.sel.n.length || A.sel.m.length ? T('Selection: ', 'ที่เลือก: ') + (A.sel.n.length ? A.sel.n.length + T(' node(s) ', ' จุดต่อ ') : '') + (A.sel.m.length ? A.sel.m.length + T(' element(s)', ' ชิ้นส่วน') : '') : T('Nothing selected — select in the view first (the window stays open).', 'ยังไม่ได้เลือก — เลือกในมุมมองก่อน (หน้าต่างยังเปิดอยู่)')}</p>`;
+    const modeSel = v => ws('mode', T('Mode', 'โหมด'), [['move', T('Move', 'ย้าย')], ['copy', T('Copy', 'คัดลอก')]], v.mode);
+    const xyz = (v, p, lbl) => `<div class="an-row3">${['x', 'y', 'z'].map(a => wf(p + a, (lbl || '') + a.toUpperCase() + ul('L'), v[p + a], 'n')).join('')}</div>`;
+    const cen = () => { const c = selCentre(); return { cx: uv(c[0], 'L'), cy: uv(c[1], 'L'), cz: uv(c[2], 'L') }; };
+    const RW = {
+      tr: { t: () => T('Translate nodes / elements', 'เลื่อน / คัดลอก'), def: () => ({ mode: 'copy', dx: 0, dy: 0, dz: uv(3.5, 'L'), n: 1, con: false, lds: true }), live: ['mode'],
+        body: v => selInfo() + `<div class="an-row2">${modeSel(v)}${v.mode === 'copy' ? wf('n', T('Number of copies', 'จำนวนสำเนา'), v.n, 'n') : '<span></span>'}</div>` + xyz(v, 'd', 'Δ') + (v.mode === 'copy' ? wck('con', T('Connect each node to its copy (extrude — e.g. columns)', 'เชื่อมจุดต่อกับสำเนา (ยืด — เช่น เสา)'), v.con) + wck('lds', T('Copy loads too', 'คัดลอกแรงด้วย'), v.lds) : '') + wfoot(T('Apply', 'ดำเนินการ')),
+        add: v => { if (!needSel(true)) return; const d = ['dx', 'dy', 'dz'].map(k => frU(+v[k] || 0, 'L')); if (!d.some(Boolean)) { toast(T('Enter a distance.', 'ใส่ระยะ'), 'bad'); return; } if (v.mode === 'move') moveNodes(p => addv(p, d, 1)); else { replicate(d, Math.max(1, Math.min(50, +v.n | 0)), !!v.con, !!v.lds); redraw(true); } } },
+      ext: { t: () => T('Extrude nodes into elements', 'ยืดจุดต่อเป็นชิ้นส่วน'), def: () => ({ dx: 0, dy: 0, dz: uv(3.5, 'L'), n: 1 }),
+        body: v => selInfo() + hint(T('Each selected node is copied by the distance and joined to its copy with a new element (section and material of the Elements step).', 'คัดลอกจุดต่อที่เลือกตามระยะ และเชื่อมกับสำเนาด้วยชิ้นส่วนใหม่ (หน้าตัดและวัสดุตามขั้นชิ้นส่วน)')) + xyz(v, 'd', 'Δ') + wf('n', T('Number of times', 'จำนวนครั้ง'), v.n, 'n') + wfoot(T('Extrude', 'ยืด')),
+        add: v => { if (!A.sel.n.length) { toast(T('Select nodes first.', 'เลือกจุดต่อก่อน'), 'bad'); return; } const d = ['dx', 'dy', 'dz'].map(k => frU(+v[k] || 0, 'L')); if (!d.some(Boolean)) { toast(T('Enter a distance.', 'ใส่ระยะ'), 'bad'); return; } const keep = A.sel.m; A.sel.m = []; replicate(d, Math.max(1, Math.min(50, +v.n | 0)), true, false); if (!A.sel.m.length) A.sel.m = keep; redraw(true); } },
+      rot: { t: () => T('Rotate nodes / elements', 'หมุน'), def: () => Object.assign({ mode: 'move', ax: 'z', ang: 90, n: 1, con: false, lds: true }, cen()), live: ['mode'],
+        body: v => selInfo() + `<div class="an-row3">${modeSel(v)}${ws('ax', T('About axis', 'รอบแกน'), [['z', 'Z'], ['x', 'X'], ['y', 'Y']], v.ax)}${wf('ang', T('Angle (°)', 'มุม (°)'), v.ang, 'n')}</div>` + xyz(v, 'c', T('Centre ', 'จุดหมุน ')) + `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-rb" data-c="wcen">${T('Use centre of selection', 'ใช้จุดกึ่งกลางของที่เลือก')}</button></div>` + (v.mode === 'copy' ? wf('n', T('Number of copies', 'จำนวนสำเนา'), v.n, 'n') + wck('con', T('Connect nodes to their copies', 'เชื่อมจุดต่อกับสำเนา'), v.con) + wck('lds', T('Copy loads too', 'คัดลอกแรงด้วย'), v.lds) : '') + wfoot(T('Apply', 'ดำเนินการ')),
+        add: v => { if (!needSel(true)) return; const fn = rotFn(v.ax, +v.ang || 0, ['cx', 'cy', 'cz'].map(k => frU(+v[k] || 0, 'L'))); if (!(+v.ang)) { toast(T('Enter an angle.', 'ใส่มุม'), 'bad'); return; } if (v.mode === 'move') moveNodes(fn); else { replicate([0, 0, 0], Math.max(1, Math.min(50, +v.n | 0)), !!v.con, !!v.lds, fn); redraw(true); } } },
+      mir: { t: () => T('Mirror nodes / elements', 'สะท้อน'), def: () => { const c = cen(); return { mode: 'copy', ax: 'x', at: c.cx, lds: true }; }, live: ['mode', 'ax'],
+        body: v => selInfo() + `<div class="an-row3">${modeSel(v)}${ws('ax', T('Mirror plane', 'ระนาบสะท้อน'), [['x', 'X = …  (Y–Z plane)'], ['y', 'Y = …  (X–Z plane)'], ['z', 'Z = …  (X–Y plane)']], v.ax)}${wf('at', v.ax.toUpperCase() + ul('L'), v.at, 'n')}</div>` + (v.mode === 'copy' ? wck('lds', T('Copy loads too', 'คัดลอกแรงด้วย'), v.lds) : '') + wfoot(T('Apply', 'ดำเนินการ')),
+        add: v => { if (!needSel(true)) return; const fn = mirFn(v.ax, frU(+v.at || 0, 'L')); if (v.mode === 'move') moveNodes(fn); else { replicate([0, 0, 0], 1, false, !!v.lds, fn); redraw(true); } } },
+      scl: { t: () => T('Scale node coordinates', 'ปรับขนาดพิกัด'), def: () => Object.assign({ s: 1.5 }, cen()),
+        body: v => selInfo() + wf('s', T('Scale factor', 'ตัวคูณขนาด'), v.s, 'n') + xyz(v, 'c', T('About ', 'อ้างอิง ')) + `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-rb" data-c="wcen">${T('Use centre of selection', 'ใช้จุดกึ่งกลางของที่เลือก')}</button></div>` + wfoot(T('Scale', 'ปรับขนาด')),
+        add: v => { if (!needSel(true)) return; const s = +v.s; if (!(s > 0)) { toast(T('The factor must be positive.', 'ตัวคูณต้องเป็นบวก'), 'bad'); return; } moveNodes(sclFn(s, ['cx', 'cy', 'cz'].map(k => frU(+v[k] || 0, 'L')))); } },
+      ndiv: { t: () => T('Divide between two nodes', 'แบ่งระหว่างจุดต่อ'), def: () => ({ n: 4 }),
+        body: v => selInfo() + hint(T('Creates equally spaced nodes between the two selected nodes.', 'สร้างจุดต่อระยะเท่ากันระหว่างจุดต่อ 2 จุดที่เลือก')) + wf('n', T('Number of divisions', 'จำนวนช่วง'), v.n, 'n') + wfoot(T('Divide', 'แบ่ง')), add: v => divideNodes(+v.n) },
+      ediv: { t: () => T('Divide elements', 'แบ่งชิ้นส่วน'), def: () => ({ n: 2 }),
+        body: v => selInfo() + hint(T('Each selected element is split into equal parts; element loads are carried over.', 'แบ่งชิ้นส่วนที่เลือกเป็นส่วนเท่า ๆ กัน แรงบนชิ้นส่วนถูกย้ายไปด้วย')) + wf('n', T('Number of parts', 'จำนวนส่วน'), v.n, 'n') + wfoot(T('Divide', 'แบ่ง')), add: v => divideElems(+v.n) },
+      nmrg: { t: () => T('Merge coincident nodes', 'รวมจุดต่อที่ซ้อนกัน'), def: () => ({ scope: 'all', tol: uv(0.001, 'L') }),
+        body: v => `<div class="an-row2">${ws('scope', T('Nodes', 'จุดต่อ'), [['all', T('All nodes', 'ทั้งหมด')], ['sel', T('Selected only', 'เฉพาะที่เลือก')]], v.scope)}${wf('tol', T('Tolerance', 'ระยะยอมรับ') + ul('L'), v.tol, 'n')}</div>` + hint(T('Nodes closer than the tolerance become one; elements are reconnected and duplicates removed.', 'จุดต่อที่ห่างน้อยกว่าระยะยอมรับรวมเป็นจุดเดียว ชิ้นส่วนเชื่อมใหม่และลบชิ้นซ้ำ')) + wfoot(T('Merge', 'รวม')), add: v => mergeNodes(v.scope, frU(+v.tol || 0, 'L')) },
+      chg: { t: () => T('Change element parameters', 'เปลี่ยนคุณสมบัติชิ้นส่วน'), def: () => ({ sec: '', mat: '', type: '', beta: '' }),
+        body: v => { const keep = [['', T('— keep —', '— คงเดิม —')]]; return selInfo() + `<div class="an-row2">${ws('sec', T('Section', 'หน้าตัด'), keep.concat(secOpts()), v.sec)}${ws('mat', T('Material', 'วัสดุ'), keep.concat(matOpts()), v.mat)}</div><div class="an-row2">${ws('type', T('Type', 'ชนิด'), keep.concat([['frame', T('Frame', 'โครงข้อแข็ง')], ['truss', T('Truss', 'โครงถัก')]]), v.type)}${wf('beta', T('Beta angle β (°)', 'มุม β (°)'), v.beta, 'n', 'placeholder="—"')}</div>` + wfoot(T('Apply', 'กำหนด')); },
+        add: v => { if (!needSel(false)) return; snap(true); const m = A.model; A.sel.m.forEach(id => { const q = m.members.find(z => z.id === id); if (!q) return; if (v.sec) q.sec = v.sec; if (v.mat) q.mat = v.mat; if (v.type) q.type = v.type; if (v.beta !== '' && isFinite(+v.beta)) q.beta = +v.beta; }); changed(true); toast(T('Parameters applied to ' + A.sel.m.length + ' element(s)', 'กำหนดให้ ' + A.sel.m.length + ' ชิ้นส่วน'), 'ok'); } },
+      bbeta: { t: () => T('Beta angle', 'มุม β'), def: () => ({ beta: 90 }),
+        body: v => selInfo() + hint(T('Rotates the element about its own axis: local y turns towards local z. For a column, β = 90° puts the major axis along global Y.', 'หมุนชิ้นส่วนรอบแกนตัวเอง แกน y หมุนไปทาง z สำหรับเสา β = 90° ทำให้แกนหลักอยู่ตามแกน Y')) + wf('beta', 'β (°)', v.beta, 'n') + wfoot(T('Apply', 'กำหนด')),
+        add: v => { if (!needSel(false)) return; snap(true); A.sel.m.forEach(id => { const q = A.model.members.find(z => z.id === id); if (q) q.beta = +v.beta || 0; }); changed(true); toast('β → ' + A.sel.m.length, 'ok'); } },
+      spr: { t: () => T('Point spring supports', 'สปริงที่จุดต่อ'), def: () => ({ kx: '', ky: '', kz: '', krx: '', kry: '', krz: '' }),
+        body: v => selInfo() + `<div class="an-row3">${['kx', 'ky', 'kz'].map(q => wf(q, q + ul('kL'), v[q], 'n')).join('')}</div><div class="an-row3">${['krx', 'kry', 'krz'].map(q => wf(q, q + ul('kR'), v[q], 'n')).join('')}</div>` + hint(T('Blank or 0 removes that spring. Springs act in global axes and add to any support.', 'ว่างหรือ 0 คือไม่มีสปริง สปริงทำงานตามแกนหลักและรวมกับจุดรองรับ')) + wfoot(T('Apply', 'กำหนด')),
+        add: v => { if (!A.sel.n.length) { toast(T('Select nodes first.', 'เลือกจุดต่อก่อน'), 'bad'); return; } snap(true); const nd = nodeMap(); A.sel.n.forEach(id => { const n = nd[id]; ['kx', 'ky', 'kz', 'krx', 'kry', 'krz'].forEach(q => { const x = +v[q]; if (!x) delete n[q]; else n[q] = frU(x, q[1] === 'r' ? 'kR' : 'kL'); }); }); changed(true); toast(T('Springs set on ' + A.sel.n.length + ' node(s)', 'กำหนดสปริง ' + A.sel.n.length + ' จุด'), 'ok'); } },
+      rel: { t: () => T('Beam end release', 'ปลดแรงปลายคาน'), def: () => ({ h: 'both' }),
+        body: v => selInfo() + ws('h', T('Moment release', 'การปลดโมเมนต์'), [['none', T('None — rigid', 'ไม่มี — ยึดแน่น')], ['i', T('Pin at end i', 'หมุดที่ปลาย i')], ['j', T('Pin at end j', 'หมุดที่ปลาย j')], ['both', T('Pin both ends', 'หมุดทั้งสองปลาย')], ['truss', T('Truss (axial only)', 'โครงถัก (แรงตามแนวแกน)')]], v.h) + wfoot(T('Apply', 'กำหนด')),
+        add: v => { if (!needSel(false)) return; dropApply('rel:' + v.h, null); } },
+      sw: { t: () => T('Self weight', 'น้ำหนักตัวเอง'), body: () => hint(T('Tick the load case that carries the self weight of the elements (area × unit weight γ of the material).', 'ติ๊กกรณีน้ำหนักที่รวมน้ำหนักตัวเองของชิ้นส่วน (พื้นที่ × หน่วยน้ำหนัก γ ของวัสดุ)')) + tblw([T('Case', 'กรณี'), T('Name', 'ชื่อ'), T('Type', 'ประเภท'), T('Self weight', 'น้ำหนักตัวเอง')], A.model.cases.map((c, i) => `<tr><td><b>${esc(c.id)}</b></td><td>${esc(c.name)}</td><td>${c.type}</td><td><input type="checkbox" data-tb="cases" data-i="${i}" data-f="sw" ${c.sw ? 'checked' : ''}></td></tr>`)) + `<p class="muted small">${T('Total self weight', 'น้ำหนักตัวเองรวม')}: <b>${fu(A.model.members.reduce((s, q) => s + ((memWeight(q) || {}).W || 0), 0), 'F')}${ul('F')}</b></p>` + wfoot('') },
+      actl: { t: () => T('Analysis control', 'การควบคุมการวิเคราะห์'), body: () => panel('run') + wfoot('') },
+      vname: { t: () => T('Named views', 'มุมมองที่บันทึก'), def: () => ({ n: '' }),
+        body: v => `<div class="an-row2">${wf('n', T('Name for the current view', 'ชื่อมุมมองปัจจุบัน'), v.n, '', 'placeholder="' + T('e.g. South elevation', 'เช่น รูปด้านทิศใต้') + '"')}<span class="an-f"><span>&nbsp;</span><button class="btn btn-hot xs" data-act="an-wadd">${T('Save view', 'บันทึกมุมมอง')}</button></span></div>` +
+          (A.opt.views.length ? tblw([T('View', 'มุมมอง'), ''], A.opt.views.map((q, i) => `<tr><td>${esc(q.n)} <span class="muted small">${q.c.v === '3d' ? '3D' : q.c.v.toUpperCase()}</span></td><td class="num"><button class="btn btn-ghost xs" data-act="an-rb" data-c="vrestore" data-v="${i}">${T('Show', 'แสดง')}</button> <button class="icon-btn" data-act="an-rb" data-c="vdel" data-v="${i}" aria-label="${T('Delete', 'ลบ')}">×</button></td></tr>`)) : hint(T('No saved views yet.', 'ยังไม่มีมุมมองที่บันทึก'))) + wfoot(''),
+        add: v => { const n = String(v.n || '').trim() || T('View ', 'มุมมอง ') + (A.opt.views.length + 1); A.opt.views.push({ n, c: camSnap(), cut: A.cut }); v.n = ''; persist(); toast(T('View saved: ', 'บันทึกมุมมอง: ') + n, 'ok'); } },
+      ntab: { t: () => T('Nodes table', 'ตารางจุดต่อ'), body: () => { const m = A.model; return tblw(['ID', 'X' + ul('L'), 'Y' + ul('L'), 'Z' + ul('L'), T('Support', 'จุดรองรับ'), ''], m.nodes.slice(0, 600).map((n, i) => `<tr class="${A.sel.n.includes(n.id) ? 'on' : ''}"><td><button class="linkbtn" data-act="an-pickn" data-n="${esc(n.id)}">${esc(n.id)}</button></td>${['x', 'y', 'z'].map(q => `<td>${inp(uv(+n[q] || 0, 'L'), `data-tb="nodes" data-i="${i}" data-f="${q}" type="number" step="any"`)}</td>`).join('')}<td>${sel(SUP(), n.sup || 'free', `data-tb="nodes" data-i="${i}" data-f="sup"`)}</td><td>${liDel('nodes', i)}</td></tr>`), 'edit') + (m.nodes.length > 600 ? hint(T('First 600 rows.', 'แสดง 600 แถวแรก')) : '') + wfoot('', `<button class="btn btn-ghost sm" data-act="an-rb" data-c="csv" data-v="nodes">CSV</button>`); } },
+      etab: { t: () => T('Elements table', 'ตารางชิ้นส่วน'), body: () => { const m = A.model, so = secOpts(), mo = matOpts(); return tblw(['ID', T('Node i', 'จุด i'), T('Node j', 'จุด j'), T('Section', 'หน้าตัด'), T('Material', 'วัสดุ'), T('Type', 'ชนิด'), 'β°', 'L' + ul('L'), ''], m.members.slice(0, 500).map((q, i) => { const g = memGeom(q); return `<tr class="${A.sel.m.includes(q.id) ? 'on' : ''} ${memOK(q) ? '' : 'bad'}"><td><button class="linkbtn" data-act="an-pick" data-m="${esc(q.id)}">${esc(q.id)}</button></td><td>${inp(q.i, `data-tb="members" data-i="${i}" data-f="i"`)}</td><td>${inp(q.j, `data-tb="members" data-i="${i}" data-f="j"`)}</td><td>${sel(so, q.sec, `data-tb="members" data-i="${i}" data-f="sec"`)}</td><td>${sel(mo, q.mat, `data-tb="members" data-i="${i}" data-f="mat"`)}</td><td>${sel([['frame', T('Frame', 'โครงข้อแข็ง')], ['truss', T('Truss', 'โครงถัก')]], q.type || 'frame', `data-tb="members" data-i="${i}" data-f="type"`)}</td><td>${inp(+q.beta || 0, `data-tb="members" data-i="${i}" data-f="beta" type="number" step="any"`)}</td><td class="num mono">${g ? fu(g.L, 'L') : '—'}</td><td>${liDel('members', i)}</td></tr>`; }), 'edit') + (m.members.length > 500 ? hint(T('First 500 rows.', 'แสดง 500 แถวแรก')) : '') + wfoot('', `<button class="btn btn-ghost sm" data-act="an-rb" data-c="csv" data-v="members">CSV</button>`); } },
+      pmt: { t: () => T('Material table', 'ตารางวัสดุ'), body: () => tblw(['ID', T('Name', 'ชื่อ'), 'E (MPa)', 'ν', 'γ' + ul('g'), 'α' + ul('al'), "f'c / fy (MPa)"], A.model.materials.map(x => `<tr><td><b>${esc(x.id)}</b></td><td>${esc(x.name || '')}</td><td class="num mono">${f(+x.E, 0)}</td><td class="num mono">${f(x.nu === undefined ? 0.3 : +x.nu, 2)}</td><td class="num mono">${fu(+x.rho || 0, 'g', UU().F === 'kN' ? 1 : 4)}</td><td class="num mono">${fx(toU(+x.alpha || F.alphaOf(x) * 1e6, 'al'), 2)}</td><td class="num mono">${x.fc ? f(+x.fc, 1) : x.fy ? f(+x.fy, 0) : '—'}</td></tr>`)) + wfoot('') },
+      pst: { t: () => T('Section table', 'ตารางหน้าตัด'), body: () => tblw(['ID', T('Shape', 'รูปทรง'), 'A (mm²)', 'I<sub>z</sub> (×10⁶ mm⁴)', 'I<sub>y</sub> (×10⁶ mm⁴)', 'J (×10⁶ mm⁴)', T('Used by', 'ใช้ใน')], A.model.sections.map(s => { const p = F.secProps(s); return `<tr><td><b>${esc(s.id)}</b></td><td>${esc(s.name || s.type)}</td><td class="num mono">${f(p.A, 0)}</td><td class="num mono">${f(p.Iz / 1e6, 2)}</td><td class="num mono">${f(p.Iy / 1e6, 2)}</td><td class="num mono">${f(p.J / 1e6, 3)}</td><td class="num mono">${A.model.members.filter(q => q.sec === s.id).length}</td></tr>`; })) + wfoot('') },
+      btab: { t: () => T('Boundary table', 'ตารางจุดรองรับ'), body: () => { const m = A.model, rows = m.nodes.filter(n => F.fixOf(n).some(Boolean) || ['kx', 'ky', 'kz', 'krx', 'kry', 'krz'].some(q => +n[q] > 0)); return (rows.length ? tblw([T('Node', 'จุดต่อ'), T('Support', 'จุดรองรับ'), 'Ux Uy Uz Rx Ry Rz', T('Springs', 'สปริง')], rows.map(n => `<tr><td><button class="linkbtn" data-act="an-pickn" data-n="${esc(n.id)}">${esc(n.id)}</button></td><td>${esc((SUP().find(q => q[0] === (n.sup || 'free')) || [])[1] || n.sup)}</td><td class="mono">${F.fixOf(n).map(x => (x ? '■' : '□')).join(' ')}</td><td class="mono small">${['kx', 'ky', 'kz', 'krx', 'kry', 'krz'].filter(q => +n[q] > 0).map(q => q + ' ' + fu(+n[q], q[1] === 'r' ? 'kR' : 'kL', 0)).join(', ') || '—'}</td></tr>`)) : hint(T('No supports yet.', 'ยังไม่มีจุดรองรับ'))) + `<p class="muted small">${T('Released / truss elements', 'ชิ้นส่วนที่ปลดแรง / โครงถัก')}: ${m.members.filter(q => q.relI || q.relJ || q.type === 'truss').map(q => esc(q.id) + (q.type === 'truss' ? ' (T)' : ' (' + (q.relI ? 'i' : '') + (q.relJ ? 'j' : '') + ')')).join(', ') || '—'}</p>` + wfoot(''); } },
+      ltab: { t: () => T('Load table', 'ตารางแรง'), body: () => { const m = A.model; return m.loads.length ? tblw([T('Case', 'กรณี'), T('On', 'ที่'), T('Type', 'ชนิด'), T('Values', 'ค่า'), ''], m.loads.slice(0, 600).map((l, i) => `<tr><td><b>${esc(l.case)}</b></td><td>${esc(l.kind === 'node' ? l.node : l.member)}</td><td>${{ node: T('nodal', 'ที่จุดต่อ'), udl: T('distributed', 'แผ่กระจาย'), point: T('point', 'แรงจุด'), moment: T('moment', 'โมเมนต์'), temp: T('temperature', 'อุณหภูมิ') }[l.kind] || l.kind}</td><td class="small">${esc(loadDesc(l))}</td><td>${liDel('loads', i)}</td></tr>`)) + wfoot('', `<button class="btn btn-ghost sm" data-act="an-rb" data-c="csv" data-v="loads">CSV</button>`) : hint(T('No loads yet.', 'ยังไม่มีแรง')) + wfoot(''); } },
+      lsum: { t: () => T('Load summary', 'สรุปแรง'), body: () => tblw([T('Case', 'กรณี'), T('Loads', 'จำนวน'), 'ΣFx' + ul('F'), 'ΣFy' + ul('F'), 'ΣFz' + ul('F'), T('of which self weight', 'น้ำหนักตัวเอง') + ul('F'), T('Temperature', 'อุณหภูมิ')], A.model.cases.map(c => { const s = caseSum(c.id); return `<tr><td><b>${esc(c.id)}</b> <span class="muted small">${esc(c.name)}</span></td><td class="num mono">${s.n}</td>${s.R.map(v => `<td class="num mono">${fu(v, 'F')}</td>`).join('')}<td class="num mono">${s.sw ? fu(-s.sw, 'F') : '—'}</td><td class="num mono">${s.nT || '—'}</td></tr>`; })) + hint(T('Resultants of the applied loads in global axes (Z up, so gravity is negative). Moments and temperature loads have no force resultant.', 'ผลรวมแรงตามแกนหลัก (Z ขึ้น แรงโน้มถ่วงเป็นลบ) โมเมนต์และแรงจากอุณหภูมิไม่มีผลรวมแรง')) + wfoot('') },
+      qms: { t: () => T('Mass summary', 'สรุปมวล'), body: () => { const m = A.model, by = {}; let tot = 0; m.members.forEach(q => { const w = memWeight(q); if (!w) return; const k = q.mat + ' · ' + q.sec, o = by[k] || (by[k] = { n: 0, L: 0, W: 0 }); o.n++; o.L += w.L; o.W += w.W; tot += w.W; }); return tblw([T('Material · section', 'วัสดุ · หน้าตัด'), T('Elements', 'จำนวน'), T('Length', 'ความยาว') + ul('L'), T('Weight', 'น้ำหนัก') + ul('F'), T('Mass (t)', 'มวล (ตัน)')], Object.entries(by).map(([k, o]) => `<tr><td>${esc(k)}</td><td class="num mono">${o.n}</td><td class="num mono">${fu(o.L, 'L', 2)}</td><td class="num mono">${fu(o.W, 'F')}</td><td class="num mono">${f(o.W / 9.81, 2)}</td></tr>`).concat([`<tr class="tot"><td>Σ</td><td></td><td></td><td class="num mono">${fu(tot, 'F')}</td><td class="num mono">${f(tot / 9.81, 2)}</td></tr>`])) + wfoot(''); } },
+      qwt: { t: () => T('Element weight table', 'ตารางน้ำหนักชิ้นส่วน'), body: () => { let tot = 0; const rows = A.model.members.slice(0, 600).map(q => { const w = memWeight(q); if (w) tot += w.W; return `<tr><td>${esc(q.id)}</td><td>${esc(q.sec)}</td><td>${esc(q.mat)}</td><td class="num mono">${w ? fu(w.L, 'L', 2) : '—'}</td><td class="num mono">${w ? f(w.A * 1e6, 0) : '—'}</td><td class="num mono">${w ? fu(w.gam, 'g', UU().F === 'kN' ? 1 : 4) : '—'}</td><td class="num mono">${w ? fu(w.W, 'F') : '—'}</td></tr>`; }); return tblw([T('Element', 'ชิ้นส่วน'), T('Section', 'หน้าตัด'), T('Material', 'วัสดุ'), 'L' + ul('L'), 'A (mm²)', 'γ' + ul('g'), T('Weight', 'น้ำหนัก') + ul('F')], rows.concat([`<tr class="tot"><td>Σ</td><td></td><td></td><td></td><td></td><td></td><td class="num mono">${fu(tot, 'F')}</td></tr>`])) + wfoot(''); } },
+      qnt: { t: () => T('Node detail table', 'ตารางรายละเอียดจุดต่อ'), body: () => { const m = A.model, cur = fresh() ? current() : null, env = cur && cur.kind === 'env'; return (cur ? `<p class="muted small">${T('Results for ', 'ผลของ ')}${esc((srcList().find(q => q[0] === A.src) || [])[1] || '')}</p>` : hint(T('Run the analysis to add displacements and reactions.', 'วิเคราะห์เพื่อแสดงการเคลื่อนตัวและแรงปฏิกิริยา'))) + tblw(['ID', 'X', 'Y', 'Z' + ul('L'), T('Support', 'จุดรองรับ')].concat(cur && !env ? ['u<sub>x</sub>', 'u<sub>y</sub>', 'u<sub>z</sub>' + ul('d'), 'R<sub>x</sub>', 'R<sub>y</sub>', 'R<sub>z</sub>' + ul('F')] : []), m.nodes.slice(0, 600).map((n, i) => `<tr class="${A.sel.n.includes(n.id) ? 'on' : ''}"><td>${esc(n.id)}</td>${['x', 'y', 'z'].map(q => `<td class="num mono">${fu(+n[q] || 0, 'L')}</td>`).join('')}<td>${n.sup && n.sup !== 'free' ? esc(n.sup) : ''}</td>${cur && !env ? [0, 1, 2].map(d => `<td class="num mono">${fu(cur.u[6 * i + d], 'd', 3)}</td>`).join('') + [0, 1, 2].map(d => `<td class="num mono">${F.fixOf(n)[d] || +n[['kx', 'ky', 'kz'][d]] ? fu(cur.R[6 * i + d], 'F') : ''}</td>`).join('') : ''}</tr>`)) + wfoot(''); } },
+      qet: { t: () => T('Element detail table', 'ตารางรายละเอียดชิ้นส่วน'), body: () => { const m = A.model, cur = fresh() ? current() : null; return (cur ? `<p class="muted small">${T('Results for ', 'ผลของ ')}${esc((srcList().find(q => q[0] === A.src) || [])[1] || '')}</p>` : hint(T('Run the analysis to add the member forces.', 'วิเคราะห์เพื่อแสดงแรงในชิ้นส่วน'))) + tblw(['ID', 'i', 'j', T('Section', 'หน้าตัด'), T('Material', 'วัสดุ'), T('Type', 'ชนิด'), T('Release', 'ปลดแรง'), 'β°', 'L' + ul('L')].concat(cur ? ['|N|' + ul('F'), '|V|' + ul('F'), '|M|' + ul('M')] : []), m.members.slice(0, 600).map(q => { const g = memGeom(q), r = cur ? memRes(cur, q.id) : null, mx = k => r ? Math.max(...(cur.kind === 'env' ? r[k + 'max'].concat(r[k + 'min']) : r[k]).map(Math.abs)) : 0; return `<tr class="${A.sel.m.includes(q.id) ? 'on' : ''}"><td>${esc(q.id)}</td><td>${esc(q.i)}</td><td>${esc(q.j)}</td><td>${esc(q.sec)}</td><td>${esc(q.mat)}</td><td>${q.type === 'truss' ? T('truss', 'โครงถัก') : T('frame', 'โครงข้อแข็ง')}</td><td>${(q.relI ? 'i ' : '') + (q.relJ ? 'j' : '') || '—'}</td><td class="num mono">${f(+q.beta || 0, 0)}</td><td class="num mono">${g ? fu(g.L, 'L', 2) : '—'}</td>${r ? `<td class="num mono">${fu(mx('N'), 'F')}</td><td class="num mono">${fu(Math.max(mx('Vy'), mx('Vz')), 'F')}</td><td class="num mono">${fu(Math.max(mx('My'), mx('Mz')), 'M')}</td>` : cur ? '<td></td><td></td><td></td>' : ''}</tr>`; })) + wfoot(''); } },
+      stat: { t: () => T('Project status', 'สถานะโครงการ'), body: () => { const m = A.model, sd = stdInfo(m.std), tot = m.members.reduce((s, q) => s + ((memWeight(q) || {}).W || 0), 0), Lt = m.members.reduce((s, q) => s + ((memGeom(q) || {}).L || 0), 0), bad = m.members.filter(q => !memOK(q)).length;
+        const kv = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`;
+        return `<dl class="an-wkv an-stat">${kv(T('Design standard', 'มาตรฐาน'), esc(T(sd.name[0], sd.name[1])))}${kv(T('Model type', 'ชนิดแบบจำลอง'), m.plane === 'XZ' ? T('2D frame (X–Z)', 'โครง 2 มิติ (X–Z)') : T('3D frame', 'โครง 3 มิติ'))}${kv(T('Nodes', 'จุดต่อ'), m.nodes.length)}${kv(T('Elements', 'ชิ้นส่วน'), m.members.length + (bad ? ` <span class="an-miss">(${bad} ${T('without property', 'ไม่มีคุณสมบัติ')})</span>` : ''))}${kv(T('Total element length', 'ความยาวรวม'), fu(Lt, 'L', 2) + ul('L'))}${kv(T('Materials / sections', 'วัสดุ / หน้าตัด'), m.materials.length + ' / ' + m.sections.length)}${kv(T('Supported nodes', 'จุดรองรับ'), m.nodes.filter(n => F.fixOf(n).some(Boolean)).length)}${kv(T('Load cases / loads', 'กรณีน้ำหนัก / แรง'), m.cases.length + ' / ' + m.loads.length)}${kv(T('Combinations', 'การรวมน้ำหนัก'), m.combos.length)}${kv(T('Self weight', 'น้ำหนักตัวเอง'), fu(tot, 'F') + ul('F') + ' (' + f(tot / 9.81, 1) + ' t)')}${kv(T('Units', 'หน่วย'), ulab('F') + ', ' + ulab('L') + ', ' + ulab('M') + ', ' + ulab('T'))}${kv(T('Analysis', 'การวิเคราะห์'), fresh() ? T('up to date', 'เป็นปัจจุบัน') + ' · ' + A.res.ms + ' ms' : A.err ? `<span class="an-miss">${esc(A.err)}</span>` : T('not run since the last change', 'ยังไม่ได้วิเคราะห์หลังแก้ไขล่าสุด'))}${kv(T('Options', 'ตัวเลือก'), [A.opt.pdelta ? 'P-Delta' : '', A.opt.modes ? T('modal', 'โหมด') : '', A.opt.buckling ? T('buckling', 'การโก่งเดาะ') : ''].filter(Boolean).join(', ') || T('linear static', 'สถิตเชิงเส้น'))}</dl>` + wfoot(''); } },
+      qinfo: { t: () => T('Query', 'สอบถาม'), body: () => queryHTML() + wfoot('') }
+    };
+    function queryHTML() {
+      const q = A.qinfo, m = A.model; if (!q) return hint(T('Pick Query Nodes or Query Elements, then click in the view.', 'เลือกสอบถามจุดต่อหรือชิ้นส่วน แล้วคลิกในมุมมอง'));
+      const cur = fresh() ? current() : null, env = cur && cur.kind === 'env', kv = (k, v) => `<div><dt>${k}</dt><dd>${v}</dd></div>`, srcL = cur ? esc((srcList().find(z => z[0] === A.src) || [])[1] || '') : '';
+      if (q.k === 'n') {
+        const i = m.nodes.findIndex(n => n.id === q.id), n = m.nodes[i]; if (!n) return hint(T('That node no longer exists.', 'ไม่มีจุดต่อนี้แล้ว'));
+        const ms = m.members.filter(z => z.i === n.id || z.j === n.id).map(z => z.id), ls = m.loads.filter(l => l.node === n.id);
+        let r = '';
+        if (cur && !env) r = kv(T('Displacement', 'การเคลื่อนตัว') + ' (' + ulab('d') + ')', [0, 1, 2].map(d => 'xyz'[d] + ' ' + fu(cur.u[6 * i + d], 'd', 3)).join(' · ')) + kv(T('Rotation (mrad)', 'การหมุน (mrad)'), [3, 4, 5].map(d => 'xyz'[d - 3] + ' ' + fx(cur.u[6 * i + d] * 1000, 3)).join(' · ')) + (F.fixOf(n).some(Boolean) ? kv(T('Reaction', 'แรงปฏิกิริยา'), [0, 1, 2].map(d => 'R' + 'xyz'[d] + ' ' + fu(cur.R[6 * i + d], 'F')).join(' · ') + ul('F') + '<br>' + [3, 4, 5].map(d => 'M' + 'xyz'[d - 3] + ' ' + fu(cur.R[6 * i + d], 'M')).join(' · ') + ul('M')) : '');
+        else if (cur && env && F.fixOf(n).some(Boolean)) r = kv(T('Reaction range', 'ช่วงแรงปฏิกิริยา'), [0, 1, 2].map(d => 'R' + 'xyz'[d] + ' ' + fu(cur.R[6 * i + d][1], 'F') + '…' + fu(cur.R[6 * i + d][0], 'F')).join('<br>') + ul('F'));
+        return `<h4>${T('Node', 'จุดต่อ')} ${esc(n.id)}</h4><dl class="an-wkv an-stat">${kv(T('Coordinates', 'พิกัด') + ' (' + ulab('L') + ')', ['x', 'y', 'z'].map(a => fu(+n[a] || 0, 'L')).join(', '))}${kv(T('Support', 'จุดรองรับ'), esc((SUP().find(s => s[0] === (n.sup || 'free')) || [])[1] || n.sup) + ' · ' + F.fixOf(n).map(x => (x ? '■' : '□')).join(''))}${kv(T('Elements', 'ชิ้นส่วน'), ms.map(esc).join(', ') || '—')}${kv(T('Loads', 'แรง'), ls.map(l => '<b>' + esc(l.case) + '</b> ' + esc(loadDesc(l))).join('<br>') || '—')}${r}</dl>${cur ? `<p class="muted small">${srcL}</p>` : ''}`;
+      }
+      const e = m.members.find(z => z.id === q.id); if (!e) return hint(T('That element no longer exists.', 'ไม่มีชิ้นส่วนนี้แล้ว'));
+      const g = memGeom(e), w = memWeight(e), s = m.sections.find(z => z.id === e.sec), p = s ? F.secProps(s) : null, ls = m.loads.filter(l => l.member === e.id), r = cur ? memRes(cur, e.id) : null;
+      const ext = k => { if (!r) return ''; const a = env ? r[k + 'max'] : r[k], b = env ? r[k + 'min'] : r[k]; return fu(Math.min(...b), ['T', 'My', 'Mz'].includes(k) ? 'M' : 'F') + ' … ' + fu(Math.max(...a), ['T', 'My', 'Mz'].includes(k) ? 'M' : 'F'); };
+      return `<h4>${T('Element', 'ชิ้นส่วน')} ${esc(e.id)} <span class="muted small">${esc(e.i)} → ${esc(e.j)}</span></h4><dl class="an-wkv an-stat">${kv(T('Length', 'ความยาว'), g ? fu(g.L, 'L') + ul('L') : '—')}${kv(T('Section', 'หน้าตัด'), esc(e.sec) + (p ? ` · A ${f(p.A, 0)} mm² · I<sub>z</sub> ${f(p.Iz / 1e6, 1)}×10⁶` : ` <span class="an-miss">${T('missing', 'ไม่มี')}</span>`))}${kv(T('Material', 'วัสดุ'), esc(e.mat) + (m.materials.some(z => z.id === e.mat) ? '' : ` <span class="an-miss">${T('missing', 'ไม่มี')}</span>`))}${kv(T('Type / release / β', 'ชนิด / ปลดแรง / β'), (e.type === 'truss' ? T('truss', 'โครงถัก') : T('frame', 'โครงข้อแข็ง')) + ' · ' + ((e.relI ? 'i ' : '') + (e.relJ ? 'j' : '') || T('rigid', 'ยึดแน่น')) + ' · ' + f(+e.beta || 0, 0) + '°')}${kv(T('Weight', 'น้ำหนัก'), w ? fu(w.W, 'F') + ul('F') : '—')}${kv(T('Loads', 'แรง'), ls.map(l => '<b>' + esc(l.case) + '</b> ' + esc(loadDesc(l))).join('<br>') || '—')}${r ? ['N', 'Vy', 'Vz', 'T', 'My', 'Mz'].map(k => kv(k, ext(k))).join('') : ''}</dl>${cur ? `<p class="muted small">${srcL} · ${ulab('F')}, ${ulab('M')}</p>` : hint(T('Run the analysis to see the forces.', 'วิเคราะห์เพื่อดูแรง'))}`;
+    }
+    function csvOut(tb) {
+      const m = A.model, esc2 = v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+      const rows = tb === 'nodes' ? [['id', 'x (' + ulab('L') + ')', 'y', 'z', 'support']].concat(m.nodes.map(n => [n.id, uv(+n.x || 0, 'L'), uv(+n.y || 0, 'L'), uv(+n.z || 0, 'L'), n.sup || 'free']))
+        : tb === 'members' ? [['id', 'i', 'j', 'section', 'material', 'type', 'relI', 'relJ', 'beta']].concat(m.members.map(q => [q.id, q.i, q.j, q.sec, q.mat, q.type || 'frame', q.relI ? 1 : 0, q.relJ ? 1 : 0, +q.beta || 0]))
+          : [['case', 'on', 'kind', 'values']].concat(m.loads.map(l => [l.case, l.kind === 'node' ? l.node : l.member, l.kind, loadDesc(l)]));
+      ctx.saveFile((m.name || 'model').replace(/[^\w\-]+/g, '_') + '_' + tb + '.csv', new Blob([rows.map(r => r.map(esc2).join(',')).join('\n')], { type: 'text/csv' }));
+    }
+
+    // ---- results access
+    function needRes() { if (fresh()) return true; if (!run()) { toast(A.err || T('The analysis failed.', 'การวิเคราะห์ล้มเหลว'), 'bad'); return false; } return true; }
+    function showRes(rv, tab) {
+      if (!needRes()) return; A.step = 'res'; A.drawerMin = false;
+      if (rv) { A.rview = rv; if (rv === 'buck' && !(A.src || '').startsWith('combo:')) { const c = A.model.combos.find(q => q.type === 'ULS'); if (c) A.src = 'combo:' + c.id; } }
+      if (tab) A.rtab = tab; ctx.render();
+    }
+    function openLoadWin(o) { openWin('load'); Object.assign(wdef('load'), o); winRefresh(); }
+
+    // ---- command dispatcher
+    function ribCmd(c, v, b) {
+      if (b && b.dataset.m) { openMenu(c, b); return; }
+      closeMenu();
+      const m = A.model, o = A.opt;
+      switch (c) {
+        // view
+        case 'redraw': A.box = null; redraw(); toast(T('Redrawn', 'วาดใหม่แล้ว'), ''); return;
+        case 'initv': camPush(); A.cut = 'all'; setView(m.plane === 'XZ' ? 'xz' : '3d'); setActive('all'); ctx.render(); return;
+        case 'prevv': camPrev(); return;
+        case 'orbit': setTool(A.tool === 'orbit' ? 'select' : 'orbit'); return;
+        case 'pan': setTool(A.tool === 'pan' ? 'select' : 'pan'); return;
+        case 'zfit': camPush(); A.cam.k = null; redraw(); return;
+        case 'zin': zoomStep(1.25); return;
+        case 'zout': zoomStep(0.8); return;
+        case 'zwin': setTool('zoomw'); toast(T('Drag a box around the area to zoom to.', 'ลากกรอบรอบพื้นที่ที่ต้องการซูม'), ''); return;
+        case 'vp': case 'vpc': viewPoint(v); return;
+        case 'namedv': openWin('vname'); return;
+        case 'vrestore': { const q = A.opt.views[+v]; if (!q) return; camPush(); A.cam.v = A.cam.v; camApply(Object.assign({}, q.c)); if (q.cut !== undefined) { A.cut = q.cut; redraw(); } return; }
+        case 'vdel': A.opt.views.splice(+v, 1); persist(); winRefresh(); return;
+        case 'hidden': A.solid = !A.solid; ribRefresh(); redraw(); return;
+        case 'wire': A.solid = false; ribRefresh(); redraw(); return;
+        case 'lbls': { const on = !(A.lblN !== false || A.lblM !== false); A.lblN = A.lblM = on; ribRefresh(); redraw(); return; }
+        case 'tsel': setTool('select'); return;
+        case 'sby': selectBy(v); ribRefresh(); return;
+        case 'unsn': A.sel.n = []; selChanged(); return;
+        case 'unsm': A.sel.m = []; selChanged(); return;
+        case 'selprev': if (!A.prevSel) { toast(T('No previous selection.', 'ไม่มีการเลือกก่อนหน้า'), ''); return; } { const nsN = new Set(m.nodes.map(n => n.id)), nsM = new Set(m.members.map(q => q.id)); A.sel = { n: A.prevSel.n.filter(id => nsN.has(id)), m: A.prevSel.m.filter(id => nsM.has(id)) }; } selChanged(); return;
+        case 'active': case 'inactive': case 'inverse': setActive(c); return;
+        case 'actall': setActive('all'); return;
+        case 'grid': A.grid = A.grid === false; ribRefresh(); redraw(); return;
+        case 'snap': A.opt.snap = +v || 0; persist(); ribRefresh(); sideRefresh(); toast(T('Snap: ', 'สแนป: ') + (+v ? fu(+v, 'L', 3) + ul('L') : T('off', 'ปิด')), ''); return;
+        case 'tog': if (v === 'solid' || v === 'labels' || v === 'loadsOn' || v === 'allAxes') A[v] = !A[v]; else A[v] = A[v] === false; if (v === 'loadsOn') syncLshow(); ribRefresh(); redraw(); return;
+        // structure
+        case 'wizard': A.tplOpen = true; ctx.render(); return;
+        case 'type3d': case 'type2d': { const p = c === 'type2d' ? 'XZ' : ''; if ((m.plane || '') === p) return; snap(true); m.plane = p; changed(false); setView(p ? 'xz' : '3d'); ctx.render(); toast(p ? T('2D frame in the X–Z plane', 'โครง 2 มิติ ระนาบ X–Z') : T('3D frame', 'โครง 3 มิติ'), ''); return; }
+        case 'std': onClick('an-std', { dataset: { k: v }, classList: { contains: () => false }, closest: () => null }); return;
+        case 'save': onClick('an-save', { dataset: {}, classList: { contains: () => false }, closest: () => null }); return;
+        case 'report': onClick('an-report', { dataset: {}, classList: { contains: () => false }, closest: () => null }); return;
+        // node / element
+        case 'cnode': if (A.tool === 'node') { setTool('select'); return; } setTool('node'); openWin('node'); return;
+        case 'celem': setTool(A.tool === 'member' ? 'select' : 'member'); return;
+        case 'ntrans': case 'etrans': openWin('tr'); return;
+        case 'ndiv': openWin('ndiv'); return;
+        case 'ediv': openWin('ediv'); return;
+        case 'nmerge': openWin('nmrg'); return;
+        case 'emerge': mergeElems(); return;
+        case 'eint': intersectElems(); return;
+        case 'del': if (!A.sel.n.length && !A.sel.m.length) { toast(T('Select something to delete.', 'เลือกสิ่งที่จะลบ'), 'bad'); return; } deleteSel(); return;
+        case 'rot': openWin('rot'); return;
+        case 'mir': openWin('mir'); return;
+        case 'scl': openWin('scl'); return;
+        case 'ext': openWin('ext'); return;
+        case 'ntab': openWin('ntab'); return;
+        case 'etab': openWin('etab'); return;
+        case 'chg': openWin('chg'); return;
+        case 'wcen': { const w = A.win && wdef(A.win.k); if (w) { Object.assign(w, cen()); winRefresh(); } return; }
+        // properties
+        case 'pmat': openWin('mat'); return;
+        case 'pmatl': A.step = 'mat'; ctx.render(); return;
+        case 'psec': openWin('sec'); return;
+        case 'psecm': A.step = 'sec'; ctx.render(); return;
+        case 'ptab': openWin(v === 'sec' ? 'pst' : 'pmt'); return;
+        // boundary
+        case 'bsup': openWin('sup'); return;
+        case 'bspr': openWin('spr'); return;
+        case 'brel': openWin('rel'); return;
+        case 'bbeta': openWin('bbeta'); return;
+        case 'btab': openWin('btab'); return;
+        // load
+        case 'ltype': A.ltype = v; ribRefresh(); return;
+        case 'lcases': openWin('case'); return;
+        case 'lcombo': openWin('combo'); return;
+        case 'lsw': openWin('sw'); return;
+        case 'lnode': openLoadWin({ on: 'node' }); return;
+        case 'lbeam': openLoadWin({ on: 'elem', kind: 'udl', dir: 'grav' }); return;
+        case 'lpoint': openLoadWin({ on: 'elem', kind: 'point', dir: 'grav', w1: 10, a: '' }); return;
+        case 'lmom': openLoadWin({ on: 'elem', kind: 'moment', dir: 'lz', w1: 10, a: '' }); return;
+        case 'ltemp': openLoadWin({ on: 'elem', kind: 'temp', dT: 20, dTy: 0, dTz: 0 }); return;
+        case 'ltgrad': openLoadWin({ on: 'elem', kind: 'temp', dT: 0, dTy: 10, dTz: 0 }); return;
+        case 'lshow': if (!v) A.loadsOn = false; else { A.lcase = v; A.loadsOn = true; } syncLshow(); ribRefresh(); redraw(); if (['case', 'load'].includes(A.step)) sideRefresh(); return;
+        case 'ltab': openWin('ltab'); return;
+        case 'lsum': openWin('lsum'); return;
+        // analysis
+        case 'run': doRun(); return;
+        case 'clear': A.res = null; A.err = null; A.errNode = null; A.resVer = -1; if (A.step === 'res') A.step = 'run'; ctx.render(); toast(T('Results cleared', 'ล้างผลแล้ว'), ''); return;
+        case 'actl': openWin('actl'); return;
+        case 'tpd': case 'tmode': case 'tbuck': { if (!pro()) { toast(T('P-Delta, modal and buckling analyses are Pro features.', 'การวิเคราะห์ P-Delta โหมด และการโก่งเดาะสำหรับสมาชิก Pro'), 'bad'); return; } const k = { tpd: 'pdelta', tmode: 'modes', tbuck: 'buckling' }[c]; o[k] = !o[k]; persist(); A.ver++; updCounts(); ribRefresh(); if (A.step === 'run') sideRefresh(); toast((o[k] ? '✓ ' : '✗ ') + ({ pdelta: 'P-Delta', modes: T('Modal analysis', 'การวิเคราะห์โหมด'), buckling: T('Buckling analysis', 'การวิเคราะห์การโก่งเดาะ') })[k] + T(' — run again', ' — วิเคราะห์อีกครั้ง'), ''); return; }
+        // results
+        case 'rreact': showRes('react'); return;
+        case 'rdef': showRes('def'); return;
+        case 'rv': showRes(v); return;
+        case 'src': if (!needRes()) return; A.src = v; A.step = 'res'; ctx.render(); return;
+        case 'dscale': A.dscale = +v; redraw(); return;
+        case 'rvals': A.labels = !A.labels; ribRefresh(); redraw(); return;
+        case 'rdet': if (A.sel.m.length !== 1) { toast(T('Select one element, then press Beam Detail.', 'เลือกชิ้นส่วน 1 ชิ้น แล้วกดรายละเอียดคาน'), 'bad'); return; } showRes(A.rview && A.rview !== 'mode' && A.rview !== 'buck' ? A.rview : 'Mz'); return;
+        case 'rmode': if (!A.opt.modes) { toast(T('Turn on Modal in Analysis Control, then run.', 'เปิดการวิเคราะห์โหมดในการควบคุมการวิเคราะห์ แล้ววิเคราะห์'), 'bad'); return; } showRes('mode'); return;
+        case 'rbuck': if (!A.opt.buckling) { toast(T('Turn on Buckling in Analysis Control, then run.', 'เปิดการวิเคราะห์การโก่งเดาะในการควบคุมการวิเคราะห์ แล้ววิเคราะห์'), 'bad'); return; } showRes('buck'); return;
+        case 'rtab': showRes(null, v); return;
+        // design
+        case 'dbeam': case 'dcol': if (A.sel.m.length !== 1) { toast(T('Select one element in the view first.', 'เลือกชิ้นส่วน 1 ชิ้นในมุมมองก่อน'), 'bad'); return; } if (!needRes()) return; if (!A.src) { const cb = m.combos.find(q => q.type === 'ULS'); A.src = cb ? 'env:ULS' : null; } sendToDesign(c === 'dbeam' ? 'beam' : 'column'); return;
+        // query
+        case 'qstat': openWin('stat'); return;
+        case 'qnode': case 'qelem': setTool(A.tool === c ? 'select' : c); return;
+        case 'qnt': case 'qet': case 'qwt': case 'qms': openWin(c); return;
+        // tools
+        case 'units': { A.opt.u = Object.assign({}, UPRE[v]); persist(); ctx.render(); if (A.win) winRefresh(); toast(T('Units: ', 'หน่วย: ') + ulab('F') + ', ' + ulab('L') + ', ' + ulab('M') + ', ' + ulab('T'), ''); return; }
+        case 'help': openWin('help'); return;
+        case 'undo': undo(false); return;
+        case 'redo': undo(true); return;
+        case 'csv': csvOut(v); return;
+      }
     }
 
     return { view, mount, onClick, onInput, run, state: A, build, preset, TPL, migrate };
