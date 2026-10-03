@@ -893,6 +893,14 @@ body.an-dragging .an-canvas{box-shadow:inset 0 0 0 3px color-mix(in srgb,var(--a
 .an-guide{position:absolute;left:0;top:0;pointer-events:none;z-index:1}
 .an-quick{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px;margin:6px 0;border:1px dashed var(--line2);border-radius:10px}
 .an-quick>span{width:100%;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* results panel: drag handle on its top edge */
+.an-drawer.on{position:relative}
+.an-drawgrip{flex:none;height:9px;margin-top:-1px;cursor:ns-resize;display:grid;place-items:center;background:color-mix(in srgb,var(--ink) 4%,var(--card));border-bottom:1px solid var(--line);touch-action:none}
+.an-drawgrip i{display:block;width:44px;height:3px;border-radius:2px;background:var(--line2)}
+.an-drawgrip:hover,.an-drawgrip:focus-visible{background:color-mix(in srgb,var(--blue) 12%,var(--card));outline:none}
+.an-drawgrip:hover i,.an-drawgrip:focus-visible i{background:var(--blue)}
+body.an-resizing,body.an-resizing *{cursor:ns-resize!important;user-select:none!important}
 </style>
 </head>
 <body>

@@ -1268,7 +1268,7 @@
           <section class="an-work">
             <div class="an-canvas"><canvas id="anGuide" class="an-guide" aria-hidden="true"></canvas><canvas id="anCv" tabindex="0" aria-label="${T('3D model view', 'มุมมองแบบจำลอง 3 มิติ')}"></canvas><span class="an-tag" id="anViewTag">${viewTag()}</span>${ax ? `<label class="an-lv an-lvbox">${T('Level', 'ระดับ')} ${ax.toUpperCase()} = ${sel([['all', T('all', 'ทั้งหมด')]].concat(lv.map(v => [v, fu(v, 'L', 2)])), A.cut, 'id="an-cut"')}</label>` : ''}
               <p class="an-hintbar"><span id="anHint">${hintBar()}</span></p>${unitBar()}</div>
-            <div class="an-drawer ${showRes ? 'on' : ''}" id="anDrawer">${drawerHTML()}</div>
+            <div class="an-drawer ${showRes ? 'on' : ''} ${A.drawerMin ? 'min' : ''}" id="anDrawer" ${drawerStyle()}>${drawerHTML()}</div>
           </section>
         ${A.tplOpen ? `<div class="modal-bg an-tplbg">${tplHTML()}</div>` : ''}
         <div id="anWinHost"></div><div id="anRibMenu"></div>
@@ -1290,9 +1290,26 @@
       if (A.tool === 'select') return T('Drag box: → window / ← crossing · Ctrl: add · Alt: remove · Shift-click: add/remove', 'ลากกรอบ: → หน้าต่าง / ← ตัดผ่าน · Ctrl: เพิ่ม · Alt: ลบออก · Shift-คลิก: เพิ่ม/ลบ') + ' · ' + sh + ' · ' + T('middle-drag: pan · wheel: zoom', 'ลากปุ่มกลาง: เลื่อน · ล้อเมาส์: ซูม');
       return (A.cam.v === '3d' ? T('Drag: rotate', 'ลาก: หมุน') : T('Drag: pan', 'ลาก: เลื่อน')) + ' · ' + T('Ctrl-drag: select area · middle-drag: pan · wheel: zoom', 'Ctrl-ลาก: เลือกพื้นที่ · ลากปุ่มกลาง: เลื่อน · ล้อเมาส์: ซูม');
     }
+    const drawerStyle = () => (A.step === 'res' && fresh() && !A.drawerMin && A.opt.drawerH ? `style="height:${A.opt.drawerH}px"` : '');
+    // drag the top edge of the results panel to change its height (kept between sessions)
+    function bindDrawerGrip() {
+      if (A._gripBound) return; A._gripBound = true;
+      const limits = () => { const w = $('.an-work'), H = w ? w.getBoundingClientRect().height : innerHeight; return [90, Math.max(140, H - 140)]; };
+      const setH = h => { const [lo, hi] = limits(), d = $('#anDrawer'); A.opt.drawerH = Math.round(Math.max(lo, Math.min(hi, h))); if (d) d.style.height = A.opt.drawerH + 'px'; };
+      document.addEventListener('pointerdown', e => {
+        const gp = e.target.closest && e.target.closest('.an-drawgrip'); if (!gp) return;
+        e.preventDefault(); const d = $('#anDrawer'); if (!d) return;
+        const y0 = e.clientY, h0 = d.getBoundingClientRect().height; A.noRefit = true; document.body.classList.add('an-resizing'); gp.setPointerCapture(e.pointerId);
+        const mv = ev => setH(h0 + (y0 - ev.clientY));
+        const up = () => { gp.removeEventListener('pointermove', mv); gp.removeEventListener('pointerup', up); gp.removeEventListener('pointercancel', up); document.body.classList.remove('an-resizing'); persist(); setTimeout(() => { A.noRefit = false; }, 400); redraw(); };
+        gp.addEventListener('pointermove', mv); gp.addEventListener('pointerup', up); gp.addEventListener('pointercancel', up);
+      });
+      document.addEventListener('dblclick', e => { if (!(e.target.closest && e.target.closest('.an-drawgrip'))) return; delete A.opt.drawerH; persist(); const d = $('#anDrawer'); if (d) d.style.height = ''; redraw(); });
+      document.addEventListener('keydown', e => { const gp = e.target.closest && e.target.closest('.an-drawgrip'); if (!gp || !['ArrowUp', 'ArrowDown'].includes(e.key)) return; e.preventDefault(); const d = $('#anDrawer'); if (!d) return; A.noRefit = true; setH(d.getBoundingClientRect().height + (e.key === 'ArrowUp' ? 30 : -30)); persist(); setTimeout(() => { A.noRefit = false; }, 400); });
+    }
     function drawerHTML() {
       if (!(A.step === 'res' && fresh())) return '';
-      return `<div class="an-drawhead"><b>${T('Results', 'ผลลัพธ์')}</b><span class="muted small">${esc((srcList().find(q => q[0] === A.src) || [])[1] || '')}</span><span class="grow"></span><button class="btn btn-ghost xs" data-act="an-drawer">${A.drawerMin ? T('Show ▴', 'แสดง ▴') : T('Hide ▾', 'ซ่อน ▾')}</button></div>
+      return `${A.drawerMin ? '' : `<div class="an-drawgrip" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="${T('Drag to resize the results panel', 'ลากเพื่อปรับความสูงแผงผลลัพธ์')}" title="${T('Drag to resize · double-click to reset', 'ลากเพื่อปรับขนาด · ดับเบิลคลิกเพื่อคืนค่า')}"><i></i></div>`}<div class="an-drawhead"><b>${T('Results', 'ผลลัพธ์')}</b><span class="muted small">${esc((srcList().find(q => q[0] === A.src) || [])[1] || '')}</span><span class="grow"></span><button class="btn btn-ghost xs" data-act="an-drawer">${A.drawerMin ? T('Show ▴', 'แสดง ▴') : T('Hide ▾', 'ซ่อน ▾')}</button></div>
         ${A.drawerMin ? '' : `<div class="an-drawbody"><div id="anMember">${memberHTML()}</div><div class="an-results" id="anRes">${resultsHTML()}</div></div>`}`;
     }
     function tplHTML() {
@@ -1307,14 +1324,14 @@
     }
     function drawAll() {
       redraw(); updCounts();
-      const d = $('#anDrawer'); if (d) { const on = A.step === 'res' && fresh(); d.className = 'an-drawer' + (on ? ' on' : '') + (A.drawerMin ? ' min' : ''); d.innerHTML = drawerHTML(); }
+      const d = $('#anDrawer'); if (d) { const on = A.step === 'res' && fresh(); d.className = 'an-drawer' + (on ? ' on' : '') + (A.drawerMin ? ' min' : ''); d.style.height = on && !A.drawerMin && A.opt.drawerH ? A.opt.drawerH + 'px' : ''; d.innerHTML = drawerHTML(); }
       const u = document.querySelector('[data-act=an-undo]'), rd = document.querySelector('[data-act=an-redo]'); if (u) u.disabled = !A.hist.length; if (rd) rd.disabled = !A.fut.length;
     }
     let resizeBound = false, keyBound = false;
     function mount() {
       const cv = $('#anCv'); if (!cv) return;
-      winRefresh();
-      if (!cv._b) { cv._b = true; bindCanvas(cv); if (G.ResizeObserver) { let raf = 0; let last = [0, 0]; new G.ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { if (!cv.isConnected) return; const w = cv.clientWidth, h = cv.clientHeight; if (Math.abs(w - last[0]) > 30 || Math.abs(h - last[1]) > 30) { if (last[0]) A.cam.k = null; last = [w, h]; } redraw(); }); }).observe(cv); } }
+      winRefresh(); bindDrawerGrip();
+      if (!cv._b) { cv._b = true; bindCanvas(cv); if (G.ResizeObserver) { let raf = 0; let last = [0, 0]; new G.ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => { if (!cv.isConnected) return; const w = cv.clientWidth, h = cv.clientHeight; if (Math.abs(w - last[0]) > 30 || Math.abs(h - last[1]) > 30) { if (last[0]) if (!A.noRefit) A.cam.k = null; last = [w, h]; } redraw(); }); }).observe(cv); } }
       redraw();
       if (!resizeBound) { resizeBound = true; let rt = null; G.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if ($('#anCv')) redraw(); }, 120); }); }
       if (!keyBound) {
