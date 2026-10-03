@@ -120,6 +120,34 @@ t = Date.now(); r = run(m, { pdelta: true, nseg: 2, modes: 6, buckling: true });
   m.materials[0].alpha = 10; m.nodes = [N('A', 0, 0, 0, 'fixed'), N('B', 6, 0, 0, 'fixed')]; m.members = [Mb('B1', 'A', 'B')]; m.loads = [{ case: 'G', kind: 'temp', member: 'B1', dT: -20 }]; m.combos = [{ id: 'C1', name: '1.5', type: 'ULS', f: { G: 1.5 } }];
   P('17 material α = 10e-6, cooling 20°, factor 1.5: N = +1.5·EAαΔT', run(m).combos.C1.mem[0].N[2], 1.5 * EA * 10e-6 * 20);
 }
+// 18 support settlement, prestress and influence lines
+{
+  const SS2 = () => [N('A', 0, 0, 0, 'custom', { fix: [1, 1, 1, 1, 0, 0] }), N('B', 6, 0, 0, 'custom', { fix: [0, 1, 1, 1, 0, 0] }), N('C', 12, 0, 0, 'custom', { fix: [0, 1, 1, 1, 0, 0] })];
+  let m = base(); m.nodes = SS2(); m.members = [Mb('B1', 'A', 'B'), Mb('B2', 'B', 'C')];
+  const D = 0.01, Ls = 6; m.loads = [{ case: 'G', kind: 'settle', node: 'B', dz: -D }];
+  let c = run(m).cases.G;
+  P('18 middle support settles 10 mm: M_B = 3EIΔ/L²', c.mem[0].Mz[c.mem[0].Mz.length - 1], 3 * EIz * D / Ls ** 2);
+  P('18 settlement: R_B = −6EIΔ/L³', c.R[6 * 1 + 2], -6 * EIz * D / Ls ** 3); P('18 settlement: ΣRz = 0', c.R[2] + c.R[8] + c.R[14], 0); P('18 settled node moves 10 mm', c.u[6 * 1 + 2], -D);
+  m.combos = [{ id: 'C1', name: '1.5', type: 'ULS', f: { G: 1.5 } }]; P('18 settlement × 1.5 in a combination', run(m).combos.C1.mem[0].Mz[20], 1.5 * 3 * EIz * D / Ls ** 2);
+  // prestress
+  const SS = () => [N('A', 0, 0, 0, 'custom', { fix: [1, 1, 1, 1, 0, 0] }), N('B', 10, 0, 0, 'custom', { fix: [0, 1, 1, 1, 0, 0] })];
+  m = base(); m.nodes = SS(); m.members = [Mb('B1', 'A', 'B')]; m.loads = [{ case: 'G', kind: 'pres', member: 'B1', P: 1000, e1: 200, em: 200, e2: 200 }];
+  c = run(m).cases.G;
+  P('18 straight tendon 200 mm below centroid: Mz = −P·e', c.mem[0].Mz[10], -200); P('18 straight tendon: N = −P', c.mem[0].N[10], -1000);
+  P('18 straight tendon camber = P·e·L²/8EI (up)', c.mem[0].dz[10], 200 * 100 / 8 / EIz); P('18 straight tendon: no vertical reactions', Math.abs(c.R[2]) + Math.abs(c.R[8]), 0);
+  m.loads = [{ case: 'G', kind: 'pres', member: 'B1', P: 1000, e1: 0, em: 300, e2: 0 }]; c = run(m).cases.G;
+  P('18 parabolic tendon (sag 300 mm): midspan Mz = −P·e', c.mem[0].Mz[10], -300); P('18 parabolic tendon: end Mz = 0', c.mem[0].Mz[0], 0);
+  P('18 parabolic tendon: self-equilibrating (Rz)', Math.abs(c.R[2]) + Math.abs(c.R[8]), 0);
+  // influence lines
+  m = base(); m.nodes = SS(); m.members = [Mb('B1', 'A', 'B')];
+  const inf = F.influence(m, { paths: [{ id: 'P1', mems: ['B1'] }], ds: 0.5, nps: 10 }), pa = inf.paths.P1, np = 11, at = (k, comp, pt) => pa.data[k * 1 * 7 * np + inf.comps.indexOf(comp) * np + pt];
+  P('18 IL: unit load at midspan → Mz(mid) = L/4', at(10, 'Mz', 5), 2.5); P('18 IL: unit load at 2.5 m → Mz(mid) = 1.25', at(5, 'Mz', 5), 1.25);
+  P('18 IL: reaction A for load at 2.5 m = 0.75', pa.R[5 * inf.nd + 2], 0.75);
+  m.nodes = SS2(); m.members = [Mb('B1', 'A', 'B'), Mb('B2', 'B', 'C')];
+  const i2 = F.influence(m, { paths: [{ id: 'P', mems: ['B2', 'B1'] }], ds: 0.5 }), p2 = i2.paths.P;
+  P('18 IL along a reversed path: total length', p2.L, 12); P('18 IL two-span: R_B for load over B = 1', p2.R[12 * i2.nd + 8], 1);
+  P('18 IL two-span: R_B for load at 3 m in span 1 = 0.6875', p2.R[18 * i2.nd + 8], 0.6875);
+}
 // 16 standard steel sections (properties computed from dimensions) against published tables
 require(require('path').join(__dirname, '..', 'steelsec.js')); const SL = globalThis.STEELLIB;
 [['UB', '310UB40.4', 5210, 86.4e6, 7.65e6, 157e3], ['IPE', 'IPE 300', 5381, 83.56e6, 6.038e6, 201.2e3], ['HEB', 'HEB 300', 14910, 251.7e6, 85.63e6, 1850e3], ['H', 'H 300×150', 4678, 72.1e6, 5.08e6, null]].forEach(([sr, nm, A0, Iz0, Iy0, J0]) => {

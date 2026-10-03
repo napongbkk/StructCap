@@ -796,6 +796,10 @@
         <div class="menu-hd"><span class="menu-n">2</span><div><p class="eyebrow">${T('Structural analysis', 'วิเคราะห์โครงสร้าง')}</p><h2>${T('3D frame & truss analysis', 'วิเคราะห์โครงข้อแข็งและโครงถัก 3 มิติ')}</h2><p class="muted">${T('Build the model step by step — standard, materials, sections, nodes, elements, supports, loads and combinations — then analyse and read the results in 3D.', 'สร้างแบบจำลองทีละขั้น — มาตรฐาน วัสดุ หน้าตัด จุดต่อ ชิ้นส่วน จุดรองรับ แรง และการรวมน้ำหนัก — แล้ววิเคราะห์และดูผลใน 3 มิติ')}</p></div></div>
         <button class="an-entry" data-act="nav" data-v="analysis">${analysisIcon()}<div class="an-entry-tx"><b>${T('Open 3D analysis', 'เปิดหน้าวิเคราะห์ 3 มิติ')}</b><span class="an-chips">${[T('AS · Eurocode · Thai EIT', 'AS · Eurocode · วสท.'), T('Linear static', 'สถิตเชิงเส้น'), 'P-Delta', T('Modal', 'โหมด'), T('Buckling', 'การโก่งเดาะ'), T('Envelopes', 'ค่าสูงสุด/ต่ำสุด'), T('Results → RC design', 'ผล → ออกแบบ RC')].map(c => `<i>${c}</i>`).join('')}</span></div><span class="pick-go">${T('Open →', 'เปิด →')}</span></button>
       </section>
+      <section class="menu-box box-analysis box-bridge">
+        <div class="menu-hd"><span class="menu-n">3</span><div><p class="eyebrow">${T('Bridge analysis', 'วิเคราะห์สะพาน')}</p><h2>${T('3D bridge analysis', 'วิเคราะห์สะพาน 3 มิติ')}</h2><p class="muted">${T('Girder decks, box girders, truss, arch and cable-stayed bridges — moving traffic loads, influence lines, construction stages, prestress, settlement and temperature.', 'สะพานคานหลายตัว คานกล่อง โครงถัก โค้ง และขึงด้วยเคเบิล — น้ำหนักจราจรเคลื่อนที่ เส้นอิทธิพล ขั้นตอนการก่อสร้าง แรงอัดล่วงหน้า การทรุดตัว และอุณหภูมิ')}</p></div></div>
+        <button class="an-entry" data-act="nav" data-v="bridge">${bridgeIcon()}<div class="an-entry-tx"><b>${T('Open bridge analysis', 'เปิดหน้าวิเคราะห์สะพาน')}</b><span class="an-chips">${['AS 5100 M1600 / S1600', 'EN 1991-2 LM1', 'AASHTO HL-93 · HS20', T('Influence lines', 'เส้นอิทธิพล'), T('Construction stages', 'ขั้นตอนการก่อสร้าง'), T('Prestress · settlement', 'แรงอัดล่วงหน้า · การทรุดตัว')].map(c => `<i>${c}</i>`).join('')}</span></div><span class="pick-go">${T('Open →', 'เปิด →')}</span></button>
+      </section>
     </main>`;
   }
   // Line-sketch icons in drafting style: ink outlines, accent for loads / struts
@@ -840,6 +844,9 @@
       <g class="ln-acc"><path d="M56 20L32 36M64 20l24 16"/></g>
       <path d="M26 40v28M38 40v28M82 40v28M94 40v28" class="ln"/>
       ${[46, 52, 58, 64].map(y => `<path d="M26 ${y}l12 -4M82 ${y}l12 -4" class="ln-thin"/>`).join('')}</svg>`;
+  }
+  function bridgeIcon() {
+    return `<svg class="an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M4 50h112" class="ln"/><path d="M14 50V40M106 50V40" class="ln"/><path d="M14 40 Q60 6 106 40" class="ln" fill="none"/>${[26, 38, 50, 60, 70, 82, 94].map(x => { const y = 40 - 34 * (1 - Math.pow((x - 60) / 46, 2)); return `<path d="M${x} ${y.toFixed(1)}V50" class="ln-thin"/>`; }).join('')}<path d="M40 64V50M80 64V50" class="ln"/><path d="M34 68h12M74 68h12" class="ln-thin"/><path d="M52 34l6-6 6 6" class="acc" fill="none"/></svg>`;
   }
   function analysisIcon() {
     return `<svg class="ei ei-an" viewBox="0 0 120 72" aria-hidden="true"><path d="M10 26h100" class="ln"/><path d="M12 26l-5 8h10zM60 26l-5 8h10zM108 26l-5 8h10z" class="ln"/>
@@ -1635,7 +1642,7 @@
         pdf.text('Page ' + (i + 1) + ' of ' + n, 210 - mm.r, 297 - mm.b + 8.5, { align: 'right' });
       }
       const blob = pdf.output('blob');
-      const name = S.view === 'analysis' ? (S.meta.ref || 'analysis').replace(/[^\w\-]+/g, '_') + '_frame-analysis_' + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
+      const name = S.view === 'analysis' || S.view === 'bridge' ? (S.meta.ref || S.view).replace(/[^\w\-]+/g, '_') + '_frame-analysis_' + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
       if (dl) await dl.save({ filename: name, data: blob }); else pdf.save(name);
       toast(T('PDF saved', 'บันทึก PDF แล้ว'), 'ok');
     } catch (e) {
@@ -1837,15 +1844,18 @@
     else if (S.view === 'home') root.innerHTML = viewHome() + siteFoot();
     else if (S.view === 'design') { root.innerHTML = viewDesign() + siteFoot(); compute(); }
     else if (S.view === 'admin') { root.innerHTML = viewAdmin() + siteFoot(); if (S.role === 'admin') { adminSubscribe(); adminBody(); } }
-    else if (S.view === 'analysis') { const an = anUI(); if (!an) { S.view = 'home'; root.innerHTML = viewHome() + siteFoot(); return; } root.innerHTML = navBar() + an.view(); an.mount(); }
+    else if (S.view === 'analysis' || S.view === 'bridge') { const an = anUI(S.view); if (!an) { S.view = 'home'; root.innerHTML = viewHome() + siteFoot(); return; } root.innerHTML = navBar() + an.view(); an.mount(); }
   }
 
   // ------------------------------------------------------------------ ANALYSIS (frame.js engine + analysis.js page)
-  let AN = null;
-  function anUI() {
-    if (AN) return AN;
-    if (!window.SC_ANALYSIS_UI || !window.FRAME) return null;
-    AN = window.SC_ANALYSIS_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, toDesign });
+  let AN = null; const AN2 = {};
+  function anUI(view) {
+    view = view === 'bridge' ? 'bridge' : 'analysis';
+    if (!AN2[view]) {
+      if (!window.SC_ANALYSIS_UI || !window.FRAME || (view === 'bridge' && !window.BRIDGE)) return null;
+      AN2[view] = window.SC_ANALYSIS_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, toDesign, mode: view === 'bridge' ? 'bridge' : 'frame', viewName: view });
+    }
+    AN = AN2[view];
     window.SC_AN = AN; // handy for checking a model from the browser console
     return AN;
   }
@@ -1873,9 +1883,9 @@
   document.addEventListener('click', ev => {
     const b = ev.target.closest('[data-act]'); if (!b) return;
     const a = b.dataset.act;
-    if (a.startsWith('an-') && S.view === 'analysis' && AN) { AN.onClick(a, b); return; }
+    if (a.startsWith('an-') && (S.view === 'analysis' || S.view === 'bridge') && AN) { AN.onClick(a, b); return; }
     if (a === 'lang') { if (A.edit) syncModalDraft(); const wasReport = S.reportOpen; setLang(b.dataset.l); if (wasReport && S.view === 'design') { S.reportOpen = true; renderReport(); } }
-    else if (a === 'nav') { const v = b.dataset.v; if ((v === 'home' || v === 'codes' || v === 'analysis') && S.role === 'guest') { S.role = 'free'; saveSession(); } go(v); }
+    else if (a === 'nav') { const v = b.dataset.v; if ((v === 'home' || v === 'codes' || v === 'analysis' || v === 'bridge') && S.role === 'guest') { S.role = 'free'; saveSession(); } go(v); }
     else if (a === 'scroll') { const t = document.getElementById(b.dataset.t); if (t) t.scrollIntoView({ behavior: 'smooth' }); }
     else if (a === 'free') { if (S.role === 'guest') { S.role = 'free'; saveSession(); } go('home'); }
     else if (a === 'logout') logout();
@@ -1927,7 +1937,7 @@
   });
   document.addEventListener('input', ev => {
     const t = ev.target;
-    if (S.view === 'analysis' && AN && t.closest('.an') && AN.onInput(t)) return;
+    if ((S.view === 'analysis' || S.view === 'bridge') && AN && t.closest('.an') && AN.onInput(t)) return;
     if (t.dataset.k && S.view === 'design') {
       const v = inp(), fd = SCHEMA[S.elem].find(x => x.k === t.dataset.k);
       v[t.dataset.k] = t.value;

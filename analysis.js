@@ -5,7 +5,8 @@
   'use strict';
   G.SC_ANALYSIS_UI = function (ctx) {
     const { T, esc, f, $, S, toast, isPro, COPY, logoMark, today } = ctx;
-    const F = G.FRAME, KEY = 'structcap.analysis.v3', OLD = 'structcap.analysis.v2', FREE_MEMBERS = 80, HEAVY_PTS = 1500;
+    const MODE = ctx.mode === 'bridge' ? 'bridge' : 'frame', VIEW = ctx.viewName || 'analysis', BRG = MODE === 'bridge', BR = G.BRIDGE;
+    const F = G.FRAME, KEY = BRG ? 'structcap.bridge.v1' : 'structcap.analysis.v3', OLD = BRG ? 'structcap.bridge.v0' : 'structcap.analysis.v2', FREE_MEMBERS = 80, HEAVY_PTS = 1500;
     const lsGet = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
     const lsSet = v => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) { } };
     const clone = o => JSON.parse(JSON.stringify(o));
@@ -77,11 +78,21 @@
       truss: { n: ['Truss (2D)', 'โครงถัก (2 มิติ)'], p: { kind: 'pratt', span: 18, depth: 2, panels: 6, load: 12 } },
       blank: { n: ['Empty 3D model', 'โมเดลว่าง 3 มิติ'], p: {} }
     };
+    const BTPL = {
+      girder: { n: ['Girder deck (grillage)', 'สะพานคานหลายตัว (กริลเลจ)'], p: { spans: '25, 30, 25', ng: 5, s: 2.4, cont: 'continuous', nseg: 8, pt: 3500 } },
+      box: { n: ['Box girder (spine)', 'สะพานคานกล่อง'], p: { spans: '40, 55, 40', piers: '12, 12', width: 11, nseg: 10 } },
+      btruss: { n: ['Truss bridge', 'สะพานโครงถัก'], p: { span: 60, panels: 10, height: 8, width: 9, kind: 'pratt' } },
+      arch: { n: ['Tied arch', 'สะพานโค้งผูก'], p: { span: 80, rise: 16, panels: 16, width: 11 } },
+      cable: { n: ['Cable-stayed', 'สะพานขึงด้วยเคเบิล'], p: { main: 120, side: 60, pylon: 45, spacing: 10, width: 12 } },
+      blank: { n: ['Empty bridge model', 'โมเดลสะพานว่าง'], p: {} }
+    };
+    if (BRG) { Object.keys(TPL).forEach(k => { delete TPL[k]; }); Object.assign(TPL, BTPL); }
     const blankModel = (std, name, plane, secs, mats, cases) => ({ std, name, plane: plane || '', nodes: [], members: [], sections: secs, materials: mats, cases, loads: [], combos: [], code: stdInfo(std).combo });
     const GQ = () => [CASE('G', 'G', true, 'Dead', 'น้ำหนักบรรทุกคงที่'), CASE('Q', 'Q', false, 'Live', 'น้ำหนักบรรทุกจร')];
     const udl = (cs, member, w, dir) => ({ case: cs, kind: 'udl', member, dir: dir || 'grav', w1: r4(w), w2: '', a: '', b: '' });
     const nload = (cs, node, o) => Object.assign({ case: cs, kind: 'node', node, Fx: 0, Fy: 0, Fz: 0, Mx: 0, My: 0, Mz: 0 }, o);
     function build(kind, p, std) {
+      if (BRG && BTPL[kind]) return buildBridge(kind, p, std);
       std = STDS.includes(std) ? std : 'AS';
       const D = DEFS[std], CM = concMat(std, D.conc), SM = steelMat(std, D.steel), TM = steelMat(std, D.tube);
       const num = s => String(s).split(/[,\s]+/).map(Number).filter(v => v > 0);
@@ -165,6 +176,127 @@
       return m;
     }
     // 2D models saved by the first analysis page (x, y up) → 3D model in the XZ plane
+
+    // ================================================================== bridge templates (bridge mode)
+    const TCODE = { AS: 'AS', EC: 'EN', TH: 'HL93' }, LANEW = { AS: 3.2, EN: 3.0, HL93: 3.6, HS20: 3.6, USER: 3.5 };
+    const concAt = (std, fc) => { const d = stdInfo(std), g = d.conc.filter(q => q[2] >= fc)[0] || d.conc[d.conc.length - 1]; return concMat(std, g[0]); };
+    const numL = s => String(s).split(/[,\s]+/).map(Number).filter(v => v > 0);
+    function bridgeDefaults(m, std, o) {
+      const code = TCODE[std] || 'AS', lw = LANEW[code], pt = m.cases.some(c => c.id === 'PT');
+      const MLC = { AS: { id: 'ML', name: T('M1600 / S1600 (AS 5100.2)', 'M1600 / S1600 (AS 5100.2)'), code: 'AS', veh: ['M1600', 'S1600'] }, EN: { id: 'ML', name: T('Load Model 1 (EN 1991-2)', 'Load Model 1 (EN 1991-2)'), code: 'EN', veh: ['LM1'] }, HL93: { id: 'ML', name: T('HL-93 truck / tandem + lane', 'HL-93 รถบรรทุก / เพลาคู่ + น้ำหนักช่องจราจร'), code: 'HL93', veh: ['HL93T', 'HL93D'] } }[code];
+      const F0 = { AS: [1.2, 1.4, 1.8], EN: [1.35, 1.35, 1.35], HL93: [1.25, 1.5, 1.75] }[code];
+      const f = (g, s2) => { const o2 = { G: g, SDL: s2 }; if (pt) o2.PT = 1; return o2; };
+      m.bridge = Object.assign({ kind: o.kind, lanes: o.lanes || [], vehicles: [], mlc: [Object.assign({ lanes: [], dla: '' }, MLC)], stages: o.stages || [],
+        bcombos: [{ id: 'BU1', name: T('ULS — ', 'ULS — ') + F0[0] + 'G + ' + F0[1] + 'SDL + ' + F0[2] + ' traffic', type: 'ULS', f: f(F0[0], F0[1]), ml: { ML: F0[2] } }, { id: 'BS1', name: T('SLS — G + SDL + traffic', 'SLS — G + SDL + จราจร'), type: 'SLS', f: f(1, 1), ml: { ML: 1 } }] }, o.extra || {});
+      m.combos = preset(m.code, m.cases);
+      return lw;
+    }
+    // lanes across a deck of girder lines at y = ys[] (members per line in order)
+    function lanesOver(ys, lines, width, lw) {
+      const nL = Math.max(1, Math.min(6, Math.floor(width / lw))), out = [];
+      for (let k = 0; k < nL; k++) {
+        const yc = (k - (nL - 1) / 2) * lw;
+        if (ys.length === 1) { out.push({ id: 'L' + (k + 1), name: T('Lane ', 'ช่องจราจร ') + (k + 1), a: lines[0].slice(), b: null, w: 0, y: yc }); continue; }
+        let g = 0; while (g < ys.length - 2 && ys[g + 1] < yc) g++;
+        const w = Math.max(0, Math.min(1, (yc - ys[g]) / (ys[g + 1] - ys[g])));
+        out.push({ id: 'L' + (k + 1), name: T('Lane ', 'ช่องจราจร ') + (k + 1), a: lines[g].slice(), b: lines[g + 1].slice(), w: r4(w), y: r4(yc) });
+      }
+      return out;
+    }
+    const parab = (Ls, ec) => x => 4 * ec * x * (Ls - x) / (Ls * Ls); // tendon eccentricity along a span (mm), zero at the supports
+    function buildBridge(kind, p, std) {
+      std = STDS.includes(std) ? std : 'AS';
+      const D = DEFS[std], SM = steelMat(std, D.steel), m = blankModel(std, '', '', [], [], [CASE('G', 'G', true, 'Dead load (self-weight)', 'น้ำหนักบรรทุกคงที่ (น้ำหนักตัวเอง)'), CASE('SDL', 'G', false, 'Superimposed dead (surfacing, barriers)', 'น้ำหนักบรรทุกคงที่เพิ่มเติม (ผิวทาง ราวกันตก)')]);
+      const code = TCODE[std] || 'AS', lw = LANEW[code], nd = (id, x, y, z, sup, fix) => { const n = { id, x: r4(x), y: r4(y), z: r4(z), sup: sup || 'free' }; if (fix) { n.sup = 'custom'; n.fix = fix; } m.nodes.push(n); return id; };
+      const mb = (id, i, j, sec, mat, o) => { m.members.push(Object.assign({ id, i, j, sec, mat, type: 'frame', relI: false, relJ: false, beta: 0 }, o || {})); return id; };
+      const udl = (cs, member, w) => m.loads.push({ case: cs, kind: 'udl', member, dir: 'grav', w1: r4(w), w2: '', a: '', b: '' });
+      if (kind === 'girder') {
+        const spans = numL(p.spans), ng = Math.max(2, Math.min(12, p.ng | 0)), s = +p.s || 2.4, ns = Math.max(4, Math.min(20, p.nseg | 0)), cont = p.cont !== 'simple';
+        const CG = concAt(std, 40), CS = Object.assign({}, concAt(std, 32), { id: 'DECK', name: T('Deck slab (weight carried by the girders)', 'พื้นสะพาน (น้ำหนักรวมในคาน)'), rho: 0 });
+        const avg = spans.reduce((a, b) => a + b, 0) / spans.length / ns;
+        m.materials = [CG, CS]; m.sections = [{ id: 'PSC', name: T('PSC I-girder + slab (composite)', 'คานอัดแรง + พื้น (ส่วนประกอบ)'), type: 'user', A: 900000, Iz: 4.2e11, Iy: 4.0e10, J: 2.5e10, dd: 1900, ww: s * 1000 }, { id: 'SLAB', name: T('Deck slab strip', 'แถบพื้นสะพาน'), type: 'rect', b: r4(avg * 1000), h: 220 }, { id: 'DIA', name: T('Diaphragm 400×1500', 'คานขวาง 400×1500'), type: 'rect', b: 400, h: 1500 }];
+        if (+p.pt > 0) m.cases.push(CASE('PT', 'G', false, 'Prestress (after losses)', 'แรงอัดล่วงหน้า (หลังสูญเสีย)'));
+        m.cases.push(CASE('TG', 'O', false, 'Temperature gradient (top +10 °C)', 'ผลต่างอุณหภูมิ (ผิวบน +10 °C)'));
+        const xs = [0], sup = [0], spanOf = [], xa = []; spans.forEach((L, j) => { const x0 = xs[xs.length - 1]; for (let k = 1; k <= ns; k++) { xs.push(r4(x0 + L * k / ns)); spanOf.push(j); xa.push(x0); } sup.push(xs.length - 1); });
+        const ys = Array.from({ length: ng }, (_, g) => r4((g - (ng - 1) / 2) * s)), gm = Math.floor((ng - 1) / 2), lines = [];
+        ys.forEach((y, g) => xs.forEach((x, k) => { const si = sup.indexOf(k); nd('G' + (g + 1) + '_' + k, x, y, 0, null, si >= 0 ? [si === 0 ? 1 : 0, g === gm ? 1 : 0, 1, 0, 0, 0] : null); }));
+        ys.forEach((y, g) => { const ln = []; for (let k = 0; k < xs.length - 1; k++) { const atJ = sup.includes(k + 1) && k + 1 !== xs.length - 1, atI = sup.includes(k) && k !== 0; ln.push(mb('G' + (g + 1) + '.' + (k + 1), 'G' + (g + 1) + '_' + k, 'G' + (g + 1) + '_' + (k + 1), 'PSC', CG.id, { relJ: !cont && atJ, relI: !cont && atI })); } lines.push(ln); });
+        xs.forEach((x, k) => { for (let g = 0; g < ng - 1; g++) mb('T' + k + '.' + (g + 1), 'G' + (g + 1) + '_' + k, 'G' + (g + 2) + '_' + k, sup.includes(k) ? 'DIA' : 'SLAB', sup.includes(k) ? CG.id : 'DECK'); });
+        lines.forEach((ln, g) => ln.forEach((id, k) => {
+          udl('SDL', id, 2.5 * s + (g === 0 || g === ng - 1 ? 7 : 0));
+          if (+p.pt > 0) { const Ls = spans[spanOf[k]], e = parab(Ls, 600), a0 = xs[k] - xa[k], b0 = xs[k + 1] - xa[k]; m.loads.push({ case: 'PT', kind: 'pres', member: id, P: +p.pt, e1: r4(e(a0)), em: r4(e((a0 + b0) / 2)), e2: r4(e(b0)) }); }
+          m.loads.push({ case: 'TG', kind: 'temp', member: id, dT: 0, dTy: 10, dTz: 0 });
+        }));
+        m.name = T('Girder deck bridge ', 'สะพานคาน ') + spans.join(' + ') + ' m';
+        bridgeDefaults(m, std, { kind, lanes: lanesOver(ys, lines, ng * s, lw) });
+      } else if (kind === 'box') {
+        const spans = numL(p.spans), hs = numL(p.piers), W = +p.width || 11, ns = Math.max(4, Math.min(24, p.nseg | 0));
+        const CD = concAt(std, 50), CP = concAt(std, 40);
+        m.materials = CD.id === CP.id ? [CD] : [CD, CP];
+        m.sections = [{ id: 'BOX', name: T('Concrete box girder', 'คานกล่องคอนกรีต'), type: 'user', A: 6.5e6, Iz: 4.5e12, Iy: 4.0e13, J: 9.0e12, dd: 2600, ww: W * 1000 }, { id: 'PIER', name: T('Pier 2000×4000', 'ตอม่อ 2000×4000'), type: 'rect', b: 4000, h: 2000 }];
+        m.cases.push(CASE('PT', 'G', false, 'Prestress (after losses)', 'แรงอัดล่วงหน้า (หลังสูญเสีย)'), CASE('TG', 'O', false, 'Temperature gradient (top +10 °C)', 'ผลต่างอุณหภูมิ (ผิวบน +10 °C)'));
+        const xs = [0], sup = [0], spanOf = [], xa = []; spans.forEach((L, j) => { const x0 = xs[xs.length - 1]; for (let k = 1; k <= ns; k++) { xs.push(r4(x0 + L * k / ns)); spanOf.push(j); xa.push(x0); } sup.push(xs.length - 1); });
+        xs.forEach((x, k) => nd('D' + k, x, 0, 0, null, k === 0 ? [1, 1, 1, 1, 0, 0] : k === xs.length - 1 ? [0, 1, 1, 1, 0, 0] : null));
+        const deck = []; for (let k = 0; k < xs.length - 1; k++) deck.push(mb('D' + (k + 1), 'D' + k, 'D' + (k + 1), 'BOX', CD.id));
+        sup.slice(1, -1).forEach((k, j) => { const h = hs[j] || hs[hs.length - 1] || 12; nd('P' + (j + 1) + 'B', xs[k], 0, -h, 'fixed'); mb('P' + (j + 1), 'P' + (j + 1) + 'B', 'D' + k, 'PIER', CP.id, { relJ: true }); });
+        deck.forEach((id, k) => { udl('SDL', id, 2.5 * W + 14); const Ls = spans[spanOf[k]], e = parab(Ls, 900), a0 = xs[k] - xa[k], b0 = xs[k + 1] - xa[k]; m.loads.push({ case: 'PT', kind: 'pres', member: id, P: 40000, e1: r4(e(a0)), em: r4(e((a0 + b0) / 2)), e2: r4(e(b0)) }); m.loads.push({ case: 'TG', kind: 'temp', member: id, dT: 0, dTy: 10, dTz: 0 }); });
+        const s1 = deck.filter((_, k) => spanOf[k] === 0).concat(['P1']), s2 = m.members.map(q => q.id).filter(id => !s1.includes(id));
+        m.name = T('Box girder bridge ', 'สะพานคานกล่อง ') + spans.join(' + ') + ' m';
+        bridgeDefaults(m, std, { kind, lanes: lanesOver([0], [deck], W, lw), stages: spans.length > 1 ? [{ id: 'S1', name: T('Span 1 and pier 1', 'ช่วงที่ 1 และตอม่อ 1'), mems: s1, cases: [], sw: true }, { id: 'S2', name: T('Remaining spans, surfacing', 'ช่วงที่เหลือ ผิวทาง'), mems: s2, cases: ['SDL'], sw: true }] : [] });
+      } else if (kind === 'btruss' || kind === 'arch') {
+        const arch = kind === 'arch', L = +p.span || (arch ? 80 : 60), n = Math.max(4, (p.panels | 0) + ((p.panels | 0) % 2)), H = +p.height || 8, R = +p.rise || 16, W = +p.width || 10, dx = L / n;
+        m.materials = [SM];
+        m.sections = arch ? [{ id: 'ARCH', name: T('Arch rib (built-up I)', 'ซี่โค้ง (I ประกอบ)'), type: 'I', d: 1000, bf: 800, tf: 40, tw: 25 }, { id: 'TIE', name: T('Tie girder', 'คานผูก'), type: 'I', d: 1600, bf: 700, tf: 40, tw: 20 }, { id: 'HANG', name: T('Hanger bar Ø110', 'สลิงแขวน Ø110'), type: 'circ', D: 110 }]
+          : [{ id: 'CH', name: T('Truss chord (built-up I)', 'คอร์ดโครงถัก (I ประกอบ)'), type: 'I', d: 700, bf: 600, tf: 36, tw: 24 }, { id: 'WEB', name: T('Web member', 'ชิ้นส่วนเอว'), type: 'I', d: 450, bf: 450, tf: 22, tw: 16 }];
+        m.sections.push({ id: 'XG', name: T('Cross girder', 'คานขวาง'), type: 'I', d: 1200, bf: 450, tf: 30, tw: 16 }, { id: 'STR', name: T('Stringer', 'คานตามยาว'), type: 'I', d: 700, bf: 300, tf: 20, tw: 12 }, { id: 'BR', name: T('Bracing', 'ค้ำยัน'), type: 'I', d: 300, bf: 300, tf: 16, tw: 10 });
+        const nL = Math.max(1, Math.min(4, Math.floor((W - 1) / lw))), sy = Array.from({ length: nL }, (_, k) => r4((k - (nL - 1) / 2) * lw)), yl = -W / 2, yr = W / 2;
+        const zA = x => 4 * R * x * (L - x) / (L * L);
+        for (let k = 0; k <= n; k++) {
+          const x = k * dx, end = k === 0 || k === n;
+          nd('BL' + k, x, yl, 0, null, k === 0 ? [1, 1, 1, 0, 0, 0] : k === n ? [0, 1, 1, 0, 0, 0] : null); nd('BR' + k, x, yr, 0, null, k === 0 ? [1, 0, 1, 0, 0, 0] : k === n ? [0, 0, 1, 0, 0, 0] : null);
+          sy.forEach((y, j) => nd('S' + (j + 1) + '_' + k, x, y, 0));
+          if (!end) { nd('TL' + k, x, yl, arch ? zA(x) : H); nd('TR' + k, x, yr, arch ? zA(x) : H); }
+          // cross girder split at the stringers
+          const pts = ['BL' + k].concat(sy.map((_, j) => 'S' + (j + 1) + '_' + k), ['BR' + k]); for (let j = 0; j < pts.length - 1; j++) mb('XG' + k + '.' + (j + 1), pts[j], pts[j + 1], 'XG', SM.id);
+        }
+        const lines = sy.map(() => []);
+        for (let k = 0; k < n; k++) {
+          ['L', 'R'].forEach(sd => mb((arch ? 'TI' : 'BC') + sd + (k + 1), 'B' + sd + k, 'B' + sd + (k + 1), arch ? 'TIE' : 'CH', SM.id));
+          sy.forEach((_, j) => lines[j].push(mb('ST' + (j + 1) + '.' + (k + 1), 'S' + (j + 1) + '_' + k, 'S' + (j + 1) + '_' + (k + 1), 'STR', SM.id)));
+          mb('BXa' + (k + 1), 'BL' + k, 'BR' + (k + 1), 'BR', SM.id, { type: 'truss' }); mb('BXb' + (k + 1), 'BR' + k, 'BL' + (k + 1), 'BR', SM.id, { type: 'truss' });
+        }
+        ['L', 'R'].forEach(sd => {
+          const top = k => (k === 0 || k === n ? 'B' + sd + k : 'T' + sd + k);
+          for (let k = 0; k < n; k++) { if (arch || (k > 0 && k < n - 1)) mb((arch ? 'AR' : 'TC') + sd + (k + 1), top(k), top(k + 1), arch ? 'ARCH' : 'CH', SM.id); }
+          if (!arch) { mb('EP' + sd + '0', 'B' + sd + '0', 'T' + sd + '1', 'CH', SM.id); mb('EP' + sd + n, 'B' + sd + n, 'T' + sd + (n - 1), 'CH', SM.id); }
+          for (let k = 1; k < n; k++) mb((arch ? 'H' : 'V') + sd + k, 'T' + sd + k, 'B' + sd + k, arch ? 'HANG' : 'WEB', SM.id, { type: 'truss' });
+          if (!arch) for (let k = 1; k < n - 1; k++) { const pr = p.kind === 'warren' ? k % 2 === 1 : k < n / 2; mb('D' + sd + k, pr ? 'T' + sd + k : 'T' + sd + (k + 1), pr ? 'B' + sd + (k + 1) : 'B' + sd + k, 'WEB', SM.id, { type: 'truss' }); }
+        });
+        // top bracing (struts + X) where there is head room
+        for (let k = 1; k < n; k++) { const x = k * dx, clear = !arch || zA(x) > 6.5; if (!clear) continue; mb('TS' + k, 'TL' + k, 'TR' + k, 'BR', SM.id); if (k < n - 1 && (!arch || zA(x + dx) > 6.5)) { mb('TXa' + k, 'TL' + k, 'TR' + (k + 1), 'BR', SM.id, { type: 'truss' }); mb('TXb' + k, 'TR' + k, 'TL' + (k + 1), 'BR', SM.id, { type: 'truss' }); } }
+        lines.forEach(ln => ln.forEach(id => udl('SDL', id, (0.22 * 25 + 2.5) * W / Math.max(1, sy.length))));
+        m.name = (arch ? T('Tied arch bridge ', 'สะพานโค้งผูก ') : T('Truss bridge ', 'สะพานโครงถัก ')) + L + ' m';
+        bridgeDefaults(m, std, { kind, lanes: sy.map((y, j) => ({ id: 'L' + (j + 1), name: T('Lane ', 'ช่องจราจร ') + (j + 1), a: lines[j].slice(), b: null, w: 0, y })) });
+      } else if (kind === 'cable') {
+        const Lm = +p.main || 120, Ls = +p.side || 60, Hp = +p.pylon || 45, sp = +p.spacing || 10, W = +p.width || 12;
+        const CD = concAt(std, 40), CP = concAt(std, 40), ST = { id: 'STRAND', name: T('Stay cable strand', 'ลวดเคเบิล'), kind: 'steel', E: 195000, nu: 0.3, rho: 78.5, alpha: 12 };
+        m.materials = [CD, ST]; m.sections = [{ id: 'DECK', name: T('Composite deck girder', 'คานพื้นสะพานส่วนประกอบ'), type: 'user', A: 1.1e6, Iz: 1.5e12, Iy: 2.0e13, J: 3.0e12, dd: 2800, ww: W * 1000 }, { id: 'PYL', name: T('Pylon 4000×6000', 'เสาสะพาน 4000×6000'), type: 'rect', b: 6000, h: 4000 }, { id: 'CAB', name: T('Stay cable Ø90 (≈ 6360 mm²)', 'เคเบิล Ø90 (≈ 6360 mm²)'), type: 'circ', D: 90 }];
+        m.cases.push(CASE('CT', 'G', false, 'Cable tensioning', 'แรงดึงเคเบิล'));
+        const half = sp / 2, nx = Math.round((Ls + Lm) / half), xs = Array.from({ length: nx + 1 }, (_, k) => r4(k * half)), kp = Math.round(Ls / half);
+        xs.forEach((x, k) => nd('D' + k, x, 0, 0, null, k === 0 || k === nx ? [0, 1, 1, 1, 0, 0] : null));
+        const deck = []; for (let k = 0; k < nx; k++) deck.push(mb('D' + (k + 1), 'D' + k, 'D' + (k + 1), 'DECK', CD.id));
+        nd('PB', Ls, 0, -20, 'fixed'); nd('PT', Ls, 0, Hp); mb('PY1', 'PB', 'D' + kp, 'PYL', CP.id); mb('PY2', 'D' + kp, 'PT', 'PYL', CP.id);
+        const wD = 1.1 * 25 + 2.5 * W + 14, EA = 195e6 * Math.PI * 0.045 * 0.045, al = 12e-6;
+        xs.forEach((x, k) => { const d = Math.abs(x - Ls); if (d < sp - 1e-6 || Math.abs(d / sp - Math.round(d / sp)) > 1e-6 || k === nx) return; /* the outermost back-span cable is the backstay, anchored at the abutment */ const id = mb((x < Ls ? 'CS' : 'CM') + Math.round(d / sp), 'D' + k, 'PT', 'CAB', 'STRAND', { type: 'truss' }); const sin = Hp / Math.hypot(Hp, d), P = wD * sp / sin; m.loads.push({ case: 'CT', kind: 'temp', member: id, dT: r4(-P / EA / al), dTy: 0, dTz: 0 }); });
+        deck.forEach(id => udl('SDL', id, 2.5 * W + 14));
+        m.name = T('Cable-stayed bridge ', 'สะพานขึงด้วยเคเบิล ') + Ls + ' + ' + Lm + ' m';
+        bridgeDefaults(m, std, { kind, lanes: lanesOver([0], [deck], W, lw) });
+      } else {
+        m.materials = [concAt(std, 40), SM]; m.sections = [{ id: 'GIRD', name: T('Girder 600×1500', 'คาน 600×1500'), type: 'rect', b: 600, h: 1500 }];
+        m.name = T('Empty bridge model', 'โมเดลสะพานว่าง'); bridgeDefaults(m, std, { kind: 'blank' });
+      }
+      return m;
+    }
     function migrate(o) {
       if (!o || !o.nodes) return null;
       if (o.nodes.some(n => n.z !== undefined)) return o;
@@ -191,10 +323,10 @@
     const VIEWS = { '3d': [-PI / 2 - 0.72, 0.42], plan: [-PI / 2, PI / 2], xz: [-PI / 2, 0], yz: [0, 0] };
     const initStd = ({ EC2: 'EC', EC: 'EC', TH: 'TH', AS: 'AS' })[S.codeSel || S.code] || 'AS';
     const A = {
-      model: saved && saved.model ? saved.model : build('building', TPL.building.p, initStd),
+      model: saved && saved.model ? saved.model : BRG ? build('girder', TPL.girder.p, initStd) : build('building', TPL.building.p, initStd),
       opt: Object.assign({ pdelta: false, modes: false, nmodes: 6, buckling: false, nseg: 4, massG: 1, massQ: 0.3, snap: 0.5, u: { F: 'kN', L: 'm', T: 'C' } }, saved && saved.opt || {}),
       step: 'mat', rview: 'Mz', src: null, sel: { n: [], m: [] }, tool: 'select', draw: null, mode: 0, labels: true, loadsOn: false, dscale: 1,
-      res: null, err: null, errNode: null, tpl: 'building', tplOpen: false, rtab: 'sum', lcase: 'G', cut: 'all', cb: null, ss: null,
+      res: null, err: null, errNode: null, tpl: BRG ? 'girder' : 'building', tplOpen: false, rtab: 'sum', lcase: 'G', cut: 'all', cb: null, ss: null,
       cam: { v: '3d', yaw: VIEWS['3d'][0], pitch: VIEWS['3d'][1], k: null, t: [0, 0, 0] }, hist: [], fut: [], ver: 0, resVer: -1, hover: null, mouse: null, box: null
     };
     if (!STDS.includes(A.model.std)) A.model.std = 'AS';
@@ -221,7 +353,9 @@
         const o = A.opt, go = pro();
         const mass = {}; m.cases.forEach(c => { if (c.type === 'G') mass[c.id] = +o.massG || 0; else if (c.type === 'Q') mass[c.id] = +o.massQ || 0; });
         A.res = F.analyse(m, { pdelta: go && o.pdelta, modes: go && o.modes ? Math.max(1, Math.min(20, o.nmodes | 0)) : 0, buckling: go && o.buckling, nseg: Math.max(2, Math.min(10, o.nseg | 0)), massSrc: mass });
-        if (!A.src || !srcList().some(s => s[0] === A.src)) A.src = m.combos.length ? 'combo:' + m.combos[0].id : 'case:' + m.cases[0].id;
+        A.bres = null;
+        if (BRG && m.bridge) { try { A.bres = BR.run(m, A.res); A.bres.warn.forEach(w => A.res.warn.push(w)); } catch (e) { A.res.warn.push(T('Bridge analysis: ', 'การวิเคราะห์สะพาน: ') + (e.message || e)); } }
+        if (!A.src || !srcList().some(s => s[0] === A.src)) A.src = BRG && A.bres && Object.keys(A.bres.bc).length ? 'bc:' + Object.keys(A.bres.bc)[0] : m.combos.length ? 'combo:' + m.combos[0].id : 'case:' + m.cases[0].id;
       } catch (e) { A.err = e.message || String(e); A.errNode = e.node || null; }
       A.resVer = A.ver;
       return !A.err;
@@ -239,6 +373,11 @@
       m.combos.forEach(c => out.push(['combo:' + c.id, c.id + ' — ' + c.name + ' (' + c.type + ')']));
       if (m.combos.some(c => c.type === 'ULS')) out.push(['env:ULS', T('Envelope — all ULS combinations', 'ค่าสูงสุด/ต่ำสุด — ULS ทั้งหมด')]);
       if (m.combos.some(c => c.type === 'SLS')) out.push(['env:SLS', T('Envelope — all SLS combinations', 'ค่าสูงสุด/ต่ำสุด — SLS ทั้งหมด')]);
+      if (BRG && m.bridge) {
+        (m.bridge.mlc || []).forEach(c => out.push(['ml:' + c.id, T('Moving load ', 'น้ำหนักเคลื่อนที่ ') + c.id + ' — ' + c.name + T(' (envelope)', ' (ค่าสูงสุด/ต่ำสุด)')]));
+        (m.bridge.stages || []).forEach((st, i) => out.push(['st:' + st.id, T('Stage ', 'ขั้นที่ ') + (i + 1) + ' — ' + st.name + T(' (cumulative)', ' (สะสม)')]));
+        (m.bridge.bcombos || []).forEach(c => out.push(['bc:' + c.id, c.id + ' — ' + c.name + ' (' + c.type + T(', with traffic)', ', รวมจราจร)')]));
+      }
       return out;
     }
     function current() {
@@ -246,6 +385,8 @@
       const [k, id] = A.src.split(':');
       if (k === 'case') return r.cases[id] ? Object.assign({ kind: 'case' }, r.cases[id]) : null;
       if (k === 'combo') return r.combos[id] && !r.combos[id].failed ? Object.assign({ kind: 'combo' }, r.combos[id]) : null;
+      if (k === 'ml' || k === 'bc') { const e = A.bres && A.bres[k][id]; return e ? Object.assign({ kind: 'env' }, e) : null; }
+      if (k === 'st') { const e = A.bres && A.bres.st.find(q => q.id === id); return e && !e.empty ? Object.assign({ kind: 'case' }, e) : null; }
       const env = F.envelope(r, A.model.combos.filter(c => c.type === id).map(c => c.id));
       return env ? Object.assign({ kind: 'env', name: id }, env) : null;
     }
@@ -355,6 +496,7 @@
         if (err) { g.beginPath(); g.arc(p[0], p[1], 11, 0, 2 * PI); g.strokeStyle = pal.pink; g.lineWidth = 2; g.stroke(); }
         scr.n.push({ id: n.id, p });
       });
+      if (BRG && view === 'model' && !rep && A.showLanes !== false) drawLanesOn(g, P, pal);
       // loads
       if (view === 'model' && (A.loadsOn || rep)) drawLoads(o.lcase || A.lcase || 'all');
       // local axes of selected members
@@ -408,6 +550,8 @@
         if (nT > 8) { const grp = {}; tl.forEach(l => { const k0 = l.case + ': ' + loadDesc(l).replace(/ΔT uniform|ΔT สม่ำเสมอ/, 'ΔT'); grp[k0] = (grp[k0] || 0) + 1; }); Object.entries(grp).slice(0, 4).forEach(([k0, c0]) => notes.push('🌡 ' + k0 + ' — ' + c0 + T(' element(s)', ' ชิ้นส่วน'))); }
         ls.forEach(l => {
           const col = caseCol(pal, l.case);
+          if (l.kind === 'settle') { const n = nd[l.node]; if (!n || !visN.has(n.id)) return; const pp = P(P3(n)); g.strokeStyle = col; g.lineWidth = 1.6; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(pp[0], pp[1] + 4); g.lineTo(pp[0], pp[1] + 26); g.stroke(); g.setLineDash([]); g.beginPath(); g.moveTo(pp[0] - 5, pp[1] + 20); g.lineTo(pp[0], pp[1] + 27); g.lineTo(pp[0] + 5, pp[1] + 20); g.stroke(); text(l.case + ' ' + fu(+l.dz || 0, 'd', 1) + ul('d'), pp[0] + 8, pp[1] + 30, col); return; }
+          if (l.kind === 'pres') { const mb = m.members.find(q => q.id === l.member); if (!mb || !memVis(mb)) return; const a = nd[mb.i], b = nd[mb.j]; if (!a || !b) return; const pa = P3(a), pb = P3(b), ax = F.axes(pa, pb, mb.beta), e1 = +l.e1 || 0, e2 = +l.e2 || 0, em = l.em === '' || l.em == null ? (e1 + e2) / 2 : +l.em, ef = t => e1 + (e2 - e1) * t + 4 * (em - (e1 + e2) / 2) * t * (1 - t), sc2 = 0.04 * ext / Math.max(300, Math.abs(e1), Math.abs(e2), Math.abs(em)); g.strokeStyle = '#c92a2a'; g.lineWidth = 1.5; g.setLineDash([6, 3]); g.beginPath(); for (let i = 0; i <= 12; i++) { const t = i / 12, q = P(addv(addv(pa, sub(pb, pa), t), ax.ey, -ef(t) * sc2)); i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); } g.stroke(); g.setLineDash([]); if (fewL || selM.has(mb.id)) { const q = P(addv(pa, sub(pb, pa), 0.5)); text(l.case + ' P ' + fu(+l.P || 0, 'F', 0), q[0] + 4, q[1] + 14, '#c92a2a'); } return; }
           if (l.kind === 'node') {
             const n = nd[l.node]; if (!n || !visN.has(n.id)) return; const p0 = P3(n), pp = P(p0);
             [['Fx', [1, 0, 0]], ['Fy', [0, 1, 0]], ['Fz', [0, 0, 1]]].forEach(([q, e]) => { const v = +l[q] || 0; if (!v) return; const len = (20 + 26 * Math.abs(v) / maxP) / k, d = e.map(c0 => c0 * Math.sign(v)), tail = P(addv(p0, d, -len - 5 / k)), head = P(addv(p0, d, -5 / k)); arrow(tail, head, col, 1.5); if (fewL || selN.has(n.id)) text(fu(Math.abs(v), 'F'), tail[0] + 3, tail[1] - 3, col); });
@@ -444,6 +588,7 @@
       }
       function drawResults() {
         const r = A.res;
+        if (view === 'il') { drawILOn(g, P, pal, notes, ext, text); return; }
         if (view === 'mode' || view === 'buck') {
           let u, mesh, title;
           if (view === 'mode') { const md = r.modal && r.modal.modes[A.mode]; if (!md) { notes.push(r.modal ? T('No mode.', 'ไม่มีโหมด') : T('Turn on modal analysis (Pro) in the Analysis settings.', 'เปิดการวิเคราะห์โหมด (Pro) ในการตั้งค่าการวิเคราะห์')); return; } u = md.u; mesh = r.modal.mesh; title = T('Mode ', 'โหมด ') + (A.mode + 1) + ' · f = ' + f(md.f, 3) + ' Hz · T = ' + f(md.T, 3) + ' s'; }
@@ -792,6 +937,8 @@
       if (l.kind === 'node') return ['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].filter(q => +l[q]).map(q => q + ' ' + fu(+l[q], q[0] === 'F' ? 'F' : 'M') + ul(q[0] === 'F' ? 'F' : 'M')).join(', ') || '0';
       if (l.kind === 'udl') return `w ${fu(+l.w1 || 0, 'w')}${l.w2 !== '' && l.w2 != null ? '→' + fu(+l.w2, 'w') : ''}${ul('w')} · ${dirLabel(l)}${span()}`;
       if (l.kind === 'point') return `P ${fu(+l.P || 0, 'F')}${ul('F')} @ ${fu(+l.a || 0, 'L', 2)}${ul('L')} · ${dirLabel(l)}`;
+      if (l.kind === 'pres') return T('tendon P ', 'ลวด P ') + fu(+l.P || 0, 'F') + ul('F') + ' · e ' + f(+l.e1 || 0, 0) + ' / ' + f(l.em === '' || l.em == null ? ((+l.e1 || 0) + (+l.e2 || 0)) / 2 : +l.em, 0) + ' / ' + f(+l.e2 || 0, 0) + ' mm';
+      if (l.kind === 'settle') return T('settlement ', 'ทรุดตัว ') + ['dx', 'dy', 'dz'].filter(q => +l[q]).map(q => q + ' ' + fu(+l[q], 'd') + ul('d')).join(', ');
       if (l.kind === 'temp') return [['dT', T('ΔT uniform', 'ΔT สม่ำเสมอ')], ['dTy', 'ΔT_y'], ['dTz', 'ΔT_z']].filter(([q]) => +l[q]).map(([q, lb]) => lb + ' ' + (+l[q] > 0 ? '+' : '') + fu(+l[q], 'T', 1) + ul('T')).join(' · ') || 'ΔT 0';
       return `M ${fu(+l.M || 0, 'M')}${ul('M')} @ ${fu(+l.a || 0, 'L', 2)}${ul('L')} · ${dirLabel(l)}`;
     }
@@ -1072,12 +1219,13 @@
         ['case', T('Load cases', 'กรณีน้ำหนัก'), m.cases.length],
         ['load', T('Apply loads', 'ใส่แรงกระทำ'), m.loads.length],
         ['combo', T('Load combinations', 'การรวมน้ำหนัก'), m.combos.length],
+        ...(BRG ? [['brg', T('Bridge loads & stages', 'น้ำหนักสะพานและขั้นตอน'), ((m.bridge || {}).mlc || []).length + ((m.bridge || {}).stages || []).length]] : []),
         ['run', T('Run analysis', 'วิเคราะห์โครงสร้าง'), fresh() ? '✓' : A.err && A.resVer === A.ver ? '!' : '—'],
         ['res', T('Results', 'ผลการวิเคราะห์'), fresh() ? '✓' : '—']
       ];
     };
     function treeHTML() {
-      return `<nav class="an-tree" aria-label="${T('Main menu', 'เมนูหลัก')}"><div class="an-treehead">${T('MAIN MENU', 'เมนูหลัก')}<span class="grow"></span><button class="an-stdchip" data-act="an-rb" data-c="gostd" title="${T('Design standard — change it in the ribbon: Structure › Design Standard', 'มาตรฐานการออกแบบ — เปลี่ยนได้ที่ริบบอน: โครงสร้าง › มาตรฐาน')}">${icon('book')}${esc(A.model.std)} · ${esc(T(stdInfo(A.model.std).name[0], stdInfo(A.model.std).name[1]))}</button></div>${STEPS().map(([k, l, c], i) => { const open = A.step === k, st = k === 'run' || k === 'res' ? (fresh() ? 'ok' : A.err && A.resVer === A.ver && k === 'run' ? 'bad' : '') : ''; return `<div class="an-node ${open ? 'open' : ''}"><div class="an-throw"><button class="an-th" data-act="an-step" data-s="${k}" aria-expanded="${open}"><span class="an-num">${i + 1}</span><span class="an-tl">${l}</span><span class="an-cnt ${st}" data-s="${k}">${esc(String(c))}</span><span class="an-chev" aria-hidden="true">›</span></button>${WADD.includes(k) ? `<button class="an-plus" data-act="an-win" data-k="${k}" title="${esc(winTitle(k))}" aria-label="${esc(winTitle(k))}">+</button>` : '<span class="an-plus0"></span>'}</div>${open ? `<div class="an-panel">${panel(k)}</div>` : ''}</div>`; }).join('')}</nav>`;
+      return `<nav class="an-tree" aria-label="${T('Main menu', 'เมนูหลัก')}"><div class="an-treehead">${T('MAIN MENU', 'เมนูหลัก')}${BRG ? `<span class="an-modechip">${T('BRIDGE', 'สะพาน')}</span>` : ''}<span class="grow"></span><button class="an-stdchip" data-act="an-rb" data-c="gostd" title="${T('Design standard — change it in the ribbon: Structure › Design Standard', 'มาตรฐานการออกแบบ — เปลี่ยนได้ที่ริบบอน: โครงสร้าง › มาตรฐาน')}">${icon('book')}${esc(A.model.std)} · ${esc(T(stdInfo(A.model.std).name[0], stdInfo(A.model.std).name[1]))}</button></div>${STEPS().map(([k, l, c], i) => { const open = A.step === k, st = k === 'run' || k === 'res' ? (fresh() ? 'ok' : A.err && A.resVer === A.ver && k === 'run' ? 'bad' : '') : ''; return `<div class="an-node ${open ? 'open' : ''}"><div class="an-throw"><button class="an-th" data-act="an-step" data-s="${k}" aria-expanded="${open}"><span class="an-num">${i + 1}</span><span class="an-tl">${l}</span><span class="an-cnt ${st}" data-s="${k}">${esc(String(c))}</span><span class="an-chev" aria-hidden="true">›</span></button>${WADD.includes(k) ? `<button class="an-plus" data-act="an-win" data-k="${k}" title="${esc(winTitle(k))}" aria-label="${esc(winTitle(k))}">+</button>` : '<span class="an-plus0"></span>'}</div>${open ? `<div class="an-panel">${panel(k)}</div>` : ''}</div>`; }).join('')}</nav>`;
     }
     function updCounts() { STEPS().forEach(([k, , c]) => { const e = document.querySelector('.an-cnt[data-s="' + k + '"]'); if (e) { e.textContent = String(c); e.classList.toggle('ok', (k === 'run' || k === 'res') && fresh()); } }); }
     function sideRefresh() { const s = $('#anSide'); if (!s) return; const sc = s.scrollTop; s.innerHTML = treeHTML(); s.scrollTop = sc; }
@@ -1138,6 +1286,7 @@
           (forms || hint(T('Select nodes or elements in the view (click, Shift-click or drag a box), then apply nodal loads, distributed loads, point loads or moments to this load case.', 'เลือกจุดต่อหรือชิ้นส่วนในมุมมอง (คลิก, Shift-คลิก หรือลากกรอบ) แล้วใส่แรงที่จุดต่อ แรงแผ่กระจาย แรงจุด หรือโมเมนต์ในกรณีน้ำหนักนี้'))) + selCount() +
           (nl ? `<button class="linkbtn an-llist" data-act="an-llist" aria-expanded="${!!A.llist}">${A.llist ? '▾ ' + T('Hide individual loads', 'ซ่อนรายการแรง') : '▸ ' + T('Show individual loads', 'แสดงรายการแรง')} (${nl})</button>${A.llist ? `<div class="an-blk">${loadTable(cs)}</div>` : ''}` : '');
       }
+      if (k === 'brg') return bridgePanel();
       if (k === 'combo') {
         const cb = A.cb || (A.cb = { name: '', type: 'ULS', rows: m.cases.slice(0, 2).map((c, i) => ({ c: c.id, f: i ? 1.5 : 1.2 })) });
         const auto = cb.rows.filter(r => r.c && +r.f).map(r => f(+r.f, 2).replace(/\.?0+$/, '') + r.c).join(' + ');
@@ -1164,7 +1313,7 @@
       }
       // results
       if (!fresh()) return hint(T('Run the analysis (step 9) to see results.', 'วิเคราะห์โครงสร้าง (ขั้นที่ 9) เพื่อดูผลลัพธ์')) + `<button class="btn btn-hot an-runbtn" data-act="an-run">▶ ${T('Run analysis', 'วิเคราะห์โครงสร้าง')}</button>`;
-      const rv = [['def', T('Deflected shape', 'รูปการโก่งตัว')], ['N', T('Axial N', 'แรงตามแนวแกน N')], ['Vy', T('Shear V_y', 'แรงเฉือน V_y')], ['Vz', T('Shear V_z', 'แรงเฉือน V_z')], ['T', T('Torsion T', 'แรงบิด T')], ['My', T('Moment M_y (minor)', 'โมเมนต์ M_y (แกนรอง)')], ['Mz', T('Moment M_z (major)', 'โมเมนต์ M_z (แกนหลัก)')], ['react', T('Reactions', 'แรงปฏิกิริยา')], ['mode', T('Mode shapes', 'รูปโหมด')], ['buck', T('Buckling', 'การโก่งเดาะ')]];
+      const rv = [['def', T('Deflected shape', 'รูปการโก่งตัว')], ['N', T('Axial N', 'แรงตามแนวแกน N')], ['Vy', T('Shear V_y', 'แรงเฉือน V_y')], ['Vz', T('Shear V_z', 'แรงเฉือน V_z')], ['T', T('Torsion T', 'แรงบิด T')], ['My', T('Moment M_y (minor)', 'โมเมนต์ M_y (แกนรอง)')], ['Mz', T('Moment M_z (major)', 'โมเมนต์ M_z (แกนหลัก)')], ['react', T('Reactions', 'แรงปฏิกิริยา')], ['mode', T('Mode shapes', 'รูปโหมด')], ['buck', T('Buckling', 'การโก่งเดาะ')]].concat(BRG ? [['il', T('Influence line', 'เส้นอิทธิพล')]] : []);
       return `<div class="an-rvs">${rv.map(([q, l]) => `<button data-act="an-rv" data-v="${q}" aria-pressed="${A.rview === q}">${l}</button>`).join('')}</div>` +
         (A.rview === 'mode' ? fld(T('Mode', 'โหมด'), sel((A.res.modal ? A.res.modal.modes : []).map((md, i) => [i, (i + 1) + ' · T = ' + f(md.T, 3) + ' s']), A.mode, 'id="an-modesel"')) : fld(T('Results for', 'ผลของ'), sel(srcList(), A.src, 'id="an-src"'))) +
         `<div class="an-row2">${fld(T('Diagram scale', 'มาตราส่วนแผนภาพ'), `<input type="range" min="0.2" max="4" step="0.1" value="${A.dscale}" id="an-scale">`)}<label class="chkl an-f"><span>&nbsp;</span><span><input type="checkbox" id="an-labels" ${A.labels ? 'checked' : ''}> ${T('Values and labels', 'ค่าและป้ายชื่อ')}</span></label></div>` +
@@ -1314,7 +1463,13 @@
     function tplHTML() {
       const p = Object.assign({}, TPL[A.tpl].p, A.tplP || {});
       const fl = (k, lbl, type) => `<label>${lbl}<input data-tp="${k}" value="${esc(p[k])}" ${type === 'n' ? 'type="number" step="any"' : ''}></label>`;
-      const form = A.tpl === 'building' ? fl('bx', T('Bays in X (m), comma separated', 'ช่วงแกน X (ม.) คั่นด้วยจุลภาค')) + fl('by', T('Bays in Y (m)', 'ช่วงแกน Y (ม.)')) + fl('st', T('Storey heights (m), bottom up', 'ความสูงชั้น (ม.) จากล่างขึ้นบน')) + fl('g', T('Beam dead UDL G (kN/m, plus self-weight)', 'น้ำหนักคงที่บนคาน G (kN/m ไม่รวมน้ำหนักตัวเอง)'), 'n') + fl('q', T('Beam live UDL Q (kN/m)', 'น้ำหนักจรบนคาน Q (kN/m)'), 'n') + fl('wind', T('Wind force per floor, each direction (kN)', 'แรงลมต่อชั้น แต่ละทิศ (kN)'), 'n')
+      const form = BRG ? (A.tpl === 'girder' ? fl('spans', T('Spans (m), comma separated', 'ช่วงสะพาน (ม.) คั่นด้วยจุลภาค')) + fl('ng', T('Number of girders', 'จำนวนคาน'), 'n') + fl('s', T('Girder spacing (m)', 'ระยะห่างคาน (ม.)'), 'n') + `<label>${T('Continuity', 'ความต่อเนื่อง')}${sel([['continuous', T('Continuous over the piers', 'ต่อเนื่องเหนือตอม่อ')], ['simple', T('Simply supported spans', 'ช่วงอิสระ')]], p.cont, 'data-tp="cont"')}</label>` + fl('nseg', T('Segments per span', 'จำนวนช่วงย่อยต่อช่วง'), 'n') + fl('pt', T('Prestress per girder (kN, 0 = none)', 'แรงอัดล่วงหน้าต่อคาน (kN, 0 = ไม่มี)'), 'n')
+        : A.tpl === 'box' ? fl('spans', T('Spans (m), comma separated', 'ช่วงสะพาน (ม.) คั่นด้วยจุลภาค')) + fl('piers', T('Pier heights (m)', 'ความสูงตอม่อ (ม.)')) + fl('width', T('Deck width (m)', 'ความกว้างพื้น (ม.)'), 'n') + fl('nseg', T('Segments per span', 'จำนวนช่วงย่อยต่อช่วง'), 'n')
+          : A.tpl === 'btruss' ? `<label>${T('Type', 'ชนิด')}${sel([['pratt', 'Pratt'], ['warren', 'Warren']], p.kind, 'data-tp="kind"')}</label>` + fl('span', T('Span (m)', 'ช่วง (ม.)'), 'n') + fl('panels', T('Panels (even)', 'จำนวนช่อง (คู่)'), 'n') + fl('height', T('Truss height (m)', 'ความสูงโครงถัก (ม.)'), 'n') + fl('width', T('Width between trusses (m)', 'ระยะห่างโครงถัก (ม.)'), 'n')
+            : A.tpl === 'arch' ? fl('span', T('Span (m)', 'ช่วง (ม.)'), 'n') + fl('rise', T('Arch rise (m)', 'ความสูงโค้ง (ม.)'), 'n') + fl('panels', T('Hanger panels (even)', 'จำนวนช่องสลิง (คู่)'), 'n') + fl('width', T('Width between arches (m)', 'ระยะห่างซี่โค้ง (ม.)'), 'n')
+              : A.tpl === 'cable' ? fl('side', T('Back span (m)', 'ช่วงหลัง (ม.)'), 'n') + fl('main', T('Main span (m)', 'ช่วงหลัก (ม.)'), 'n') + fl('pylon', T('Pylon height above deck (m)', 'ความสูงเสาเหนือพื้น (ม.)'), 'n') + fl('spacing', T('Cable spacing on the deck (m)', 'ระยะเคเบิลบนพื้น (ม.)'), 'n') + fl('width', T('Deck width (m)', 'ความกว้างพื้น (ม.)'), 'n')
+                : `<p class="muted">${T('An empty bridge model with concrete and steel of the chosen standard, dead and superimposed-dead cases, and the code traffic model ready for your lanes.', 'โมเดลสะพานว่าง มีคอนกรีตและเหล็กตามมาตรฐาน กรณีน้ำหนักคงที่ และแบบจำลองจราจรตามมาตรฐาน')}</p>`)
+        : A.tpl === 'building' ? fl('bx', T('Bays in X (m), comma separated', 'ช่วงแกน X (ม.) คั่นด้วยจุลภาค')) + fl('by', T('Bays in Y (m)', 'ช่วงแกน Y (ม.)')) + fl('st', T('Storey heights (m), bottom up', 'ความสูงชั้น (ม.) จากล่างขึ้นบน')) + fl('g', T('Beam dead UDL G (kN/m, plus self-weight)', 'น้ำหนักคงที่บนคาน G (kN/m ไม่รวมน้ำหนักตัวเอง)'), 'n') + fl('q', T('Beam live UDL Q (kN/m)', 'น้ำหนักจรบนคาน Q (kN/m)'), 'n') + fl('wind', T('Wind force per floor, each direction (kN)', 'แรงลมต่อชั้น แต่ละทิศ (kN)'), 'n')
         : A.tpl === 'shed' || A.tpl === 'portal' ? fl('span', T('Span (m)', 'ช่วงกว้าง (ม.)'), 'n') + fl('eave', T('Eave height (m)', 'ความสูงชายคา (ม.)'), 'n') + fl('rise', T('Apex rise (m)', 'ความสูงจั่ว (ม.)'), 'n') + fl('bay', T('Frame spacing (m)', 'ระยะห่างโครง (ม.)'), 'n') + (A.tpl === 'shed' ? fl('nb', T('Number of bays', 'จำนวนช่วง'), 'n') : '') + `<label>${T('Bases', 'ฐาน')}${sel([['pin', T('Pinned', 'หมุด')], ['fixed', T('Fixed', 'ยึดแน่น')]], p.base, 'data-tp="base"')}</label>`
           : A.tpl === 'beam' ? fl('spans', T('Spans (m), comma separated', 'ช่วงคาน (ม.) คั่นด้วยจุลภาค')) + fl('g', T('Dead UDL G (kN/m, plus self-weight)', 'น้ำหนักคงที่ G (kN/m ไม่รวมน้ำหนักตัวเอง)'), 'n') + fl('q', T('Live UDL Q (kN/m)', 'น้ำหนักจร Q (kN/m)'), 'n')
             : A.tpl === 'truss' ? `<label>${T('Type', 'ชนิด')}${sel([['pratt', 'Pratt'], ['howe', 'Howe'], ['warren', 'Warren']], p.kind, 'data-tp="kind"')}</label>` + fl('span', T('Span (m)', 'ช่วงกว้าง (ม.)'), 'n') + fl('depth', T('Depth (m)', 'ความลึก (ม.)'), 'n') + fl('panels', T('Panels (even)', 'จำนวนช่อง (คู่)'), 'n') + fl('load', T('Dead load per top node (kN)', 'น้ำหนักคงที่ต่อจุดต่อบน (kN)'), 'n')
@@ -1337,10 +1492,10 @@
         keyBound = true;
         document.addEventListener('mousedown', e => { if (A.ribMenu && !(e.target.closest && (e.target.closest('.an-rmenu') || e.target.closest('[data-m]')))) closeMenu(); });
         G.addEventListener('resize', () => closeMenu());
-        document.addEventListener('dragstart', e => { const t = e.target.closest && e.target.closest('[data-dnd]'); if (!t || S.view !== 'analysis') return; A.dnd = t.dataset.dnd; try { e.dataTransfer.setData('text/plain', A.dnd); e.dataTransfer.effectAllowed = 'copy'; } catch (er) { } document.body.classList.add('an-dragging'); });
+        document.addEventListener('dragstart', e => { const t = e.target.closest && e.target.closest('[data-dnd]'); if (!t || S.view !== VIEW) return; A.dnd = t.dataset.dnd; try { e.dataTransfer.setData('text/plain', A.dnd); e.dataTransfer.effectAllowed = 'copy'; } catch (er) { } document.body.classList.add('an-dragging'); });
         document.addEventListener('dragend', () => { A.dnd = null; document.body.classList.remove('an-dragging'); if (A.hover) { A.hover = null; redraw(); } });
         document.addEventListener('keydown', e => {
-          if (S.view !== 'analysis' || !$('#anCv')) return;
+          if (S.view !== VIEW || !$('#anCv')) return;
           const tg = e.target, typing = tg && (tg.tagName === 'INPUT' || tg.tagName === 'SELECT' || tg.tagName === 'TEXTAREA');
           if ((e.ctrlKey || e.metaKey) && !typing && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); undo(e.shiftKey); return; }
           if ((e.ctrlKey || e.metaKey) && !typing && (e.key === 'y' || e.key === 'Y')) { e.preventDefault(); undo(true); return; }
@@ -1372,6 +1527,7 @@
 
     // ------------------------------------------------------------------ input handlers
     function onInput(t) {
+      if (BRG && (bridgeInput(t) || ilInput(t))) return true;
       if (t.dataset.tp) { A.tplP = Object.assign({}, TPL[A.tpl].p, A.tplP || {}); A.tplP[t.dataset.tp] = t.value; return true; }
       if (t.dataset.ins) { applyIns(t); return true; }
       if (t.dataset.w && A.win) {
@@ -1435,6 +1591,7 @@
     }
     function afterNewModel() { A.sel = { n: [], m: [] }; A.src = null; A.draw = null; A.cut = 'all'; A.cb = null; A.res = null; A.err = null; A.lcase = (A.model.cases[0] || {}).id || ''; setView(A.model.plane === 'XZ' ? 'xz' : '3d'); A.ver++; persist(); if (A.step === 'res' || A.step === 'run') A.step = 'node'; ctx.render(); }
     function doRun() {
+      if (BRG && !A._busy && ((A.model.bridge || {}).mlc || []).length) { A._busy = true; toast(T('Analysing the bridge — moving loads and stages…', 'กำลังวิเคราะห์สะพาน — น้ำหนักเคลื่อนที่และขั้นตอน…'), ''); setTimeout(() => { try { doRun(); } finally { A._busy = false; } }, 40); return; }
       const ok = run();
       if (ok) { A.step = 'res'; if (!A.rview || (A.rview === 'mode' && !A.res.modal) || (A.rview === 'buck' && !A.res.buckling)) A.rview = 'Mz'; toast(T('Analysis complete — ', 'วิเคราะห์เสร็จ — ') + A.res.ms + ' ms', 'ok'); }
       else { A.step = 'run'; toast(A.err, 'bad'); }
@@ -1684,14 +1841,15 @@
           [T('Display', 'การแสดง'), [B('dispm', 'palette', T('Display', 'ตัวเลือกการแสดง'), { m: 1 })]]
         ]],
         ['struct', T('Structure', 'โครงสร้าง'), [
-          [T('Sample', 'ตัวอย่าง'), [B('sample', 'sample', T('Sample Building', 'อาคารตัวอย่าง'))]],
-          [T('Quick Templates', 'แม่แบบด่วน'), [B('qt', 'bldg', T('Building 3D', 'อาคาร 3 มิติ'), { v: 'building' }), B('qt', 'shed', T('Steel Shed', 'โรงงานเหล็ก'), { v: 'shed' }), B('qt', 'portal', T('Portal Frame', 'โครงข้อแข็ง'), { v: 'portal' }), B('qt', 'cbeam', T('Continuous Beam', 'คานต่อเนื่อง'), { v: 'beam' }), B('qt', 'truss', T('Truss', 'โครงถัก'), { v: 'truss' }), B('qt', 'blank', T('Empty Model', 'โมเดลว่าง'), { v: 'blank' })]],
+          [T('Sample', 'ตัวอย่าง'), [B('sample', 'sample', BRG ? T('Sample Bridge', 'สะพานตัวอย่าง') : T('Sample Building', 'อาคารตัวอย่าง'))]],
+          [T('Quick Templates', 'แม่แบบด่วน'), BRG ? [B('qt', 'beam', T('Girder Deck', 'สะพานคาน'), { v: 'girder' }), B('qt', 'column', T('Box Girder', 'คานกล่อง'), { v: 'box' }), B('qt', 'truss', T('Truss Bridge', 'สะพานโครงถัก'), { v: 'btruss' }), B('qt', 'portal', T('Tied Arch', 'สะพานโค้ง'), { v: 'arch' }), B('qt', 'shed', T('Cable-Stayed', 'สะพานขึงเคเบิล'), { v: 'cable' }), B('qt', 'blank', T('Empty Model', 'โมเดลว่าง'), { v: 'blank' })] : [B('qt', 'bldg', T('Building 3D', 'อาคาร 3 มิติ'), { v: 'building' }), B('qt', 'shed', T('Steel Shed', 'โรงงานเหล็ก'), { v: 'shed' }), B('qt', 'portal', T('Portal Frame', 'โครงข้อแข็ง'), { v: 'portal' }), B('qt', 'cbeam', T('Continuous Beam', 'คานต่อเนื่อง'), { v: 'beam' }), B('qt', 'truss', T('Truss', 'โครงถัก'), { v: 'truss' }), B('qt', 'blank', T('Empty Model', 'โมเดลว่าง'), { v: 'blank' })]],
           [T('Wizard', 'ตัวช่วยสร้าง'), [B('wizard', 'wand', T('Structure Wizard', 'สร้างจากแม่แบบ'))]],
           [T('Structure Type', 'ชนิดโครงสร้าง'), [B('type3d', 'cube', T('3D Frame', 'โครง 3 มิติ'), { on: () => A.model.plane !== 'XZ' }), B('type2d', 'plane', T('2D Frame (X–Z)', 'โครง 2 มิติ (X–Z)'), { on: () => A.model.plane === 'XZ' })]],
           [T('Design Standard', 'มาตรฐานการออกแบบ'), [...STDS.map(k => B('std', 'book', { AS: T('Australian (AS)', 'ออสเตรเลีย (AS)'), EC: T('Eurocodes (EN)', 'ยูโรโค้ด (EN)'), TH: T('Thai (EIT / TIS)', 'ไทย (วสท. / มอก.)') }[k] || k, { v: k, on: () => A.model.std === k })),
             COL(B('stdcombo', 'lcc', T('Standard Combinations', 'การรวมน้ำหนักตามมาตรฐาน')), B('stdinfo', 'list', T('Standard Details', 'รายละเอียดมาตรฐาน')))]],
           [T('Model', 'แบบจำลอง'), [B('save', 'save', T('Save', 'บันทึก')), B('open', 'open', T('Open', 'เปิด'), { file: 1 }), B('report', 'doc', T('Report', 'รายงาน'))]]
         ]],
+        ...(BRG ? [bridgeTab()] : []),
         ['node', T('Node/Element', 'จุดต่อ/ชิ้นส่วน'), [
           [T('Nodes', 'จุดต่อ'), [B('cnode', 'node', T('Create Nodes', 'สร้างจุดต่อ'), { on: tool('node') }), B('ntrans', 'move', T('Translate', 'เลื่อน/คัดลอก')), B('ndiv', 'divide', T('Divide', 'แบ่ง')), B('nmerge', 'merge', T('Merge', 'รวมจุด')),
             COL(B('del', 'del', T('Delete', 'ลบ')), B('rot', 'rotate', T('Rotate', 'หมุน')), B('mir', 'mirror', T('Mirror', 'สะท้อน'))), COL(B('scl', 'scale', T('Scale', 'ปรับขนาด')), B('ext', 'extrude', T('Extrude', 'ยืดเป็นชิ้นส่วน'))), B('ntab', 'table', T('Nodes Table', 'ตารางจุดต่อ'))]],
@@ -1743,7 +1901,7 @@
         ]],
         ['tools', T('Tools', 'เครื่องมือ'), [
           [T('Setting', 'ตั้งค่า'), [B('unitm', 'units', T('Unit System', 'ระบบหน่วย') + ' · ' + ulab('F') + ', ' + ulab('L'), { m: 1 })]],
-          [T('Model File', 'ไฟล์แบบจำลอง'), [B('save', 'save', T('Save', 'บันทึก')), B('open', 'open', T('Open', 'เปิด'), { file: 1 }), B('sample', 'sample', T('Sample Building', 'อาคารตัวอย่าง')), B('wizard', 'wand', T('Template', 'แม่แบบ'))]],
+          [T('Model File', 'ไฟล์แบบจำลอง'), [B('save', 'save', T('Save', 'บันทึก')), B('open', 'open', T('Open', 'เปิด'), { file: 1 }), B('sample', 'sample', BRG ? T('Sample Bridge', 'สะพานตัวอย่าง') : T('Sample Building', 'อาคารตัวอย่าง')), B('wizard', 'wand', T('Template', 'แม่แบบ'))]],
           [T('Help', 'วิธีใช้'), [B('help', 'help', T('Shortcuts & Help', 'ปุ่มลัดและวิธีใช้'))]]
         ]]
       ];
@@ -1765,6 +1923,7 @@
 
     // ---- dropdown menus
     function MENU(id) {
+      if (BRG) { const bm = bridgeMenu(id); if (bm) return bm; }
       const it = (c, l, v, on) => ({ c, l, v, on }), sep = { sep: 1 };
       const VPS = [['3d', T('Isometric (default)', 'ไอโซเมตริก')], ['plan', T('Top (plan)', 'ด้านบน (แปลน)')], ['xz', T('Front (X–Z)', 'ด้านหน้า (X–Z)')], ['yz', T('Right (Y–Z)', 'ด้านขวา (Y–Z)')], ['back', T('Back', 'ด้านหลัง')], ['left', T('Left', 'ด้านซ้าย')], ['bottom', T('Bottom', 'ด้านล่าง')], ['ne', T('Isometric NE', 'ไอโซเมตริก NE')], ['nw', T('Isometric NW', 'ไอโซเมตริก NW')], ['sw', T('Isometric SW', 'ไอโซเมตริก SW')]];
       switch (id) {
@@ -2055,7 +2214,7 @@
       pmt: { t: () => T('Material table', 'ตารางวัสดุ'), body: () => tblw(['ID', T('Name', 'ชื่อ'), 'E (MPa)', 'ν', 'γ' + ul('g'), 'α' + ul('al'), "f'c / fy (MPa)"], A.model.materials.map(x => `<tr><td><b>${esc(x.id)}</b></td><td>${esc(x.name || '')}</td><td class="num mono">${f(+x.E, 0)}</td><td class="num mono">${f(x.nu === undefined ? 0.3 : +x.nu, 2)}</td><td class="num mono">${fu(+x.rho || 0, 'g', UU().F === 'kN' ? 1 : 4)}</td><td class="num mono">${fx(toU(+x.alpha || F.alphaOf(x) * 1e6, 'al'), 2)}</td><td class="num mono">${x.fc ? f(+x.fc, 1) : x.fy ? f(+x.fy, 0) : '—'}</td></tr>`)) + wfoot('') },
       pst: { t: () => T('Section table', 'ตารางหน้าตัด'), body: () => tblw(['ID', T('Shape', 'รูปทรง'), 'A (mm²)', 'I<sub>z</sub> (×10⁶ mm⁴)', 'I<sub>y</sub> (×10⁶ mm⁴)', 'J (×10⁶ mm⁴)', T('Used by', 'ใช้ใน')], A.model.sections.map(s => { const p = F.secProps(s); return `<tr><td><b>${esc(s.id)}</b></td><td>${esc(s.name || s.type)}</td><td class="num mono">${f(p.A, 0)}</td><td class="num mono">${f(p.Iz / 1e6, 2)}</td><td class="num mono">${f(p.Iy / 1e6, 2)}</td><td class="num mono">${f(p.J / 1e6, 3)}</td><td class="num mono">${A.model.members.filter(q => q.sec === s.id).length}</td></tr>`; })) + wfoot('') },
       btab: { t: () => T('Boundary table', 'ตารางจุดรองรับ'), body: () => { const m = A.model, rows = m.nodes.filter(n => F.fixOf(n).some(Boolean) || ['kx', 'ky', 'kz', 'krx', 'kry', 'krz'].some(q => +n[q] > 0)); return (rows.length ? tblw([T('Node', 'จุดต่อ'), T('Support', 'จุดรองรับ'), 'Ux Uy Uz Rx Ry Rz', T('Springs', 'สปริง')], rows.map(n => `<tr><td><button class="linkbtn" data-act="an-pickn" data-n="${esc(n.id)}">${esc(n.id)}</button></td><td>${esc((SUP().find(q => q[0] === (n.sup || 'free')) || [])[1] || n.sup)}</td><td class="mono">${F.fixOf(n).map(x => (x ? '■' : '□')).join(' ')}</td><td class="mono small">${['kx', 'ky', 'kz', 'krx', 'kry', 'krz'].filter(q => +n[q] > 0).map(q => q + ' ' + fu(+n[q], q[1] === 'r' ? 'kR' : 'kL', 0)).join(', ') || '—'}</td></tr>`)) : hint(T('No supports yet.', 'ยังไม่มีจุดรองรับ'))) + `<p class="muted small">${T('Released / truss elements', 'ชิ้นส่วนที่ปลดแรง / โครงถัก')}: ${m.members.filter(q => q.relI || q.relJ || q.type === 'truss').map(q => esc(q.id) + (q.type === 'truss' ? ' (T)' : ' (' + (q.relI ? 'i' : '') + (q.relJ ? 'j' : '') + ')')).join(', ') || '—'}</p>` + wfoot(''); } },
-      ltab: { t: () => T('Load table', 'ตารางแรง'), body: () => { const m = A.model; return m.loads.length ? tblw([T('Case', 'กรณี'), T('On', 'ที่'), T('Type', 'ชนิด'), T('Values', 'ค่า'), ''], m.loads.slice(0, 600).map((l, i) => `<tr><td><b>${esc(l.case)}</b></td><td>${esc(l.kind === 'node' ? l.node : l.member)}</td><td>${{ node: T('nodal', 'ที่จุดต่อ'), udl: T('distributed', 'แผ่กระจาย'), point: T('point', 'แรงจุด'), moment: T('moment', 'โมเมนต์'), temp: T('temperature', 'อุณหภูมิ') }[l.kind] || l.kind}</td><td class="small">${esc(loadDesc(l))}</td><td>${liDel('loads', i)}</td></tr>`)) + wfoot('', `<button class="btn btn-ghost sm" data-act="an-rb" data-c="csv" data-v="loads">CSV</button>`) : hint(T('No loads yet.', 'ยังไม่มีแรง')) + wfoot(''); } },
+      ltab: { t: () => T('Load table', 'ตารางแรง'), body: () => { const m = A.model; return m.loads.length ? tblw([T('Case', 'กรณี'), T('On', 'ที่'), T('Type', 'ชนิด'), T('Values', 'ค่า'), ''], m.loads.slice(0, 600).map((l, i) => `<tr><td><b>${esc(l.case)}</b></td><td>${esc(l.kind === 'node' || l.kind === 'settle' ? l.node : l.member)}</td><td>${{ node: T('nodal', 'ที่จุดต่อ'), udl: T('distributed', 'แผ่กระจาย'), point: T('point', 'แรงจุด'), moment: T('moment', 'โมเมนต์'), temp: T('temperature', 'อุณหภูมิ'), pres: T('prestress', 'แรงอัดล่วงหน้า'), settle: T('settlement', 'การทรุดตัว') }[l.kind] || l.kind}</td><td class="small">${esc(loadDesc(l))}</td><td>${liDel('loads', i)}</td></tr>`)) + wfoot('', `<button class="btn btn-ghost sm" data-act="an-rb" data-c="csv" data-v="loads">CSV</button>`) : hint(T('No loads yet.', 'ยังไม่มีแรง')) + wfoot(''); } },
       lsum: { t: () => T('Load summary', 'สรุปแรง'), body: () => tblw([T('Case', 'กรณี'), T('Loads', 'จำนวน'), 'ΣFx' + ul('F'), 'ΣFy' + ul('F'), 'ΣFz' + ul('F'), T('of which self weight', 'น้ำหนักตัวเอง') + ul('F'), T('Temperature', 'อุณหภูมิ')], A.model.cases.map(c => { const s = caseSum(c.id); return `<tr><td><b>${esc(c.id)}</b> <span class="muted small">${esc(c.name)}</span></td><td class="num mono">${s.n}</td>${s.R.map(v => `<td class="num mono">${fu(v, 'F')}</td>`).join('')}<td class="num mono">${s.sw ? fu(-s.sw, 'F') : '—'}</td><td class="num mono">${s.nT || '—'}</td></tr>`; })) + hint(T('Resultants of the applied loads in global axes (Z up, so gravity is negative). Moments and temperature loads have no force resultant.', 'ผลรวมแรงตามแกนหลัก (Z ขึ้น แรงโน้มถ่วงเป็นลบ) โมเมนต์และแรงจากอุณหภูมิไม่มีผลรวมแรง')) + wfoot('') },
       qms: { t: () => T('Mass summary', 'สรุปมวล'), body: () => { const m = A.model, by = {}; let tot = 0; m.members.forEach(q => { const w = memWeight(q); if (!w) return; const k = q.mat + ' · ' + q.sec, o = by[k] || (by[k] = { n: 0, L: 0, W: 0 }); o.n++; o.L += w.L; o.W += w.W; tot += w.W; }); return tblw([T('Material · section', 'วัสดุ · หน้าตัด'), T('Elements', 'จำนวน'), T('Length', 'ความยาว') + ul('L'), T('Weight', 'น้ำหนัก') + ul('F'), T('Mass (t)', 'มวล (ตัน)')], Object.entries(by).map(([k, o]) => `<tr><td>${esc(k)}</td><td class="num mono">${o.n}</td><td class="num mono">${fu(o.L, 'L', 2)}</td><td class="num mono">${fu(o.W, 'F')}</td><td class="num mono">${f(o.W / 9.81, 2)}</td></tr>`).concat([`<tr class="tot"><td>Σ</td><td></td><td></td><td class="num mono">${fu(tot, 'F')}</td><td class="num mono">${f(tot / 9.81, 2)}</td></tr>`])) + wfoot(''); } },
       qwt: { t: () => T('Element weight table', 'ตารางน้ำหนักชิ้นส่วน'), body: () => { let tot = 0; const rows = A.model.members.slice(0, 600).map(q => { const w = memWeight(q); if (w) tot += w.W; return `<tr><td>${esc(q.id)}</td><td>${esc(q.sec)}</td><td>${esc(q.mat)}</td><td class="num mono">${w ? fu(w.L, 'L', 2) : '—'}</td><td class="num mono">${w ? f(w.A * 1e6, 0) : '—'}</td><td class="num mono">${w ? fu(w.gam, 'g', UU().F === 'kN' ? 1 : 4) : '—'}</td><td class="num mono">${w ? fu(w.W, 'F') : '—'}</td></tr>`; }); return tblw([T('Element', 'ชิ้นส่วน'), T('Section', 'หน้าตัด'), T('Material', 'วัสดุ'), 'L' + ul('L'), 'A (mm²)', 'γ' + ul('g'), T('Weight', 'น้ำหนัก') + ul('F')], rows.concat([`<tr class="tot"><td>Σ</td><td></td><td></td><td></td><td></td><td></td><td class="num mono">${fu(tot, 'F')}</td></tr>`])) + wfoot(''); } },
@@ -2104,6 +2263,7 @@
     function ribCmd(c, v, b) {
       if (b && b.dataset.m) { openMenu(c, b); return; }
       closeMenu();
+      if (BRG && bridgeCmd(c, v)) return;
       const m = A.model, o = A.opt;
       switch (c) {
         // view
@@ -2135,7 +2295,7 @@
         case 'tog': if (v === 'solid' || v === 'labels' || v === 'loadsOn' || v === 'allAxes') A[v] = !A[v]; else A[v] = A[v] === false; if (v === 'loadsOn') syncLshow(); ribRefresh(); redraw(); return;
         // structure
         case 'wizard': A.tplOpen = true; ctx.render(); return;
-        case 'sample': case 'qt': quickModel(c === 'sample' ? 'building' : v); return;
+        case 'sample': case 'qt': quickModel(c === 'sample' ? (BRG ? 'girder' : 'building') : v); return;
         case 'guides': A.guides = A.guides === false; drawGuide(null); ribRefresh(); return;
         case 'type3d': case 'type2d': { const p = c === 'type2d' ? 'XZ' : ''; if ((m.plane || '') === p) return; snap(true); m.plane = p; changed(false); setView(p ? 'xz' : '3d'); ctx.render(); toast(p ? T('2D frame in the X–Z plane', 'โครง 2 มิติ ระนาบ X–Z') : T('3D frame', 'โครง 3 มิติ'), ''); return; }
         case 'gostd': A.rib = 'struct'; A.ribMin = false; ribRefresh(); { const g = [...document.querySelectorAll('#anRib .an-rgt')].find(e => /Design Standard|มาตรฐานการออกแบบ/.test(e.textContent)); if (g) { const r = g.parentElement; r.classList.add('an-flash'); setTimeout(() => r.classList.remove('an-flash'), 1200); } } return;
@@ -2217,6 +2377,177 @@
         case 'redo': undo(true); return;
         case 'csv': csvOut(v); return;
       }
+    }
+
+
+    // ================================================================== bridge mode: ribbon tab, windows, lanes, influence lines
+    const BRD = () => { const m = A.model; if (!m.bridge) m.bridge = { kind: 'blank', lanes: [], vehicles: [], mlc: [], stages: [], bcombos: [] }; ['lanes', 'vehicles', 'mlc', 'stages', 'bcombos'].forEach(k => { if (!Array.isArray(m.bridge[k])) m.bridge[k] = []; }); return m.bridge; };
+    const CODEL = () => [['AS', 'AS 5100.2'], ['EN', 'EN 1991-2'], ['HL93', 'AASHTO LRFD HL-93'], ['HS20', T('AASHTO HS20-44 (Thai DOH)', 'AASHTO HS20-44 (กรมทางหลวง)')], ['USER', T('User', 'กำหนดเอง')]];
+    const vehList = () => Object.entries(BR.VEH).map(([k, v]) => [k, v.name]).concat(BRD().vehicles.map(v => [v.id, v.name || v.id]));
+    function bridgeTab() {
+      const tool = t => () => A.tool === t, b = BRD();
+      return ['bridge', T('Bridge', 'สะพาน'), [
+        [T('Bridge Wizard', 'ตัวช่วยสร้างสะพาน'), [B('qt', 'beam', T('Girder Deck', 'สะพานคาน'), { v: 'girder' }), B('qt', 'column', T('Box Girder', 'คานกล่อง'), { v: 'box' }), B('qt', 'truss', T('Truss Bridge', 'โครงถัก'), { v: 'btruss' }), B('qt', 'portal', T('Tied Arch', 'โค้งผูก'), { v: 'arch' }), B('qt', 'shed', T('Cable-Stayed', 'ขึงเคเบิล'), { v: 'cable' }), B('wizard', 'wand', T('Wizard…', 'กำหนดขนาด…'))]],
+        [T('Traffic', 'การจราจร'), [B('blanes', 'list', T('Traffic Lanes', 'ช่องจราจร') + ' (' + b.lanes.length + ')'), B('bveh', 'pload', T('Vehicles', 'ยานพาหนะ')), B('bmlc', 'udl', T('Moving Load Cases', 'กรณีน้ำหนักเคลื่อนที่') + ' (' + b.mlc.length + ')')]],
+        [T('Construction & Effects', 'การก่อสร้างและผลกระทบ'), [B('bstg', 'extrude', T('Construction Stages', 'ขั้นตอนก่อสร้าง') + ' (' + b.stages.length + ')'), COL(B('bpres', 'range', T('Prestress Tendon', 'แรงอัดล่วงหน้า')), B('bset', 'support', T('Support Settlement', 'การทรุดตัว')), B('ltemp', 'thermo', T('Temperature', 'อุณหภูมิ')))]],
+        [T('Combination', 'การรวม'), [B('bcomb', 'lcc', T('Bridge Combinations', 'การรวมน้ำหนักสะพาน') + ' (' + b.bcombos.length + ')')]],
+        [T('Bridge Results', 'ผลสะพาน'), [B('bil', 'mode', T('Influence Lines', 'เส้นอิทธิพล'), { on: () => A.step === 'res' && A.rview === 'il' }), B('bmlr', 'diagram', T('Moving Load Envelope', 'ค่าสูงสุด/ต่ำสุดน้ำหนักเคลื่อนที่'), { m: 1 }), B('bstr', 'deform', T('Stage Results', 'ผลตามขั้นตอน'), { m: 1 }), COL(B('tog', 'eye', T('Show lanes', 'แสดงช่องจราจร'), { v: 'showLanes', on: () => A.showLanes !== false }))]]
+      ]];
+    }
+    function bridgeMenu(id) {
+      const it = (c, l, v, on) => ({ c, l, v, on });
+      if (id === 'bmlr') return BRD().mlc.map(c => it('src', c.id + ' — ' + c.name, 'ml:' + c.id, A.src === 'ml:' + c.id)).concat(BRD().bcombos.map(c => it('src', c.id + ' — ' + c.name, 'bc:' + c.id, A.src === 'bc:' + c.id)));
+      if (id === 'bstr') return BRD().stages.map((s, i) => it('src', T('Stage ', 'ขั้นที่ ') + (i + 1) + ' — ' + s.name, 'st:' + s.id, A.src === 'st:' + s.id));
+      return null;
+    }
+    // ---- member chains (paths) and their geometry
+    function chainOf(ids) { // order a set of connected members into a path
+      const m = A.model, mem = ids.map(id => m.members.find(q => q.id === id)).filter(Boolean); if (mem.length < 2) return mem.map(q => q.id);
+      const deg = {}; mem.forEach(q => { deg[q.i] = (deg[q.i] || 0) + 1; deg[q.j] = (deg[q.j] || 0) + 1; });
+      let at = Object.keys(deg).find(k => deg[k] === 1) || mem[0].i; const left = new Set(mem.map(q => q.id)), out = [];
+      while (left.size) { const q = mem.find(z => left.has(z.id) && (z.i === at || z.j === at)); if (!q) return null; out.push(q.id); left.delete(q.id); at = q.i === at ? q.j : q.i; }
+      return out;
+    }
+    function pathGeom(ids) { // s → point along the chain
+      const m = A.model, nd = nodeMap(), segs = []; let at = null, L = 0;
+      ids.forEach((id, k) => { const q = m.members.find(z => z.id === id); if (!q || !nd[q.i] || !nd[q.j]) return; let rev = false; if (k === 0) { const nx = m.members.find(z => z.id === ids[1]); rev = !!(nx && (q.i === nx.i || q.i === nx.j) && !(q.j === nx.i || q.j === nx.j)); } else rev = q.j === at; at = rev ? q.i : q.j; const a = P3(nd[rev ? q.j : q.i]), b = P3(nd[rev ? q.i : q.j]), l = Math.hypot(...sub(b, a)); segs.push({ a, b, l, s0: L }); L += l; });
+      return { L, at: s => { const g = segs.find(q => s <= q.s0 + q.l + 1e-9) || segs[segs.length - 1]; if (!g) return [0, 0, 0]; const t = g.l ? Math.max(0, Math.min(1, (s - g.s0) / g.l)) : 0; return addv(g.a, sub(g.b, g.a), t); } };
+    }
+    function laneGeom(l) { const ga = pathGeom(l.a || []); if (!l.b || !l.b.length) return ga; const gb = pathGeom(l.b), w = +l.w || 0; return { L: ga.L, at: s => addv(ga.at(s), sub(gb.at(s / (ga.L || 1) * gb.L), ga.at(s)), w) }; }
+    const LCOL = ['#e8590c', '#1c7ed6', '#2f9e44', '#ae3ec9', '#f08c00', '#0c8599'];
+    // drawn by render() in model view
+    function drawLanesOn(g, P, pal) {
+      const b = A.model.bridge; if (!b || !b.lanes || !b.lanes.length) return;
+      g.save(); b.lanes.forEach((l, k) => {
+        const ge = laneGeom(l); if (!ge.L) return; const col = LCOL[k % LCOL.length], n = 40; g.strokeStyle = col; g.lineWidth = 6; g.globalAlpha = 0.28; g.beginPath();
+        for (let i = 0; i <= n; i++) { const p = P(ge.at(ge.L * i / n)); i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); } g.stroke(); g.globalAlpha = 1;
+        const p0 = P(ge.at(0)), p1 = P(ge.at(Math.min(ge.L, 1.5))); const an = Math.atan2(p1[1] - p0[1], p1[0] - p0[0]);
+        g.fillStyle = col; g.font = '700 11px system-ui, sans-serif'; g.fillText(l.id, p0[0] - 18 * Math.cos(an) - 6, p0[1] - 18 * Math.sin(an) + 4);
+        const pm = P(ge.at(ge.L * 0.5)), pn = P(ge.at(ge.L * 0.5 + Math.min(1, ge.L / 20))), a2 = Math.atan2(pn[1] - pm[1], pn[0] - pm[0]);
+        g.beginPath(); g.moveTo(pm[0] + 8 * Math.cos(a2), pm[1] + 8 * Math.sin(a2)); g.lineTo(pm[0] - 6 * Math.cos(a2 - 0.6), pm[1] - 6 * Math.sin(a2 - 0.6)); g.lineTo(pm[0] - 6 * Math.cos(a2 + 0.6), pm[1] - 6 * Math.sin(a2 + 0.6)); g.closePath(); g.fill();
+      }); g.restore();
+    }
+    // ---- influence lines
+    function ilInf() {
+      if (A.bres && A.bres.inf && A.resVer === A.ver) return A.bres.inf;
+      if (A.ilCache && A.ilCache.ver === A.ver) return A.ilCache.inf;
+      try { const inf = BR.influence(A.model); A.ilCache = { ver: A.ver, inf }; return inf; } catch (e) { toast(e.message, 'bad'); return null; }
+    }
+    function ilData() {
+      const b = BRD(), lane = b.lanes.find(l => l.id === (A.ilLane || (b.lanes[0] || {}).id)); if (!lane) return null;
+      const inf = ilInf(); if (!inf) return null; const tg = A.ilT || defaultIL(); if (!tg) return null;
+      const r = BR.lineOf(A.model, inf, lane, tg); return r ? Object.assign(r, { lane, tg }) : null;
+    }
+    function defaultIL() { const b = BRD(), l = b.lanes[0]; if (!l || !l.a || !l.a.length) return null; return { k: 'm', mem: l.a[Math.floor(l.a.length / 2)], comp: 'Mz', pt: 0 }; }
+    function drawILOn(g, P, pal, notes, ext, text) {
+      const d = ilData(); if (!d) { notes.push(T('Define a traffic lane to see influence lines (Bridge › Traffic Lanes).', 'กำหนดช่องจราจรเพื่อดูเส้นอิทธิพล (สะพาน › ช่องจราจร)')); return; }
+      const ge = laneGeom(d.lane), mx = Math.max(1e-12, ...d.y.map(Math.abs)), sc = 0.16 * ext / mx;
+      const base = d.s.map(s => ge.at(s)), top = base.map((p, i) => addv(p, [0, 0, 1], d.y[i] * sc));
+      g.save(); g.beginPath(); base.forEach((p, i) => { const q = P(p); i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); }); for (let i = top.length - 1; i >= 0; i--) { const q = P(top[i]); g.lineTo(q[0], q[1]); } g.closePath(); g.globalAlpha = 0.22; g.fillStyle = pal.acc; g.fill(); g.globalAlpha = 1;
+      g.strokeStyle = pal.acc; g.lineWidth = 2; g.beginPath(); top.forEach((p, i) => { const q = P(p); i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); }); g.stroke(); g.restore();
+      let iM = 0, im = 0; d.y.forEach((v, i) => { if (v > d.y[iM]) iM = i; if (v < d.y[im]) im = i; });
+      [iM, im].filter((x, k, a) => a.indexOf(x) === k).forEach(i => { if (Math.abs(d.y[i]) < 1e-9) return; const q = P(top[i]); g.beginPath(); g.arc(q[0], q[1], 3.5, 0, 2 * PI); g.fillStyle = pal.acc; g.fill(); text(fx(d.y[i], 3) + ' @ ' + fu(d.s[i], 'L', 1) + ul('L'), q[0] + 6, q[1] - 6, pal.ink, { font: '600 11px ui-monospace, monospace' }); });
+      notes.push(T('Influence line — ', 'เส้นอิทธิพล — ') + ilName(d.tg) + T(' for a unit load moving along ', ' สำหรับแรง 1 หน่วยเคลื่อนตาม ') + d.lane.id);
+      const mk = d.tg.k === 'm' ? A.model.members.find(q => q.id === d.tg.mem) : null, nd = nodeMap();
+      if (mk && nd[mk.i] && nd[mk.j]) { const pa = P3(nd[mk.i]), pb = P3(nd[mk.j]), q = P(addv(pa, sub(pb, pa), (+d.tg.pt || 0) / 10)); g.beginPath(); g.arc(q[0], q[1], 7, 0, 2 * PI); g.strokeStyle = pal.pink; g.lineWidth = 2; g.stroke(); }
+      if (d.tg.k === 'r' && nd[d.tg.node]) { const q = P(P3(nd[d.tg.node])); g.beginPath(); g.arc(q[0], q[1], 8, 0, 2 * PI); g.strokeStyle = pal.pink; g.lineWidth = 2; g.stroke(); }
+    }
+    const ilName = tg => (tg.k === 'r' ? T('reaction ', 'แรงปฏิกิริยา ') + ['Rx', 'Ry', 'Rz', 'Mx', 'My', 'Mz'][+tg.dof || 0] + T(' at ', ' ที่ ') + tg.node : tg.comp + T(' in ', ' ใน ') + tg.mem + T(' at ', ' ที่ ') + ((+tg.pt || 0) / 10).toFixed(1) + 'L');
+    function ilChart(d) {
+      const W = 540, H = 170, pad = 30, mx = Math.max(1e-12, ...d.y.map(Math.abs)), X = s => pad + (W - 2 * pad) * s / (d.L || 1), Y = v => H / 2 - v / mx * (H / 2 - 22);
+      const pts = d.s.map((s, i) => X(s).toFixed(1) + ',' + Y(d.y[i]).toFixed(1)).join(' ');
+      let iM = 0, im = 0; d.y.forEach((v, i) => { if (v > d.y[iM]) iM = i; if (v < d.y[im]) im = i; });
+      const lab = i => `<circle cx="${X(d.s[i]).toFixed(1)}" cy="${Y(d.y[i]).toFixed(1)}" r="3" class="an-ilpt"/><text x="${Math.min(W - 70, X(d.s[i]) + 5).toFixed(1)}" y="${(Y(d.y[i]) + (d.y[i] >= 0 ? -6 : 14)).toFixed(1)}" class="an-ilt">${fx(d.y[i], 3)}</text>`;
+      const pos = d.y.reduce((s2, v, i) => s2 + (i ? Math.max(0, (v + d.y[i - 1]) / 2) * (d.s[i] - d.s[i - 1]) : 0), 0), neg = d.y.reduce((s2, v, i) => s2 + (i ? Math.min(0, (v + d.y[i - 1]) / 2) * (d.s[i] - d.s[i - 1]) : 0), 0);
+      return `<svg viewBox="0 0 ${W} ${H}" class="an-ilsvg" role="img" aria-label="${esc(T('Influence line', 'เส้นอิทธิพล'))}"><line x1="${pad}" x2="${W - pad}" y1="${H / 2}" y2="${H / 2}" class="an-ax"/><polygon points="${X(0)},${H / 2} ${pts} ${X(d.L)},${H / 2}" class="an-ilfill"/><polyline points="${pts}" class="an-illine"/>${[iM, im].filter((x, k, a) => a.indexOf(x) === k && Math.abs(d.y[x]) > 1e-9).map(lab).join('')}<text x="${pad}" y="${H - 6}" class="an-ilt">0</text><text x="${W - pad}" y="${H - 6}" text-anchor="end" class="an-ilt">${fu(d.L, 'L', 1)}${ul('L')}</text></svg>
+        <p class="muted small">${T('Max', 'สูงสุด')} ${fx(d.y[iM], 4)} @ ${fu(d.s[iM], 'L', 2)}${ul('L')} · ${T('min', 'ต่ำสุด')} ${fx(d.y[im], 4)} @ ${fu(d.s[im], 'L', 2)}${ul('L')} · ${T('area +', 'พื้นที่ +')} ${fx(pos, 3)} / ${fx(neg, 3)} m · ${T('per unit load (kN) acting down', 'ต่อแรง 1 kN ทิศลง')}</p>`;
+    }
+    // ---- bridge windows
+    const bf = (path, v, attrs, w) => inp(v == null ? '' : v, `data-bf="${path}" ${attrs || ''}`, w);
+    const bsel = (path, opts, v) => sel(opts, v, `data-bf="${path}"`);
+    Object.assign(RW, {
+      blanes: { t: () => T('Traffic lanes', 'ช่องจราจร'), body: () => { const b = BRD(); return hint(T('A lane follows a chain of elements (path A). For a lane between two girder lines, give path B and the share w carried by B (lever rule). Select elements in the view, then use the buttons.', 'ช่องจราจรวิ่งตามชิ้นส่วนที่ต่อกัน (เส้นทาง A) หากอยู่ระหว่างคาน 2 แนว ให้กำหนดเส้นทาง B และสัดส่วน w ที่ B รับ (หลักคาน) เลือกชิ้นส่วนในมุมมองแล้วกดปุ่ม')) +
+        (b.lanes.length ? tblw(['ID', T('Name', 'ชื่อ'), T('Path A', 'เส้นทาง A'), T('Path B', 'เส้นทาง B'), 'w (B)', T('Length', 'ความยาว'), ''], b.lanes.map((l, i) => { const ge = laneGeom(l); return `<tr><td><b style="color:${LCOL[i % LCOL.length]}">${esc(l.id)}</b></td><td>${bf('lanes.' + i + '.name', l.name, '', 120)}</td><td class="small">${(l.a || []).length} ${T('el.', 'ชิ้น')} <span class="muted">${esc((l.a || []).slice(0, 2).join(', '))}${(l.a || []).length > 2 ? '…' : ''}</span> <button class="linkbtn" data-act="an-rb" data-c="lanesel" data-v="${i}:a">${T('use selection', 'ใช้ที่เลือก')}</button></td><td class="small">${l.b && l.b.length ? l.b.length + T(' el.', ' ชิ้น') : '—'} <button class="linkbtn" data-act="an-rb" data-c="lanesel" data-v="${i}:b">${T('use selection', 'ใช้ที่เลือก')}</button>${l.b && l.b.length ? ` <button class="linkbtn" data-act="an-rb" data-c="lanesel" data-v="${i}:x">${T('clear', 'ล้าง')}</button>` : ''}</td><td>${bf('lanes.' + i + '.w', l.w || 0, 'type="number" step="0.05" min="0" max="1"', 60)}</td><td class="num mono">${fu(ge.L, 'L', 1)}</td><td><button class="icon-btn" data-act="an-rb" data-c="bdel" data-v="lanes:${i}" aria-label="${T('Delete', 'ลบ')}">×</button></td></tr>`; })) : hint(T('No lanes yet.', 'ยังไม่มีช่องจราจร'))) +
+        wfoot(T('Add lane from selection', 'เพิ่มช่องจราจรจากที่เลือก')); }, add: () => { const ids = chainOf(A.sel.m); if (!ids || !ids.length) { toast(T('Select a connected chain of elements along the lane first.', 'เลือกชิ้นส่วนที่ต่อกันตามแนวช่องจราจรก่อน'), 'bad'); return; } snap(true); const b = BRD(); b.lanes.push({ id: nextId(b.lanes, 'L'), name: T('Lane ', 'ช่องจราจร ') + (b.lanes.length + 1), a: ids, b: null, w: 0 }); changed(true); ribRefresh(); } },
+      bveh: { t: () => T('Vehicles', 'ยานพาหนะ'), def: () => ({ name: '', axles: '0:100, 1.2:100', udl: 0, dla: 0 }),
+        body: v => tblw([T('Vehicle', 'ยานพาหนะ'), T('Axles (kN @ m)', 'เพลา (kN @ m)'), T('Lane UDL', 'น้ำหนักแผ่'), 'DLA', ''], vehList().map(([id]) => { const x = BR.vehicle(A.model, id), user = !BR.VEH[id], ax = BR.variants(x)[0]; return `<tr><td><b>${esc(id)}</b><br><span class="muted small">${esc(x.name || '')}</span></td><td class="small mono">${ax.length > 6 ? ax.length + ' × ' + f(ax[0][1], 0) + ' kN, ' + T('length ', 'ยาว ') + f(ax[ax.length - 1][0], 2) + ' m' : ax.map(a => f(a[1], 1) + '@' + f(a[0], 2)).join(' · ')}${x.vary ? `<br><span class="muted">${T('gap after axle ', 'ช่องว่างหลังเพลา ')}${x.vary.after + 1}: ${x.vary.min}–${x.vary.max} m</span>` : ''}${x.unit ? `<br><span class="muted">${T('axle load set by the lane class (300/200/100 kN)', 'น้ำหนักเพลาตามลำดับช่อง (300/200/100 kN)')}</span>` : ''}</td><td class="num mono">${x.unit ? '27 / 7.5' : f(x.udl, 2)} kN/m</td><td class="num mono">${f(x.dla, 2)}${x.dlaUdl ? ' *' : ''}</td><td>${user ? `<button class="icon-btn" data-act="an-rb" data-c="bdel" data-v="vehicles:${BRD().vehicles.findIndex(q => q.id === id)}" aria-label="${T('Delete', 'ลบ')}">×</button>` : ''}</td></tr>`; })) +
+          `<p class="muted small">* ${T('DLA also applied to the lane UDL.', 'DLA ใช้กับน้ำหนักแผ่ด้วย')} ${T('Built-in vehicles follow AS 5100.2, EN 1991-2 and AASHTO; check them against the edition your project uses.', 'ยานพาหนะในระบบตาม AS 5100.2, EN 1991-2 และ AASHTO ควรตรวจสอบกับฉบับที่โครงการใช้')}</p>` +
+          `<h4>${T('New user vehicle', 'เพิ่มยานพาหนะ')}</h4><div class="an-row2">${wf('name', T('Name', 'ชื่อ'), v.name, '', 'placeholder="' + T('e.g. 10-wheel truck', 'เช่น รถ 10 ล้อ') + '"')}${wf('axles', T('Axles: offset (m) : load (kN), …', 'เพลา: ระยะ (ม.) : แรง (kN), …'), v.axles)}</div><div class="an-row2">${wf('udl', T('Lane UDL (kN/m)', 'น้ำหนักแผ่ (kN/m)'), v.udl, 'n')}${wf('dla', T('Dynamic allowance (e.g. 0.3)', 'แรงกระแทก (เช่น 0.3)'), v.dla, 'n')}</div>` + wfoot(T('Add vehicle', 'เพิ่มยานพาหนะ')),
+        add: v => { const ax = String(v.axles || '').split(/[,;]+/).map(s => s.split(':').map(Number)).filter(a => a.length === 2 && isFinite(a[0]) && isFinite(a[1])); if (!ax.length) { toast(T('Enter axles as offset:load, e.g. 0:60, 3.5:120', 'ใส่เพลาเป็น ระยะ:แรง เช่น 0:60, 3.5:120'), 'bad'); return; } snap(true); const b = BRD(), id = nextId(b.vehicles, 'V'); b.vehicles.push({ id, name: String(v.name || '').trim() || id, axles: ax, udl: +v.udl || 0, dla: +v.dla || 0, dlaUdl: false }); v.name = ''; changed(false); toast(T('Vehicle ', 'ยานพาหนะ ') + id, 'ok'); } },
+      bmlc: { t: () => T('Moving load cases', 'กรณีน้ำหนักเคลื่อนที่'), body: () => { const b = BRD(), vl = vehList(); return hint(T('Each case runs the chosen vehicles along the chosen lanes (none ticked = all lanes) and keeps the worst effect at every point, with the lane factors of the code.', 'แต่ละกรณีให้ยานพาหนะที่เลือกวิ่งตามช่องจราจรที่เลือก (ไม่เลือก = ทุกช่อง) และเก็บผลที่รุนแรงที่สุดทุกจุด ตามตัวคูณช่องจราจรของมาตรฐาน')) +
+        b.mlc.map((c, i) => `<div class="an-blk"><div class="an-row3">${fld('ID', bf('mlc.' + i + '.id', c.id))}${fld(T('Name', 'ชื่อ'), bf('mlc.' + i + '.name', c.name))}${fld(T('Code / lane factors', 'มาตรฐาน / ตัวคูณช่อง'), bsel('mlc.' + i + '.code', CODEL(), c.code))}</div><p class="muted small">${esc((BR.SCHEMES[c.code] || BR.SCHEMES.USER).name)}</p>
+          <div class="an-chks"><b class="small">${T('Vehicles', 'ยานพาหนะ')}</b>${vl.map(([id, nm]) => `<label class="chkl sm" title="${esc(nm)}"><input type="checkbox" data-bfl="mlc.${i}.veh" value="${esc(id)}" ${(c.veh || []).includes(id) ? 'checked' : ''}> ${esc(id)}</label>`).join('')}</div>
+          <div class="an-chks"><b class="small">${T('Lanes', 'ช่องจราจร')}</b>${b.lanes.map(l => `<label class="chkl sm"><input type="checkbox" data-bfl="mlc.${i}.lanes" value="${esc(l.id)}" ${(c.lanes || []).includes(l.id) ? 'checked' : ''}> ${esc(l.id)}</label>`).join('') || '—'}</div>
+          <div class="an-row3">${fld(T('DLA override (blank = vehicle value)', 'แรงกระแทก (ว่าง = ตามยานพาหนะ)'), bf('mlc.' + i + '.dla', c.dla, 'type="number" step="0.01"'))}<span></span><span class="an-f"><span>&nbsp;</span><button class="btn btn-ghost xs" data-act="an-rb" data-c="bdel" data-v="mlc:${i}">${T('Delete case', 'ลบกรณี')}</button></span></div></div>`).join('') + wfoot(T('Add moving load case', 'เพิ่มกรณี')); },
+        add: () => { snap(true); const b = BRD(), code = TCODE[A.model.std] || 'AS'; b.mlc.push({ id: nextId(b.mlc, 'ML'), name: T('Moving load ', 'น้ำหนักเคลื่อนที่ ') + (b.mlc.length + 1), code, veh: { AS: ['M1600'], EN: ['LM1'], HL93: ['HL93T', 'HL93D'] }[code] || ['M1600'], lanes: [], dla: '' }); changed(false); ribRefresh(); } },
+      bstg: { t: () => T('Construction stages', 'ขั้นตอนการก่อสร้าง'), body: () => { const b = BRD(), m = A.model; return hint(T('Stages are analysed in order on the structure built so far; results add up. A stage activates elements, applies load cases and (optionally) the self-weight of its new elements.', 'วิเคราะห์ทีละขั้นบนโครงสร้างที่สร้างแล้ว ผลรวมสะสม แต่ละขั้นเพิ่มชิ้นส่วน ใส่กรณีน้ำหนัก และ (เลือกได้) น้ำหนักตัวเองของชิ้นส่วนใหม่')) +
+        (b.stages.length ? b.stages.map((st, i) => `<div class="an-blk"><div class="an-row3">${fld(T('Stage', 'ขั้น') + ' ' + (i + 1), bf('stages.' + i + '.name', st.name))}${fld(T('Elements added', 'ชิ้นส่วนที่เพิ่ม'), `<span class="mono small">${(st.mems || []).length}</span>`)}<span class="an-f"><span>&nbsp;</span><span><button class="btn btn-ghost xs" data-act="an-rb" data-c="stgsel" data-v="${i}">${T('= selection', '= ที่เลือก')}</button> <button class="btn btn-ghost xs" data-act="an-rb" data-c="stgshow" data-v="${i}">${T('Select', 'เลือก')}</button> <button class="icon-btn" data-act="an-rb" data-c="bdel" data-v="stages:${i}" aria-label="${T('Delete', 'ลบ')}">×</button></span></span></div>
+          <div class="an-chks"><b class="small">${T('Load cases applied', 'กรณีน้ำหนักที่ใส่')}</b>${m.cases.map(c => `<label class="chkl sm"><input type="checkbox" data-bfl="stages.${i}.cases" value="${esc(c.id)}" ${(st.cases || []).includes(c.id) ? 'checked' : ''}> ${esc(c.id)}</label>`).join('')}<label class="chkl sm"><input type="checkbox" data-bf="stages.${i}.sw" ${st.sw ? 'checked' : ''}> ${T('self-weight of new elements', 'น้ำหนักตัวเองของชิ้นส่วนใหม่')}</label></div></div>`).join('') : hint(T('No stages yet.', 'ยังไม่มีขั้นตอน'))) +
+        `<p class="muted small">${T('Not yet in any stage: ', 'ยังไม่อยู่ในขั้นใด: ')}${m.members.filter(q => !b.stages.some(s => (s.mems || []).includes(q.id))).length} ${T('elements', 'ชิ้นส่วน')}</p>` + wfoot(T('Add stage from selection', 'เพิ่มขั้นจากที่เลือก')); },
+        add: () => { if (!A.sel.m.length) { toast(T('Select the elements built in this stage first.', 'เลือกชิ้นส่วนที่สร้างในขั้นนี้ก่อน'), 'bad'); return; } snap(true); const b = BRD(); b.stages.push({ id: nextId(b.stages, 'S'), name: T('Stage ', 'ขั้นที่ ') + (b.stages.length + 1), mems: A.sel.m.slice(), cases: [], sw: true }); changed(false); ribRefresh(); } },
+      bpres: { t: () => T('Prestressing tendon', 'แรงอัดล่วงหน้า'), def: () => ({ case: (A.model.cases.find(c => c.id === 'PT') || A.model.cases[0] || {}).id || '', P: 3000, e1: 0, em: 500, e2: 0, prof: 'span' }), live: ['prof'],
+        body: v => selInfo() + hint(T('Equivalent loads of a parabolic tendon: axial compression P, end moments P·e and the upward pull 8P·sag/L². Eccentricity e in mm, positive below the centroid (local −y).', 'แรงเทียบเท่าของลวดอัดแรงรูปพาราโบลา: แรงอัด P โมเมนต์ปลาย P·e และแรงยก 8P·ระยะตกท้องช้าง/L² ค่า e เป็น มม. บวกเมื่ออยู่ใต้แกนกลาง (−y)')) +
+          `<div class="an-row2">${ws('case', T('Load case', 'กรณีน้ำหนัก'), caseOpts(), v.case)}${wf('P', T('Force after losses P (kN)', 'แรงหลังสูญเสีย P (kN)'), v.P, 'n')}</div>${ws('prof', T('Profile', 'รูปทรง'), [['span', T('One parabola over the whole selected chain (e at ends, e at middle)', 'พาราโบลาเดียวตลอดชิ้นส่วนที่เลือก')], ['each', T('Same e1 / e_mid / e2 on every selected element', 'e1 / e_กลาง / e2 เท่ากันทุกชิ้น')]], v.prof)}<div class="an-row3">${wf('e1', 'e₁ (mm)', v.e1, 'n')}${wf('em', T('e at middle (mm)', 'e กลาง (mm)'), v.em, 'n')}${wf('e2', 'e₂ (mm)', v.e2, 'n')}</div>` + wfoot(T('Apply tendon', 'ใส่แรงอัด')),
+        add: v => { if (!A.sel.m.length) { toast(T('Select the elements of the tendon first.', 'เลือกชิ้นส่วนของลวดก่อน'), 'bad'); return; } if (!(+v.P)) { toast(T('Enter the tendon force.', 'ใส่แรงในลวด'), 'bad'); return; } const m = A.model, ids = v.prof === 'span' ? chainOf(A.sel.m) : A.sel.m; if (!ids) { toast(T('The selection is not one connected chain.', 'ชิ้นส่วนที่เลือกไม่ต่อเนื่องกัน'), 'bad'); return; }
+          snap(true); const nd = nodeMap(), Ls = ids.map(id => { const q = m.members.find(z => z.id === id); return Math.hypot(...sub(P3(nd[q.j]), P3(nd[q.i]))); }), Lt = Ls.reduce((a, b) => a + b, 0), e1 = +v.e1 || 0, e2 = +v.e2 || 0, em = +v.em || 0, e = x => e1 + (e2 - e1) * x / Lt + 4 * (em - (e1 + e2) / 2) * x * (Lt - x) / (Lt * Lt);
+          let s0 = 0, at = null; ids.forEach((id, k) => { const q = m.members.find(z => z.id === id); let rev; if (k === 0) { const nx = ids[1] && m.members.find(z => z.id === ids[1]); rev = !!(nx && (q.i === nx.i || q.i === nx.j) && !(q.j === nx.i || q.j === nx.j)); } else rev = q.j === at; at = rev ? q.i : q.j; const a = s0, b2 = s0 + Ls[k], ea = v.prof === 'span' ? e(a) : e1, eb = v.prof === 'span' ? e(b2) : e2, ec = v.prof === 'span' ? e((a + b2) / 2) : em; m.loads.push({ case: v.case, kind: 'pres', member: id, P: +v.P, e1: r4(rev ? eb : ea), em: r4(ec), e2: r4(rev ? ea : eb) }); s0 = b2; });
+          A.lcase = v.case; changed(true); toast(T('Tendon applied to ' + ids.length + ' element(s) in ' + v.case, 'ใส่แรงอัดให้ ' + ids.length + ' ชิ้นส่วน ในกรณี ' + v.case), 'ok'); } },
+      bset: { t: () => T('Support settlement', 'การทรุดตัวของจุดรองรับ'), def: () => ({ case: '', dz: -10, dx: 0, dy: 0 }),
+        body: v => selInfo() + hint(T('Imposed displacement of the selected supports (only restrained directions move). Downward settlement is negative Z.', 'การเคลื่อนตัวที่กำหนดของจุดรองรับที่เลือก (เฉพาะทิศที่ยึดไว้) การทรุดลงเป็น Z ลบ')) +
+          `${ws('case', T('Load case', 'กรณีน้ำหนัก'), [['', T('— new case "SET" —', '— กรณีใหม่ "SET" —')]].concat(caseOpts()), v.case)}<div class="an-row3">${['dx', 'dy', 'dz'].map(q => wf(q, q + ul('d'), v[q], 'n')).join('')}</div>` + wfoot(T('Apply settlement', 'ใส่การทรุดตัว')),
+        add: v => { if (!A.sel.n.length) { toast(T('Select the support nodes first.', 'เลือกจุดรองรับก่อน'), 'bad'); return; } snap(true); const m = A.model; let cs = v.case; if (!cs) { cs = m.cases.some(c => c.id === 'SET') ? 'SET' : 'SET'; if (!m.cases.some(c => c.id === cs)) m.cases.push(CASE(cs, 'O', false, 'Support settlement', 'การทรุดตัวของจุดรองรับ')); v.case = cs; }
+          A.sel.n.forEach(id => m.loads.push({ case: cs, kind: 'settle', node: id, dx: frU(+v.dx || 0, 'd'), dy: frU(+v.dy || 0, 'd'), dz: frU(+v.dz || 0, 'd') })); A.lcase = cs; changed(true); toast(T('Settlement applied to ' + A.sel.n.length + ' node(s) in ' + cs, 'ใส่การทรุดตัว ' + A.sel.n.length + ' จุด ในกรณี ' + cs), 'ok'); } },
+      bcomb: { t: () => T('Bridge combinations', 'การรวมน้ำหนักสะพาน'), body: () => { const b = BRD(), m = A.model; return hint(T('Static cases are added with their factors; moving-load envelopes are added on the adverse side at every point (max with max, min with min). A stage result can be the permanent part.', 'กรณีสถิตรวมตามตัวคูณ ผลน้ำหนักเคลื่อนที่รวมด้านที่รุนแรงทุกจุด (สูงสุดกับสูงสุด ต่ำสุดกับต่ำสุด) ใช้ผลขั้นตอนก่อสร้างเป็นส่วนถาวรได้')) +
+        b.bcombos.map((c, i) => `<div class="an-blk"><div class="an-row3">${fld('ID', bf('bcombos.' + i + '.id', c.id))}${fld(T('Name', 'ชื่อ'), bf('bcombos.' + i + '.name', c.name))}${fld(T('Type', 'ชนิด'), bsel('bcombos.' + i + '.type', [['ULS', 'ULS'], ['SLS', 'SLS']], c.type))}</div>
+          <div class="an-row4">${m.cases.map(cs => fld(esc(cs.id) + ' ×', bf('bcombos.' + i + '.f.' + cs.id, (c.f || {})[cs.id] || '', 'type="number" step="any"'))).join('')}${b.mlc.map(ml => fld('<b>' + esc(ml.id) + '</b> ×', bf('bcombos.' + i + '.ml.' + ml.id, (c.ml || {})[ml.id] || '', 'type="number" step="any"'))).join('')}</div>
+          <div class="an-row3">${fld(T('Plus stage result', 'บวกผลขั้นตอน'), bsel('bcombos.' + i + '.stage', [['', '—']].concat(b.stages.map(s => [s.id, s.id + ' — ' + s.name])), c.stage || ''))}<span></span><span class="an-f"><span>&nbsp;</span><button class="btn btn-ghost xs" data-act="an-rb" data-c="bdel" data-v="bcombos:${i}">${T('Delete', 'ลบ')}</button></span></div></div>`).join('') + wfoot(T('Add combination', 'เพิ่มการรวม')); },
+        add: () => { snap(true); const b = BRD(); b.bcombos.push({ id: nextId(b.bcombos, 'BC'), name: T('Combination ', 'การรวม ') + (b.bcombos.length + 1), type: 'ULS', f: { G: 1 }, ml: b.mlc[0] ? { [b.mlc[0].id]: 1 } : {} }); changed(false); ribRefresh(); } },
+      bil: { t: () => T('Influence lines', 'เส้นอิทธิพล'), body: () => { const b = BRD(), tg = A.ilT || defaultIL() || { k: 'm', mem: '', comp: 'Mz', pt: 0 }, d = ilData();
+        const memO = A.model.members.map(q => [q.id, q.id]), nodeO = A.model.nodes.filter(n => F.fixOf(n).some(Boolean)).map(n => [n.id, n.id]);
+        return `<div class="an-row3">${fld(T('Lane', 'ช่องจราจร'), sel(b.lanes.map(l => [l.id, l.id + ' — ' + (l.name || '')]), A.ilLane || (b.lanes[0] || {}).id, 'id="an-illane"'))}${fld(T('Result', 'ผลลัพธ์'), sel([['m', T('Element force', 'แรงในชิ้นส่วน')], ['r', T('Support reaction', 'แรงปฏิกิริยา')]], tg.k, 'id="an-ilk"'))}${tg.k === 'r' ? fld(T('Node', 'จุดต่อ'), sel(nodeO, tg.node, 'id="an-ilnode"')) : fld(T('Element', 'ชิ้นส่วน'), sel(memO, tg.mem, 'id="an-ilmem"'))}</div>
+          <div class="an-row3">${tg.k === 'r' ? fld(T('Component', 'องค์ประกอบ'), sel(['Rx', 'Ry', 'Rz', 'Mx', 'My', 'Mz'].map((q, i) => [i, q]), +tg.dof || 2, 'id="an-ildof"')) : fld(T('Component', 'องค์ประกอบ'), sel([['Mz', 'M_z'], ['Vy', 'V_y'], ['N', 'N'], ['My', 'M_y'], ['Vz', 'V_z'], ['T', 'T'], ['dz', T('deflection d_z', 'การโก่ง d_z')]], tg.comp, 'id="an-ilcomp"')) + fld(T('Position along element', 'ตำแหน่งบนชิ้นส่วน'), sel(Array.from({ length: 11 }, (_, i) => [i, (i / 10).toFixed(1) + ' L']), +tg.pt || 0, 'id="an-ilpt"'))}<span class="an-f"><span>&nbsp;</span><button class="btn btn-ghost xs" data-act="an-rb" data-c="ilpick">${T('Use selected', 'ใช้ที่เลือก')}</button></span></div>` +
+          (d ? ilChart(d) : hint(T('Define a lane and run the analysis.', 'กำหนดช่องจราจรแล้ววิเคราะห์'))) + wfoot('', `<button class="btn btn-hot sm" data-act="an-rb" data-c="ilshow">${T('Show on the model', 'แสดงบนแบบจำลอง')}</button>`); } }
+    });
+    WIDE.push('blanes', 'bveh', 'bmlc', 'bstg', 'bcomb', 'bil');
+    // commands of the bridge tab (called from ribCmd)
+    function bridgeCmd(c, v) {
+      const b = BRD();
+      switch (c) {
+        case 'blanes': case 'bveh': case 'bmlc': case 'bstg': case 'bpres': case 'bset': case 'bcomb': openWin(c); return true;
+        case 'bil': A.ilT = A.ilT || defaultIL(); openWin('bil'); return true;
+        case 'ilshow': if (!needRes()) return true; A.step = 'res'; A.rview = 'il'; A.drawerMin = true; A.win = null; ctx.render(); return true;
+        case 'ilpick': if (A.sel.m.length) A.ilT = Object.assign({}, A.ilT || defaultIL() || {}, { k: 'm', mem: A.sel.m[0] }); else if (A.sel.n.length) A.ilT = { k: 'r', node: A.sel.n[0], dof: 2 }; winRefresh(); redraw(); return true;
+        case 'lanesel': { const [i, w] = String(v).split(':'), l = b.lanes[+i]; if (!l) return true; if (w === 'x') { snap(true); l.b = null; l.w = 0; changed(true); winRefresh(); return true; } const ids = chainOf(A.sel.m); if (!ids || !ids.length) { toast(T('Select a connected chain of elements first.', 'เลือกชิ้นส่วนที่ต่อกันก่อน'), 'bad'); return true; } snap(true); l[w] = ids; if (w === 'b' && !(+l.w)) l.w = 0.5; changed(true); winRefresh(); return true; }
+        case 'stgsel': { const st = b.stages[+v]; if (!st) return true; if (!A.sel.m.length) { toast(T('Select elements first.', 'เลือกชิ้นส่วนก่อน'), 'bad'); return true; } snap(true); st.mems = A.sel.m.slice(); changed(false); winRefresh(); return true; }
+        case 'stgshow': { const st = b.stages[+v]; if (!st) return true; A.sel = { n: [], m: (st.mems || []).slice() }; selChanged(); return true; }
+        case 'bdel': { const [k, i] = String(v).split(':'); if (!b[k] || !b[k][+i]) return true; snap(true); b[k].splice(+i, 1); changed(true); winRefresh(); ribRefresh(); return true; }
+      }
+      return false;
+    }
+    // inputs inside bridge windows: data-bf="path.to.value", data-bfl="path.to.list" (checkbox list)
+    function bridgeInput(t) {
+      const b = BRD();
+      if (t.dataset.bfl) { const ps = t.dataset.bfl.split('.'); let o = b; for (let i = 0; i < ps.length - 1; i++) o = o[ps[i]]; const k = ps[ps.length - 1], list = new Set(o[k] || []); if (t.checked) list.add(t.value); else list.delete(t.value); snap(); o[k] = [...list]; changed(false); return true; }
+      if (!t.dataset.bf) return false;
+      const ps = t.dataset.bf.split('.'); let o = b; for (let i = 0; i < ps.length - 1; i++) { if (o[ps[i]] == null) o[ps[i]] = {}; o = o[ps[i]]; }
+      const k = ps[ps.length - 1], v = t.type === 'checkbox' ? t.checked : t.type === 'number' ? (t.value === '' ? '' : +t.value) : t.value;
+      snap(); if ((ps[0] === 'bcombos') && (ps[2] === 'f' || ps[2] === 'ml') && (v === '' || v === 0)) delete o[k]; else o[k] = v;
+      changed(false); if (ps[0] === 'mlc' && k === 'code') winRefresh(); if (k === 'id' || k === 'name') ribRefresh(); return true;
+    }
+    function ilInput(t) {
+      const id = t.id; if (!/^an-il/.test(id)) return false;
+      const tg = Object.assign({}, A.ilT || defaultIL() || { k: 'm', comp: 'Mz', pt: 0 });
+      if (id === 'an-illane') A.ilLane = t.value; else if (id === 'an-ilk') { if (t.value === 'r') { const n = A.model.nodes.find(z => F.fixOf(z).some(Boolean)); A.ilT = { k: 'r', node: n ? n.id : '', dof: 2 }; } else A.ilT = defaultIL(); winRefresh(); redraw(); return true; }
+      else if (id === 'an-ilmem') tg.mem = t.value; else if (id === 'an-ilcomp') tg.comp = t.value; else if (id === 'an-ilpt') tg.pt = +t.value; else if (id === 'an-ilnode') tg.node = t.value; else if (id === 'an-ildof') tg.dof = +t.value;
+      if (id !== 'an-illane') A.ilT = tg; winRefresh(); redraw(); return true;
+    }
+    // tree step "Bridge loads" (bridge mode)
+    function bridgePanel() {
+      const b = BRD(), r = A.bres;
+      const row = (c, lbl, n, extra) => `<button class="an-lirow an-pickrow" data-act="an-rb" data-c="${c}"><span class="an-lim">${lbl}</span><span class="an-lis">${extra || ''}</span><span class="an-lit mono">${n}</span></button>`;
+      return hint(T('Traffic lanes and vehicles give moving-load envelopes; stages, prestress, settlement and temperature are bridge effects. Everything runs with step 10.', 'ช่องจราจรและยานพาหนะให้ค่าสูงสุด/ต่ำสุดของน้ำหนักเคลื่อนที่ ขั้นตอนก่อสร้าง แรงอัดล่วงหน้า การทรุดตัว และอุณหภูมิเป็นผลเฉพาะสะพาน ทั้งหมดคำนวณเมื่อกดขั้นที่ 10')) +
+        `<div class="an-list">${row('blanes', T('Traffic lanes', 'ช่องจราจร'), b.lanes.length, b.lanes.map(l => l.id).join(', '))}${row('bveh', T('Vehicles', 'ยานพาหนะ'), Object.keys(BR.VEH).length + b.vehicles.length)}${row('bmlc', T('Moving load cases', 'กรณีน้ำหนักเคลื่อนที่'), b.mlc.length, b.mlc.map(c => c.id + ': ' + (c.veh || []).join('+')).join(' · '))}${row('bstg', T('Construction stages', 'ขั้นตอนก่อสร้าง'), b.stages.length)}${row('bpres', T('Prestress tendons', 'ลวดอัดแรง'), A.model.loads.filter(l => l.kind === 'pres').length)}${row('bset', T('Support settlements', 'การทรุดตัว'), A.model.loads.filter(l => l.kind === 'settle').length)}${row('bcomb', T('Bridge combinations', 'การรวมน้ำหนักสะพาน'), b.bcombos.length)}${row('bil', T('Influence lines', 'เส้นอิทธิพล'), '›')}</div>` +
+        (r && fresh() ? `<p class="muted small">${T('Bridge analysis: ', 'การวิเคราะห์สะพาน: ')}${Object.keys(r.ml).length} ${T('moving-load envelope(s)', 'ผลน้ำหนักเคลื่อนที่')}, ${r.st.length} ${T('stage(s)', 'ขั้นตอน')} · ${r.ms} ms</p>` : '');
     }
 
     return { view, mount, onClick, onInput, run, state: A, build, preset, TPL, migrate };

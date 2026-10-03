@@ -199,7 +199,7 @@
 
   // member loads of one load case in local coordinates, split per element
   function caseLoads(model, mesh, caseId, factor) {
-    const nodal = new Map(), byEl = new Map(), cs = model.cases.find(c => c.id === caseId) || {};
+    const nodal = new Map(), byEl = new Map(), imposed = new Map(), cs = model.cases.find(c => c.id === caseId) || {};
     const addN = (p, v) => { const o = nodal.get(p) || [0, 0, 0, 0, 0, 0]; for (let k = 0; k < 6; k++) o[k] += (v[k] || 0) * factor; nodal.set(p, o); };
     const memLoad = (rec, ld) => {
       rec.els.forEach(el => {
@@ -218,7 +218,20 @@
     const GV = { gx: [1, 0, 0], gy: [0, 1, 0], gz: [0, 0, 1], grav: [0, 0, -1], gravp: [0, 0, -1] }, LV = { lx: [1, 0, 0], ly: [0, 1, 0], lz: [0, 0, 1] };
     model.loads.filter(l => l.case === caseId).forEach(l => {
       if (l.kind === 'node') { const p = mesh.nid[l.node]; if (p !== undefined) addN(p, [+l.Fx || 0, +l.Fy || 0, +l.Fz || 0, +l.Mx || 0, +l.My || 0, +l.Mz || 0]); return; }
+      if (l.kind === 'settle') { // imposed displacement of a support (m, rad), global axes
+        const p = mesh.nid[l.node]; if (p === undefined) return;
+        ['dx', 'dy', 'dz', 'rx', 'ry', 'rz'].forEach((q, d) => { const v = (+l[q] || 0) * factor; if (v) imposed.set(6 * p + d, (imposed.get(6 * p + d) || 0) + v); });
+        return;
+      }
       const rec = mesh.mems.find(r => r.id === l.member); if (!rec) return;
+      if (l.kind === 'pres') { // prestressing tendon, parabolic in the local x–y plane; e (mm) positive towards −y (below the centroid)
+        const L = rec.L, P = (+l.P || 0) * factor, e1 = (+l.e1 || 0) / 1000, e2 = (+l.e2 || 0) / 1000, em = l.em === '' || l.em == null ? (e1 + e2) / 2 : (+l.em || 0) / 1000;
+        if (!P) return;
+        const D = em - (e1 + e2) / 2, s0 = (e2 - e1) / L + 4 * D / L, sL = (e2 - e1) / L - 4 * D / L, q = 8 * P * D / (L * L);
+        memLoad(rec, { k: 'p', a: 0, P: [P, -P * s0, 0] }); memLoad(rec, { k: 'p', a: L, P: [-P, P * sL, 0] });
+        if (!rec.truss) { memLoad(rec, { k: 'm', a: 0, M: [0, 0, P * e1] }); memLoad(rec, { k: 'm', a: L, M: [0, 0, -P * e2] }); if (q) memLoad(rec, { k: 'd', a: 0, b: L, q1: [0, q, 0], q2: [0, q, 0] }); }
+        return;
+      }
       if (l.kind === 'temp') {
         // α ΔT: uniform → axial strain; ΔTy = T(+y face) − T(−y face) over the depth, ΔTz over the width → curvature κ = −α ΔT / h
         const al = alphaOf(rec.mat), h = Math.max(1e-6, (+rec.sec.d || 300) * 1e-3), b = Math.max(1e-6, (+rec.sec.w || +rec.sec.d || 300) * 1e-3);
@@ -236,7 +249,7 @@
       } else if (l.kind === 'point') memLoad(rec, { k: 'p', a: Math.max(0, Math.min(L, +l.a || 0)), P: vec((+l.P || 0) * factor) });
       else if (l.kind === 'moment') memLoad(rec, { k: 'm', a: Math.max(0, Math.min(L, +l.a || 0)), M: vec((+l.M || 0) * factor) });
     });
-    return { nodal, byEl };
+    return { nodal, byEl, imposed };
   }
 
   // ------------------------------------------------------------------ element processing
@@ -402,6 +415,13 @@
       elData.push({ kl: pe.kl, fl, rel: pe.rel, inv: pe.inv, dofs: pe.dofs });
     });
     loadset.nodal.forEach((v, p) => { for (let d = 0; d < 6; d++) { const i = num.map[6 * p + d]; if (i >= 0) F[i] += v[d]; } });
+    // imposed displacements of restrained DOFs (support settlement): F_free −= K_free,fixed · d
+    const imp = loadset.imposed && loadset.imposed.size ? new Map([...loadset.imposed].filter(([d]) => num.map[d] < 0)) : null;
+    if (imp && imp.size) mesh.els.forEach((el, e) => {
+      const pe = prep.els[e]; if (!pe.dofs.some(d => imp.has(d))) return;
+      const Kg = toGlobalK(condense(pe.kl, new Array(12).fill(0), pe.rel).K, pe.R);
+      for (let a = 0; a < 12; a++) { const ia = num.map[pe.dofs[a]]; if (ia < 0) continue; let s = 0; for (let b = 0; b < 12; b++) { const v = imp.get(pe.dofs[b]); if (v) s += Kg[a][b] * v; } F[ia] -= s; }
+    });
     const u = new Float64Array(num.nd);
     if (num.n) {
       const uf = prep.S.solve(F);
@@ -412,6 +432,7 @@
       }
       num.free.forEach((d, i) => { u[d] = uf[i]; });
     }
+    if (imp) imp.forEach((v, d) => { u[d] = v; });
     const R = new Float64Array(num.nd);
     elData.forEach((ed, e) => {
       const Rm = prep.els[e].R, ul = toLocalV(ed.dofs.map(d => u[d]), Rm);
@@ -476,7 +497,7 @@
     const adv = opt.pdelta || opt.modes || opt.buckling;
     const meshS = adv ? build(model, opt.nseg) : null, numS = adv ? numbering(model, meshS) : null;
     const res = { cases: {}, combos: {}, warn, meshL, meshS, model };
-    const lost = model.loads.filter(l => l.kind === 'node' ? meshL.nid[l.node] === undefined : !model.members.some(q => q.id === l.member)).length;
+    const lost = model.loads.filter(l => l.kind === 'node' || l.kind === 'settle' ? meshL.nid[l.node] === undefined : !model.members.some(q => q.id === l.member)).length;
     if (lost) warn.push(lost + ' load(s) refer to a node or member that no longer exists and were ignored.');
     const noCase = model.loads.filter(l => !model.cases.some(c => c.id === l.case)).length;
     if (noCase) warn.push(noCase + ' load(s) belong to a load case that no longer exists.');
@@ -490,11 +511,12 @@
       res.cases[c.id] = Object.assign(pack(meshL, st, ls), { name: c.name });
     });
     const comboLoads = (mesh, cb) => {
-      const out = { nodal: new Map(), byEl: new Map() };
+      const out = { nodal: new Map(), byEl: new Map(), imposed: new Map() };
       Object.entries(cb.f || {}).forEach(([cid, fct]) => {
         if (!+fct || !model.cases.some(c => c.id === cid)) return; const l = caseLoads(model, mesh, cid, +fct);
         l.nodal.forEach((v, p) => { const o = out.nodal.get(p) || [0, 0, 0, 0, 0, 0]; out.nodal.set(p, o.map((x, k) => x + v[k])); });
         l.byEl.forEach((arr, el) => { out.byEl.set(el, (out.byEl.get(el) || []).concat(arr)); });
+        l.imposed.forEach((v, d) => { out.imposed.set(d, (out.imposed.get(d) || 0) + v); });
       });
       return out;
     };
@@ -639,5 +661,42 @@
     return { mem, R, n: list.length };
   }
 
-  G.FRAME = { analyse, envelope, secProps, concreteE, alphaOf, axes, SUPS, fixOf, COMP, _test: { kLocal, feq, loadsUpTo, jacobiEig, Sky, numbering, build } };
+  // paths: [{id, mems:[member ids in order]}]; returns per path the station positions and, for every station,
+  // the member results (N, Vy, Vz, T, My, Mz, dz at nps+1 points) and the reactions, for a unit load in direction dir
+  function influence(model, opt) {
+    opt = Object.assign({ ds: 0.5, nps: 10, dir: [0, 0, -1], maxSt: 400 }, opt || {});
+    const mesh = build(model, 1), num = numbering(model, mesh), prep = prepare(model, mesh, num);
+    if (!prep.ok) { const n = model.nodes[prep.at]; throw Object.assign(new Error('The structure is unstable (mechanism)' + (n ? ' at node ' + n.id : '') + ' — check supports, releases and connections.'), { code: 'unstable', node: n ? n.id : null }); }
+    const byId = {}; mesh.mems.forEach(r => { byId[r.id] = r; });
+    const NC = 7, np = opt.nps + 1, nm = mesh.mems.length, nd = num.nd;
+    const out = { comps: ['N', 'Vy', 'Vz', 'T', 'My', 'Mz', 'dz'], nps: opt.nps, memIds: mesh.mems.map(r => r.id), L: mesh.mems.map(r => r.L), nd, paths: {} };
+    (opt.paths || []).forEach(pa => {
+      const recs = (pa.mems || []).map(id => byId[id]).filter(Boolean); if (!recs.length) return;
+      // orientation of each member along the path
+      const seg = []; let at = null;
+      recs.forEach((r, k) => {
+        let rev = false;
+        if (k === 0) { const nx = recs[1]; rev = !!(nx && (r.i === nx.i || r.i === nx.j) && !(r.j === nx.i || r.j === nx.j)); }
+        else rev = r.j === at;
+        at = rev ? r.i : r.j; seg.push({ r, rev });
+      });
+      const Lt = seg.reduce((s, q) => s + q.r.L, 0), nst = Math.max(2, Math.min(opt.maxSt, Math.round(Lt / opt.ds))), ds = Lt / nst, S = [];
+      for (let k = 0; k <= nst; k++) S.push(k * ds);
+      const data = new Float32Array((nst + 1) * nm * NC * np), R = new Float32Array((nst + 1) * nd);
+      S.forEach((sv, k) => {
+        let acc = 0, q = seg[seg.length - 1], a = q.r.L; for (const sg of seg) { if (sv <= acc + sg.r.L + 1e-9) { q = sg; a = sv - acc; break; } acc += sg.r.L; }
+        const t = Math.max(0, Math.min(q.r.L, q.rev ? q.r.L - a : a)), el = q.r.els[0], loc = q.r.R.map(e => dot3(e, opt.dir));
+        const ls = { nodal: new Map(), byEl: new Map([[el, [{ k: 'p', a: t, P: loc }]]]), imposed: new Map() };
+        const st = solveWith(prep, mesh, ls); if (!st.ok) return;
+        const mr = memberResults(mesh, st, ls, opt.nps), base = k * nm * NC * np;
+        mr.forEach((m, mi) => { out.comps.forEach((c, ci) => { const arr = m[c], o = base + (mi * NC + ci) * np; for (let i = 0; i < np && i < arr.length; i++) data[o + i] = arr[i]; }); });
+        R.set(st.R, k * nd);
+      });
+      out.paths[pa.id] = { id: pa.id, S, ds, L: Lt, mems: pa.mems.slice(), data, R, nst };
+    });
+    out.x = mesh.mems.map(r => Array.from({ length: np }, (_, i) => r.L * i / opt.nps));
+    return out;
+  }
+
+  G.FRAME = { analyse, influence, envelope, secProps, concreteE, alphaOf, axes, SUPS, fixOf, COMP, _test: { kLocal, feq, loadsUpTo, jacobiEig, Sky, numbering, build } };
 })(typeof window !== 'undefined' ? window : globalThis);
