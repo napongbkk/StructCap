@@ -1286,9 +1286,10 @@
     const TCAP = 150;
     function tnode(key, ic, label, o) {
       o = o || {}; const kids = o.kids, has = !!kids, open = has && A.tx.has(key);
-      const act = o.act ? `data-act="${o.act}" ${Object.entries(o.data || {}).map(([k, v]) => `data-${k}="${esc(String(v))}"`).join(' ')}` : has ? `data-act="an-tx" data-k="${esc(key)}"` : '';
+      const d = o.data || {}, tv = o.tv || (o.act === 'an-tsel' ? d.v : o.act === 'an-step' ? 'step:' + d.s : o.act === 'an-rb' ? 'rb:' + d.c + (d.v != null ? ':' + d.v : '') : o.act === 'an-rv' ? 'rv:' + d.v : key ? 'k:' + key : '');
+      const act = tv ? `data-act="an-tpick" data-tv="${esc(tv)}"` : '';
       const cnt = o.cnt != null ? ` : <span class="an-cnt ${o.cntCls || ''}" ${o.cs ? `data-s="${o.cs}"` : ''}>${esc(String(o.cnt))}</span>` : '';
-      return `<li><div class="an-tr">${has ? `<button class="an-tx" data-act="an-tx" data-k="${esc(key)}" aria-expanded="${open}" aria-label="${open ? T('Collapse', 'ย่อ') : T('Expand', 'ขยาย')}">${open ? '−' : '+'}</button>` : '<span class="an-tx0"></span>'}<button class="an-tl2 ${o.on ? 'on' : ''} ${o.muted ? 'muted' : ''}" ${act} title="${esc(o.title || label.replace(/<[^>]+>/g, ''))}">${ic ? icon(ic) : ''}<span class="an-tlt">${label}${cnt}</span></button></div>${open ? `<ul>${typeof kids === 'function' ? kids() : kids}</ul>` : ''}</li>`;
+      return `<li><div class="an-tr">${has ? `<button class="an-tx" data-act="an-tx" data-k="${esc(key)}" aria-expanded="${open}" aria-label="${open ? T('Collapse', 'ย่อ') : T('Expand', 'ขยาย')}">${open ? '−' : '+'}</button>` : '<span class="an-tx0"></span>'}<button class="an-tl2 ${tv && A.tsel === tv ? 'on' : ''} ${o.muted ? 'muted' : ''}" ${act} title="${esc((o.title || label.replace(/<[^>]+>/g, '')) + (tv ? T(' — right-click: edit / delete', ' — คลิกขวา: แก้ไข / ลบ') : ''))}">${ic ? icon(ic) : ''}<span class="an-tlt">${label}${cnt}</span></button></div>${open ? `<ul>${typeof kids === 'function' ? kids() : kids}</ul>` : ''}</li>`;
     }
     const capList = (arr, fn) => arr.slice(0, TCAP).map(fn).join('') + (arr.length > TCAP ? `<li><div class="an-tr"><span class="an-tx0"></span><span class="muted small">… ${arr.length - TCAP} ${T('more — see the tables', 'รายการ — ดูในตาราง')}</span></div></li>` : '');
     const stepOn = k => A.step === k;
@@ -1358,10 +1359,76 @@
       const secs = [T('Model — nodes, elements, sections, materials', 'แบบจำลอง — จุดต่อ ชิ้นส่วน หน้าตัด วัสดุ'), T('Loads and combinations', 'แรงและการรวมน้ำหนัก'), T('Analysis method', 'วิธีการวิเคราะห์')].concat(m.combos.length ? [T('Results of ', 'ผลของ ') + m.combos.length + T(' combination(s)', ' การรวมน้ำหนัก')] : [], r && A.res.modal ? [T('Modal analysis', 'การวิเคราะห์โหมด')] : [], r && A.res.buckling ? [T('Elastic buckling', 'การโก่งเดาะ')] : [], BLD ? [T('Grids, stories and floor loads', 'กริด ชั้น และน้ำหนักบนพื้น'), T('Wind loads', 'แรงลม'), T('Story drift and shear', 'ดริฟต์และแรงเฉือนรายชั้น')] : [], [T('Quantity take-off', 'ปริมาณวัสดุ')]);
       return `<ul class="an-wt">${tnode('rp', 'doc', `<b>${T('Analysis report', 'รายงานการวิเคราะห์')}</b>`, { kids: secs.map(it).join('') })}</ul><div class="an-adds"><button class="btn ${pro() ? 'btn-hot' : 'btn-lock'} xs" data-act="an-report">${pro() ? T('Generate report', 'สร้างรายงาน') : '🔒 ' + T('Report (Pro)', 'รายงาน (Pro)')}</button>${r ? '' : `<span class="muted small">${T('runs the analysis first', 'จะวิเคราะห์ก่อน')}</span>`}</div>`;
     }
+    // left click: highlight (and select what it names) — no editing
+    function tPick(tv) {
+      A.tsel = tv; const [k] = tv.split(':');
+      if (['n', 'm', 'kind', 'sec', 'mat', 'sup', 'story', 'grp', 'case', 'combo'].includes(k)) { const step0 = A.step; treeClick('an-tsel', { dataset: { v: tv } }); if (A.step !== 'res') A.step = step0 === 'res' ? 'res' : A.step; return; }
+      if (k === 'rv') { A.step = 'res'; A.rview = tv.slice(3); drawAll(); }
+      sideRefresh();
+    }
+    // what a tree target edits: the step panel shown in the pop-up window
+    const KSTEP = { ctl: 'run', nod: 'node', ele: 'elem', pm: 'mat', ps: 'sec', bnd: 'sup', bs: 'sup', br: 'sup', bp: 'sup', sl: 'case', cb: 'combo', res: 'res', brg: 'brg' };
+    const KNEW = { nod: 'node', ele: 'elem', pm: 'mat', ps: 'sec', bs: 'sup', sl: 'case', cb: 'combo', pmat: 'mat', psec: 'sec' };
+    function tResolve(tv) {
+      const i = tv.indexOf(':'), k = tv.slice(0, i), id = tv.slice(i + 1);
+      if (k === 'k') { if (id.startsWith('lc:')) return tResolve('case:' + id.slice(3)); if (id.startsWith('ek:')) return tResolve('kind:' + id.slice(3)); if (id.startsWith('bs:')) return tResolve('sup:' + id.slice(3)); if (id === 'sty') return { rb: ['bstory'] }; if (id === 'grd') return { rb: ['bgrid'] }; if (id === 'bst') return { rb: ['bstg'] }; return { step: KSTEP[id], add: KNEW[id] }; }
+      if (k === 'step') return { step: id };
+      if (k === 'rb') { const [c, v] = id.split(':'); return { rb: [c, v] }; }
+      return { k, id };
+    }
+    function tEdit(tv, forceStep) {
+      const r = tResolve(tv), m = A.model, nd = nodeMap();
+      if (r.rb) { ribCmd(r.rb[0], r.rb[1]); return; }
+      let step = forceStep || r.step, title = '';
+      if (r.k === 'n') { A.sel = { n: [r.id], m: [] }; step = 'node'; title = T('Node ', 'จุดต่อ ') + r.id; }
+      else if (r.k === 'm') { A.sel = { n: [], m: [r.id] }; step = 'elem'; title = T('Element ', 'ชิ้นส่วน ') + r.id; }
+      else if (r.k === 'kind') { A.sel = { n: [], m: m.members.filter(q => memKind(q, nd) === r.id).map(q => q.id) }; step = 'elem'; title = A.sel.m.length + T(' elements', ' ชิ้นส่วน'); }
+      else if (r.k === 'sec') { OPEN.sec = r.id; step = 'sec'; title = T('Section ', 'หน้าตัด ') + r.id; }
+      else if (r.k === 'mat') { OPEN.mat = r.id; step = 'mat'; title = T('Material ', 'วัสดุ ') + r.id; }
+      else if (r.k === 'sup') { A.sel = { n: m.nodes.filter(n => F.fixOf(n).some(Boolean) && (n.sup || 'custom') === r.id).map(n => n.id), m: [] }; step = 'sup'; title = T('Supports', 'จุดรองรับ'); }
+      else if (r.k === 'case') { A.lcase = r.id; A.loadsOn = true; syncLshow(); step = forceStep || 'case'; title = (step === 'load' ? T('Loads in ', 'แรงในกรณี ') : T('Load case ', 'กรณีน้ำหนัก ')) + r.id; }
+      else if (r.k === 'combo') { OPEN.combo = r.id; step = 'combo'; title = T('Combination ', 'การรวมน้ำหนัก ') + r.id; }
+      else if (r.k === 'story') { goStory(r.id); return; }
+      else if (r.k === 'grp') { tPick(tv); return; }
+      else if (r.k === 'rv') { tPick(tv); return; }
+      if (!step) { toast(T('Nothing to edit here — expand it with +.', 'ไม่มีให้แก้ไข — กด + เพื่อขยาย'), ''); return; }
+      const st = STEPS().find(q => q[0] === step);
+      A.tedit = { step, title: title || (st ? st[1] : step) }; if (A.step !== 'res' && step !== 'res') A.step = step;
+      selChanged(); openWin('tedit'); redraw();
+    }
+    function tDel(tv) {
+      const r = tResolve(tv), m = A.model, nd = nodeMap(), ask = q => (G.confirm ? G.confirm(q) : true);
+      if (r.k === 'n' || r.k === 'm' || r.k === 'kind') {
+        const sel = r.k === 'n' ? { n: [r.id], m: [] } : r.k === 'm' ? { n: [], m: [r.id] } : { n: [], m: m.members.filter(q => memKind(q, nd) === r.id).map(q => q.id) };
+        if (sel.m.length > 1 && !ask(T('Delete ' + sel.m.length + ' elements?', 'ลบ ' + sel.m.length + ' ชิ้นส่วน?'))) return;
+        A.sel = sel; deleteSel(); A.tsel = null; toast(T('Deleted — Ctrl+Z to undo', 'ลบแล้ว — Ctrl+Z เพื่อย้อนกลับ'), ''); return;
+      }
+      if (r.k === 'sec' || r.k === 'mat') { const tb = r.k === 'sec' ? 'sections' : 'materials', used = m.members.filter(q => q[r.k] === r.id).length; if (used) { toast(T(r.id + ' is used by ' + used + ' element(s) — assign another one first.', r.id + ' ใช้กับ ' + used + ' ชิ้นส่วน — เปลี่ยนเป็นรายการอื่นก่อน'), 'bad'); return; } snap(true); m[tb] = m[tb].filter(q => q.id !== r.id); A.tsel = null; changed(true); toast(r.id + T(' deleted', ' ถูกลบ'), ''); return; }
+      if (r.k === 'sup') { const ns = m.nodes.filter(n => F.fixOf(n).some(Boolean) && (n.sup || 'custom') === r.id); if (!ask(T('Remove ' + ns.length + ' support(s)?', 'ยกเลิกจุดรองรับ ' + ns.length + ' จุด?'))) return; snap(true); ns.forEach(n => { n.sup = 'free'; delete n.fix; }); A.tsel = null; changed(true); return; }
+      if (r.k === 'case') { if (!ask(T('Delete load case ' + r.id + ' and its loads?', 'ลบกรณีน้ำหนัก ' + r.id + ' และแรงทั้งหมดในกรณีนี้?'))) return; snap(true); m.cases = m.cases.filter(c => c.id !== r.id); m.loads = m.loads.filter(l => l.case !== r.id); m.combos.forEach(c => { if (c.f) delete c.f[r.id]; }); if (A.lcase === r.id) A.lcase = (m.cases[0] || {}).id || ''; A.tsel = null; changed(true); return; }
+      if (r.k === 'combo') { snap(true); m.combos = m.combos.filter(c => c.id !== r.id); A.tsel = null; changed(true); return; }
+      if (r.k === 'grp') { snap(true); (m.groups || []).splice(+r.id, 1); A.tsel = null; changed(false); sideRefresh(); return; }
+      toast(T('This item cannot be deleted from the tree.', 'ลบรายการนี้จากผังไม่ได้'), '');
+    }
+    function tNew(tv) { const r = tResolve(tv), k = r.add || ({ n: 'node', m: 'elem', kind: 'elem', sec: 'sec', mat: 'mat', sup: 'sup', case: 'case', combo: 'combo' })[r.k]; if (k) openWin(k); }
+    function tCtxMenu(tv, x, y) {
+      const r = tResolve(tv), del = ['n', 'm', 'kind', 'sec', 'mat', 'sup', 'case', 'combo', 'grp'].includes(r.k), nw = r.add || ({ n: 1, m: 1, kind: 1, sec: 1, mat: 1, sup: 1, case: 1, combo: 1 })[r.k];
+      const edit = r.rb || r.step || ['n', 'm', 'kind', 'sec', 'mat', 'sup', 'case', 'combo', 'story'].includes(r.k);
+      const items = [];
+      if (edit) items.push(['edit', r.k === 'story' ? T('Show plan', 'แสดงแปลน') : r.rb ? T('Open…', 'เปิด…') : T('Edit…', 'แก้ไข…')]);
+      if (r.k === 'case') items.push(['loads', T('Edit loads…', 'แก้ไขแรง…')]);
+      if (nw) items.push(['new', T('New…', 'เพิ่มใหม่…')]);
+      if (r.step === 'run') items.push(['run', T('Run analysis', 'วิเคราะห์')]);
+      if (del) items.push(['sep'], ['del', T('Delete', 'ลบ')]);
+      if (!items.length) return;
+      const h = $('#anRibMenu'); if (!h) return; A.ribMenu = 'ctx';
+      const left = Math.max(6, Math.min(x, innerWidth - 200)), top = Math.max(6, Math.min(y, innerHeight - 40 * items.length - 10));
+      h.innerHTML = `<div class="an-rmenu an-ctx" role="menu" style="left:${left}px;top:${top}px">${items.map(([c, l]) => (c === 'sep' ? '<hr>' : `<button role="menuitem" data-act="an-tctx" data-c="${c}" data-tv="${esc(tv)}" class="${c === 'del' ? 'danger' : ''}"><i>${c === 'edit' ? '✎' : c === 'del' ? '🗑' : c === 'new' ? '+' : c === 'run' ? '▶' : c === 'loads' ? '↓' : ''}</i>${esc(l)}</button>`)).join('')}</div>`;
+    }
     function treeHTML() {
       const tab = A.stab || 'works', tabs = [['tables', T('Tables', 'ตาราง')], ['works', T('Works', 'งาน')], ['group', T('Group', 'กลุ่ม')], ['report', T('Report', 'รายงาน')]];
       const st = STEPS().find(q => q[0] === A.step), stl = st ? st[1] : A.step === 'std' ? T('Design standard', 'มาตรฐานการออกแบบ') : '';
-      const det = tab === 'works' && A.step ? `<div class="an-det" id="anDet"><div class="an-dethead">${icon('params')}<b>${stl}</b><span class="grow"></span><button class="icon-btn" data-act="an-step" data-s="${A.step}" data-close="1" aria-label="${T('Close', 'ปิด')}">×</button></div><div class="an-panel">${panel(A.step)}</div></div>` : '';
+      const det = false ? `<div class="an-det" id="anDet"><div class="an-dethead">${icon('params')}<b>${stl}</b><span class="grow"></span><button class="icon-btn" data-act="an-step" data-s="${A.step}" data-close="1" aria-label="${T('Close', 'ปิด')}">×</button></div><div class="an-panel">${panel(A.step)}</div></div>` : '';
       return `<nav class="an-tree" aria-label="${T('Main menu', 'เมนูหลัก')}"><div class="an-treehead">${T('MAIN MENU', 'เมนูหลัก')}${BRG ? `<span class="an-modechip">${T('BRIDGE', 'สะพาน')}</span>` : BLD ? `<span class="an-modechip">${T('BUILDING', 'อาคาร')}</span>` : ''}<span class="grow"></span><button class="an-stdchip" data-act="an-rb" data-c="gostd" title="${T('Design standard — change it in the ribbon: Structure › Design Standard', 'มาตรฐานการออกแบบ — เปลี่ยนได้ที่ริบบอน: โครงสร้าง › มาตรฐาน')}">${icon('book')}${esc(A.model.std)} · ${esc(T(stdInfo(A.model.std).name[0], stdInfo(A.model.std).name[1]))}</button></div>
         <div class="an-stabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" data-act="an-stab" data-t="${k}" aria-selected="${tab === k}">${l}</button>`).join('')}</div>
         <div class="an-wtree">${tab === 'works' ? worksTree() : tab === 'tables' ? tablesTab() : tab === 'group' ? groupTab() : reportTab()}</div>${det}</nav>`;
@@ -1369,6 +1436,8 @@
     // clicks in the tree: expand / collapse, select, groups
     function treeClick(a, b) {
       const m = A.model;
+      if (a === 'an-tpick') { const tv = b.dataset.tv, now = Date.now(); if (A._lastPick && A._lastPick.tv === tv && now - A._lastPick.t < 450) { A._lastPick = null; tEdit(tv); return true; } A._lastPick = { tv, t: now }; tPick(tv); return true; }
+      if (a === 'an-tctx') { closeMenu(); const c = b.dataset.c, tv = b.dataset.tv; if (c === 'edit') tEdit(tv); else if (c === 'loads') tEdit(tv, 'load'); else if (c === 'del') tDel(tv); else if (c === 'new') tNew(tv); else if (c === 'run') doRun(); return true; }
       if (a === 'an-tx') { const k = b.dataset.k; if (A.tx.has(k)) A.tx.delete(k); else A.tx.add(k); sideRefresh(); return true; }
       if (a === 'an-stab') { A.stab = b.dataset.t; sideRefresh(); return true; }
       if (a === 'an-grp') {
@@ -1395,7 +1464,7 @@
       return true;
     }
     function updCounts() { STEPS().forEach(([k, , c]) => { const e = document.querySelector('.an-cnt[data-s="' + k + '"]'); if (e) { e.textContent = String(c); e.classList.toggle('ok', (k === 'run' || k === 'res') && fresh()); } }); }
-    function sideRefresh() { const s = $('#anSide'); if (!s) return; const sc = s.scrollTop; s.innerHTML = treeHTML(); s.scrollTop = sc; }
+    function sideRefresh() { const s = $('#anSide'); if (!s) return; const sc = s.scrollTop; s.innerHTML = treeHTML(); s.scrollTop = sc; if (A.win && A.win.k === 'tedit') { const ae = document.activeElement, typing = ae && ae.closest && ae.closest('#anWin') && /INPUT|TEXTAREA/.test(ae.tagName) && ae.type !== 'checkbox'; if (!typing) { const wb = $('#anWin .an-winbody'), ws0 = wb ? wb.scrollTop : 0; winRefresh(); const wb2 = $('#anWin .an-winbody'); if (wb2) wb2.scrollTop = ws0; } } }
     function panel(k) {
       const m = A.model, d = stdInfo(m.std);
       if (k === 'std') return hint(T('Choose the design standard first. It sets the concrete and steel grades (step 1), the steel section tables (step 2) and the load combination rules (step 8).', 'เลือกมาตรฐานก่อน มาตรฐานจะกำหนดชั้นคุณภาพคอนกรีตและเหล็ก (ขั้นที่ 1) ตารางหน้าตัดเหล็ก (ขั้นที่ 2) และกฎการรวมน้ำหนัก (ขั้นที่ 8)')) +
@@ -1663,6 +1732,7 @@
       if (!keyBound) {
         keyBound = true;
         document.addEventListener('click', e => { A.lastEv = e; }, true);
+        document.addEventListener('contextmenu', e => { if (S.view !== VIEW) return; const t = e.target.closest && e.target.closest('.an-wt .an-tl2[data-tv]'); if (!t) return; e.preventDefault(); const tv = t.dataset.tv; if (A.tsel !== tv) tPick(tv); tCtxMenu(tv, e.clientX, e.clientY); });
         document.addEventListener('mousedown', e => { if (A.ribMenu && !(e.target.closest && (e.target.closest('.an-rmenu') || e.target.closest('[data-m]')))) closeMenu(); });
         G.addEventListener('resize', () => closeMenu());
         document.addEventListener('dragstart', e => { const t = e.target.closest && e.target.closest('[data-dnd]'); if (!t || S.view !== VIEW) return; A.dnd = t.dataset.dnd; try { e.dataTransfer.setData('text/plain', A.dnd); e.dataTransfer.effectAllowed = 'copy'; } catch (er) { } document.body.classList.add('an-dragging'); });
@@ -3046,6 +3116,7 @@
       } }
     });
     WIDE.push('bgrid', 'bstory', 'bfloor', 'bwind', 'bstr', 'qto');
+    RW.tedit = { t: () => (A.tedit ? A.tedit.title : T('Edit', 'แก้ไข')), body: () => `<div class="an-panel an-tedit">${A.tedit ? panel(A.tedit.step) : ''}</div>` + wfoot('') };
     // inputs: data-bk (m.bld path), data-bg (grids), data-bs (stories), data-qo (take-off options)
     function bldInput(t) {
       if (t.id === 'an-src2') { A.src = t.value; const bb = $('#bstrBody'); if (bb) bb.innerHTML = storyResHTML(current()); drawAll(); return true; }

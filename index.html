@@ -971,6 +971,11 @@ body.an-resizing,body.an-resizing *{cursor:ns-resize!important;user-select:none!
 .an-dethead{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--line);background:var(--card);font-size:13px}
 .an-dethead .an-ic{width:15px;height:15px;color:var(--acc)}
 .an-det>.an-panel{padding:8px}
+
+.an-win[data-k=tedit]{width:min(580px,calc(100vw - 20px))}
+.an-win[data-k=tedit] .an-winbody{max-height:min(74vh,700px);overflow:auto}
+.an-ctx{min-width:180px}
+.an-ctx button.danger{color:var(--bad,#dc2626)}
 </style>
 <title>StructCap</title>
 <meta name="description" content="StructCap — structural design and analysis: RC beams, columns and pile caps to Eurocode 2 (EN 1992-1-1:2023), AS 3600:2018 and the Thai EIT standard.">
