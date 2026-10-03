@@ -801,11 +801,6 @@
           ['bridge', bridgeIcon(), T('Bridge', 'สะพาน'), T('Girder decks, box girders, truss, arch and cable-stayed bridges under moving traffic loads.', 'สะพานคาน คานกล่อง โครงถัก โค้ง และขึงเคเบิล ภายใต้น้ำหนักจราจรเคลื่อนที่'), ['AS 5100 · EN 1991-2 · HL-93', T('Influence lines', 'เส้นอิทธิพล'), T('Construction stages', 'ขั้นตอนก่อสร้าง'), T('Prestress', 'แรงอัดล่วงหน้า')]]
         ].map(([v, ic, t, d, ch]) => `<button class="an-appc" data-act="nav" data-v="${v}">${ic}<b>${t}</b><span class="muted small">${d}</span><span class="an-chips">${ch.map(c => `<i>${c}</i>`).join('')}</span><span class="pick-go">${T('Open →', 'เปิด →')}</span></button>`).join('')}</div>
       </section>
-      <section class="menu-box box-analysis box-qto">
-        <div class="menu-hd"><span class="menu-n">3</span><div><p class="eyebrow">${T('Quantity take-off', 'ถอดปริมาณวัสดุ')}</p><h2>${T('Quantities from the 3D model', 'ปริมาณวัสดุจากแบบจำลอง 3 มิติ')}</h2><p class="muted">${T('Concrete volume, formwork area, reinforcement and structural steel tonnage — by story, element type and section — with unit rates for a cost estimate and CSV export.', 'ปริมาตรคอนกรีต พื้นที่แบบหล่อ เหล็กเสริม และน้ำหนักเหล็กรูปพรรณ — แยกตามชั้น ชนิดชิ้นส่วน และหน้าตัด — พร้อมราคาต่อหน่วยเพื่อประมาณราคา และส่งออก CSV')}</p></div></div>
-        <div class="an-entry an-qto">${qtoIcon()}<div class="an-entry-tx"><b>${T('Open the take-off of a model', 'เปิดการถอดปริมาณของแบบจำลอง')}</b><span class="an-chips">${[T('Concrete m³', 'คอนกรีต ลบ.ม.'), T('Formwork m²', 'แบบหล่อ ตร.ม.'), T('Rebar t', 'เหล็กเสริม ตัน'), T('Steel t', 'เหล็กรูปพรรณ ตัน'), T('By story', 'ตามชั้น'), T('Cost estimate', 'ประมาณราคา'), 'CSV'].map(c => `<i>${c}</i>`).join('')}</span></div>
-          <span class="an-qbtns">${[['building', T('Building model', 'แบบจำลองอาคาร')], ['analysis', T('3D frame model', 'แบบจำลองโครง 3 มิติ')], ['bridge', T('Bridge model', 'แบบจำลองสะพาน')]].map(([v, l]) => `<button class="btn btn-ghost sm" data-act="nav" data-v="${v}" data-qto="1">${l} →</button>`).join('')}</span></div>
-      </section>
     </main>`;
   }
   // Line-sketch icons in drafting style: ink outlines, accent for loads / struts
