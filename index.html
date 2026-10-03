@@ -936,6 +936,41 @@ body.an-resizing,body.an-resizing *{cursor:ns-resize!important;user-select:none!
 .an-win[data-k=bgrid],.an-win[data-k=bstory],.an-win[data-k=bfloor],.an-win[data-k=bwind],.an-win[data-k=bstr],.an-win[data-k=qto]{width:min(860px,calc(100vw - 20px))}
 .an-win[data-k=bgrid] .an-winbody,.an-win[data-k=bstory] .an-winbody,.an-win[data-k=bfloor] .an-winbody,.an-win[data-k=bwind] .an-winbody,.an-win[data-k=bstr] .an-winbody,.an-win[data-k=qto] .an-winbody{max-height:min(76vh,720px);overflow:auto}
 .an-win .tabs.sm{margin:6px 0}
+
+/* side tree — MIDAS "Works" style */
+.an-tree{grid-template-columns:minmax(0,1fr)}.an-tree>*{min-width:0}
+.an-stabs{display:flex;gap:2px;border-bottom:1px solid var(--line2);margin:2px 0 6px;padding:0 4px}
+.an-stabs button{font:600 12.5px system-ui,sans-serif;padding:5px 11px;border:1px solid transparent;border-bottom:0;border-radius:6px 6px 0 0;background:none;color:var(--muted);margin-bottom:-1px;cursor:pointer}
+.an-stabs button[aria-selected=true]{background:var(--card);color:var(--ink);border-color:var(--line2)}
+.an-stabs button:hover{color:var(--ink)}
+.an-wtree{padding:0 2px 6px;font-size:13px}
+.an-wt,.an-wt ul{list-style:none;margin:0;padding:0}
+.an-wt ul{margin-left:5px;padding-left:14px;border-left:1px dotted var(--conc-line,#aab4c6)}
+.an-wt li{position:relative}
+.an-wt ul>li::before{content:'';position:absolute;left:-14px;top:11.5px;width:12px;border-top:1px dotted var(--conc-line,#aab4c6)}
+.an-wt ul>li:last-child::after{content:'';position:absolute;left:-15px;top:12px;bottom:0;width:3px;background:var(--card)}
+.an-tr{display:flex;align-items:center;gap:3px;min-height:23px;min-width:0}
+.an-tl2{overflow:hidden;flex:0 1 auto}
+.an-tx{position:relative;z-index:1;width:11px;height:11px;flex:none;display:grid;place-items:center;padding:0;border:1px solid var(--muted);border-radius:2px;background:var(--card);color:var(--ink);font:600 11px/1 ui-monospace,monospace;cursor:pointer}
+.an-tx:hover{border-color:var(--blue);color:var(--blue)}
+.an-tx0{width:11px;flex:none}
+.an-tl2{display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;border:1px solid transparent;background:none;padding:1px 5px;border-radius:4px;font:inherit;color:var(--ink);cursor:pointer;text-align:left;white-space:nowrap}
+.an-tl2 .an-tlt{overflow:hidden;text-overflow:ellipsis}
+.an-tl2:not([data-act]){cursor:default}
+.an-tl2[data-act]:hover{background:color-mix(in srgb,var(--blue) 9%,transparent)}
+.an-tl2.on{background:color-mix(in srgb,var(--blue) 15%,transparent);border:1px dotted var(--blue)}
+.an-tl2.nohov{cursor:default}
+.an-tl2 .an-ic{width:16px;height:16px;color:var(--blue)}
+.an-tl2 .an-cnt{font:inherit;font-variant-numeric:tabular-nums;background:none;padding:0;color:inherit;border:0}
+.an-tl2 .an-cnt.ok{color:var(--ok)}
+.an-tl2 .muted{color:var(--muted)}
+.an-tl2 .mono{font-family:var(--f-mono);font-size:11.5px}
+.an-grpin{width:110px;padding:1px 5px;font-size:12.5px;border:1px solid var(--line2);border-radius:4px;background:var(--card);color:var(--ink)}
+.an-tr .an-cnt{font-size:11.5px;color:var(--muted)}
+.an-det{margin-top:8px;border:1px solid var(--line2);border-radius:10px;background:var(--bg);overflow:hidden}
+.an-dethead{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--line);background:var(--card);font-size:13px}
+.an-dethead .an-ic{width:15px;height:15px;color:var(--acc)}
+.an-det>.an-panel{padding:8px}
 </style>
 <title>StructCap</title>
 <meta name="description" content="StructCap — structural design and analysis: RC beams, columns and pile caps to Eurocode 2 (EN 1992-1-1:2023), AS 3600:2018 and the Thai EIT standard.">
