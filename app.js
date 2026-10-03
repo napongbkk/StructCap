@@ -436,10 +436,11 @@
   // ------------------------------------------------------------------ toast
   function toast(msg, tone) {
     const t = document.createElement('div'); t.className = 'toast ' + (tone || ''); t.textContent = msg; t.setAttribute('role', 'status');
-    $('#toasts').appendChild(t); setTimeout(() => t.classList.add('out'), 3200); setTimeout(() => t.remove(), 3700);
+    const box = $('#toasts'); while (box.children.length >= 3) box.firstChild.remove(); box.appendChild(t); setTimeout(() => t.classList.add('out'), 3200); setTimeout(() => t.remove(), 3700);
   }
 
   // ------------------------------------------------------------------ navigation
+  const ANV = ['analysis', 'building', 'bridge'];
   function go(view, patch) { Object.assign(S, patch || {}); S.view = view; S.codePop = false; S.reportOpen = false; render(); window.scrollTo(0, 0); }
   function saveSession() { ss.set('srcSession', { role: S.role, user: S.user }); }
   function logout() { S.role = 'guest'; S.user = null; ss.del('srcSession'); ss.del('scAdminToken'); ss.del('scUserToken'); A.loaded = false; go('landing'); toast(T('Signed out', 'ออกจากระบบแล้ว')); }
@@ -793,12 +794,17 @@
             <span class="pick-go">${locked ? T('Sign in with Pro to unlock', 'เข้าสู่ระบบ Pro เพื่อใช้งาน') : T('Open designer →', 'เปิดหน้าออกแบบ →')}</span></button>`;
       }).join('')}</div></div></div>` : ''}
       <section class="menu-box box-analysis">
-        <div class="menu-hd"><span class="menu-n">2</span><div><p class="eyebrow">${T('Structural analysis', 'วิเคราะห์โครงสร้าง')}</p><h2>${T('3D frame & truss analysis', 'วิเคราะห์โครงข้อแข็งและโครงถัก 3 มิติ')}</h2><p class="muted">${T('Build the model step by step — standard, materials, sections, nodes, elements, supports, loads and combinations — then analyse and read the results in 3D.', 'สร้างแบบจำลองทีละขั้น — มาตรฐาน วัสดุ หน้าตัด จุดต่อ ชิ้นส่วน จุดรองรับ แรง และการรวมน้ำหนัก — แล้ววิเคราะห์และดูผลใน 3 มิติ')}</p></div></div>
-        <button class="an-entry" data-act="nav" data-v="analysis">${analysisIcon()}<div class="an-entry-tx"><b>${T('Open 3D analysis', 'เปิดหน้าวิเคราะห์ 3 มิติ')}</b><span class="an-chips">${[T('AS · Eurocode · Thai EIT', 'AS · Eurocode · วสท.'), T('Linear static', 'สถิตเชิงเส้น'), 'P-Delta', T('Modal', 'โหมด'), T('Buckling', 'การโก่งเดาะ'), T('Envelopes', 'ค่าสูงสุด/ต่ำสุด'), T('Results → RC design', 'ผล → ออกแบบ RC')].map(c => `<i>${c}</i>`).join('')}</span></div><span class="pick-go">${T('Open →', 'เปิด →')}</span></button>
+        <div class="menu-hd"><span class="menu-n">2</span><div><p class="eyebrow">${T('Structural analysis', 'วิเคราะห์โครงสร้าง')}</p><h2>${T('3D analysis — frames, buildings and bridges', 'วิเคราะห์ 3 มิติ — โครงข้อแข็ง อาคาร และสะพาน')}</h2><p class="muted">${T('Three apps on one finite-element engine, each with a ribbon, model tree, 3D view, load combinations to AS, Eurocode or Thai EIT, and a calculation report.', 'สามแอปบนเครื่องคำนวณไฟไนต์เอลิเมนต์เดียวกัน มีริบบอน ผังแบบจำลอง มุมมอง 3 มิติ การรวมน้ำหนักตาม AS, Eurocode หรือ วสท. และรายงานการคำนวณ')}</p></div></div>
+        <div class="an-apps">${[
+          ['analysis', analysisIcon(), T('3D frame & truss', 'โครงข้อแข็งและโครงถัก 3 มิติ'), T('Any frame, truss or grillage: nodes and elements, supports, releases, loads and combinations.', 'โครงข้อแข็ง โครงถัก หรือกริลเลจ: จุดต่อ ชิ้นส่วน จุดรองรับ การปลดแรง น้ำหนัก และการรวมน้ำหนัก'), [T('Linear static', 'สถิตเชิงเส้น'), 'P-Delta', T('Modal', 'โหมด'), T('Buckling', 'การโก่งเดาะ'), T('Results → RC design', 'ผล → ออกแบบ RC')]],
+          ['building', buildingIcon(), T('Building design', 'อาคาร'), T('Grid lines and stories, draw columns, beams and slabs on plan, floor loads by tributary area, automatic wind, story drift.', 'เส้นกริดและชั้น วาดเสา คาน แผ่นพื้นบนแปลน น้ำหนักบนพื้นตามพื้นที่รับ แรงลมอัตโนมัติ ดริฟต์รายชั้น'), [T('Grids & stories', 'กริดและชั้น'), T('Floor loads', 'น้ำหนักบนพื้น'), T('Wind AS · EN · DPT 1311-50', 'ลม AS · EN · มยผ. 1311-50'), T('Rigid diaphragm', 'ไดอะแฟรมแข็ง'), T('Story drift', 'ดริฟต์')]],
+          ['bridge', bridgeIcon(), T('Bridge', 'สะพาน'), T('Girder decks, box girders, truss, arch and cable-stayed bridges under moving traffic loads.', 'สะพานคาน คานกล่อง โครงถัก โค้ง และขึงเคเบิล ภายใต้น้ำหนักจราจรเคลื่อนที่'), ['AS 5100 · EN 1991-2 · HL-93', T('Influence lines', 'เส้นอิทธิพล'), T('Construction stages', 'ขั้นตอนก่อสร้าง'), T('Prestress', 'แรงอัดล่วงหน้า')]]
+        ].map(([v, ic, t, d, ch]) => `<button class="an-appc" data-act="nav" data-v="${v}">${ic}<b>${t}</b><span class="muted small">${d}</span><span class="an-chips">${ch.map(c => `<i>${c}</i>`).join('')}</span><span class="pick-go">${T('Open →', 'เปิด →')}</span></button>`).join('')}</div>
       </section>
-      <section class="menu-box box-analysis box-bridge">
-        <div class="menu-hd"><span class="menu-n">3</span><div><p class="eyebrow">${T('Bridge analysis', 'วิเคราะห์สะพาน')}</p><h2>${T('3D bridge analysis', 'วิเคราะห์สะพาน 3 มิติ')}</h2><p class="muted">${T('Girder decks, box girders, truss, arch and cable-stayed bridges — moving traffic loads, influence lines, construction stages, prestress, settlement and temperature.', 'สะพานคานหลายตัว คานกล่อง โครงถัก โค้ง และขึงด้วยเคเบิล — น้ำหนักจราจรเคลื่อนที่ เส้นอิทธิพล ขั้นตอนการก่อสร้าง แรงอัดล่วงหน้า การทรุดตัว และอุณหภูมิ')}</p></div></div>
-        <button class="an-entry" data-act="nav" data-v="bridge">${bridgeIcon()}<div class="an-entry-tx"><b>${T('Open bridge analysis', 'เปิดหน้าวิเคราะห์สะพาน')}</b><span class="an-chips">${['AS 5100 M1600 / S1600', 'EN 1991-2 LM1', 'AASHTO HL-93 · HS20', T('Influence lines', 'เส้นอิทธิพล'), T('Construction stages', 'ขั้นตอนการก่อสร้าง'), T('Prestress · settlement', 'แรงอัดล่วงหน้า · การทรุดตัว')].map(c => `<i>${c}</i>`).join('')}</span></div><span class="pick-go">${T('Open →', 'เปิด →')}</span></button>
+      <section class="menu-box box-analysis box-qto">
+        <div class="menu-hd"><span class="menu-n">3</span><div><p class="eyebrow">${T('Quantity take-off', 'ถอดปริมาณวัสดุ')}</p><h2>${T('Quantities from the 3D model', 'ปริมาณวัสดุจากแบบจำลอง 3 มิติ')}</h2><p class="muted">${T('Concrete volume, formwork area, reinforcement and structural steel tonnage — by story, element type and section — with unit rates for a cost estimate and CSV export.', 'ปริมาตรคอนกรีต พื้นที่แบบหล่อ เหล็กเสริม และน้ำหนักเหล็กรูปพรรณ — แยกตามชั้น ชนิดชิ้นส่วน และหน้าตัด — พร้อมราคาต่อหน่วยเพื่อประมาณราคา และส่งออก CSV')}</p></div></div>
+        <div class="an-entry an-qto">${qtoIcon()}<div class="an-entry-tx"><b>${T('Open the take-off of a model', 'เปิดการถอดปริมาณของแบบจำลอง')}</b><span class="an-chips">${[T('Concrete m³', 'คอนกรีต ลบ.ม.'), T('Formwork m²', 'แบบหล่อ ตร.ม.'), T('Rebar t', 'เหล็กเสริม ตัน'), T('Steel t', 'เหล็กรูปพรรณ ตัน'), T('By story', 'ตามชั้น'), T('Cost estimate', 'ประมาณราคา'), 'CSV'].map(c => `<i>${c}</i>`).join('')}</span></div>
+          <span class="an-qbtns">${[['building', T('Building model', 'แบบจำลองอาคาร')], ['analysis', T('3D frame model', 'แบบจำลองโครง 3 มิติ')], ['bridge', T('Bridge model', 'แบบจำลองสะพาน')]].map(([v, l]) => `<button class="btn btn-ghost sm" data-act="nav" data-v="${v}" data-qto="1">${l} →</button>`).join('')}</span></div>
       </section>
     </main>`;
   }
@@ -846,7 +852,13 @@
       ${[46, 52, 58, 64].map(y => `<path d="M26 ${y}l12 -4M82 ${y}l12 -4" class="ln-thin"/>`).join('')}</svg>`;
   }
   function bridgeIcon() {
-    return `<svg class="an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M4 50h112" class="ln"/><path d="M14 50V40M106 50V40" class="ln"/><path d="M14 40 Q60 6 106 40" class="ln" fill="none"/>${[26, 38, 50, 60, 70, 82, 94].map(x => { const y = 40 - 34 * (1 - Math.pow((x - 60) / 46, 2)); return `<path d="M${x} ${y.toFixed(1)}V50" class="ln-thin"/>`; }).join('')}<path d="M40 64V50M80 64V50" class="ln"/><path d="M34 68h12M74 68h12" class="ln-thin"/><path d="M52 34l6-6 6 6" class="acc" fill="none"/></svg>`;
+    return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M4 50h112" class="ln"/><path d="M14 50V40M106 50V40" class="ln"/><path d="M14 40 Q60 6 106 40" class="ln" fill="none"/>${[26, 38, 50, 60, 70, 82, 94].map(x => { const y = 40 - 34 * (1 - Math.pow((x - 60) / 46, 2)); return `<path d="M${x} ${y.toFixed(1)}V50" class="ln-thin"/>`; }).join('')}<path d="M40 64V50M80 64V50" class="ln"/><path d="M34 68h12M74 68h12" class="ln-thin"/><path d="M52 34l6-6 6 6" class="ln-acc"/></svg>`;
+  }
+  function buildingIcon() {
+    return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M6 66h108" class="ln"/>${[0, 1, 2, 3].map(k => `<path d="M${22 + k * 4} ${62 - k * 14}h${64 - k * 0}" class="ln"/>`).join('')}${[22, 54, 86].map(x => `<path d="M${x} 66V${66 - 4 * 14 - 2}" class="ln"/>`).join('')}<path d="M86 66l20-10V8L86 18M106 8L86 18H22l20-10h64" class="ln-thin"/><path d="M96 9v50M74 8v52" class="ln-dash"/><g class="ln-acc"><path d="M4 22h12M4 34h12M4 46h12"/><path d="M12 19l4 3-4 3M12 31l4 3-4 3M12 43l4 3-4 3"/></g></svg>`;
+  }
+  function qtoIcon() {
+    return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M14 58l30-14 30 14-30 14z" class="ln-thin"/><path d="M14 58V30l30-14 30 14v28M44 44V16M14 30l30 14 30-14" class="ln"/><rect x="84" y="10" width="30" height="40" rx="3" class="ln"/><path d="M90 20h18M90 28h18M90 36h12" class="ln-thin"/><path d="M90 44h18" class="ln-acc"/></svg>`;
   }
   function analysisIcon() {
     return `<svg class="ei ei-an" viewBox="0 0 120 72" aria-hidden="true"><path d="M10 26h100" class="ln"/><path d="M12 26l-5 8h10zM60 26l-5 8h10zM108 26l-5 8h10z" class="ln"/>
@@ -1642,7 +1654,7 @@
         pdf.text('Page ' + (i + 1) + ' of ' + n, 210 - mm.r, 297 - mm.b + 8.5, { align: 'right' });
       }
       const blob = pdf.output('blob');
-      const name = S.view === 'analysis' || S.view === 'bridge' ? (S.meta.ref || S.view).replace(/[^\w\-]+/g, '_') + '_frame-analysis_' + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
+      const name = ANV.includes(S.view) ? (S.meta.ref || S.view).replace(/[^\w\-]+/g, '_') + '_frame-analysis_' + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
       if (dl) await dl.save({ filename: name, data: blob }); else pdf.save(name);
       toast(T('PDF saved', 'บันทึก PDF แล้ว'), 'ok');
     } catch (e) {
@@ -1844,16 +1856,16 @@
     else if (S.view === 'home') root.innerHTML = viewHome() + siteFoot();
     else if (S.view === 'design') { root.innerHTML = viewDesign() + siteFoot(); compute(); }
     else if (S.view === 'admin') { root.innerHTML = viewAdmin() + siteFoot(); if (S.role === 'admin') { adminSubscribe(); adminBody(); } }
-    else if (S.view === 'analysis' || S.view === 'bridge') { const an = anUI(S.view); if (!an) { S.view = 'home'; root.innerHTML = viewHome() + siteFoot(); return; } root.innerHTML = navBar() + an.view(); an.mount(); }
+    else if (ANV.includes(S.view)) { const an = anUI(S.view); if (!an) { S.view = 'home'; root.innerHTML = viewHome() + siteFoot(); return; } root.innerHTML = navBar() + an.view(); an.mount(); }
   }
 
   // ------------------------------------------------------------------ ANALYSIS (frame.js engine + analysis.js page)
   let AN = null; const AN2 = {};
   function anUI(view) {
-    view = view === 'bridge' ? 'bridge' : 'analysis';
+    view = ANV.includes(view) ? view : 'analysis';
     if (!AN2[view]) {
-      if (!window.SC_ANALYSIS_UI || !window.FRAME || (view === 'bridge' && !window.BRIDGE)) return null;
-      AN2[view] = window.SC_ANALYSIS_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, toDesign, mode: view === 'bridge' ? 'bridge' : 'frame', viewName: view });
+      if (!window.SC_ANALYSIS_UI || !window.FRAME || (view === 'bridge' && !window.BRIDGE) || (view === 'building' && !window.BUILDING)) return null;
+      AN2[view] = window.SC_ANALYSIS_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, toDesign, mode: view === 'bridge' ? 'bridge' : view === 'building' ? 'building' : 'frame', viewName: view });
     }
     AN = AN2[view];
     window.SC_AN = AN; // handy for checking a model from the browser console
@@ -1883,9 +1895,9 @@
   document.addEventListener('click', ev => {
     const b = ev.target.closest('[data-act]'); if (!b) return;
     const a = b.dataset.act;
-    if (a.startsWith('an-') && (S.view === 'analysis' || S.view === 'bridge') && AN) { AN.onClick(a, b); return; }
+    if (a.startsWith('an-') && ANV.includes(S.view) && AN) { AN.onClick(a, b); return; }
     if (a === 'lang') { if (A.edit) syncModalDraft(); const wasReport = S.reportOpen; setLang(b.dataset.l); if (wasReport && S.view === 'design') { S.reportOpen = true; renderReport(); } }
-    else if (a === 'nav') { const v = b.dataset.v; if ((v === 'home' || v === 'codes' || v === 'analysis' || v === 'bridge') && S.role === 'guest') { S.role = 'free'; saveSession(); } go(v); }
+    else if (a === 'nav') { const v = b.dataset.v; if ((v === 'home' || v === 'codes' || ANV.includes(v)) && S.role === 'guest') { S.role = 'free'; saveSession(); } go(v); if (b.dataset.qto && ANV.includes(v)) setTimeout(() => { const an = anUI(v); if (an && an.openQto) an.openQto(); }, 30); }
     else if (a === 'scroll') { const t = document.getElementById(b.dataset.t); if (t) t.scrollIntoView({ behavior: 'smooth' }); }
     else if (a === 'free') { if (S.role === 'guest') { S.role = 'free'; saveSession(); } go('home'); }
     else if (a === 'logout') logout();
@@ -1937,7 +1949,7 @@
   });
   document.addEventListener('input', ev => {
     const t = ev.target;
-    if ((S.view === 'analysis' || S.view === 'bridge') && AN && t.closest('.an') && AN.onInput(t)) return;
+    if (ANV.includes(S.view) && AN && t.closest('.an') && AN.onInput(t)) return;
     if (t.dataset.k && S.view === 'design') {
       const v = inp(), fd = SCHEMA[S.elem].find(x => x.k === t.dataset.k);
       v[t.dataset.k] = t.value;

@@ -223,7 +223,8 @@
         ['dx', 'dy', 'dz', 'rx', 'ry', 'rz'].forEach((q, d) => { const v = (+l[q] || 0) * factor; if (v) imposed.set(6 * p + d, (imposed.get(6 * p + d) || 0) + v); });
         return;
       }
-      const rec = mesh.mems.find(r => r.id === l.member); if (!rec) return;
+      if (!mesh.byId) mesh.byId = new Map(mesh.mems.map(r => [r.id, r]));
+      const rec = mesh.byId.get(l.member); if (!rec) return;
       if (l.kind === 'pres') { // prestressing tendon, parabolic in the local x–y plane; e (mm) positive towards −y (below the centroid)
         const L = rec.L, P = (+l.P || 0) * factor, e1 = (+l.e1 || 0) / 1000, e2 = (+l.e2 || 0) / 1000, em = l.em === '' || l.em == null ? (e1 + e2) / 2 : (+l.em || 0) / 1000;
         if (!P) return;
@@ -302,7 +303,7 @@
     const starts = Array.from({ length: np }, (_, i) => i).sort((a, b) => deg[a] - deg[b]);
     starts.forEach(s0 => {
       if (seen[s0]) return; seen[s0] = 1; const q = [s0];
-      for (let h = 0; h < q.length; h++) { const p = q[h]; order.push(p); adj[p].filter(x => !seen[x]).sort((a, b) => deg[a] - deg[b]).forEach(x => { seen[x] = 1; q.push(x); }); }
+      for (let h = 0; h < q.length; h++) { const p = q[h]; order.push(p); adj[p].filter(x => !seen[x]).sort((a, b) => deg[a] - deg[b]).forEach(x => { if (seen[x]) return; seen[x] = 1; q.push(x); }); /* parallel elements list a neighbour twice */ }
     });
     order.reverse();
     const map = new Int32Array(nd).fill(-1), free = [], nodeFirst = new Int32Array(np).fill(-1);

@@ -5,8 +5,8 @@
   'use strict';
   G.SC_ANALYSIS_UI = function (ctx) {
     const { T, esc, f, $, S, toast, isPro, COPY, logoMark, today } = ctx;
-    const MODE = ctx.mode === 'bridge' ? 'bridge' : 'frame', VIEW = ctx.viewName || 'analysis', BRG = MODE === 'bridge', BR = G.BRIDGE;
-    const F = G.FRAME, KEY = BRG ? 'structcap.bridge.v1' : 'structcap.analysis.v3', OLD = BRG ? 'structcap.bridge.v0' : 'structcap.analysis.v2', FREE_MEMBERS = 80, HEAVY_PTS = 1500;
+    const MODE = ctx.mode === 'bridge' ? 'bridge' : ctx.mode === 'building' ? 'building' : 'frame', VIEW = ctx.viewName || 'analysis', BRG = MODE === 'bridge', BLD = MODE === 'building', BR = G.BRIDGE, BD = G.BUILDING;
+    const F = G.FRAME, KEY = BRG ? 'structcap.bridge.v1' : BLD ? 'structcap.building.v1' : 'structcap.analysis.v3', OLD = BRG ? 'structcap.bridge.v0' : BLD ? 'structcap.building.v0' : 'structcap.analysis.v2', FREE_MEMBERS = 80, HEAVY_PTS = 1500;
     const lsGet = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
     const lsSet = v => { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch (e) { } };
     const clone = o => JSON.parse(JSON.stringify(o));
@@ -15,8 +15,8 @@
     const UPRE = { SI: { F: 'kN', L: 'm', T: 'C' }, SImm: { F: 'N', L: 'mm', T: 'C' }, MKS: { F: 'tf', L: 'm', T: 'C' }, MKScm: { F: 'kgf', L: 'cm', T: 'C' }, US: { F: 'kip', L: 'ft', T: 'F' } };
     const UU = () => { try { return (A.opt && A.opt.u) || UPRE.SI; } catch (e) { return UPRE.SI; } };
     const dU = () => (UU().L === 'ft' || UU().L === 'in' ? ['in', 0.0254] : ['mm', 1e-3]);
-    const ufac = q => { const u = UU(), Fq = UF[u.F] || 1, Lq = UL[u.L] || 1; return q === 'L' ? Lq : q === 'F' ? Fq : q === 'w' || q === 'kL' ? Fq / Lq : q === 'M' || q === 'kR' ? Fq * Lq : q === 'd' ? dU()[1] : q === 'T' ? UT[u.T] || 1 : q === 'al' ? 1 / (UT[u.T] || 1) : q === 'g' ? Fq / (Lq * Lq * Lq) : 1; };
-    const ulab = q => { const u = UU(), M = u.F === 'kN' && u.L === 'm' ? 'kNm' : u.F + '·' + u.L; return { L: u.L, F: u.F, w: u.F + '/' + u.L, kL: u.F + '/' + u.L, M, kR: M + '/rad', d: dU()[0], T: '°' + u.T, al: '×10⁻⁶/°' + u.T, g: u.F + '/' + u.L + '³' }[q] || ''; };
+    const ufac = q => { const u = UU(), Fq = UF[u.F] || 1, Lq = UL[u.L] || 1; return q === 'L' ? Lq : q === 'F' ? Fq : q === 'w' || q === 'kL' ? Fq / Lq : q === 'M' || q === 'kR' ? Fq * Lq : q === 'd' ? dU()[1] : q === 'T' ? UT[u.T] || 1 : q === 'al' ? 1 / (UT[u.T] || 1) : q === 'g' ? Fq / (Lq * Lq * Lq) : q === 'p' ? Fq / (Lq * Lq) : 1; };
+    const ulab = q => { const u = UU(), M = u.F === 'kN' && u.L === 'm' ? 'kNm' : u.F + '·' + u.L; return { L: u.L, F: u.F, w: u.F + '/' + u.L, kL: u.F + '/' + u.L, M, kR: M + '/rad', d: dU()[0], T: '°' + u.T, al: '×10⁻⁶/°' + u.T, g: u.F + '/' + u.L + '³', p: u.F === 'kN' && u.L === 'm' ? 'kPa' : u.F + '/' + u.L + '²' }[q] || ''; };
     const toU = (v, q) => v / ufac(q), frU = (v, q) => v * ufac(q);
     const uv = (v, q) => (v === '' || v == null ? v : Number(toU(+v, q).toPrecision(10)));
     const udp = q => { const u = UU(); if (q === 'F') return { N: 0, kgf: 0 }[u.F] === 0 ? 0 : 2; if (q === 'M' || q === 'w') return u.F === 'N' || u.F === 'kgf' ? 0 : 2; if (q === 'L') return { m: 3, cm: 1, mm: 0, ft: 3, in: 2 }[u.L]; if (q === 'd') return 2; return 2; };
@@ -86,13 +86,21 @@
       cable: { n: ['Cable-stayed', 'สะพานขึงด้วยเคเบิล'], p: { main: 120, side: 60, pylon: 45, spacing: 10, width: 12 } },
       blank: { n: ['Empty bridge model', 'โมเดลสะพานว่าง'], p: {} }
     };
+    const BLDTPL = {
+      rc: { n: ['RC frame building', 'อาคารโครงข้อแข็ง คสล.'], p: { bx: '8, 8, 8', by: '7, 7', st: '4, 3x3.5', col: '500x500', beam: '300x600', t: 150, sdl: 1.5, ll: 3, roof: 0.25, wind: 'on' } },
+      steel: { n: ['Steel frame building', 'อาคารโครงเหล็ก'], p: { bx: '9, 9, 9', by: '7.5, 7.5', st: '4.2, 2x3.8', t: 130, sdl: 1, ll: 3, roof: 0.25, wind: 'on' } },
+      tower: { n: ['RC tower (10 storeys)', 'อาคารสูง คสล. (10 ชั้น)'], p: { bx: '7, 7, 7, 7', by: '7, 7, 7', st: '4.5, 9x3.3', col: '700x700', beam: '350x650', t: 200, sdl: 2, ll: 3, roof: 0.25, wind: 'on' } },
+      blank: { n: ['Grids and stories only', 'กริดและชั้นเท่านั้น'], p: { bx: '6, 6, 6', by: '6, 6', st: '3x3.5', t: 150, sdl: 1.5, ll: 3, wind: 'on' } }
+    };
     if (BRG) { Object.keys(TPL).forEach(k => { delete TPL[k]; }); Object.assign(TPL, BTPL); }
+    if (BLD) { Object.keys(TPL).forEach(k => { delete TPL[k]; }); Object.assign(TPL, BLDTPL); }
     const blankModel = (std, name, plane, secs, mats, cases) => ({ std, name, plane: plane || '', nodes: [], members: [], sections: secs, materials: mats, cases, loads: [], combos: [], code: stdInfo(std).combo });
     const GQ = () => [CASE('G', 'G', true, 'Dead', 'น้ำหนักบรรทุกคงที่'), CASE('Q', 'Q', false, 'Live', 'น้ำหนักบรรทุกจร')];
     const udl = (cs, member, w, dir) => ({ case: cs, kind: 'udl', member, dir: dir || 'grav', w1: r4(w), w2: '', a: '', b: '' });
     const nload = (cs, node, o) => Object.assign({ case: cs, kind: 'node', node, Fx: 0, Fy: 0, Fz: 0, Mx: 0, My: 0, Mz: 0 }, o);
     function build(kind, p, std) {
       if (BRG && BTPL[kind]) return buildBridge(kind, p, std);
+      if (BLD && BLDTPL[kind]) return buildBuilding(kind, p, std);
       std = STDS.includes(std) ? std : 'AS';
       const D = DEFS[std], CM = concMat(std, D.conc), SM = steelMat(std, D.steel), TM = steelMat(std, D.tube);
       const num = s => String(s).split(/[,\s]+/).map(Number).filter(v => v > 0);
@@ -297,6 +305,43 @@
       }
       return m;
     }
+    // ---- building module: lists like "4, 3.5x4" or "4@3.5", grid labels A, B, … Z, AA
+    const numR = s => { const out = []; String(s == null ? '' : s).split(/[,;\s]+/).forEach(t => { let q; if ((q = t.match(/^(\d+)@([\d.]+)$/))) for (let i = 0; i < Math.min(200, +q[1]); i++) out.push(+q[2]); else if ((q = t.match(/^(\d+)[x×*]([\d.]+)$/))) for (let i = 0; i < Math.min(200, +q[1]); i++) out.push(+q[2]); else if (+t > 0) out.push(+t); }); return out; };
+    const dims2 = (s, d) => { const q = String(s || '').split(/[x×*\s]+/).map(Number).filter(v => v > 0); return q.length >= 2 ? q.slice(0, 2) : q.length === 1 ? [q[0], q[0]] : d; };
+    const GLAB = i => { let s = ''; i++; while (i > 0) { const r = (i - 1) % 26; s = String.fromCharCode(65 + r) + s; i = Math.floor((i - 1) / 26); } return s; };
+    const cumul = a => a.reduce((o, v) => { o.push(r4(o[o.length - 1] + v)); return o; }, [0]);
+    const STEELB = { AS: [['UC', '310UC118'], ['UB', '460UB67.1']], EC: [['HEB', 'HEB 300'], ['IPE', 'IPE 450']], TH: [['H', 'H 350×350'], ['H', 'H 450×200']] };
+    function buildBuilding(kind, p, std) {
+      std = STDS.includes(std) ? std : 'AS';
+      const D = DEFS[std], steel = kind === 'steel', CM = concMat(std, D.conc), SM = steelMat(std, D.steel);
+      const cd = dims2(p.col, [500, 500]), bd = dims2(p.beam, [300, 600]), sb = STEELB[std];
+      const secs = steel ? [Object.assign(stdSec('COL', sb[0][0], sb[0][1]), { name: sb[0][1] + T(' column', ' เสา') }), Object.assign(stdSec('BM', sb[1][0], sb[1][1]), { name: sb[1][1] + T(' beam', ' คาน') })]
+        : [{ id: 'COL', name: cd[0] + '×' + cd[1] + T(' RC column', ' เสา คสล.'), type: 'rect', b: cd[0], h: cd[1] }, { id: 'BM', name: bd[0] + '×' + bd[1] + T(' RC beam', ' คาน คสล.'), type: 'rect', b: bd[0], h: bd[1] }];
+      const wind = p.wind !== 'off', cases = GQ().concat(wind ? [CASE('WX', 'W', false, 'Wind +X', 'ลม +X'), CASE('WY', 'W', false, 'Wind +Y', 'ลม +Y'), CASE('WXN', 'W', false, 'Wind −X', 'ลม −X'), CASE('WYN', 'W', false, 'Wind −Y', 'ลม −Y')] : []);
+      const m = blankModel(std, '', '', secs, steel ? [SM, CM] : [CM], cases), b = BD.bld(m);
+      const xs = cumul(numR(p.bx).length ? numR(p.bx) : [6]), ys = cumul(numR(p.by).length ? numR(p.by) : [6]), zs = cumul(numR(p.st).length ? numR(p.st) : [3.5]);
+      b.gx = xs.map((x, i) => ({ id: GLAB(i), x })); b.gy = ys.map((y, i) => ({ id: String(i + 1), y }));
+      b.stories = zs.map((z, k) => ({ id: k === 0 ? 'Base' : k === zs.length - 1 && k > 1 ? 'Roof' : 'L' + k, z }));
+      b.floor = { dl: 'G', ll: 'Q', sw: true, mat: CM.id, way: 'auto' }; b.dsec = { col: 'COL', beam: 'BM' };
+      b.slabP = { t: +p.t || (steel ? 130 : 150), sdl: p.sdl === '' || p.sdl == null ? 1.5 : +p.sdl, ll: p.ll === '' || p.ll == null ? 3 : +p.ll };
+      b.wind = BD.windDefaults(std); b.wind.on = wind; b.dia = true;
+      if (kind !== 'blank') {
+        const nx = xs.length, ny = ys.length, id = (i, j, k) => 'N' + (k * nx * ny + j * nx + i + 1);
+        zs.forEach((z, k) => ys.forEach((y, j) => xs.forEach((x, i) => m.nodes.push({ id: id(i, j, k), x, y, z, sup: k ? 'free' : 'fixed' }))));
+        let c = 0, bb = 0, s = 0; const mat = steel ? SM.id : CM.id;
+        for (let k = 1; k < zs.length; k++) {
+          ys.forEach((y, j) => xs.forEach((x, i) => m.members.push({ id: 'C' + (++c), i: id(i, j, k - 1), j: id(i, j, k), sec: 'COL', mat, type: 'frame', beta: 0 })));
+          ys.forEach((y, j) => { for (let i = 0; i < nx - 1; i++) m.members.push({ id: 'B' + (++bb), i: id(i, j, k), j: id(i + 1, j, k), sec: 'BM', mat, type: 'frame', beta: 0 }); });
+          xs.forEach((x, i) => { for (let j = 0; j < ny - 1; j++) m.members.push({ id: 'B' + (++bb), i: id(i, j, k), j: id(i, j + 1, k), sec: 'BM', mat, type: 'frame', beta: 0 }); });
+          const roof = k === zs.length - 1 && zs.length > 2;
+          for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) b.slabs.push({ id: 'S' + (++s), st: b.stories[k].id, x0: xs[i], x1: xs[i + 1], y0: ys[j], y1: ys[j + 1], t: b.slabP.t, sdl: b.slabP.sdl, ll: roof ? +p.roof || 0 : b.slabP.ll, way: 'auto' });
+        }
+      }
+      m.combos = preset(m.code, m.cases);
+      m.name = T(BLDTPL[kind] ? BLDTPL[kind].n[0] : 'Building', BLDTPL[kind] ? BLDTPL[kind].n[1] : 'อาคาร');
+      BD.sync(m);
+      return m;
+    }
     function migrate(o) {
       if (!o || !o.nodes) return null;
       if (o.nodes.some(n => n.z !== undefined)) return o;
@@ -323,10 +368,10 @@
     const VIEWS = { '3d': [-PI / 2 - 0.72, 0.42], plan: [-PI / 2, PI / 2], xz: [-PI / 2, 0], yz: [0, 0] };
     const initStd = ({ EC2: 'EC', EC: 'EC', TH: 'TH', AS: 'AS' })[S.codeSel || S.code] || 'AS';
     const A = {
-      model: saved && saved.model ? saved.model : BRG ? build('girder', TPL.girder.p, initStd) : build('building', TPL.building.p, initStd),
+      model: saved && saved.model ? saved.model : BRG ? build('girder', TPL.girder.p, initStd) : BLD ? build('rc', TPL.rc.p, initStd) : build('building', TPL.building.p, initStd),
       opt: Object.assign({ pdelta: false, modes: false, nmodes: 6, buckling: false, nseg: 4, massG: 1, massQ: 0.3, snap: 0.5, u: { F: 'kN', L: 'm', T: 'C' } }, saved && saved.opt || {}),
       step: 'mat', rview: 'Mz', src: null, sel: { n: [], m: [] }, tool: 'select', draw: null, mode: 0, labels: true, loadsOn: false, dscale: 1,
-      res: null, err: null, errNode: null, tpl: BRG ? 'girder' : 'building', tplOpen: false, rtab: 'sum', lcase: 'G', cut: 'all', cb: null, ss: null,
+      res: null, err: null, errNode: null, tpl: BRG ? 'girder' : BLD ? 'rc' : 'building', tplOpen: false, rtab: 'sum', lcase: 'G', cut: 'all', cb: null, ss: null,
       cam: { v: '3d', yaw: VIEWS['3d'][0], pitch: VIEWS['3d'][1], k: null, t: [0, 0, 0] }, hist: [], fut: [], ver: 0, resVer: -1, hover: null, mouse: null, box: null
     };
     if (!STDS.includes(A.model.std)) A.model.std = 'AS';
@@ -352,7 +397,9 @@
         if (!pro() && m.members.length > FREE_MEMBERS) throw new Error(T('The Free plan analyses up to ' + FREE_MEMBERS + ' elements. Upgrade to Pro for larger models.', 'แพ็กเกจ Free วิเคราะห์ได้ไม่เกิน ' + FREE_MEMBERS + ' ชิ้นส่วน อัปเกรดเป็น Pro สำหรับโมเดลที่ใหญ่กว่า'));
         const o = A.opt, go = pro();
         const mass = {}; m.cases.forEach(c => { if (c.type === 'G') mass[c.id] = +o.massG || 0; else if (c.type === 'Q') mass[c.id] = +o.massQ || 0; });
-        A.res = F.analyse(m, { pdelta: go && o.pdelta, modes: go && o.modes ? Math.max(1, Math.min(20, o.nmodes | 0)) : 0, buckling: go && o.buckling, nseg: Math.max(2, Math.min(10, o.nseg | 0)), massSrc: mass });
+        if (BLD) { const sy = BD.sync(m); A.bldWarn = sy.warn; }
+        A.res = F.analyse(BLD ? BD.expand(m) : m, { pdelta: go && o.pdelta, modes: go && o.modes ? Math.max(1, Math.min(20, o.nmodes | 0)) : 0, buckling: go && o.buckling, nseg: Math.max(2, Math.min(10, o.nseg | 0)), massSrc: mass });
+        if (BLD) { BD.stripRes(A.res); (A.bldWarn || []).forEach(w => A.res.warn.push(w)); }
         A.bres = null;
         if (BRG && m.bridge) { try { A.bres = BR.run(m, A.res); A.bres.warn.forEach(w => A.res.warn.push(w)); } catch (e) { A.res.warn.push(T('Bridge analysis: ', 'การวิเคราะห์สะพาน: ') + (e.message || e)); } }
         if (!A.src || !srcList().some(s => s[0] === A.src)) A.src = BRG && A.bres && Object.keys(A.bres.bc).length ? 'bc:' + Object.keys(A.bres.bc)[0] : m.combos.length ? 'combo:' + m.combos[0].id : 'case:' + m.cases[0].id;
@@ -362,7 +409,7 @@
     }
     const fresh = () => !!A.res && A.resVer === A.ver;
     const curView = () => (A.step === 'res' && fresh() ? A.rview : 'model');
-    function changed(side) { A.ver++; persist(); redraw(); updCounts(); if (side) sideRefresh(); const u = $('#anRib [data-c=undo]'), r = $('#anRib [data-c=redo]'); if (u) u.disabled = !A.hist.length; if (r) r.disabled = !A.fut.length; }
+    function changed(side) { A.ver++; if (BLD && A.model.bld) { try { A.bldWarn = BD.sync(A.model).warn; } catch (e) { A.bldWarn = [String(e.message || e)]; } } persist(); redraw(); updCounts(); if (side) sideRefresh(); const u = $('#anRib [data-c=undo]'), r = $('#anRib [data-c=redo]'); if (u) u.disabled = !A.hist.length; if (r) r.disabled = !A.fut.length; }
 
     // ------------------------------------------------------------------ results
     const COMPS = [['N', 'N', 'kN'], ['Vy', 'V<sub>y</sub>', 'kN'], ['Vz', 'V<sub>z</sub>', 'kN'], ['T', 'T', 'kNm'], ['My', 'M<sub>y</sub>', 'kNm'], ['Mz', 'M<sub>z</sub>', 'kNm']];
@@ -404,15 +451,17 @@
       return { r, u: cross(r, [-d[0], -d[1], -d[2]]), d };
     }
     const cutAxis = () => ({ plan: 'z', xz: 'y', yz: 'x' }[A.cam.v] || null);
-    function levels() { const ax = cutAxis(); if (!ax) return []; const s = new Set(A.model.nodes.map(n => r4(+n[ax] || 0))); return [...s].sort((a, b) => a - b); }
+    function levels() { const ax = cutAxis(); if (!ax) return []; const s = new Set(A.model.nodes.map(n => r4(+n[ax] || 0))); if (BLD && ax === 'z' && A.model.bld) A.model.bld.stories.forEach(q => s.add(r4(q.z))); return [...s].sort((a, b) => a - b); }
     function nodeVisible(n) { if (A.hidN && A.hidN.has(n.id)) return false; const ax = cutAxis(); if (!ax || A.cut === 'all') return true; return Math.abs((+n[ax] || 0) - +A.cut) < 1e-3; }
     function setView(v) { const [y, p] = VIEWS[v]; Object.assign(A.cam, { v, yaw: y, pitch: p, k: null }); A.cut = 'all'; }
     function fit(W, H) {
-      const c = A.cam, B = basis(c), ns = A.model.nodes.filter(nodeVisible);
+      const c = A.cam, B = basis(c), ns = A.model.nodes.filter(nodeVisible).map(P3);
+      // a building fits its grid lines and stories too (so an empty grid is visible)
+      if (BLD && A.model.bld && A.model.bld.gx.length && A.model.bld.gy.length) { const bd = A.model.bld, X = bd.gx.map(g => g.x), Y = bd.gy.map(g => g.y), st = bd.stories.map(q => q.z), zs = A.cut !== 'all' && cutAxis() === 'z' ? [+A.cut] : st.length ? [Math.min(...st), Math.max(...st)] : [0]; [Math.min(...X), Math.max(...X)].forEach(x => [Math.min(...Y), Math.max(...Y)].forEach(y => zs.forEach(z => ns.push([x, y, z])))); }
       if (!ns.length) { c.t = [0, 0, 0]; c.k = Math.min(W, H) / 14; return; }
       let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-      ns.forEach(n => { const p = P3(n), a = dot(p, B.r), b = dot(p, B.u); x0 = Math.min(x0, a); x1 = Math.max(x1, a); y0 = Math.min(y0, b); y1 = Math.max(y1, b); });
-      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, ctr = ns.reduce((s, n) => addv(s, P3(n), 1 / ns.length), [0, 0, 0]);
+      ns.forEach(p => { const a = dot(p, B.r), b = dot(p, B.u); x0 = Math.min(x0, a); x1 = Math.max(x1, a); y0 = Math.min(y0, b); y1 = Math.max(y1, b); });
+      const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, ctr = ns.reduce((s, p) => addv(s, p, 1 / ns.length), [0, 0, 0]);
       const dd = dot(ctr, B.d); c.t = addv(addv(addv([0, 0, 0], B.r, cx), B.u, cy), B.d, dd);
       c.k = Math.min((W - 110) / Math.max(x1 - x0, 1), (H - 120) / Math.max(y1 - y0, 1), 400);
     }
@@ -420,6 +469,7 @@
     function screenToWorld(x, y, W, H) { const c = A.cam, B = basis(c); return addv(addv(c.t.slice(), B.r, (x - W / 2) / c.k), B.u, (H / 2 - y) / c.k); }
     function planePoint(x, y, W, H) {
       const ax = cutAxis(); if (!ax) return null;
+      if (BLD && ax === 'z' && A.model.bld) return gridSnap(x, y, W, H).p;
       const p = screenToWorld(x, y, W, H), i = { x: 0, y: 1, z: 2 }[ax], sn = +A.opt.snap > 0 ? +A.opt.snap : 0;
       p[i] = A.cut === 'all' ? 0 : +A.cut;
       return p.map((v, k) => (k === i || !sn ? r4(v) : r4(Math.round(v / sn) * sn)));
@@ -449,7 +499,9 @@
       // structural grid on the base plane / elevation plane
       const xs = [...new Set(m.nodes.map(n => r4(+n.x || 0)))], ys = [...new Set(m.nodes.map(n => r4(+n.y || 0)))], zs = [...new Set(m.nodes.map(n => r4(+n.z || 0)))];
       const mm = a => [Math.min(...a), Math.max(...a)], pad = Math.max(1, 0.06 * ext);
-      if ((rep || A.grid !== false) && xs.length && xs.length < 60 && ys.length < 60) {
+      const bldO = BLD && m.bld ? { g, P, pal, line, text, rep, W, H } : null, bldGrid = bldO && (m.bld.gx.length || m.bld.gy.length);
+      if (bldGrid) { drawBld(Object.assign({ stage: 'grid' }, bldO)); }
+      else if ((rep || A.grid !== false) && xs.length && xs.length < 60 && ys.length < 60) {
         const [x0, x1] = mm(xs), [y0, y1] = mm(ys), [z0, z1] = mm(zs), v = c.v;
         g.save(); g.globalAlpha = 0.9;
         if (v === 'xz') { const yy = A.cut === 'all' ? y0 : +A.cut; xs.forEach(x => line(P([x, yy, z0 - pad]), P([x, yy, z1 + pad]), pal.grid, 1, [4, 4])); zs.forEach(z => line(P([x0 - pad, yy, z]), P([x1 + pad, yy, z]), pal.grid, 1, [4, 4])); }
@@ -460,6 +512,7 @@
       // members
       const scr = { n: [], m: [] }, resMode = view !== 'model', solidOn = !!A.solid && !resMode && !rep;
       const RED = '#dc2626'; let nBad = 0;
+      if (bldO && view === 'model') drawBld(Object.assign({ stage: 'slabs' }, bldO));
       if (solidOn) drawSolid();
       m.members.forEach(mb => {
         const a = nd[mb.i], b = nd[mb.j]; if (!a || !b) return;
@@ -498,7 +551,7 @@
       });
       if (BRG && view === 'model' && !rep && A.showLanes !== false) drawLanesOn(g, P, pal);
       // loads
-      if (view === 'model' && (A.loadsOn || rep)) drawLoads(o.lcase || A.lcase || 'all');
+      if (view === 'model' && (A.loadsOn || rep)) { drawLoads(o.lcase || A.lcase || 'all'); if (BLD && o.lcase !== '__none') drawSlabLoads({ P, text, pal, g, notes }, o.lcase || A.lcase || 'all'); }
       // local axes of selected members
       if (!rep && ((selM.size && selM.size <= 24) || A.allAxes)) m.members.forEach(mb => {
         if (!(A.allAxes ? memVis(mb) : selM.has(mb.id))) return; const a = nd[mb.i], b = nd[mb.j]; if (!a || !b) return;
@@ -512,6 +565,7 @@
         if (rep || A.lblN !== false) m.nodes.forEach(n => { if (!visN.has(n.id) || (many && !selN.has(n.id))) return; const p = P(P3(n)); text(n.id, p[0] + 6, p[1] + 13, pal.muted, { font: '10.5px ui-monospace, monospace' }); });
       }
       // drawing a member: rubber band
+      if (bldO) drawBld(Object.assign({ stage: 'tool' }, bldO));
       if (!rep && A.tool === 'member' && A.draw && A.mouse && nd[A.draw]) { const p = P(P3(nd[A.draw])); line(p, A.mouse, pal.acc, 1.5, [6, 4]); }
       if (!rep && A.box) { const cr = A.box[2] < A.box[0], bx = [Math.min(A.box[0], A.box[2]), Math.min(A.box[1], A.box[3]), Math.abs(A.box[2] - A.box[0]), Math.abs(A.box[3] - A.box[1])]; g.fillStyle = cr ? 'rgba(22,163,74,0.08)' : 'rgba(46,107,255,0.07)'; g.fillRect(...bx); g.strokeStyle = cr ? pal.ok : pal.blue; g.lineWidth = 1.2; g.setLineDash(cr ? [6, 4] : []); g.strokeRect(...bx); g.setLineDash([]); text(cr ? T('crossing', 'ตัดผ่าน') : T('window', 'หน้าต่าง'), bx[0] + 4, bx[1] - 5, cr ? pal.ok : pal.blue, { font: '10.5px system-ui, sans-serif' }) + (A.boxHow === 'add' ? text('+', bx[0] + bx[2] - 10, bx[1] - 5, pal.blue, { font: '700 12px system-ui' }) : A.boxHow === 'sub' ? text('−', bx[0] + bx[2] - 10, bx[1] - 5, pal.pink, { font: '700 12px system-ui' }) : 0); }
       // axis triad
@@ -543,7 +597,7 @@
         });
       }
       function drawLoads(lc) {
-        const ls = m.loads.filter(l => lc === 'all' || l.case === lc);
+        const ls = m.loads.filter(l => (lc === 'all' || l.case === lc) && l.gen !== 'slab');
         const maxW = Math.max(1e-9, ...ls.filter(l => l.kind === 'udl').map(l => Math.max(Math.abs(+l.w1 || 0), Math.abs(l.w2 === '' || l.w2 == null ? 0 : +l.w2))));
         const maxP = Math.max(1e-9, ...ls.filter(l => l.kind !== 'udl').map(l => l.kind === 'node' ? Math.max(Math.abs(+l.Fx || 0), Math.abs(+l.Fy || 0), Math.abs(+l.Fz || 0)) : Math.abs(+l.P || 0)));
         const stack = {}, fewL = ls.length <= 40 || rep, tl = ls.filter(l => l.kind === 'temp'), nT = rep ? 0 : tl.length;
@@ -594,7 +648,7 @@
           if (view === 'mode') { const md = r.modal && r.modal.modes[A.mode]; if (!md) { notes.push(r.modal ? T('No mode.', 'ไม่มีโหมด') : T('Turn on modal analysis (Pro) in the Analysis settings.', 'เปิดการวิเคราะห์โหมด (Pro) ในการตั้งค่าการวิเคราะห์')); return; } u = md.u; mesh = r.modal.mesh; title = T('Mode ', 'โหมด ') + (A.mode + 1) + ' · f = ' + f(md.f, 3) + ' Hz · T = ' + f(md.T, 3) + ' s'; }
           else { const bid = A.src && A.src.startsWith('combo:') ? A.src.slice(6) : null, bk = bid && r.buckling && r.buckling[bid], md = bk && bk.modes && bk.modes[0]; if (!md) { notes.push(bk && bk.none ? T('No compression in this combination — no buckling mode.', 'ไม่มีแรงอัดในกรณีนี้ — ไม่มีโหมดการโก่งเดาะ') : T('Turn on buckling analysis (Pro) and choose a ULS combination.', 'เปิดการวิเคราะห์การโก่งเดาะ (Pro) และเลือกกรณีรวมแรง ULS')); return; } u = md.u; mesh = bk.mesh; title = T('Buckling mode 1 · λcr = ', 'โหมดการโก่งเดาะ 1 · λcr = ') + f(md.lam, 2); }
           const sc = 0.1 * ext * A.dscale;
-          mesh.els.forEach(el => { const mb = m.members.find(q => q.id === el.mem.id); if (mb && !memVis(mb)) return; const a = mesh.pts[el.n1], b = mesh.pts[el.n2], i = 6 * el.n1, j = 6 * el.n2; line(P([a.x + u[i] * sc, a.y + u[i + 1] * sc, a.z + u[i + 2] * sc]), P([b.x + u[j] * sc, b.y + u[j + 1] * sc, b.z + u[j + 2] * sc]), pal.pink, 2); });
+          mesh.els.forEach(el => { if (String(el.mem.id).startsWith('~')) return; const mb = m.members.find(q => q.id === el.mem.id); if (mb && !memVis(mb)) return; const a = mesh.pts[el.n1], b = mesh.pts[el.n2], i = 6 * el.n1, j = 6 * el.n2; line(P([a.x + u[i] * sc, a.y + u[i + 1] * sc, a.z + u[i + 2] * sc]), P([b.x + u[j] * sc, b.y + u[j + 1] * sc, b.z + u[j + 2] * sc]), pal.pink, 2); });
           notes.push(title); return;
         }
         if (!cur) { notes.push(T('Choose results in the list above.', 'เลือกผลลัพธ์จากรายการด้านบน')); return; }
@@ -721,7 +775,7 @@
       });
       cv.addEventListener('pointermove', e => {
         const [x, y] = rel(e); drawGuide(x, y);
-        if (!pts.size) { A.mouse = [x, y]; const h = pickAt(x, y), same = (h && A.hover && h.k === A.hover.k && h.id === A.hover.id) || (!h && !A.hover); if (!same || (A.tool === 'member' && A.draw)) { A.hover = h; cv.style.cursor = curFor(); redraw(); } return; }
+        if (!pts.size) { A.mouse = [x, y]; const h = pickAt(x, y), same = (h && A.hover && h.k === A.hover.k && h.id === A.hover.id) || (!h && !A.hover); if (!same || (A.tool === 'member' && A.draw) || isBTool(A.tool)) { A.hover = h; cv.style.cursor = curFor(); redraw(); } return; }
         pts.set(e.pointerId, [x, y]);
         if (Math.hypot(x - sx, y - sy) > 4) moved = true; if (!moved) return;
         if (mode === 'pinch' && pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pd) zoomAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, d / pd); pd = d; return; }
@@ -745,7 +799,7 @@
       cv.addEventListener('pointerleave', () => { drawGuide(null); if (!pts.size && A.hover) { A.hover = null; A.mouse = null; redraw(); } });
       let wheelT = 0;
       cv.addEventListener('wheel', e => { e.preventDefault(); if (Date.now() - wheelT > 700) camPush(); wheelT = Date.now(); const [x, y] = rel(e); zoomAt(x, y, Math.exp(-e.deltaY * 0.0012)); }, { passive: false });
-      cv.addEventListener('contextmenu', e => { e.preventDefault(); if (A.draw && !moved) { A.draw = null; redraw(); } });
+      cv.addEventListener('contextmenu', e => { e.preventDefault(); if (A.draw && !moved) { A.draw = null; redraw(); } if (A.drawP && !moved) { A.drawP = null; redraw(); } });
       // drop a property dragged from the tree
       cv.addEventListener('dragover', e => { if (!A.dnd) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; if ((A.dnd.startsWith('sup:') ? A.sel.n : A.sel.m).length) { if (A.hover) { A.hover = null; redraw(); } return; } const [x, y] = rel(e), h = pickAt(x, y), want = A.dnd.startsWith('sup:') ? 'n' : 'm', ok = h && h.k === want ? h : null; if ((ok && (!A.hover || A.hover.id !== ok.id || A.hover.k !== ok.k)) || (!ok && A.hover)) { A.hover = ok; redraw(); } });
       cv.addEventListener('dragleave', () => { if (A.hover) { A.hover = null; redraw(); } });
@@ -758,6 +812,7 @@
     }
     function clickAt(x, y, e) {
       const hit = pickAt(x, y), W = cvEl.clientWidth, H = cvEl.clientHeight;
+      if (BLD && isBTool(A.tool)) { bldClick(x, y, W, H); return; }
       if (A.tool === 'qnode' || A.tool === 'qelem') {
         const want = A.tool === 'qnode' ? 'n' : 'm'; if (!hit || hit.k !== want) { toast(T('Click on a ' + (want === 'n' ? 'node' : 'element') + '.', 'คลิกบน' + (want === 'n' ? 'จุดต่อ' : 'ชิ้นส่วน')), ''); return; }
         A.qinfo = { k: want, id: hit.id }; A.sel = want === 'n' ? { n: [hit.id], m: [] } : { n: [], m: [hit.id] }; selChanged(); if (A.win && A.win.k === 'qinfo') winRefresh(); else openWin('qinfo'); return;
@@ -943,10 +998,11 @@
       return `M ${fu(+l.M || 0, 'M')}${ul('M')} @ ${fu(+l.a || 0, 'L', 2)}${ul('L')} · ${dirLabel(l)}`;
     }
     function loadTable(cs) {
-      const m = A.model, rows = m.loads.map((l, i) => [l, i]).filter(([l]) => l.case === cs);
-      if (!rows.length) return hint(T('No loads in this case yet.', 'ยังไม่มีแรงในกรณีนี้'));
+      const m = A.model, rows = m.loads.map((l, i) => [l, i]).filter(([l]) => l.case === cs && !l.gen), nGen = m.loads.filter(l => l.case === cs && l.gen).length;
+      const genNote = nGen ? hint(nGen + T(' generated load(s) from floors and wind in this case — edit them in Building › Floor Loads / Wind Loads.', ' แรงที่สร้างอัตโนมัติจากพื้นและแรงลมในกรณีนี้ — แก้ไขได้ที่ อาคาร › น้ำหนักบนพื้น / แรงลม')) : '';
+      if (!rows.length) return genNote || hint(T('No loads in this case yet.', 'ยังไม่มีแรงในกรณีนี้'));
       const desc = loadDesc;
-      return `<h4>${T('Loads in ', 'แรงในกรณี ')}${esc(cs)} (${rows.length})</h4><div class="an-list">${rows.slice(0, 400).map(([l, i]) => {
+      return genNote + `<h4>${T('Loads in ', 'แรงในกรณี ')}${esc(cs)} (${rows.length})</h4><div class="an-list">${rows.slice(0, 400).map(([l, i]) => {
         const open = isOpen('load', i), tgt = l.kind === 'node' ? l.node : l.member, on = l.kind === 'node' ? A.sel.n.includes(l.node) : A.sel.m.includes(l.member);
         let ed = '';
         if (open) ed = l.kind === 'node' ? `<div class="an-lied"><div class="an-row3">${['Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz'].map(q => cf(q, 'loads', i, q, l[q] || 0, 'n')).join('')}</div></div>`
@@ -1219,13 +1275,14 @@
         ['case', T('Load cases', 'กรณีน้ำหนัก'), m.cases.length],
         ['load', T('Apply loads', 'ใส่แรงกระทำ'), m.loads.length],
         ['combo', T('Load combinations', 'การรวมน้ำหนัก'), m.combos.length],
+        ...(BLD ? [['bld', T('Building: grids, floors & wind', 'อาคาร: กริด พื้น และแรงลม'), ((m.bld || {}).slabs || []).length]] : []),
         ...(BRG ? [['brg', T('Bridge loads & stages', 'น้ำหนักสะพานและขั้นตอน'), ((m.bridge || {}).mlc || []).length + ((m.bridge || {}).stages || []).length]] : []),
         ['run', T('Run analysis', 'วิเคราะห์โครงสร้าง'), fresh() ? '✓' : A.err && A.resVer === A.ver ? '!' : '—'],
         ['res', T('Results', 'ผลการวิเคราะห์'), fresh() ? '✓' : '—']
       ];
     };
     function treeHTML() {
-      return `<nav class="an-tree" aria-label="${T('Main menu', 'เมนูหลัก')}"><div class="an-treehead">${T('MAIN MENU', 'เมนูหลัก')}${BRG ? `<span class="an-modechip">${T('BRIDGE', 'สะพาน')}</span>` : ''}<span class="grow"></span><button class="an-stdchip" data-act="an-rb" data-c="gostd" title="${T('Design standard — change it in the ribbon: Structure › Design Standard', 'มาตรฐานการออกแบบ — เปลี่ยนได้ที่ริบบอน: โครงสร้าง › มาตรฐาน')}">${icon('book')}${esc(A.model.std)} · ${esc(T(stdInfo(A.model.std).name[0], stdInfo(A.model.std).name[1]))}</button></div>${STEPS().map(([k, l, c], i) => { const open = A.step === k, st = k === 'run' || k === 'res' ? (fresh() ? 'ok' : A.err && A.resVer === A.ver && k === 'run' ? 'bad' : '') : ''; return `<div class="an-node ${open ? 'open' : ''}"><div class="an-throw"><button class="an-th" data-act="an-step" data-s="${k}" aria-expanded="${open}"><span class="an-num">${i + 1}</span><span class="an-tl">${l}</span><span class="an-cnt ${st}" data-s="${k}">${esc(String(c))}</span><span class="an-chev" aria-hidden="true">›</span></button>${WADD.includes(k) ? `<button class="an-plus" data-act="an-win" data-k="${k}" title="${esc(winTitle(k))}" aria-label="${esc(winTitle(k))}">+</button>` : '<span class="an-plus0"></span>'}</div>${open ? `<div class="an-panel">${panel(k)}</div>` : ''}</div>`; }).join('')}</nav>`;
+      return `<nav class="an-tree" aria-label="${T('Main menu', 'เมนูหลัก')}"><div class="an-treehead">${T('MAIN MENU', 'เมนูหลัก')}${BRG ? `<span class="an-modechip">${T('BRIDGE', 'สะพาน')}</span>` : BLD ? `<span class="an-modechip">${T('BUILDING', 'อาคาร')}</span>` : ''}<span class="grow"></span><button class="an-stdchip" data-act="an-rb" data-c="gostd" title="${T('Design standard — change it in the ribbon: Structure › Design Standard', 'มาตรฐานการออกแบบ — เปลี่ยนได้ที่ริบบอน: โครงสร้าง › มาตรฐาน')}">${icon('book')}${esc(A.model.std)} · ${esc(T(stdInfo(A.model.std).name[0], stdInfo(A.model.std).name[1]))}</button></div>${STEPS().map(([k, l, c], i) => { const open = A.step === k, st = k === 'run' || k === 'res' ? (fresh() ? 'ok' : A.err && A.resVer === A.ver && k === 'run' ? 'bad' : '') : ''; return `<div class="an-node ${open ? 'open' : ''}"><div class="an-throw"><button class="an-th" data-act="an-step" data-s="${k}" aria-expanded="${open}"><span class="an-num">${i + 1}</span><span class="an-tl">${l}</span><span class="an-cnt ${st}" data-s="${k}">${esc(String(c))}</span><span class="an-chev" aria-hidden="true">›</span></button>${WADD.includes(k) ? `<button class="an-plus" data-act="an-win" data-k="${k}" title="${esc(winTitle(k))}" aria-label="${esc(winTitle(k))}">+</button>` : '<span class="an-plus0"></span>'}</div>${open ? `<div class="an-panel">${panel(k)}</div>` : ''}</div>`; }).join('')}</nav>`;
     }
     function updCounts() { STEPS().forEach(([k, , c]) => { const e = document.querySelector('.an-cnt[data-s="' + k + '"]'); if (e) { e.textContent = String(c); e.classList.toggle('ok', (k === 'run' || k === 'res') && fresh()); } }); }
     function sideRefresh() { const s = $('#anSide'); if (!s) return; const sc = s.scrollTop; s.innerHTML = treeHTML(); s.scrollTop = sc; }
@@ -1287,6 +1344,7 @@
           (nl ? `<button class="linkbtn an-llist" data-act="an-llist" aria-expanded="${!!A.llist}">${A.llist ? '▾ ' + T('Hide individual loads', 'ซ่อนรายการแรง') : '▸ ' + T('Show individual loads', 'แสดงรายการแรง')} (${nl})</button>${A.llist ? `<div class="an-blk">${loadTable(cs)}</div>` : ''}` : '');
       }
       if (k === 'brg') return bridgePanel();
+      if (k === 'bld') return bldPanel();
       if (k === 'combo') {
         const cb = A.cb || (A.cb = { name: '', type: 'ULS', rows: m.cases.slice(0, 2).map((c, i) => ({ c: c.id, f: i ? 1.5 : 1.2 })) });
         const auto = cb.rows.filter(r => r.c && +r.f).map(r => f(+r.f, 2).replace(/\.?0+$/, '') + r.c).join(' + ');
@@ -1349,6 +1407,7 @@
       if (!fresh()) return '';
       const r = A.res, cur = current(), m = A.model, env = cur && cur.kind === 'env';
       const rt = A.rtab, tabs = [['sum', T('Summary', 'สรุป')], ['react', T('Reactions', 'แรงปฏิกิริยา')], ['forces', T('Element forces', 'แรงในชิ้นส่วน')], ['disp', T('Displacements', 'การเคลื่อนตัว')], ['drift', T('Storey drift', 'การเคลื่อนตัวระหว่างชั้น')], ['modal', T('Modal', 'โหมด')], ['buck', T('Buckling', 'การโก่งเดาะ')]];
+      if (BLD) tabs.splice(4, 1, ['story', T('Stories', 'รายชั้น')]);
       const ext2 = (mm, q) => (env ? [Math.max(...mm[q + 'max']), Math.min(...mm[q + 'min'])] : [Math.max(...mm[q]), Math.min(...mm[q])]);
       const amax = (mm, q) => { const e = ext2(mm, q); return Math.max(Math.abs(e[0]), Math.abs(e[1])); };
       let body = '';
@@ -1368,6 +1427,7 @@
         body = !cur ? '' : wrap(`<table class="chk an-r"><thead><tr><th>${T('Element', 'ชิ้นส่วน')}</th><th class="num">L (${ulab('L')})</th><th class="num">N max</th><th class="num">N min</th><th class="num">|V<sub>y</sub>|</th><th class="num">|V<sub>z</sub>|</th><th class="num">|T|</th><th class="num">M<sub>y</sub> max</th><th class="num">M<sub>y</sub> min</th><th class="num">M<sub>z</sub> max</th><th class="num">M<sub>z</sub> min</th>${env ? '' : `<th class="num">δ (${ulab('d')})</th><th class="num">L/δ</th>`}</tr></thead><tbody class="an-uh"><tr><td></td><td></td>${['F', 'F', 'F', 'F', 'M', 'M', 'M', 'M', 'M'].map(q => `<td class="num muted small">${ulab(q)}</td>`).join('')}${env ? '' : '<td></td><td></td>'}</tr></tbody><tbody>${cur.mem.slice(0, 400).map(mm => { const dmax = env ? 0 : Math.max(...mm.drel.map(Math.abs), ...mm.drelz.map(Math.abs)); const N = ext2(mm, 'N'), My = ext2(mm, 'My'), Mz = ext2(mm, 'Mz'); return `<tr class="${A.sel.m.includes(mm.id) ? 'on' : ''}" data-act="an-pick" data-m="${esc(mm.id)}"><td>${esc(mm.id)}</td><td class="num mono">${fu(mm.L, 'L', 2)}</td>${[N[0], N[1], amax(mm, 'Vy'), amax(mm, 'Vz'), amax(mm, 'T'), My[0], My[1], Mz[0], Mz[1]].map((v, j) => `<td class="num mono">${fu(v, j < 4 ? 'F' : 'M')}</td>`).join('')}${env ? '' : `<td class="num mono">${fu(dmax, 'd')}</td><td class="num mono">${dmax > 1e-9 ? f(mm.L / dmax, 0) : '—'}</td>`}</tr>`; }).join('')}</tbody></table>`) + hint(T('δ = deflection relative to the line joining the element ends (local y and z). Click a row to show the element.', 'δ = การโก่งเทียบเส้นเชื่อมปลายชิ้นส่วน (แกน y และ z) คลิกแถวเพื่อแสดงชิ้นส่วน'));
       } else if (rt === 'disp') {
         body = !cur || env ? `<p class="muted">${T('Choose a load case or combination.', 'เลือกกรณีน้ำหนักหรือการรวมน้ำหนัก')}</p>` : wrap(`<table class="chk an-r"><thead><tr><th>${T('Node', 'จุดต่อ')}</th><th class="num">u<sub>x</sub> (${ulab('d')})</th><th class="num">u<sub>y</sub> (${ulab('d')})</th><th class="num">u<sub>z</sub> (${ulab('d')})</th><th class="num">θ<sub>x</sub></th><th class="num">θ<sub>y</sub></th><th class="num">θ<sub>z</sub> (mrad)</th></tr></thead><tbody>${m.nodes.slice(0, 400).map((n, i) => `<tr class="${A.sel.n.includes(n.id) ? 'on' : ''}"><td>${esc(n.id)}</td>${[0, 1, 2, 3, 4, 5].map(dd => `<td class="num mono">${dd < 3 ? fu(cur.u[6 * i + dd], 'd', 3) : fx(cur.u[6 * i + dd] * 1000, 3)}</td>`).join('')}</tr>`).join('')}</tbody></table>`);
+      } else if (rt === 'story') { body = storyResHTML(cur);
       } else if (rt === 'drift') {
         if (!cur || env) body = `<p class="muted">${T('Choose a load case or combination.', 'เลือกกรณีน้ำหนักหรือการรวมน้ำหนัก')}</p>`;
         else {
@@ -1414,7 +1474,7 @@
           ${ribHTML()}
           <aside class="an-side" id="anSide">${treeHTML()}</aside>
           <section class="an-work">
-            <div class="an-canvas"><canvas id="anGuide" class="an-guide" aria-hidden="true"></canvas><canvas id="anCv" tabindex="0" aria-label="${T('3D model view', 'มุมมองแบบจำลอง 3 มิติ')}"></canvas><span class="an-tag" id="anViewTag">${viewTag()}</span>${ax ? `<label class="an-lv an-lvbox">${T('Level', 'ระดับ')} ${ax.toUpperCase()} = ${sel([['all', T('all', 'ทั้งหมด')]].concat(lv.map(v => [v, fu(v, 'L', 2)])), A.cut, 'id="an-cut"')}</label>` : ''}
+            <div class="an-canvas"><canvas id="anGuide" class="an-guide" aria-hidden="true"></canvas><canvas id="anCv" tabindex="0" aria-label="${T('3D model view', 'มุมมองแบบจำลอง 3 มิติ')}"></canvas><span class="an-tag" id="anViewTag">${viewTag()}</span>${ax ? `<label class="an-lv an-lvbox">${T('Level', 'ระดับ')} ${ax.toUpperCase()} = ${sel([['all', T('all', 'ทั้งหมด')]].concat(lv.map(v => [v, (BLD && ax === 'z' && storyOfZ(v) ? storyOfZ(v).id + ' · ' : '') + fu(v, 'L', 2)])), A.cut, 'id="an-cut"')}</label>` : ''}
               <p class="an-hintbar"><span id="anHint">${hintBar()}</span></p>${unitBar()}</div>
             <div class="an-drawer ${showRes ? 'on' : ''} ${A.drawerMin ? 'min' : ''}" id="anDrawer" ${drawerStyle()}>${drawerHTML()}</div>
           </section>
@@ -1432,6 +1492,7 @@
     function hintBar() {
       const rot = A.cam.v === '3d' ? T('right-drag: rotate', 'ลากคลิกขวา: หมุน') : T('right-drag: pan', 'ลากคลิกขวา: เลื่อน');
       const sh = A.cam.v === '3d' ? T('Shift-drag: rotate', 'Shift-ลาก: หมุน') : T('Shift-drag: pan', 'Shift-ลาก: เลื่อน');
+      if (isBTool(A.tool)) return (A.bmsg ? A.bmsg + '  ·  ' : '') + ({ bcol: T('Columns: click grid intersections', 'เสา: คลิกจุดตัดกริด'), bbeam: T('Beams: click start and end points (chain) · right-click: stop', 'คาน: คลิกจุดเริ่มและจุดปลาย (ต่อเนื่อง) · คลิกขวา: หยุด'), bslab: T('Slabs: click a bay to add, click a slab to remove', 'แผ่นพื้น: คลิกช่องเพื่อเพิ่ม คลิกแผ่นพื้นเพื่อลบ') }[A.tool]) + ' · ' + T('PageUp / PageDown: story · Esc: done', 'PageUp / PageDown: เปลี่ยนชั้น · Esc: เสร็จ');
       if (A.tool === 'pan') return T('Pan tool: drag to move the view · wheel: zoom · Esc: back to Select', 'เครื่องมือเลื่อน: ลากเพื่อเลื่อน · ล้อเมาส์: ซูม · Esc: กลับไปเลือก');
       if (A.tool === 'zoomw') return T('Zoom window: drag a box around the area · Esc: cancel', 'ซูมกรอบ: ลากกรอบรอบพื้นที่ · Esc: ยกเลิก');
       if (A.tool === 'qnode' || A.tool === 'qelem') return T('Query: click a ' + (A.tool === 'qnode' ? 'node' : 'element') + ' to see its data · drag: rotate · Esc: back to Select', 'สอบถาม: คลิก' + (A.tool === 'qnode' ? 'จุดต่อ' : 'ชิ้นส่วน') + 'เพื่อดูข้อมูล · ลาก: หมุน · Esc: กลับไปเลือก');
@@ -1463,7 +1524,8 @@
     function tplHTML() {
       const p = Object.assign({}, TPL[A.tpl].p, A.tplP || {});
       const fl = (k, lbl, type) => `<label>${lbl}<input data-tp="${k}" value="${esc(p[k])}" ${type === 'n' ? 'type="number" step="any"' : ''}></label>`;
-      const form = BRG ? (A.tpl === 'girder' ? fl('spans', T('Spans (m), comma separated', 'ช่วงสะพาน (ม.) คั่นด้วยจุลภาค')) + fl('ng', T('Number of girders', 'จำนวนคาน'), 'n') + fl('s', T('Girder spacing (m)', 'ระยะห่างคาน (ม.)'), 'n') + `<label>${T('Continuity', 'ความต่อเนื่อง')}${sel([['continuous', T('Continuous over the piers', 'ต่อเนื่องเหนือตอม่อ')], ['simple', T('Simply supported spans', 'ช่วงอิสระ')]], p.cont, 'data-tp="cont"')}</label>` + fl('nseg', T('Segments per span', 'จำนวนช่วงย่อยต่อช่วง'), 'n') + fl('pt', T('Prestress per girder (kN, 0 = none)', 'แรงอัดล่วงหน้าต่อคาน (kN, 0 = ไม่มี)'), 'n')
+      const form = BLD ? fl('bx', T('Grid spacings in X (m), e.g. 8, 8, 2@6', 'ระยะกริดแกน X (ม.) เช่น 8, 8, 2@6')) + fl('by', T('Grid spacings in Y (m)', 'ระยะกริดแกน Y (ม.)')) + fl('st', T('Story heights (m), bottom up — 4, 3x3.5 = 4 then three of 3.5', 'ความสูงชั้น (ม.) จากล่างขึ้นบน — 4, 3x3.5')) + (A.tpl === 'steel' || A.tpl === 'blank' ? '' : fl('col', T('Column b×h (mm)', 'เสา b×h (มม.)')) + fl('beam', T('Beam b×h (mm)', 'คาน b×h (มม.)'))) + fl('t', T('Slab thickness (mm)', 'ความหนาพื้น (มม.)'), 'n') + fl('sdl', T('Superimposed dead load (kPa)', 'น้ำหนักบรรทุกคงที่เพิ่ม (kPa)'), 'n') + fl('ll', T('Floor live load (kPa)', 'น้ำหนักจรบนพื้น (kPa)'), 'n') + (A.tpl === 'blank' ? '' : fl('roof', T('Roof live load (kPa)', 'น้ำหนักจรหลังคา (kPa)'), 'n')) + `<label>${T('Wind loads', 'แรงลม')}${sel([['on', T('Automatic, to the design standard', 'อัตโนมัติ ตามมาตรฐาน')], ['off', T('None', 'ไม่มี')]], p.wind, 'data-tp="wind"')}</label>`
+        : BRG ? (A.tpl === 'girder' ? fl('spans', T('Spans (m), comma separated', 'ช่วงสะพาน (ม.) คั่นด้วยจุลภาค')) + fl('ng', T('Number of girders', 'จำนวนคาน'), 'n') + fl('s', T('Girder spacing (m)', 'ระยะห่างคาน (ม.)'), 'n') + `<label>${T('Continuity', 'ความต่อเนื่อง')}${sel([['continuous', T('Continuous over the piers', 'ต่อเนื่องเหนือตอม่อ')], ['simple', T('Simply supported spans', 'ช่วงอิสระ')]], p.cont, 'data-tp="cont"')}</label>` + fl('nseg', T('Segments per span', 'จำนวนช่วงย่อยต่อช่วง'), 'n') + fl('pt', T('Prestress per girder (kN, 0 = none)', 'แรงอัดล่วงหน้าต่อคาน (kN, 0 = ไม่มี)'), 'n')
         : A.tpl === 'box' ? fl('spans', T('Spans (m), comma separated', 'ช่วงสะพาน (ม.) คั่นด้วยจุลภาค')) + fl('piers', T('Pier heights (m)', 'ความสูงตอม่อ (ม.)')) + fl('width', T('Deck width (m)', 'ความกว้างพื้น (ม.)'), 'n') + fl('nseg', T('Segments per span', 'จำนวนช่วงย่อยต่อช่วง'), 'n')
           : A.tpl === 'btruss' ? `<label>${T('Type', 'ชนิด')}${sel([['pratt', 'Pratt'], ['warren', 'Warren']], p.kind, 'data-tp="kind"')}</label>` + fl('span', T('Span (m)', 'ช่วง (ม.)'), 'n') + fl('panels', T('Panels (even)', 'จำนวนช่อง (คู่)'), 'n') + fl('height', T('Truss height (m)', 'ความสูงโครงถัก (ม.)'), 'n') + fl('width', T('Width between trusses (m)', 'ระยะห่างโครงถัก (ม.)'), 'n')
             : A.tpl === 'arch' ? fl('span', T('Span (m)', 'ช่วง (ม.)'), 'n') + fl('rise', T('Arch rise (m)', 'ความสูงโค้ง (ม.)'), 'n') + fl('panels', T('Hanger panels (even)', 'จำนวนช่องสลิง (คู่)'), 'n') + fl('width', T('Width between arches (m)', 'ระยะห่างซี่โค้ง (ม.)'), 'n')
@@ -1517,6 +1579,7 @@
           else if (k === 'f') { camPush(); A.cam.k = null; redraw(); }
           else if (k === '+' || k === '=' || k === '-' || k === '_') { const cv = $('#anCv'); zoomAt(cv.clientWidth / 2, cv.clientHeight / 2, k === '+' || k === '=' ? 1.2 : 1 / 1.2); }
           else if (k.startsWith('Arrow')) { e.preventDefault(); const dx = k === 'ArrowLeft' ? -1 : k === 'ArrowRight' ? 1 : 0, dy = k === 'ArrowUp' ? -1 : k === 'ArrowDown' ? 1 : 0; if (is3) { c.yaw -= dx * 0.12; c.pitch = Math.max(-1.5, Math.min(1.5, c.pitch - dy * 0.12)); } else { const B = basis(c), st = 40 / c.k; c.t = addv(addv(c.t, B.r, dx * st), B.u, -dy * st); } redraw(); }
+          else if (BLD && (k === 'PageUp' || k === 'PageDown')) { e.preventDefault(); stepStory(k === 'PageUp' ? 1 : -1); }
           else if (k === 'w') { A.solid = !A.solid; ribRefresh(); redraw(); }
           else if (k === 'l') { if (!A.loadsOn && !A.model.cases.some(q => q.id === A.lcase) && A.lcase !== 'all') A.lcase = (A.model.cases[0] || {}).id || ''; A.loadsOn = !A.loadsOn; syncLshow(); redraw(); }
           else if (k === 't') { A.labels = !A.labels; redraw(); }
@@ -1528,6 +1591,7 @@
     // ------------------------------------------------------------------ input handlers
     function onInput(t) {
       if (BRG && (bridgeInput(t) || ilInput(t))) return true;
+      if (bldInput(t)) return true;
       if (t.dataset.tp) { A.tplP = Object.assign({}, TPL[A.tpl].p, A.tplP || {}); A.tplP[t.dataset.tp] = t.value; return true; }
       if (t.dataset.ins) { applyIns(t); return true; }
       if (t.dataset.w && A.win) {
@@ -1561,7 +1625,7 @@
       if (t.id === 'an-modesel') { A.mode = +t.value; redraw(); return true; }
       if (t.id === 'an-scale') { A.dscale = +t.value; redraw(); return true; }
       if (t.id === 'an-labels') { A.labels = t.checked; redraw(); return true; }
-      if (t.id === 'an-cut') { A.cut = t.value === 'all' ? 'all' : +t.value; A.cam.k = null; A.sel = { n: [], m: [] }; redraw(); sideRefresh(); return true; }
+      if (t.id === 'an-cut') { A.cut = t.value === 'all' ? 'all' : +t.value; if (BLD && A.cut !== 'all' && storyOfZ(A.cut)) A.story = storyOfZ(A.cut).id; A.cam.k = null; A.sel = { n: [], m: [] }; redraw(); sideRefresh(); return true; }
       if (t.id === 'an-file') {
         const fl = t.files[0]; if (!fl) return true;
         fl.text().then(txt => { try { const j = JSON.parse(txt), mm = migrate(j.model || j); if (!mm || !mm.nodes || !mm.members) throw 0; snap(true); A.model = Object.assign({ loads: [], combos: [], cases: [], sections: [], materials: [], std: 'AS' }, mm); if (j.opt) A.opt = Object.assign(A.opt, j.opt); afterNewModel(); toast(T('Model opened', 'เปิดแบบจำลองแล้ว'), 'ok'); } catch (e) { toast(T('That file is not a StructCap model.', 'ไฟล์นี้ไม่ใช่แบบจำลอง StructCap'), 'bad'); } });
@@ -1699,7 +1763,7 @@
         tbl([T('Material', 'วัสดุ'), 'E (MPa)', 'ν', T('Unit weight', 'หน่วยน้ำหนัก') + ' (' + ulab('g') + ')', 'α (' + ulab('al') + ')'], m.materials.map(x => [esc(x.id + (x.name ? ' — ' + x.name : '')), f(+x.E, 0), f(x.nu === undefined ? 0.3 : +x.nu, 2), fu(+x.rho, 'g', UU().F === 'kN' ? 1 : 3), fx(toU(+x.alpha || F.alphaOf(x) * 1e6, 'al'), 2)])));
       html += sec(2, T('Loads and combinations', 'แรงและกรณีรวมแรง'), m.cases.filter(c => m.loads.some(l => l.case === c.id)).map(c => fig('model', c.id, '<b>' + esc(c.id) + '</b> — ' + esc(c.name))).join('') +
         tbl([T('Case', 'กรณี'), T('Name', 'ชื่อ'), T('Type', 'ประเภท'), T('Self-weight', 'น้ำหนักตัวเอง')], m.cases.map(c => [esc(c.id), esc(c.name), c.type, c.sw ? '✓' : ''])) +
-        tbl([T('Case', 'กรณี'), T('On', 'ที่'), T('Load', 'แรง'), T('Values', 'ค่า')], lim(m.loads, 300).map(l => [esc(l.case), esc(l.kind === 'node' ? l.node : l.member), l.kind === 'node' ? T('nodal', 'ที่จุดต่อ') : l.kind === 'temp' ? T('temperature', 'อุณหภูมิ') : l.kind, esc(loadDesc(l))])) + more(m.loads, 300) +
+        tbl([T('Case', 'กรณี'), T('On', 'ที่'), T('Load', 'แรง'), T('Values', 'ค่า')], lim(m.loads.filter(l => !l.gen), 300).map(l => [esc(l.case), esc(l.kind === 'node' ? l.node : l.member), l.kind === 'node' ? T('nodal', 'ที่จุดต่อ') : l.kind === 'temp' ? T('temperature', 'อุณหภูมิ') : l.kind, esc(loadDesc(l))])) + more(m.loads, 300) +
         tbl([T('Combination', 'กรณีรวมแรง'), T('Type', 'ชนิด'), T('Factors', 'ตัวคูณ')], m.combos.map(c => [esc(c.id + ' — ' + c.name), c.type, Object.entries(c.f || {}).map(([k2, v]) => f(v, 2) + '·' + esc(k2)).join(' + ')])));
       html += sec(3, T('Analysis', 'การวิเคราะห์'), `<p class="rp-txt">${T('Finite-element stiffness method, ' + (m.plane === 'XZ' ? '2D frame elements in the X–Z plane' : '3D frame elements with 6 degrees of freedom per node (axial, two shears, torsion, two bending moments)') + ', exact fixed-end actions for member loads, member end releases by static condensation.', 'วิธีสติฟเนสไฟไนต์เอลิเมนต์ ' + (m.plane === 'XZ' ? 'ชิ้นส่วนโครงข้อแข็ง 2 มิติในระนาบ X–Z' : 'ชิ้นส่วนโครงข้อแข็ง 3 มิติ 6 องศาอิสระต่อจุด (แรงตามแนวแกน แรงเฉือนสองทิศ แรงบิด โมเมนต์ดัดสองแกน)') + ' ใช้แรงปลายยึดแน่นที่แม่นตรง และปลดแรงปลายชิ้นส่วนด้วย static condensation')} ${A.opt.pdelta && pro() ? T('Second-order P-Delta analysis of every combination (members subdivided into ' + A.opt.nseg + ' segments).', 'วิเคราะห์อันดับสอง P-Delta ทุกกรณีรวมแรง (แบ่งชิ้นส่วนเป็น ' + A.opt.nseg + ' ส่วน)') : T('First-order (linear) analysis; combinations by superposition.', 'วิเคราะห์อันดับหนึ่ง (เชิงเส้น) รวมแรงโดยการซ้อนทับ')} ${T('Sign convention: N tension +; M_z + = tension on the −y side, M_y + = tension on the −z side of the member local axes.', 'เครื่องหมาย: N แรงดึง +; M_z + ดึงด้าน −y, M_y + ดึงด้าน −z ของแกนเฉพาะที่')}</p>`);
       let n = 4;
@@ -1714,6 +1778,8 @@
       A.src = keep.src;
       if (r.modal) html += sec(n++, T('Modal analysis', 'การวิเคราะห์โหมด'), tbl([T('Mode', 'โหมด'), 'f (Hz)', 'T (s)', T('Mass X', 'มวล X'), 'Y', 'Z'], r.modal.modes.map((md, i) => [i + 1, f(md.f, 3), f(md.T, 3), f(md.mx * 100, 1) + '%', f(md.my * 100, 1) + '%', f(md.mz * 100, 1) + '%'])));
       if (r.buckling) html += sec(n++, T('Elastic buckling', 'การโก่งเดาะแบบยืดหยุ่น'), tbl([T('Combination', 'กรณีรวมแรง'), 'λcr,1', 'λcr,2', 'λcr,3'], m.combos.filter(c => r.buckling[c.id]).map(c => { const b2 = r.buckling[c.id], l = b2.modes ? b2.modes.map(q => f(q.lam, 2)) : []; return [esc(c.id + ' — ' + c.name), l[0] || (b2.none ? '∞' : '—'), l[1] || '—', l[2] || '—']; })));
+      if (BLD) { const bo = bldReport(sec, tbl, n); html += bo.html; n = bo.n; }
+      { const qo = qtoReport(sec, tbl, n); html += qo.html; n = qo.n; }
       if (r.warn.length) html += `<ul class="warn-list">${r.warn.map(w => `<li>${esc(w)}</li>`).join('')}</ul>`;
       $('#reportWrap').innerHTML = `<div class="rp-bar"><h2>${T('Analysis report', 'รายงานการวิเคราะห์')}</h2>
         <div class="rp-meta">${[['project', T('Project', 'โครงการ')], ['job', T('Job no.', 'เลขที่งาน')], ['ref', T('Model ref.', 'ชื่อแบบจำลอง')], ['by', T('Analysed by', 'ผู้วิเคราะห์')], ['checked', T('Checked by', 'ผู้ตรวจสอบ')]].map(([k2, l]) => `<label>${l}<input id="meta-${k2}" data-meta="${k2}" value="${esc(Mt[k2])}"></label>`).join('')}</div>
@@ -1734,6 +1800,9 @@
     if (!A.opt.views) A.opt.views = [];
     // ---- icons (own drawings, 24 × 24, stroke = currentColor, .ac = accent)
     const IC = {
+      slab: '<path d="M3 15l9-5 9 5-9 5z"/><path class="ac" d="M3 15v2l9 5 9-5v-2"/><path d="M7.5 12.5l9 5M16.5 12.5l-9 5"/><path d="M12 3v5M9.5 5.5L12 8l2.5-2.5"/>',
+      wind: '<path d="M3 8h11a3 3 0 1 0-3-3"/><path class="ac" d="M3 12h15a3 3 0 1 1-3 3"/><path d="M3 16h7"/><path d="M21 4v16" stroke-dasharray="2 2"/>',
+      qto: '<path d="M4 17l6-3 6 3-6 3z"/><path d="M4 17V9l6-3 6 3v8M10 14V6"/><rect class="ac" x="16.5" y="3" width="5" height="8" rx="1"/><path class="ac" d="M18 6h2M18 8.5h2"/>',
       redraw: '<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path class="ac" d="M20.5 4v5h-5"/>',
       home: '<rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/><path class="ac" d="M8 12.5l4-3.5 4 3.5M9.5 11.5V15h5v-3.5"/>',
       back: '<rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M8 21h8M12 17v4"/><path class="ac" d="M14 7.5l-4 3 4 3"/>',
@@ -1842,7 +1911,7 @@
         ]],
         ['struct', T('Structure', 'โครงสร้าง'), [
           [T('Sample', 'ตัวอย่าง'), [B('sample', 'sample', BRG ? T('Sample Bridge', 'สะพานตัวอย่าง') : T('Sample Building', 'อาคารตัวอย่าง'))]],
-          [T('Quick Templates', 'แม่แบบด่วน'), BRG ? [B('qt', 'beam', T('Girder Deck', 'สะพานคาน'), { v: 'girder' }), B('qt', 'column', T('Box Girder', 'คานกล่อง'), { v: 'box' }), B('qt', 'truss', T('Truss Bridge', 'สะพานโครงถัก'), { v: 'btruss' }), B('qt', 'portal', T('Tied Arch', 'สะพานโค้ง'), { v: 'arch' }), B('qt', 'shed', T('Cable-Stayed', 'สะพานขึงเคเบิล'), { v: 'cable' }), B('qt', 'blank', T('Empty Model', 'โมเดลว่าง'), { v: 'blank' })] : [B('qt', 'bldg', T('Building 3D', 'อาคาร 3 มิติ'), { v: 'building' }), B('qt', 'shed', T('Steel Shed', 'โรงงานเหล็ก'), { v: 'shed' }), B('qt', 'portal', T('Portal Frame', 'โครงข้อแข็ง'), { v: 'portal' }), B('qt', 'cbeam', T('Continuous Beam', 'คานต่อเนื่อง'), { v: 'beam' }), B('qt', 'truss', T('Truss', 'โครงถัก'), { v: 'truss' }), B('qt', 'blank', T('Empty Model', 'โมเดลว่าง'), { v: 'blank' })]],
+          [T('Quick Templates', 'แม่แบบด่วน'), BLD ? [B('qt', 'bldg', T('RC Building', 'อาคาร คสล.'), { v: 'rc' }), B('qt', 'shed', T('Steel Building', 'อาคารเหล็ก'), { v: 'steel' }), B('qt', 'column', T('RC Tower', 'อาคารสูง'), { v: 'tower' }), B('qt', 'grid', T('Grids Only', 'กริดอย่างเดียว'), { v: 'blank' })] : BRG ? [B('qt', 'beam', T('Girder Deck', 'สะพานคาน'), { v: 'girder' }), B('qt', 'column', T('Box Girder', 'คานกล่อง'), { v: 'box' }), B('qt', 'truss', T('Truss Bridge', 'สะพานโครงถัก'), { v: 'btruss' }), B('qt', 'portal', T('Tied Arch', 'สะพานโค้ง'), { v: 'arch' }), B('qt', 'shed', T('Cable-Stayed', 'สะพานขึงเคเบิล'), { v: 'cable' }), B('qt', 'blank', T('Empty Model', 'โมเดลว่าง'), { v: 'blank' })] : [B('qt', 'bldg', T('Building 3D', 'อาคาร 3 มิติ'), { v: 'building' }), B('qt', 'shed', T('Steel Shed', 'โรงงานเหล็ก'), { v: 'shed' }), B('qt', 'portal', T('Portal Frame', 'โครงข้อแข็ง'), { v: 'portal' }), B('qt', 'cbeam', T('Continuous Beam', 'คานต่อเนื่อง'), { v: 'beam' }), B('qt', 'truss', T('Truss', 'โครงถัก'), { v: 'truss' }), B('qt', 'blank', T('Empty Model', 'โมเดลว่าง'), { v: 'blank' })]],
           [T('Wizard', 'ตัวช่วยสร้าง'), [B('wizard', 'wand', T('Structure Wizard', 'สร้างจากแม่แบบ'))]],
           [T('Structure Type', 'ชนิดโครงสร้าง'), [B('type3d', 'cube', T('3D Frame', 'โครง 3 มิติ'), { on: () => A.model.plane !== 'XZ' }), B('type2d', 'plane', T('2D Frame (X–Z)', 'โครง 2 มิติ (X–Z)'), { on: () => A.model.plane === 'XZ' })]],
           [T('Design Standard', 'มาตรฐานการออกแบบ'), [...STDS.map(k => B('std', 'book', { AS: T('Australian (AS)', 'ออสเตรเลีย (AS)'), EC: T('Eurocodes (EN)', 'ยูโรโค้ด (EN)'), TH: T('Thai (EIT / TIS)', 'ไทย (วสท. / มอก.)') }[k] || k, { v: k, on: () => A.model.std === k })),
@@ -1850,6 +1919,7 @@
           [T('Model', 'แบบจำลอง'), [B('save', 'save', T('Save', 'บันทึก')), B('open', 'open', T('Open', 'เปิด'), { file: 1 }), B('report', 'doc', T('Report', 'รายงาน'))]]
         ]],
         ...(BRG ? [bridgeTab()] : []),
+        ...(BLD ? [bldTab()] : []),
         ['node', T('Node/Element', 'จุดต่อ/ชิ้นส่วน'), [
           [T('Nodes', 'จุดต่อ'), [B('cnode', 'node', T('Create Nodes', 'สร้างจุดต่อ'), { on: tool('node') }), B('ntrans', 'move', T('Translate', 'เลื่อน/คัดลอก')), B('ndiv', 'divide', T('Divide', 'แบ่ง')), B('nmerge', 'merge', T('Merge', 'รวมจุด')),
             COL(B('del', 'del', T('Delete', 'ลบ')), B('rot', 'rotate', T('Rotate', 'หมุน')), B('mir', 'mirror', T('Mirror', 'สะท้อน'))), COL(B('scl', 'scale', T('Scale', 'ปรับขนาด')), B('ext', 'extrude', T('Extrude', 'ยืดเป็นชิ้นส่วน'))), B('ntab', 'table', T('Nodes Table', 'ตารางจุดต่อ'))]],
@@ -1897,11 +1967,13 @@
           [T('Status', 'สถานะ'), [B('qstat', 'status', T('Project Status', 'สถานะโครงการ'))]],
           [T('Query', 'สอบถาม'), [B('qnode', 'qnode', T('Query Nodes', 'สอบถามจุดต่อ'), { on: tool('qnode') }), B('qelem', 'qelem', T('Query Elements', 'สอบถามชิ้นส่วน'), { on: tool('qelem') })]],
           [T('Detail Table', 'ตารางรายละเอียด'), [COL(B('qnt', 'table', T('Node Detail Table', 'ตารางจุดต่อ')), B('qet', 'table', T('Element Detail Table', 'ตารางชิ้นส่วน')), B('qwt', 'table', T('Element Weight Table', 'ตารางน้ำหนักชิ้นส่วน')))]],
-          [T('Mass/Load Table', 'ตารางมวล/แรง'), [COL(B('qms', 'table', T('Mass Summary Table', 'สรุปมวล')), B('lsum', 'table', T('Load Summary Table', 'สรุปแรง')))]]
+          [T('Mass/Load Table', 'ตารางมวล/แรง'), [COL(B('qms', 'table', T('Mass Summary Table', 'สรุปมวล')), B('lsum', 'table', T('Load Summary Table', 'สรุปแรง')))]],
+          [T('Quantities', 'ปริมาณ'), [B('qto', 'qto', T('Quantity Take-off', 'ถอดปริมาณวัสดุ'))]]
         ]],
         ['tools', T('Tools', 'เครื่องมือ'), [
           [T('Setting', 'ตั้งค่า'), [B('unitm', 'units', T('Unit System', 'ระบบหน่วย') + ' · ' + ulab('F') + ', ' + ulab('L'), { m: 1 })]],
           [T('Model File', 'ไฟล์แบบจำลอง'), [B('save', 'save', T('Save', 'บันทึก')), B('open', 'open', T('Open', 'เปิด'), { file: 1 }), B('sample', 'sample', BRG ? T('Sample Bridge', 'สะพานตัวอย่าง') : T('Sample Building', 'อาคารตัวอย่าง')), B('wizard', 'wand', T('Template', 'แม่แบบ'))]],
+          [T('Quantities', 'ปริมาณ'), [B('qto', 'qto', T('Quantity Take-off', 'ถอดปริมาณวัสดุ'))]],
           [T('Help', 'วิธีใช้'), [B('help', 'help', T('Shortcuts & Help', 'ปุ่มลัดและวิธีใช้'))]]
         ]]
       ];
@@ -1924,6 +1996,7 @@
     // ---- dropdown menus
     function MENU(id) {
       if (BRG) { const bm = bridgeMenu(id); if (bm) return bm; }
+      if (BLD) { const bm = bldMenu(id); if (bm) return bm; }
       const it = (c, l, v, on) => ({ c, l, v, on }), sep = { sep: 1 };
       const VPS = [['3d', T('Isometric (default)', 'ไอโซเมตริก')], ['plan', T('Top (plan)', 'ด้านบน (แปลน)')], ['xz', T('Front (X–Z)', 'ด้านหน้า (X–Z)')], ['yz', T('Right (Y–Z)', 'ด้านขวา (Y–Z)')], ['back', T('Back', 'ด้านหลัง')], ['left', T('Left', 'ด้านซ้าย')], ['bottom', T('Bottom', 'ด้านล่าง')], ['ne', T('Isometric NE', 'ไอโซเมตริก NE')], ['nw', T('Isometric NW', 'ไอโซเมตริก NW')], ['sw', T('Isometric SW', 'ไอโซเมตริก SW')]];
       switch (id) {
@@ -1948,15 +2021,15 @@
     // Esc: close menus, stop drawing, leave temporary tools and cancel the whole selection
     function escAll() {
       const had = A.sel.n.length || A.sel.m.length;
-      closeMenu(); A.draw = null; A.box = null; A.dnd = null;
-      if (['pan', 'zoomw', 'qnode', 'qelem', 'orbit', 'node', 'member'].includes(A.tool)) A.tool = 'select';
+      closeMenu(); A.draw = null; A.drawP = null; A.box = null; A.dnd = null;
+      if (['pan', 'zoomw', 'qnode', 'qelem', 'orbit', 'node', 'member', 'bcol', 'bbeam', 'bslab'].includes(A.tool)) A.tool = 'select';
       if (had) { A.sel = { n: [], m: [] }; selChanged(); toast(T('Selection cancelled', 'ยกเลิกการเลือกแล้ว'), ''); }
       else if (A.win) { A.win = null; winRefresh(); }
       else if (A.tplOpen) { A.tplOpen = false; ctx.render(); return; }
       const cv = $('#anCv'); if (cv) cv.style.cursor = 'default';
       ribRefresh(); redraw();
     }
-    const curFor = () => (A.tool === 'pan' ? 'move' : A.tool === 'zoomw' || A.tool === 'node' || A.tool === 'member' ? 'crosshair' : A.tool === 'qnode' || A.tool === 'qelem' ? 'help' : 'default');
+    const curFor = () => (A.tool === 'pan' ? 'move' : A.tool === 'zoomw' || A.tool === 'node' || A.tool === 'member' || isBTool(A.tool) ? 'crosshair' : A.tool === 'qnode' || A.tool === 'qelem' ? 'help' : 'default');
     // cursor guide lines (overlay canvas, so the model is not redrawn on every mouse move)
     function drawGuide(x, y) {
       const cv = $('#anCv'), gc = $('#anGuide'); if (!cv || !gc) return;
@@ -2148,11 +2221,11 @@
     function memGeom(q) { const nd = nodeMap(), a = nd[q.i], b = nd[q.j]; if (!a || !b) return null; const pa = P3(a), pb = P3(b); return { pa, pb, L: Math.hypot(...sub(pb, pa)), ax: F.axes(pa, pb, q.beta) }; }
     function memWeight(q) { const m = A.model, s = m.sections.find(z => z.id === q.sec), t = m.materials.find(z => z.id === q.mat), g = memGeom(q); if (!s || !t || !g) return null; const Am = F.secProps(s).A * 1e-6; return { L: g.L, A: Am, gam: +t.rho || 0, W: Am * (+t.rho || 0) * g.L }; }
     function caseSum(cid) {
-      const m = A.model, R = [0, 0, 0], cs = m.cases.find(c => c.id === cid) || {}; let sw = 0, nT = 0;
+      const m = A.model, R = [0, 0, 0], cs = m.cases.find(c => c.id === cid) || {}, byId = new Map(m.members.map(q => [q.id, q])); let sw = 0, nT = 0;
       m.loads.filter(l => l.case === cid).forEach(l => {
         if (l.kind === 'node') { R[0] += +l.Fx || 0; R[1] += +l.Fy || 0; R[2] += +l.Fz || 0; return; }
         if (l.kind === 'temp') { nT++; return; } if (l.kind === 'moment') return;
-        const q = m.members.find(z => z.id === l.member), g = q && memGeom(q); if (!g) return;
+        const q = byId.get(l.member), g = q && memGeom(q); if (!g) return;
         const dir = l.dir || 'grav', e = dir === 'lx' ? g.ax.ex : dir === 'ly' ? g.ax.ey : dir === 'lz' ? g.ax.ez : ({ gx: [1, 0, 0], gy: [0, 1, 0], gz: [0, 0, 1] })[dir] || [0, 0, -1];
         let P; if (l.kind === 'udl') { const a0 = Math.max(0, +l.a || 0), b0 = l.b === '' || l.b == null || +l.b <= 0 ? g.L : Math.min(g.L, +l.b), w1 = +l.w1 || 0, w2 = l.w2 === '' || l.w2 == null ? w1 : +l.w2; P = (w1 + w2) / 2 * Math.max(0, b0 - a0) * (dir === 'gravp' ? Math.hypot(g.ax.ex[0], g.ax.ex[1]) : 1); } else P = +l.P || 0;
         for (let k = 0; k < 3; k++) R[k] += P * e[k];
@@ -2264,6 +2337,7 @@
       if (b && b.dataset.m) { openMenu(c, b); return; }
       closeMenu();
       if (BRG && bridgeCmd(c, v)) return;
+      if ((BLD || c === 'qto' || c === 'qtocsv' || c === 'qtab') && bldCmd(c, v)) return;
       const m = A.model, o = A.opt;
       switch (c) {
         // view
@@ -2295,7 +2369,7 @@
         case 'tog': if (v === 'solid' || v === 'labels' || v === 'loadsOn' || v === 'allAxes') A[v] = !A[v]; else A[v] = A[v] === false; if (v === 'loadsOn') syncLshow(); ribRefresh(); redraw(); return;
         // structure
         case 'wizard': A.tplOpen = true; ctx.render(); return;
-        case 'sample': case 'qt': quickModel(c === 'sample' ? (BRG ? 'girder' : 'building') : v); return;
+        case 'sample': case 'qt': quickModel(c === 'sample' ? (BRG ? 'girder' : BLD ? 'rc' : 'building') : v); return;
         case 'guides': A.guides = A.guides === false; drawGuide(null); ribRefresh(); return;
         case 'type3d': case 'type2d': { const p = c === 'type2d' ? 'XZ' : ''; if ((m.plane || '') === p) return; snap(true); m.plane = p; changed(false); setView(p ? 'xz' : '3d'); ctx.render(); toast(p ? T('2D frame in the X–Z plane', 'โครง 2 มิติ ระนาบ X–Z') : T('3D frame', 'โครง 3 มิติ'), ''); return; }
         case 'gostd': A.rib = 'struct'; A.ribMin = false; ribRefresh(); { const g = [...document.querySelectorAll('#anRib .an-rgt')].find(e => /Design Standard|มาตรฐานการออกแบบ/.test(e.textContent)); if (g) { const r = g.parentElement; r.classList.add('an-flash'); setTimeout(() => r.classList.remove('an-flash'), 1200); } } return;
@@ -2550,6 +2624,369 @@
         (r && fresh() ? `<p class="muted small">${T('Bridge analysis: ', 'การวิเคราะห์สะพาน: ')}${Object.keys(r.ml).length} ${T('moving-load envelope(s)', 'ผลน้ำหนักเคลื่อนที่')}, ${r.st.length} ${T('stage(s)', 'ขั้นตอน')} · ${r.ms} ms</p>` : '');
     }
 
-    return { view, mount, onClick, onInput, run, state: A, build, preset, TPL, migrate };
+    // ================================================================== building module (grids, stories, floors, wind) and quantity take-off (all modes)
+    const BDATA = () => BD.bld(A.model);
+    const isBTool = t => t === 'bcol' || t === 'bbeam' || t === 'bslab';
+    const storyList = () => BD.stories(A.model);
+    const curStory = () => { const st = storyList(); return st.find(s => s.id === A.story) || st[st.length - 1] || null; };
+    const storyOfZ = z => storyList().find(s => Math.abs(s.z - z) < 1e-3) || null;
+    function goStory(id) { const s = storyList().find(q => q.id === id); if (!s) return; A.story = s.id; if (A.cam.v !== 'plan') { camPush(); setView('plan'); } A.cut = s.z; A.cam.k = null; ctx.render(); }
+    function stepStory(d) { const st = storyList(), cs = curStory(); if (!cs) return; const k = Math.max(1, Math.min(st.length - 1, st.indexOf(cs) + d)); goStory(st[k].id); }
+    // stories a drawing action applies to: this one, the ones of the same height, or all
+    function targetStories() {
+      const st = storyList(), cs = A.cam.v === 'plan' && A.cut !== 'all' ? storyOfZ(+A.cut) || curStory() : curStory(); if (!cs) return [];
+      const k = st.indexOf(cs), h = k > 0 ? cs.z - st[k - 1].z : 0;
+      if (A.simMode === 'all') return st.slice(1);
+      if (A.simMode === 'sim') return st.filter((s, i) => i > 0 && Math.abs((s.z - st[i - 1].z) - h) < 1e-3);
+      return k > 0 ? [cs] : [];
+    }
+    const gxs = () => BDATA().gx.slice().sort((a, b) => a.x - b.x), gys = () => BDATA().gy.slice().sort((a, b) => a.y - b.y);
+    // snapping in plan: grid intersection › node on this level › grid line › snap step
+    function gridSnap(x, y, W, H) {
+      const b = BDATA(), cs = curStory(), z = A.cut === 'all' ? (cs ? cs.z : 0) : +A.cut, w = screenToWorld(x, y, W, H), tol = 14 / (A.cam.k || 1);
+      let best = null, bd = tol;
+      b.gx.forEach(gx => b.gy.forEach(gy => { const d = Math.hypot(w[0] - gx.x, w[1] - gy.y); if (d < bd) { bd = d; best = { p: [gx.x, gy.y, z], kind: 'int', lab: gx.id + '–' + gy.id }; } }));
+      if (best) return best;
+      A.model.nodes.forEach(n => { if (Math.abs((+n.z || 0) - z) > 1e-3) return; const d = Math.hypot(w[0] - n.x, w[1] - n.y); if (d < bd) { bd = d; best = { p: [+n.x, +n.y, z], kind: 'node', lab: n.id }; } });
+      if (best) return best;
+      const sn = +A.opt.snap > 0 ? +A.opt.snap : 0, rs = v => r4(sn ? Math.round(v / sn) * sn : v);
+      b.gx.forEach(g => { const d = Math.abs(w[0] - g.x); if (d < bd) { bd = d; best = { p: [g.x, rs(w[1]), z], kind: 'line', lab: g.id }; } });
+      b.gy.forEach(g => { const d = Math.abs(w[1] - g.y); if (d < bd) { bd = d; best = { p: [rs(w[0]), g.y, z], kind: 'line', lab: g.id }; } });
+      return best || { p: [rs(w[0]), rs(w[1]), z], kind: 'free', lab: '' };
+    }
+    function bayAt(wx, wy) {
+      const X = gxs(), Y = gys(); let i = -1, j = -1;
+      for (let k = 0; k + 1 < X.length; k++) if (wx >= X[k].x && wx <= X[k + 1].x) { i = k; break; }
+      for (let k = 0; k + 1 < Y.length; k++) if (wy >= Y[k].y && wy <= Y[k + 1].y) { j = k; break; }
+      return i < 0 || j < 0 ? null : { x0: X[i].x, x1: X[i + 1].x, y0: Y[j].y, y1: Y[j + 1].y, lab: X[i].id + '–' + X[i + 1].id + ' / ' + Y[j].id + '–' + Y[j + 1].id };
+    }
+    const slabLabel = s => { const X = gxs(), Y = gys(), gl = (arr, k, v) => (arr.find(g => Math.abs(g[k] - v) < 1e-3) || {}).id; const a = gl(X, 'x', s.x0), c = gl(X, 'x', s.x1), d = gl(Y, 'y', s.y0), e = gl(Y, 'y', s.y1); return a && c && d && e ? a + '–' + c + ' / ' + d + '–' + e : fu(s.x0, 'L', 1) + '…' + fu(s.x1, 'L', 1) + ' × ' + fu(s.y0, 'L', 1) + '…' + fu(s.y1, 'L', 1); };
+    const matFor = secId => { const s = A.model.sections.find(q => q.id === secId), steel = s && (s.type === 'std' || s.type === 'tube' || s.type === 'I'), m = A.model; return ((steel ? m.materials.find(t => t.kind === 'steel') : m.materials.find(t => t.kind === 'conc')) || m.materials[0] || {}).id || ''; };
+    // a beam from a to b at level z, split at the nodes already on the line
+    function addBeamLine(a, c, z, tpl) {
+      const L = Math.hypot(c[0] - a[0], c[1] - a[1]); if (L < 1e-3) return 0;
+      const on = A.model.nodes.filter(n => Math.abs((+n.z || 0) - z) < 1e-3).map(n => { const t = ((n.x - a[0]) * (c[0] - a[0]) + (n.y - a[1]) * (c[1] - a[1])) / (L * L), d = Math.abs((n.x - a[0]) * (c[1] - a[1]) - (n.y - a[1]) * (c[0] - a[0])) / L; return { n, t, d }; }).filter(q => q.d < 1e-3 && q.t > 1e-6 && q.t < 1 - 1e-6).sort((p, q) => p.t - q.t);
+      const ids = [ensureNode([a[0], a[1], z])].concat(on.map(q => q.n.id), [ensureNode([c[0], c[1], z])]); let n = 0;
+      for (let k = 0; k + 1 < ids.length; k++) if (addMember(ids[k], ids[k + 1], tpl)) n++;
+      return n;
+    }
+    function addColumnAt(x, y, k, tpl) { const st = storyList(), i = ensureNode([x, y, st[k - 1].z]), j = ensureNode([x, y, st[k].z]); if (k - 1 === 0) { const nb = A.model.nodes.find(q => q.id === i); if (nb && nb.sup === 'free') nb.sup = 'fixed'; } return addMember(i, j, tpl) ? 1 : 0; }
+    function bNote(msg) { A.bmsg = msg; const hb = $('#anHint'); if (hb) hb.textContent = hintBar(); }
+    function bldClick(x, y, W, H) {
+      const cs = curStory();
+      if (!cs) { toast(T('Define the stories first (Building › Stories).', 'กำหนดชั้นก่อน (อาคาร › ชั้น)'), 'bad'); return; }
+      if (A.cam.v !== 'plan') { toast(T('Drawing works in a story plan — switched to ', 'การวาดทำในแปลนชั้น — เปลี่ยนเป็น ') + cs.id, ''); goStory(cs.id); return; }
+      const sp = gridSnap(x, y, W, H), tg = targetStories(), b = BDATA(), st = storyList();
+      if (!tg.length) { toast(T('Pick a story above the base (PageUp / PageDown).', 'เลือกชั้นที่อยู่เหนือฐาน (PageUp / PageDown)'), 'bad'); return; }
+      if (A.tool === 'bcol') {
+        snap(true); const tpl = { sec: b.dsec.col, mat: matFor(b.dsec.col), type: 'frame' }; let n = 0; tg.forEach(s => { n += addColumnAt(sp.p[0], sp.p[1], st.indexOf(s), tpl); });
+        changed(true); bNote(n ? '✓ ' + n + T(' column(s) at ', ' เสา ที่ ') + (sp.lab || fu(sp.p[0], 'L', 2) + ', ' + fu(sp.p[1], 'L', 2)) : T('Already there', 'มีอยู่แล้ว')); return;
+      }
+      if (A.tool === 'bbeam') {
+        if (!A.drawP) { A.drawP = sp.p; redraw(); return; }
+        const a = A.drawP; if (Math.hypot(a[0] - sp.p[0], a[1] - sp.p[1]) < 1e-3) return;
+        snap(true); const tpl = { sec: b.dsec.beam, mat: matFor(b.dsec.beam), type: 'frame' }; let n = 0; tg.forEach(s => { n += addBeamLine(a, sp.p, s.z, tpl); });
+        A.drawP = sp.p; changed(true); bNote(n ? '✓ ' + n + T(' beam(s) on ', ' คาน บน ') + tg.length + T(' story(s)', ' ชั้น') : T('Already there', 'มีอยู่แล้ว')); return;
+      }
+      if (A.tool === 'bslab') {
+        const w = screenToWorld(x, y, W, H), bay = bayAt(w[0], w[1]); if (!bay) { toast(T('Click inside a grid bay.', 'คลิกภายในช่องกริด'), ''); return; }
+        snap(true); const same = s => Math.abs(s.x0 - bay.x0) < 1e-3 && Math.abs(s.x1 - bay.x1) < 1e-3 && Math.abs(s.y0 - bay.y0) < 1e-3 && Math.abs(s.y1 - bay.y1) < 1e-3;
+        const here = b.slabs.find(s => s.st === cs.id && same(s)), sp2 = b.slabP || { t: 150, sdl: 1.5, ll: 3 };
+        let n = 0;
+        if (here) { const ids = new Set(tg.map(s => s.id)); const before = b.slabs.length; b.slabs = b.slabs.filter(s => !(ids.has(s.st) && same(s))); n = before - b.slabs.length; bNote('✓ ' + n + T(' slab(s) removed', ' แผ่นพื้นถูกลบ')); }
+        else { tg.forEach(s => { if (b.slabs.some(q => q.st === s.id && same(q))) return; b.slabs.push({ id: nextId(b.slabs, 'S'), st: s.id, x0: bay.x0, x1: bay.x1, y0: bay.y0, y1: bay.y1, t: +sp2.t || 150, sdl: +sp2.sdl || 0, ll: +sp2.ll || 0, way: b.floor.way || 'auto' }); n++; }); bNote('✓ ' + n + T(' slab(s) in bay ', ' แผ่นพื้นในช่อง ') + bay.lab); }
+        changed(true); ribRefresh(); return;
+      }
+    }
+    // auto-frame: columns at every grid intersection / beams on every grid line / slabs in every bay, on the target stories
+    function autoFrame(what) {
+      const tg = targetStories(), b = BDATA(), st = storyList(), X = gxs(), Y = gys(); if (!tg.length || X.length < 1 || Y.length < 1) { toast(T('Define grids and stories first.', 'กำหนดกริดและชั้นก่อน'), 'bad'); return; }
+      snap(true); let n = 0;
+      if (what === 'col') { const tpl = { sec: b.dsec.col, mat: matFor(b.dsec.col), type: 'frame' }; tg.forEach(s => X.forEach(gx => Y.forEach(gy => { n += addColumnAt(gx.x, gy.y, st.indexOf(s), tpl); }))); }
+      if (what === 'beam') { const tpl = { sec: b.dsec.beam, mat: matFor(b.dsec.beam), type: 'frame' }; tg.forEach(s => { Y.forEach(gy => { for (let i = 0; i + 1 < X.length; i++) n += addBeamLine([X[i].x, gy.y], [X[i + 1].x, gy.y], s.z, tpl); }); X.forEach(gx => { for (let j = 0; j + 1 < Y.length; j++) n += addBeamLine([gx.x, Y[j].y], [gx.x, Y[j + 1].y], s.z, tpl); }); }); }
+      if (what === 'slab') { const sp2 = b.slabP || { t: 150, sdl: 1.5, ll: 3 }; tg.forEach(s => { for (let i = 0; i + 1 < X.length; i++) for (let j = 0; j + 1 < Y.length; j++) { const r = { x0: X[i].x, x1: X[i + 1].x, y0: Y[j].y, y1: Y[j + 1].y }; if (b.slabs.some(q => q.st === s.id && Math.abs(q.x0 - r.x0) < 1e-3 && Math.abs(q.y0 - r.y0) < 1e-3 && Math.abs(q.x1 - r.x1) < 1e-3 && Math.abs(q.y1 - r.y1) < 1e-3)) continue; b.slabs.push(Object.assign({ id: nextId(b.slabs, 'S'), st: s.id, t: +sp2.t || 150, sdl: +sp2.sdl || 0, ll: +sp2.ll || 0, way: b.floor.way || 'auto' }, r)); n++; } }); }
+      changed(true); ribRefresh();
+      toast(n + ' ' + ({ col: T('column(s)', 'เสา'), beam: T('beam(s)', 'คาน'), slab: T('slab(s)', 'แผ่นพื้น') }[what]) + T(' added on ', ' เพิ่มบน ') + tg.length + T(' story(s)', ' ชั้น'), n ? 'ok' : '');
+    }
+    // ---- drawing (called from render): grids with bubbles, story lines, slabs, tool preview
+    function drawBld(o) {
+      const { g, P, pal, line, text, rep, W, H } = o, m = A.model, b = m.bld; if (!b) return;
+      const v = A.cam.v, st = storyList(), X = gxs(), Y = gys(), xsN = m.nodes.map(n => +n.x || 0), ysN = m.nodes.map(n => +n.y || 0);
+      const x0 = Math.min(...X.map(q => q.x), ...xsN), x1 = Math.max(...X.map(q => q.x), ...xsN), y0 = Math.min(...Y.map(q => q.y), ...ysN), y1 = Math.max(...Y.map(q => q.y), ...ysN), z0 = st.length ? st[0].z : 0, z1 = st.length ? st[st.length - 1].z : 0;
+      const pad = Math.max(1.2, 0.07 * Math.max(x1 - x0, y1 - y0, z1 - z0, 1)), bub = (p, lab) => { g.beginPath(); g.arc(p[0], p[1], 9, 0, 2 * PI); g.fillStyle = pal.bg; g.fill(); g.strokeStyle = pal.muted; g.lineWidth = 1.2; g.stroke(); g.font = '600 10px system-ui, sans-serif'; g.textAlign = 'center'; g.fillStyle = pal.ink; g.fillText(lab, p[0], p[1] + 3.5); g.textAlign = 'left'; };
+      const ext = (a, bb, pp) => { const d = [pp[0] - a[0], pp[1] - a[1]], L = Math.hypot(d[0], d[1]) || 1; return [pp[0] + d[0] / L * 12, pp[1] + d[1] / L * 12]; };
+      if (o.stage === 'grid' && (rep || A.grid !== false)) {
+        g.save();
+        if (v === 'xz' || v === 'yz') {
+          const G2 = v === 'xz' ? X.map(q => [q.x, q.id]) : Y.map(q => [q.y, q.id]), c = v === 'xz' ? (A.cut === 'all' ? y0 : +A.cut) : (A.cut === 'all' ? x0 : +A.cut), pt = (s, z) => (v === 'xz' ? P([s, c, z]) : P([c, s, z]));
+          G2.forEach(([s, id]) => { const a = pt(s, z0 - pad * 0.4), e = pt(s, z1 + pad); line(a, e, pal.grid, 1, [6, 4]); bub(ext(a, e, e), id); });
+          const smin = Math.min(...G2.map(q => q[0]), v === 'xz' ? x0 : y0), smax = Math.max(...G2.map(q => q[0]), v === 'xz' ? x1 : y1);
+          st.forEach(s => { const a = pt(smin - pad, s.z), e = pt(smax + pad * 0.3, s.z); line(a, e, pal.grid, 1, [2, 4]); text(s.id + '  ' + fu(s.z, 'L', 2), a[0] - 4, a[1] - 4, pal.muted, { align: 'right', font: '10.5px system-ui, sans-serif' }); });
+        } else {
+          const zz = v === 'plan' && A.cut !== 'all' ? +A.cut : z0;
+          X.forEach(q => { const a = P([q.x, y0 - pad, zz]), e = P([q.x, y1 + pad * 0.4, zz]); line(a, e, pal.grid, 1, [6, 4]); bub(ext(e, a, a), q.id); });
+          Y.forEach(q => { const a = P([x0 - pad, q.y, zz]), e = P([x1 + pad * 0.4, q.y, zz]); line(a, e, pal.grid, 1, [6, 4]); bub(ext(e, a, a), q.id); });
+          if (v === 'plan' && A.cut !== 'all') { const s = storyOfZ(+A.cut); if (s) text(T('Story ', 'ชั้น ') + s.id + ' · ' + fu(s.z, 'L', 2) + ul('L'), 14, H - 54, pal.muted, { font: '600 12px system-ui, sans-serif' }); }
+        }
+        g.restore();
+      }
+      if (o.stage === 'slabs' && A.showSlabs !== false && b.slabs.length) {
+        const planZ = v === 'plan' && A.cut !== 'all' ? +A.cut : null, elev = v === 'xz' || v === 'yz';
+        g.save();
+        b.slabs.forEach(s => {
+          const ss = st.find(q => q.id === s.st); if (!ss) return; if (planZ !== null && Math.abs(ss.z - planZ) > 1e-3) return;
+          const c = [[s.x0, s.y0], [s.x1, s.y0], [s.x1, s.y1], [s.x0, s.y1]].map(q => P([q[0], q[1], ss.z]));
+          if (elev) return;
+          g.beginPath(); c.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.closePath();
+          const hot = A.hoverSlab === s.id; g.globalAlpha = hot ? 0.3 : planZ !== null ? 0.16 : 0.07; g.fillStyle = hot ? pal.acc : pal.teal; g.fill(); g.globalAlpha = 1;
+          if (planZ !== null && !rep) { const cx = (c[0][0] + c[2][0]) / 2, cy = (c[0][1] + c[2][1]) / 2, way = BD.slabWay(s); text(s.id, cx - 8, cy - 2, pal.teal, { font: '600 10.5px system-ui, sans-serif' }); text((+s.t || 0) + ' · ' + (way === 'two' ? '⤧' : way === 'oneX' ? '↔' : '↕'), cx - 8, cy + 11, pal.muted, { font: '10px system-ui, sans-serif' }); }
+        });
+        g.restore();
+      }
+      if (o.stage === 'tool' && !rep && isBTool(A.tool) && A.mouse && v === 'plan') {
+        const sp = gridSnap(A.mouse[0], A.mouse[1], W, H), q = P(sp.p);
+        if (A.tool === 'bslab') { const w = screenToWorld(A.mouse[0], A.mouse[1], W, H), bay = bayAt(w[0], w[1]); if (bay) { const z = sp.p[2], c = [[bay.x0, bay.y0], [bay.x1, bay.y0], [bay.x1, bay.y1], [bay.x0, bay.y1]].map(r => P([r[0], r[1], z])); g.beginPath(); c.forEach((r, i) => (i ? g.lineTo(r[0], r[1]) : g.moveTo(r[0], r[1]))); g.closePath(); g.globalAlpha = 0.18; g.fillStyle = pal.acc; g.fill(); g.globalAlpha = 1; g.strokeStyle = pal.acc; g.lineWidth = 1.5; g.stroke(); text(bay.lab, c[3][0] + 6, c[3][1] + 16, pal.acc, { font: '600 11px system-ui, sans-serif' }); } return; }
+        if (A.tool === 'bbeam' && A.drawP) line(P(A.drawP), q, pal.acc, 2, [6, 4]);
+        g.strokeStyle = pal.acc; g.lineWidth = 1.6; if (sp.kind === 'int' || sp.kind === 'node') { g.strokeRect(q[0] - 6, q[1] - 6, 12, 12); } else { g.beginPath(); g.arc(q[0], q[1], 5, 0, 2 * PI); g.stroke(); }
+        if (A.tool === 'bcol') { g.fillStyle = pal.acc; g.globalAlpha = 0.35; g.fillRect(q[0] - 5, q[1] - 5, 10, 10); g.globalAlpha = 1; }
+        if (sp.lab) text(sp.lab, q[0] + 10, q[1] - 8, pal.acc, { font: '600 11px system-ui, sans-serif' });
+      }
+    }
+    // floor loads shown on the slabs (case lc)
+    function drawSlabLoads(o, lc) {
+      const { P, text, pal, g } = o, b = A.model.bld; if (!b || !b.slabs.length) return;
+      const st = storyList(), swc = (A.model.cases.find(c => c.sw) || {}).id, rho = BD.slabRho ? 0 : 0;
+      const planZ = A.cam.v === 'plan' && A.cut !== 'all' ? +A.cut : null, many = planZ === null && b.slabs.length > 6;
+      b.slabs.forEach(s => {
+        const ss = st.find(q => q.id === s.st); if (!ss || (planZ !== null && Math.abs(ss.z - planZ) > 1e-3)) return;
+        const parts = []; if ((lc === 'all' || lc === b.floor.dl) && +s.sdl) parts.push((lc === 'all' ? b.floor.dl + ' ' : '') + fu(+s.sdl, 'p', 2)); if ((lc === 'all' || lc === b.floor.ll) && +s.ll) parts.push((lc === 'all' ? b.floor.ll + ' ' : '') + fu(+s.ll, 'p', 2)); if (b.floor.sw && (lc === 'all' || lc === swc) && +s.t) parts.push(T('slab ', 'พื้น ') + (+s.t) + ' mm');
+        if (!parts.length) return;
+        const c = [[s.x0, s.y0], [s.x1, s.y0], [s.x1, s.y1], [s.x0, s.y1]].map(q => P([q[0], q[1], ss.z]));
+        g.save(); g.beginPath(); c.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.closePath(); g.globalAlpha = 0.14; g.fillStyle = caseCol(pal, lc === 'all' ? b.floor.dl : lc); g.fill(); g.restore();
+        if (many) return; const cx = (c[0][0] + c[2][0]) / 2, cy = (c[0][1] + c[2][1]) / 2;
+        text(parts.join(' · ') + (parts.length ? '' : ''), cx - 30, cy + (planZ !== null ? 24 : 4), caseCol(pal, lc === 'all' ? b.floor.dl : lc), { font: '10.5px ui-monospace, monospace' });
+      });
+      if (A.model.loads.some(l => l.gen === 'slab' && (lc === 'all' || l.case === lc))) o.notes.push(T('Floor loads (kPa) are spread to the beams by tributary area — see Building › Floor Loads.', 'น้ำหนักบนพื้น (kPa) ถ่ายลงคานตามพื้นที่รับน้ำหนัก — ดู อาคาร › น้ำหนักบนพื้น'));
+    }
+
+    // ---- ribbon tab, menus
+    function bldTab() {
+      const tool = t => () => A.tool === t, b = BDATA(), cs = curStory(), sm = A.simMode || 'one', secN = id => { const s = A.model.sections.find(q => q.id === id); return s ? s.id : '—'; };
+      return ['bldg', T('Building', 'อาคาร'), [
+        [T('Templates', 'แม่แบบ'), [B('qt', 'bldg', T('RC Building', 'อาคาร คสล.'), { v: 'rc' }), B('qt', 'shed', T('Steel Building', 'อาคารเหล็ก'), { v: 'steel' }), COL(B('qt', 'column', T('RC Tower', 'อาคารสูง คสล.'), { v: 'tower' }), B('qt', 'grid', T('Grids Only', 'กริดอย่างเดียว'), { v: 'blank' }), B('wizard', 'wand', T('Wizard…', 'กำหนดขนาด…')))]],
+        [T('Grid & Story', 'กริดและชั้น'), [B('bgrid', 'grid', T('Grid Lines', 'เส้นกริด') + ' (' + b.gx.length + '×' + b.gy.length + ')'), B('bstory', 'extrude', T('Stories', 'ชั้น') + ' (' + Math.max(0, b.stories.length - 1) + ')'), B('bstm', 'plane', T('Plan: ', 'แปลน: ') + (cs ? cs.id : '—'), { m: 1, on: () => A.cam.v === 'plan' })]],
+        [T('Draw on Grid', 'วาดบนกริด'), [B('bcol', 'column', T('Columns', 'เสา'), { on: tool('bcol') }), B('bbeam', 'beam', T('Beams', 'คาน'), { on: tool('bbeam') }), B('bslab', 'slab', T('Slabs', 'แผ่นพื้น'), { on: tool('bslab') }),
+          COL(B('bsim', null, T('This story', 'ชั้นนี้'), { v: 'one', radio: 1, on: () => sm === 'one' }), B('bsim', null, T('Similar stories', 'ชั้นสูงเท่ากัน'), { v: 'sim', radio: 1, on: () => sm === 'sim' }), B('bsim', null, T('All stories', 'ทุกชั้น'), { v: 'all', radio: 1, on: () => sm === 'all' })),
+          COL(B('bsecc', 'sec', T('Column: ', 'เสา: ') + secN(b.dsec && b.dsec.col), { m: 1 }), B('bsecb', 'sec', T('Beam: ', 'คาน: ') + secN(b.dsec && b.dsec.beam), { m: 1 }), B('bauto', 'wand', T('Auto Frame', 'สร้างอัตโนมัติ'), { m: 1 }))]],
+        [T('Floor Loads', 'น้ำหนักบนพื้น'), [B('bfloor', 'udl', T('Floor Loads', 'น้ำหนักบนพื้น') + ' (' + b.slabs.length + ')'), COL(B('bdia', 'plane', T('Rigid Diaphragm', 'ไดอะแฟรมแข็ง'), { on: () => !!BDATA().dia }), B('tog', 'eye', T('Show Slabs', 'แสดงพื้น'), { v: 'showSlabs', on: () => A.showSlabs !== false }))]],
+        [T('Wind & Results', 'แรงลมและผล'), [B('bwind', 'wind', T('Wind Loads', 'แรงลม') + ' · ' + ({ AS: 'AS/NZS', EN: 'EN', TH: 'DPT' }[b.wind.code] || ''), { on: () => !!b.wind.on }), COL(B('bstr', 'table', T('Story Results', 'ผลรายชั้น')), B('qto', 'qto', T('Quantity Take-off', 'ถอดปริมาณ'))), B('run', 'play', T('Run', 'วิเคราะห์'))]]
+      ]];
+    }
+    function bldMenu(id) {
+      const it = (c, l, v, on) => ({ c, l, v, on }), b = BDATA();
+      if (id === 'bstm') return storyList().slice().reverse().map(s => it('bgo', s.id + ' · ' + fu(s.z, 'L', 2) + ul('L'), s.id, A.cam.v === 'plan' && A.cut !== 'all' && Math.abs(+A.cut - s.z) < 1e-3)).concat([{ sep: 1 }, it('initv', T('3D view', 'มุมมอง 3 มิติ'))]);
+      if (id === 'bsecc' || id === 'bsecb') { const k = id === 'bsecc' ? 'col' : 'beam'; return A.model.sections.map(s => it('bsec', s.id + ' — ' + (s.name || s.type), k + ':' + s.id, (b.dsec || {})[k] === s.id)).concat([{ sep: 1 }, it('psec', T('New section…', 'หน้าตัดใหม่…'))]); }
+      if (id === 'bauto') return [it('bautogo', T('Columns at every grid intersection', 'เสาทุกจุดตัดกริด'), 'col'), it('bautogo', T('Beams on every grid line', 'คานทุกเส้นกริด'), 'beam'), it('bautogo', T('Slabs in every bay', 'แผ่นพื้นทุกช่อง'), 'slab'), { sep: 1 }, { c: 'bsim', l: T('Applies to: ', 'ใช้กับ: ') + ({ one: T('this story', 'ชั้นนี้'), sim: T('similar stories', 'ชั้นสูงเท่ากัน'), all: T('all stories', 'ทุกชั้น') }[A.simMode || 'one']), v: A.simMode || 'one' }];
+      return null;
+    }
+    function bldCmd(c, v) {
+      const b = BDATA();
+      switch (c) {
+        case 'bgrid': case 'bstory': case 'bfloor': case 'bwind': openWin(c); return true;
+        case 'bstr': if (!needRes()) return true; openWin('bstr'); return true;
+        case 'bgo': goStory(v); return true;
+        case 'bcol': case 'bbeam': case 'bslab': { const cs = curStory(); A.bmsg = ''; setTool(A.tool === c ? 'select' : c); A.drawP = null; if (A.tool === c && A.cam.v !== 'plan' && cs) goStory(cs.id); else ribRefresh(); if (A.tool === c && !A._tipShown) A._tipShown = 1, toast({ bcol: T('Click grid intersections to place columns', 'คลิกจุดตัดกริดเพื่อวางเสา'), bbeam: T('Click two points to draw a beam (it splits at nodes on the way)', 'คลิก 2 จุดเพื่อวาดคาน (แบ่งที่จุดต่อระหว่างทาง)'), bslab: T('Click inside a bay to add a slab, click a slab to remove it', 'คลิกในช่องเพื่อเพิ่มแผ่นพื้น คลิกแผ่นพื้นเพื่อลบ') }[c] + T(' · PageUp / PageDown: change story', ' · PageUp / PageDown: เปลี่ยนชั้น'), ''); return true; }
+        case 'bsim': A.simMode = v || 'one'; ribRefresh(); toast(T('Drawing applies to: ', 'การวาดใช้กับ: ') + ({ one: T('this story', 'ชั้นนี้'), sim: T('stories of the same height', 'ชั้นที่สูงเท่ากัน'), all: T('all stories', 'ทุกชั้น') }[A.simMode]), ''); return true;
+        case 'bsec': { const [k, id] = String(v).split(':'); b.dsec = Object.assign({}, b.dsec, { [k]: id }); persist(); ribRefresh(); return true; }
+        case 'bautogo': autoFrame(v); return true;
+        case 'bdia': snap(true); b.dia = !b.dia; changed(false); ribRefresh(); toast(b.dia ? T('Rigid floor diaphragms on (stiff in-plane bracing in every slab)', 'เปิดไดอะแฟรมแข็ง (ค้ำยันในระนาบที่แข็งมากในทุกแผ่นพื้น)') : T('Rigid diaphragms off', 'ปิดไดอะแฟรมแข็ง'), ''); return true;
+        case 'qto': openWin('qto'); return true;
+        case 'qtocsv': qtoCSV(); return true;
+        case 'qtab': A.qtab = v; winRefresh(); return true;
+        case 'bgadd': { snap(true); const k = v === 'y' ? 'gy' : 'gx', arr = b[k].slice().sort((p, q) => p[k === 'gx' ? 'x' : 'y'] - q[k === 'gx' ? 'x' : 'y']), last = arr[arr.length - 1], prev = arr[arr.length - 2], sp = last && prev ? last[k === 'gx' ? 'x' : 'y'] - prev[k === 'gx' ? 'x' : 'y'] : 6, id = k === 'gx' ? GLAB(b.gx.length) : String(b.gy.length + 1); const o2 = { id: b[k].some(q => q.id === id) ? id + "'" : id }; o2[k === 'gx' ? 'x' : 'y'] = r4((last ? last[k === 'gx' ? 'x' : 'y'] : 0) + (last ? sp : 0)); b[k].push(o2); changed(true); winRefresh(); ribRefresh(); return true; }
+        case 'bgdel': { const [k, i] = String(v).split(':'); if (!b[k] || !b[k][+i]) return true; snap(true); b[k].splice(+i, 1); changed(true); winRefresh(); ribRefresh(); return true; }
+        case 'bggen': { const w = wdef('bgrid'), xs = cumul(numR(w.sx)), ys = cumul(numR(w.sy)); if (xs.length < 2 || ys.length < 2) { toast(T('Enter the spacings, e.g. 8, 8, 2@6', 'ใส่ระยะ เช่น 8, 8, 2@6'), 'bad'); return true; } snap(true); b.gx = xs.map((x, i) => ({ id: GLAB(i), x: r4(x + (+w.ox || 0)) })); b.gy = ys.map((y, i) => ({ id: String(i + 1), y: r4(y + (+w.oy || 0)) })); changed(true); winRefresh(); ribRefresh(); A.cam.k = null; redraw(); toast(T('Grid lines replaced', 'สร้างเส้นกริดใหม่แล้ว'), 'ok'); return true; }
+        case 'bsadd': { const st = storyList(), top = st[st.length - 1]; if (!top) { snap(true); b.stories = [{ id: 'Base', z: 0 }]; changed(true); winRefresh(); return true; } const below = st[st.length - 2], h = +wdef('bstory').h > 0 ? frU(+wdef('bstory').h, 'L') : below ? top.z - below.z : 3.5; snap(true); addStoryAbove(h, !!wdef('bstory').copy); changed(true); winRefresh(); ribRefresh(); A.cam.k = null; redraw(); return true; }
+        case 'bsdel': { const st = storyList(), top = st[st.length - 1]; if (!top || st.length < 2) return true; snap(true); const ids = new Set(A.model.nodes.filter(n => Math.abs((+n.z || 0) - top.z) < 1e-3).map(n => n.id)); A.model.members = A.model.members.filter(q => !ids.has(q.i) && !ids.has(q.j)); A.model.nodes = A.model.nodes.filter(n => !ids.has(n.id)); const keepM = new Set(A.model.members.map(q => q.id)); A.model.loads = A.model.loads.filter(l => (l.kind === 'node' || l.kind === 'settle' ? !ids.has(l.node) : keepM.has(l.member))); b.slabs = b.slabs.filter(s => s.st !== top.id); b.stories = b.stories.filter(s => s !== top); if (A.story === top.id) A.story = null; A.sel = { n: [], m: [] }; changed(true); winRefresh(); ribRefresh(); toast(T('Story ', 'ลบชั้น ') + top.id + T(' deleted', ''), ''); return true; }
+        case 'bslabdel': { const i = +v; if (!b.slabs[i]) return true; snap(true); b.slabs.splice(i, 1); changed(true); winRefresh(); ribRefresh(); return true; }
+        case 'bfapply': { const w = wdef('bfloor'), list = b.slabs.filter(s => w.on === 'all' || s.st === w.on); if (!list.length) { toast(T('No slabs on that story.', 'ไม่มีแผ่นพื้นในชั้นนั้น'), 'bad'); return true; } snap(true); list.forEach(s => { if (w.t !== '') s.t = +w.t; if (w.sdl !== '') s.sdl = frU(+w.sdl, 'p'); if (w.ll !== '') s.ll = frU(+w.ll, 'p'); if (w.way) s.way = w.way; }); b.slabP = { t: w.t !== '' ? +w.t : (b.slabP || {}).t, sdl: w.sdl !== '' ? frU(+w.sdl, 'p') : (b.slabP || {}).sdl, ll: w.ll !== '' ? frU(+w.ll, 'p') : (b.slabP || {}).ll }; changed(true); winRefresh(); toast(T('Applied to ', 'กำหนดให้ ') + list.length + T(' slab(s)', ' แผ่นพื้น'), 'ok'); return true; }
+        case 'bwcases': windCases(); return true;
+        case 'bshow': A.loadsOn = true; A.lcase = v; syncLshow(); redraw(); ribRefresh(); return true;
+      }
+      return false;
+    }
+    // new story on top: optionally a copy of the top story's columns, beams and slabs
+    function addStoryAbove(h, copy) {
+      const b = BDATA(), st = storyList(), top = st[st.length - 1], below = st[st.length - 2], nz = r4(top.z + h), k = st.length;
+      const uniq = id => { let q = id, i = 2; while (b.stories.some(s => s.id === q)) q = id + '-' + i++; return q; };
+      let nid = 'L' + k; const roofLL = {};
+      if (top.id === 'Roof') { const rn = uniq('L' + (k - 1)); b.slabs.forEach(s => { if (s.st === 'Roof') { roofLL[s.id] = s.ll; s.st = rn; if (b.slabP && b.slabP.ll != null) s.ll = b.slabP.ll; } }); if (A.story === 'Roof') A.story = rn; top.id = rn; nid = 'Roof'; }
+      const ns = { id: uniq(nid), z: nz }; b.stories.push(ns);
+      if (!copy || !below) return;
+      const nd = nodeMap(), tz = top.z, bz = below.z, sel = A.model.members.filter(q => { const a = nd[q.i], c = nd[q.j]; if (!a || !c) return false; const za = +a.z, zc = +c.z; return Math.min(za, zc) >= bz - 1e-3 && Math.max(za, zc) <= tz + 1e-3 && !(Math.abs(za - bz) < 1e-3 && Math.abs(zc - bz) < 1e-3); });
+      sel.forEach(q => { const a = nd[q.i], c = nd[q.j], i = ensureNode([+a.x, +a.y, r4(+a.z + h)]), j = ensureNode([+c.x, +c.y, r4(+c.z + h)]); addMember(i, j, q); });
+      b.slabs.filter(s => s.st === top.id).map(s => Object.assign({}, s, { st: ns.id, ll: ns.id === 'Roof' && roofLL[s.id] != null ? roofLL[s.id] : s.ll })).forEach(s => { s.id = nextId(b.slabs, 'S'); b.slabs.push(s); });
+    }
+    // make sure the wind cases exist (and the combinations include them)
+    function windCases() {
+      const m = A.model, w = BDATA().wind, want = [['X', 1], ['Y', 1], ['X', -1], ['Y', -1]].filter(([d, s]) => w[d] && (s > 0 || w.neg)).map(([d, s]) => [w.cases[d + (s < 0 ? 'N' : '')] || ('W' + d + (s < 0 ? 'N' : '')), d, s]);
+      snap(true); let n = 0;
+      want.forEach(([id, d, s]) => { if (m.cases.some(c => c.id === id)) return; m.cases.push(CASE(id, 'W', false, 'Wind ' + (s < 0 ? '−' : '+') + d, 'ลม ' + (s < 0 ? '−' : '+') + d)); n++; });
+      m.combos = preset(m.code, m.cases); w.on = true; changed(true); winRefresh(); ribRefresh();
+      toast((n ? n + T(' wind case(s) added · ', ' กรณีลมใหม่ · ') : '') + T('load combinations regenerated (', 'สร้างการรวมน้ำหนักใหม่ (') + m.combos.length + ')', 'ok');
+    }
+
+    // ---- windows
+    const bk = (path, v, attrs, w) => inp(v == null ? '' : v, `data-bk="${path}" ${attrs || ''}`, w);
+    const bks = (path, opts, v) => sel(opts, v, `data-bk="${path}"`);
+    const pv = (v, q, d) => (v === '' || v == null ? '' : Number(toU(+v, q).toFixed(d == null ? 4 : d)));
+    function windCalcHTML() {
+      const b = BDATA(), w = b.wind; if (!w.on) return hint(T('Automatic wind loads are off.', 'ปิดการคำนวณแรงลมอัตโนมัติ'));
+      const out = ['X', 'Y'].filter(d => w[d]).map(d => BD.windCalc(A.model, d)).filter(Boolean); if (!out.length) return hint(T('Needs stories and nodes above the base.', 'ต้องมีชั้นและจุดต่อเหนือฐาน'));
+      const missing = [['X', ''], ['Y', ''], ['X', 'N'], ['Y', 'N']].filter(([d, s]) => w[d] && (!s || w.neg)).map(([d, s]) => w.cases[d + s]).filter(id => !A.model.cases.some(c => c.id === id));
+      const info = (r, c) => (c === 'EN' ? `q<sub>p</sub>(z<sub>e</sub>=${fu(r.info.ze, 'L', 1)}) ${fu(r.info.qp, 'p', 3)}` : c === 'TH' ? `C<sub>e</sub> ${f(r.info.Ce, 3)}` : `M<sub>z,cat</sub> ${f(r.info.Mz, 3)} · V ${f(r.info.V, 1)} m/s`);
+      return (missing.length ? `<p class="notice warn">${T('Load case(s) missing: ', 'ยังไม่มีกรณีน้ำหนัก: ')}${missing.map(esc).join(', ')} — <button class="linkbtn" data-act="an-rb" data-c="bwcases">${T('create them and the combinations', 'สร้างกรณีและการรวมน้ำหนัก')}</button></p>` : '') +
+        out.map(c => `<div class="an-blk"><p class="small"><b>${T('Wind ', 'ลม ')}${c.dir}</b> · H ${fu(c.H, 'L', 2)} · B ${fu(c.B, 'L', 2)} · D ${fu(c.D, 'L', 2)}${ul('L')} · C<sub>p</sub> ${f(c.cp[0], 2)} / ${f(c.cp[1], 2)} · ${T('base shear', 'แรงเฉือนที่ฐาน')} <b>${fu(c.base, 'F', 1)}${ul('F')}</b> · ${T('overturning', 'โมเมนต์พลิกคว่ำ')} <b>${fu(c.Mb, 'M', 0)}${ul('M')}</b></p><p class="muted small">${esc(c.note)}</p>` +
+          tblw([T('Story', 'ชั้น'), 'z', T('Trib. h', 'ความสูงรับ'), 'B', T('Windward', 'ด้านต้นลม') + ' p', T('Leeward', 'ด้านท้ายลม') + ' p', T('Force', 'แรง') + ' F', T('Shear', 'แรงเฉือน') + ' V', ''], c.rows.slice().reverse().map(r => `<tr><td><b>${esc(r.id)}</b></td><td class="num mono">${fu(r.z, 'L', 2)}</td><td class="num mono">${fu(r.zt - r.zb, 'L', 2)}</td><td class="num mono">${fu(r.B, 'L', 1)}</td><td class="num mono">${fu(r.pw, 'p', 3)}</td><td class="num mono">${fu(r.pl, 'p', 3)}</td><td class="num mono"><b>${fu(r.F, 'F', 2)}</b></td><td class="num mono">${fu(r.V, 'F', 1)}</td><td class="small muted">${r.info ? info(r, w.code) : ''}</td></tr>`).concat([`<tr class="tot"><td colspan="4">${T('units', 'หน่วย')}: ${ulab('L')}, ${ulab('p')}, ${ulab('F')}</td><td></td><td></td><td class="num mono">${fu(c.base, 'F', 1)}</td><td></td><td></td></tr>`]), 'an-wtbl-sm') +
+          (c.warn.length ? `<ul class="warn-list">${c.warn.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '') + '</div>').join('') +
+        `<p class="muted small">${T('Story forces act on the windward and leeward faces of each floor, shared by the tributary width of each column line. With rigid diaphragms the floor moves as one. Check the code values against the edition your project uses.', 'แรงลมต่อชั้นกระทำที่ด้านต้นลมและท้ายลมของแต่ละชั้น แบ่งตามความกว้างรับแรงของแนวเสา เมื่อมีไดอะแฟรมแข็งพื้นจะเคลื่อนที่เป็นชิ้นเดียว ควรตรวจสอบค่าตามมาตรฐานฉบับที่โครงการใช้')}</p>`;
+    }
+    function floorTotals() {
+      const b = BDATA(), st = storyList(), swc = (A.model.cases.find(c => c.sw) || {}).id, rho = (A.model.materials.find(t => t.id === b.floor.mat) || A.model.materials.find(t => t.kind === 'conc') || { rho: 24 }).rho || 24;
+      return st.slice(1).reverse().map(s => { const L = b.slabs.filter(q => q.st === s.id), Aa = L.reduce((t, q) => t + (q.x1 - q.x0) * (q.y1 - q.y0), 0); return { s, n: L.length, A: Aa, sdl: L.reduce((t, q) => t + (q.x1 - q.x0) * (q.y1 - q.y0) * (+q.sdl || 0), 0), ll: L.reduce((t, q) => t + (q.x1 - q.x0) * (q.y1 - q.y0) * (+q.ll || 0), 0), sw: b.floor.sw && swc ? L.reduce((t, q) => t + (q.x1 - q.x0) * (q.y1 - q.y0) * rho * (+q.t || 0) / 1000, 0) : 0 }; });
+    }
+    function storyResHTML(cur) {
+      if (!cur || cur.kind === 'env') return `<p class="muted">${T('Choose a load case or combination.', 'เลือกกรณีน้ำหนักหรือการรวมน้ำหนัก')}</p>`;
+      const rows = BD.storyResults(A.model, cur); if (!rows.length) return `<p class="muted">${T('Needs stories (Building › Stories).', 'ต้องกำหนดชั้น (อาคาร › ชั้น)')}</p>`;
+      const rat = v => (!isFinite(v) || v > 99999 ? '≈ 0' : 'h/' + f(v, 0)), worst = Math.min(...rows.map(r => Math.min(r.rx, r.ry)));
+      return wrap(`<table class="chk an-r"><thead><tr><th>${T('Story', 'ชั้น')}</th><th class="num">z (${ulab('L')})</th><th class="num">h</th><th class="num">u<sub>x</sub> max (${ulab('d')})</th><th class="num">u<sub>y</sub> max</th><th class="num">${T('Drift X', 'ดริฟต์ X')}</th><th class="num">${T('Drift Y', 'ดริฟต์ Y')}</th><th class="num">V<sub>x</sub> (${ulab('F')})</th><th class="num">V<sub>y</sub></th></tr></thead><tbody>${rows.slice().reverse().map(r => `<tr><td><b>${esc(r.id)}</b></td><td class="num mono">${fu(r.z, 'L', 2)}</td><td class="num mono">${fu(r.h, 'L', 2)}</td><td class="num mono">${fu(r.ux, 'd')}</td><td class="num mono">${fu(r.uy, 'd')}</td><td class="num mono ${r.rx < 500 ? 'bad' : ''}">${fu(r.dx, 'd')} · ${rat(r.rx)}</td><td class="num mono ${r.ry < 500 ? 'bad' : ''}">${fu(r.dy, 'd')} · ${rat(r.ry)}</td><td class="num mono">${fu(r.Vx, 'F', 1)}</td><td class="num mono">${fu(r.Vy, 'F', 1)}</td></tr>`).join('')}</tbody></table>`) +
+        hint(T('Drift = largest difference in horizontal displacement between the floor and the floor below on the same column line. Story shear = horizontal force carried by the elements crossing mid-height of the story. Typical serviceability limits h/500 (brittle finishes) to h/300.', 'ดริฟต์ = ผลต่างการเคลื่อนตัวแนวราบสูงสุดระหว่างชั้นกับชั้นล่างบนแนวเสาเดียวกัน แรงเฉือนชั้น = แรงแนวราบในชิ้นส่วนที่ตัดผ่านกึ่งความสูงชั้น ค่าจำกัดทั่วไป h/500 ถึง h/300')) + (isFinite(worst) && worst < 1e5 ? `<p class="small">${T('Worst drift: ', 'ดริฟต์มากที่สุด: ')}<b>h/${f(worst, 0)}</b></p>` : '');
+    }
+    // ---- quantity take-off
+    const QO = () => { if (!A.opt.qto) A.opt.qto = clone(BD.QDEF); return A.opt.qto; };
+    function qtoRun() { if (A.qtoCache && A.qtoCache.ver === A.ver && A.qtoCache.o === JSON.stringify(QO())) return A.qtoCache.q; const q = BD.qto(A.model, QO()); A.qtoCache = { ver: A.ver, o: JSON.stringify(QO()), q }; return q; }
+    const CATN = () => ({ col: T('Columns', 'เสา'), beam: T('Beams', 'คาน'), brace: T('Braces / inclined', 'ค้ำยัน / ชิ้นเอียง'), slab: T('Slabs', 'แผ่นพื้น') });
+    const MKN = () => ({ conc: T('concrete', 'คอนกรีต'), steel: T('steel', 'เหล็ก'), other: T('other', 'อื่น ๆ') });
+    function qtoHTML() {
+      const q = qtoRun(), o = QO(), tab = A.qtab || 'sum', cur = o.cur ? ' ' + esc(o.cur) : '', V = v => f(v, 2), Wt = v => f(v / 1000, 2);
+      const head = [T('Item', 'รายการ'), T('No.', 'จำนวน'), T('Length', 'ความยาว') + ' (m)', T('Concrete', 'คอนกรีต') + ' (m³)', T('Formwork', 'แบบหล่อ') + ' (m²)', T('Rebar', 'เหล็กเสริม') + ' (t)', T('Steel', 'เหล็กรูปพรรณ') + ' (t)'];
+      const row = (lab, g) => `<tr><td>${lab}</td><td class="num mono">${g.n}</td><td class="num mono">${g.L ? f(g.L, 1) : g.A ? f(g.A, 1) + ' m²' : '—'}</td><td class="num mono">${g.V ? V(g.V) : '—'}</td><td class="num mono">${g.form ? f(g.form, 1) : '—'}</td><td class="num mono">${g.rebar ? Wt(g.rebar) : '—'}</td><td class="num mono">${g.steel ? Wt(g.steel) : '—'}</td></tr>`;
+      const tot = `<tr class="tot"><td>${T('Total', 'รวม')}</td><td class="num mono">${q.tot.n}</td><td class="num mono">${f(q.tot.L, 1)}</td><td class="num mono">${V(q.tot.V)}</td><td class="num mono">${f(q.tot.form, 1)}</td><td class="num mono">${Wt(q.tot.rebar)}</td><td class="num mono">${Wt(q.tot.steel)}</td></tr>`;
+      let body = '';
+      if (tab === 'sum') body = tblw(head, q.byCat.map(g => { const [c, mk] = g.k.split('|'); return row(`${CATN()[c] || c} <span class="muted small">· ${MKN()[mk] || mk}</span>`, g); }).concat([tot]), 'an-wtbl-sm');
+      else if (tab === 'story') body = tblw([T('Story / level', 'ชั้น / ระดับ')].concat(head.slice(1)), q.byStory.map(g => row(`<b>${esc(g.k)}</b>`, g)).concat([tot]), 'an-wtbl-sm');
+      else if (tab === 'sec') body = tblw([T('Section', 'หน้าตัด')].concat(head.slice(1)), q.bySec.map(g => { const [mk, nm] = g.k.split('|'); const kgm = mk === 'steel' && g.L ? ` <span class="muted small">${f(g.steel / g.L, 1)} kg/m</span>` : ''; return row(esc(nm) + kgm, g); }).concat([tot]), 'an-wtbl-sm');
+      else body = tblw([T('Element', 'ชิ้นส่วน'), T('Type', 'ชนิด'), T('Story', 'ชั้น'), T('Section', 'หน้าตัด'), 'L (m)', 'V (m³)', T('Form', 'แบบ') + ' (m²)', T('Rebar', 'เหล็กเสริม') + ' (kg)', T('Steel', 'เหล็ก') + ' (kg)'], q.rows.slice(0, 400).map(r => `<tr><td>${esc(r.id)}</td><td class="small">${CATN()[r.cat] || r.cat}</td><td>${esc(r.lvl)}</td><td class="small">${esc(r.secName)}</td><td class="num mono">${r.Lq ? f(r.Lq, 2) : r.A ? f(r.A, 2) + ' m²' : '—'}</td><td class="num mono">${r.V ? f(r.V, 3) : '—'}</td><td class="num mono">${r.form ? f(r.form, 2) : '—'}</td><td class="num mono">${r.rebar ? f(r.rebar, 0) : '—'}</td><td class="num mono">${r.steel ? f(r.steel, 0) : '—'}</td></tr>`), 'an-wtbl-sm') + (q.rows.length > 400 ? `<p class="muted small">${T('First 400 of ' + q.rows.length + ' — Export CSV for all.', 'แสดง 400 แรกจาก ' + q.rows.length + ' — ส่งออก CSV เพื่อดูทั้งหมด')}</p>` : '');
+      const cost = q.cost.tot > 0 ? `<p class="small">${T('Estimated cost', 'ราคาประมาณ')}: ${T('concrete', 'คอนกรีต')} ${f(q.cost.conc, 0)} · ${T('formwork', 'แบบหล่อ')} ${f(q.cost.form, 0)} · ${T('rebar', 'เหล็กเสริม')} ${f(q.cost.rebar, 0)} · ${T('steel', 'เหล็กรูปพรรณ')} ${f(q.cost.steel, 0)} = <b>${f(q.cost.tot, 0)}${cur}</b></p>` : '';
+      const virt = q.virt ? `<p class="muted small">${q.virt} ${T('stiffness-only element(s) with unit weight 0 (e.g. grillage deck strips) are not counted.', 'ชิ้นส่วนที่มีหน่วยน้ำหนัก 0 (เช่น แถบพื้นของกริลเลจ) ไม่นับรวม')}</p>` : '';
+      return virt + `<div class="tabs sm" role="tablist">${[['sum', T('Summary', 'สรุป')], ['story', T('By story', 'ตามชั้น')], ['sec', T('By section', 'ตามหน้าตัด')], ['el', T('Elements', 'รายชิ้น')]].map(([k, l]) => `<button role="tab" aria-selected="${tab === k}" data-act="an-rb" data-c="qtab" data-v="${k}">${l}</button>`).join('')}</div>` + body + cost;
+    }
+    function qtoCSV() {
+      const q = qtoRun(), e2 = v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v), m = A.model;
+      const rows = [['element', 'type', 'material', 'story', 'section', 'length_m', 'area_m2', 'concrete_m3', 'formwork_m2', 'rebar_kg', 'steel_kg']].concat(q.rows.map(r => [r.id, r.cat, r.mk, r.lvl, r.secName, r4(r.Lq || 0), r4(r.A || 0), r4(r.V || 0), r4(r.form || 0), Math.round(r.rebar || 0), Math.round(r.steel || 0)]));
+      rows.push([], ['total', '', '', '', '', r4(q.tot.L), '', r4(q.tot.V), r4(q.tot.form), Math.round(q.tot.rebar), Math.round(q.tot.steel)]);
+      ctx.saveFile((m.name || 'model').replace(/[^\w\-]+/g, '_') + '_quantities.csv', new Blob([rows.map(r => r.map(e2).join(',')).join('\n')], { type: 'text/csv' }));
+    }
+    Object.assign(RW, {
+      bgrid: { t: () => T('Grid lines', 'เส้นกริด'), def: () => ({ sx: '', sy: '', ox: 0, oy: 0 }), body: v => {
+        const b = BDATA(), tb = (k, ax) => tblw([T('Label', 'ชื่อ'), ax.toUpperCase() + ul('L'), T('Spacing', 'ระยะห่าง'), ''], b[k].map((g, i) => [g, i]).sort((p, q) => p[0][ax] - q[0][ax]).map(([g, i], j, arr) => `<tr><td>${inp(g.id, `data-bg="${k}.${i}.id"`, 56)}</td><td>${inp(uv(g[ax], 'L'), `data-bg="${k}.${i}.${ax}" type="number" step="any"`, 90)}</td><td class="num mono muted">${j ? fu(g[ax] - arr[j - 1][0][ax], 'L', 2) : '—'}</td><td><button class="icon-btn" data-act="an-rb" data-c="bgdel" data-v="${k}:${i}" aria-label="${T('Delete', 'ลบ')}">×</button></td></tr>`), 'an-wtbl-sm') + `<button class="btn btn-ghost xs" data-act="an-rb" data-c="bgadd" data-v="${ax}">+ ${T('Add', 'เพิ่ม')} ${ax.toUpperCase()} ${T('grid', 'กริด')}</button>`;
+        return hint(T('Grid lines guide drawing: columns snap to intersections, beams to grid lines, slabs fill the bays. Moving a grid line moves the nodes on it.', 'เส้นกริดช่วยในการวาด: เสาสแนปที่จุดตัด คานตามเส้นกริด แผ่นพื้นเติมในช่อง การย้ายเส้นกริดจะย้ายจุดต่อบนเส้นนั้นด้วย')) +
+          `<div class="an-row2"><div><h4>${T('X grids (lines at constant X)', 'กริด X (เส้นที่ X คงที่)')}</h4>${tb('gx', 'x')}</div><div><h4>${T('Y grids (lines at constant Y)', 'กริด Y (เส้นที่ Y คงที่)')}</h4>${tb('gy', 'y')}</div></div>` +
+          `<label class="chkl"><input type="checkbox" data-bgm="1" ${A.gridMove !== false ? 'checked' : ''}> ${T('Move nodes and slabs with the grid line', 'ย้ายจุดต่อและแผ่นพื้นตามเส้นกริด')}</label>` +
+          `<h4>${T('Replace all grids from spacings', 'สร้างกริดใหม่จากระยะห่าง')}</h4><div class="an-row4">${wf('sx', T('X spacings (m), e.g. 8, 8, 2@6', 'ระยะ X (ม.) เช่น 8, 8, 2@6'), v.sx)}${wf('sy', T('Y spacings (m)', 'ระยะ Y (ม.)'), v.sy)}${wf('ox', T('X origin', 'จุดเริ่ม X'), v.ox, 'n')}${wf('oy', T('Y origin', 'จุดเริ่ม Y'), v.oy, 'n')}</div>` + wfoot('', `<button class="btn btn-ghost sm" data-act="an-rb" data-c="bggen">${T('Replace grids', 'สร้างกริดใหม่')}</button>`);
+      } },
+      bstory: { t: () => T('Stories', 'ชั้น'), def: () => ({ h: '', copy: true }), body: v => {
+        const st = storyList(), b = BDATA();
+        return hint(T('Elevations are measured from the base. Changing a story height moves everything above it.', 'ระดับวัดจากฐาน การเปลี่ยนความสูงชั้นจะเลื่อนทุกอย่างที่อยู่เหนือขึ้นไป')) +
+          tblw([T('Story', 'ชั้น'), T('Height', 'ความสูง') + ul('L'), T('Elevation', 'ระดับ') + ul('L'), T('Slabs', 'แผ่นพื้น'), T('Elements', 'ชิ้นส่วน'), ''], st.slice().reverse().map(s => { const k = st.indexOf(s), nm = A.model.nodes.filter(n => Math.abs((+n.z || 0) - s.z) < 1e-3).map(n => n.id), ns = new Set(nm); return `<tr><td>${inp(s.id, `data-bs="${esc(s.id)}.id"`, 80)}</td><td>${k ? inp(uv(s.z - st[k - 1].z, 'L'), `data-bs="${esc(s.id)}.h" type="number" step="any" min="0.1"`, 80) : '<span class="muted">—</span>'}</td><td class="num mono">${fu(s.z, 'L', 3)}</td><td class="num mono">${b.slabs.filter(q => q.st === s.id).length}</td><td class="num mono">${A.model.members.filter(q => ns.has(q.i) || ns.has(q.j)).length}</td><td>${k ? `<button class="linkbtn" data-act="an-rb" data-c="bgo" data-v="${esc(s.id)}">${T('plan', 'แปลน')}</button>` : ''}</td></tr>`; }), 'an-wtbl-sm') +
+          `<div class="an-row3">${wf('h', T('New story height (blank = same as top)', 'ความสูงชั้นใหม่ (ว่าง = เท่าชั้นบนสุด)') + ul('L'), v.h, 'n')}<span class="an-f"><span>&nbsp;</span>${wck('copy', T('copy the top story’s columns, beams and slabs', 'คัดลอกเสา คาน และแผ่นพื้นของชั้นบนสุด'), v.copy)}</span><span></span></div>` +
+          wfoot('', `<button class="btn btn-ghost sm" data-act="an-rb" data-c="bsdel">${T('Delete top story', 'ลบชั้นบนสุด')}</button><button class="btn btn-hot sm" data-act="an-rb" data-c="bsadd">${T('Add story on top', 'เพิ่มชั้นด้านบน')}</button>`);
+      } },
+      bfloor: { t: () => T('Floor loads and slabs', 'น้ำหนักบนพื้นและแผ่นพื้น'), def: () => ({ on: 'all', t: '', sdl: '', ll: '', way: '' }), body: v => {
+        const b = BDATA(), m = A.model, st = storyList(), co = m.cases.map(c => [c.id, c.id + ' — ' + c.name]), tots = floorTotals();
+        const wayO = [['auto', T('Auto (two-way unless ≥ 2:1)', 'อัตโนมัติ (สองทาง เว้นแต่ ≥ 2:1)')], ['two', T('Two-way (45° yield lines)', 'สองทาง (เส้นแบ่ง 45°)')], ['oneX', T('One-way, spans in X', 'ทางเดียว ช่วง X')], ['oneY', T('One-way, spans in Y', 'ทางเดียว ช่วง Y')]];
+        return hint(T('Area loads on slabs go to the beams around them by tributary area: two-way slabs give triangles and trapezoids, one-way slabs a uniform load on the supporting beams. Slab self-weight = unit weight × thickness. Loads are regenerated whenever the model changes.', 'น้ำหนักแผ่บนแผ่นพื้นถ่ายลงคานโดยรอบตามพื้นที่รับน้ำหนัก: พื้นสองทางเป็นสามเหลี่ยมและสี่เหลี่ยมคางหมู พื้นทางเดียวเป็นแรงแผ่สม่ำเสมอบนคานที่รองรับ น้ำหนักพื้น = หน่วยน้ำหนัก × ความหนา คำนวณใหม่ทุกครั้งที่แบบจำลองเปลี่ยน')) +
+          `<div class="an-row4">${fld(T('Superimposed dead → case', 'น้ำหนักคงที่เพิ่ม → กรณี'), bks('floor.dl', co, b.floor.dl))}${fld(T('Live → case', 'น้ำหนักจร → กรณี'), bks('floor.ll', co, b.floor.ll))}${fld(T('Slab concrete', 'คอนกรีตพื้น'), bks('floor.mat', m.materials.filter(t => t.kind === 'conc' || !t.kind).map(t => [t.id, t.id + ' · ' + fu(+t.rho || 0, 'g', 1) + ul('g')]), b.floor.mat))}<label class="chkl an-f"><span>&nbsp;</span><span><input type="checkbox" data-bk="floor.sw" ${b.floor.sw ? 'checked' : ''}> ${T('slab self-weight', 'น้ำหนักแผ่นพื้น')} → ${esc((m.cases.find(c => c.sw) || {}).id || '—')}</span></label></div>` +
+          `<h4>${T('Assign to slabs', 'กำหนดให้แผ่นพื้น')}</h4><div class="an-row4">${ws('on', T('Story', 'ชั้น'), [['all', T('All stories', 'ทุกชั้น')]].concat(st.slice(1).reverse().map(s => [s.id, s.id])), v.on)}${wf('t', T('Thickness (mm)', 'ความหนา (มม.)'), v.t, 'n', 'placeholder="' + T('keep', 'คงเดิม') + '"')}${wf('sdl', T('SDL', 'น้ำหนักคงที่เพิ่ม') + ul('p'), v.sdl, 'n', 'placeholder="' + T('keep', 'คงเดิม') + '"')}${wf('ll', T('Live', 'น้ำหนักจร') + ul('p'), v.ll, 'n', 'placeholder="' + T('keep', 'คงเดิม') + '"')}</div>` +
+          `<div class="an-row3">${ws('way', T('Distribution', 'การกระจาย'), [['', T('keep', 'คงเดิม')]].concat(wayO), v.way)}<span></span><span class="an-f"><span>&nbsp;</span><button class="btn btn-hot xs" data-act="an-rb" data-c="bfapply">${T('Apply', 'กำหนด')}</button></span></div>` +
+          `<h4>${T('Totals per story', 'รวมต่อชั้น')}</h4>` + tblw([T('Story', 'ชั้น'), T('Slabs', 'แผ่น'), T('Area', 'พื้นที่') + ' (m²)', 'SDL' + ul('F'), T('Slab weight', 'น้ำหนักพื้น') + ul('F'), T('Live', 'จร') + ul('F')], tots.map(r => `<tr><td><b>${esc(r.s.id)}</b></td><td class="num mono">${r.n}</td><td class="num mono">${f(r.A, 1)}</td><td class="num mono">${fu(r.sdl, 'F', 0)}</td><td class="num mono">${fu(r.sw, 'F', 0)}</td><td class="num mono">${fu(r.ll, 'F', 0)}</td></tr>`).concat([`<tr class="tot"><td>Σ</td><td class="num mono">${b.slabs.length}</td><td class="num mono">${f(tots.reduce((t, r) => t + r.A, 0), 1)}</td><td class="num mono">${fu(tots.reduce((t, r) => t + r.sdl, 0), 'F', 0)}</td><td class="num mono">${fu(tots.reduce((t, r) => t + r.sw, 0), 'F', 0)}</td><td class="num mono">${fu(tots.reduce((t, r) => t + r.ll, 0), 'F', 0)}</td></tr>`]), 'an-wtbl-sm') +
+          `<h4>${T('Slabs', 'แผ่นพื้น')} (${b.slabs.length})</h4>` + (b.slabs.length ? tblw(['ID', T('Story', 'ชั้น'), T('Bay', 'ช่อง'), 'Lx × Ly', 't (mm)', 'SDL' + ul('p'), T('Live', 'จร') + ul('p'), T('Way', 'การกระจาย'), ''], b.slabs.slice(0, 300).map((s, i) => `<tr><td>${esc(s.id)}</td><td>${esc(s.st)}</td><td class="small">${esc(slabLabel(s))}</td><td class="num mono small">${f(s.x1 - s.x0, 2)} × ${f(s.y1 - s.y0, 2)}</td><td>${bk('slabs.' + i + '.t', s.t, 'type="number" step="any"', 60)}</td><td>${bk('slabs.' + i + '.sdl', pv(s.sdl, 'p'), 'type="number" step="any" data-q="p"', 66)}</td><td>${bk('slabs.' + i + '.ll', pv(s.ll, 'p'), 'type="number" step="any" data-q="p"', 66)}</td><td>${bks('slabs.' + i + '.way', wayO.map(q => [q[0], q[0] === 'auto' ? 'auto → ' + BD.slabWay(Object.assign({}, s, { way: 'auto' })) : q[0]]), s.way || 'auto')}</td><td><button class="icon-btn" data-act="an-rb" data-c="bslabdel" data-v="${i}" aria-label="${T('Delete', 'ลบ')}">×</button></td></tr>`), 'an-wtbl-sm') : hint(T('No slabs yet — use Building › Slabs (click bays in a plan) or Auto Frame › Slabs in every bay.', 'ยังไม่มีแผ่นพื้น — ใช้ อาคาร › แผ่นพื้น (คลิกช่องในแปลน) หรือ สร้างอัตโนมัติ › แผ่นพื้นทุกช่อง'))) +
+          wfoot('', `<button class="btn btn-ghost sm" data-act="an-rb" data-c="bshow" data-v="${esc(b.floor.dl)}">${T('Show on model', 'แสดงบนแบบจำลอง')}</button>`);
+      } },
+      bwind: { t: () => T('Wind loads (automatic)', 'แรงลม (คำนวณอัตโนมัติ)'), body: () => {
+        const b = BDATA(), w = b.wind, c = w.code, p = w[c];
+        const par = c === 'AS' ? `<div class="an-row4">${fld(T('Region', 'เขต'), bks('wind.AS.region', [['A', 'A (A0–A7)'], ['W', 'W'], ['B1', 'B1'], ['B2', 'B2'], ['C', 'C'], ['D', 'D']], p.region))}${fld(T('Return period R (years)', 'คาบการกลับ R (ปี)'), bks('wind.AS.R', [25, 50, 100, 250, 500, 1000, 2500].map(r => [r, r + (r === 500 ? T(' (IL2, 50 yr)', ' (IL2)') : r === 1000 ? ' (IL3)' : r === 2500 ? ' (IL4)' : '')]), p.R))}${fld(T('Terrain category', 'ประเภทภูมิประเทศ'), bks('wind.AS.tc', [['1', 'TC1'], ['2', 'TC2'], ['2.5', 'TC2.5'], ['3', 'TC3'], ['4', 'TC4']], p.tc))}${fld('M<sub>d</sub>', bk('wind.AS.Md', p.Md, 'type="number" step="0.01"'))}</div><div class="an-row4">${fld('M<sub>s</sub>', bk('wind.AS.Ms', p.Ms, 'type="number" step="0.01"'))}${fld('M<sub>t</sub>', bk('wind.AS.Mt', p.Mt, 'type="number" step="0.01"'))}${fld('K<sub>a</sub> · K<sub>c</sub>', `<span class="an-pair">${bk('wind.AS.Ka', p.Ka, 'type="number" step="0.05"', 60)}${bk('wind.AS.Kc', p.Kc, 'type="number" step="0.05"', 60)}</span>`)}${fld('C<sub>dyn</sub>', bk('wind.AS.Cdyn', p.Cdyn, 'type="number" step="0.01"'))}</div>`
+          : c === 'EN' ? `<div class="an-row4">${fld('v<sub>b,0</sub> (m/s)', bk('wind.EN.vb0', p.vb0, 'type="number" step="0.5"'))}${fld('c<sub>dir</sub> · c<sub>season</sub>', `<span class="an-pair">${bk('wind.EN.cdir', p.cdir, 'type="number" step="0.05"', 60)}${bk('wind.EN.cseason', p.cseason, 'type="number" step="0.05"', 60)}</span>`)}${fld(T('Terrain category', 'ประเภทภูมิประเทศ'), bks('wind.EN.tc', [['0', '0 — sea'], ['I', 'I — lakes, flat'], ['II', 'II — low vegetation'], ['III', 'III — suburban'], ['IV', 'IV — urban']], p.tc))}${fld('c<sub>s</sub>c<sub>d</sub>', bk('wind.EN.cscd', p.cscd, 'type="number" step="0.01"'))}</div>`
+            : `<div class="an-row4">${fld(T('Wind zone', 'เขตความเร็วลม'), bks('wind.TH.zone', [['1', T('1 — 25 m/s (most of Thailand)', '1 — 25 ม./วินาที')], ['2', '2 — 27 m/s'], ['3', '3 — 29 m/s'], ['4A', T('4A — 25 m/s, TF 1.2 (east coast)', '4A — 25 ม./วินาที TF 1.2')], ['4B', T('4B — 25 m/s, TF 1.08', '4B — 25 ม./วินาที TF 1.08')]], p.zone))}${fld(T('Importance', 'ความสำคัญ'), bks('wind.TH.imp', [['low', T('Low (0.8)', 'น้อย (0.8)')], ['normal', T('Normal (1.0)', 'ปกติ (1.0)')], ['high', T('High (1.15)', 'มาก (1.15)')], ['post', T('Very high (1.15)', 'สูงมาก (1.15)')]], p.imp))}${fld(T('Exposure', 'สภาพภูมิประเทศ'), bks('wind.TH.exp', [['A', T('A — open terrain', 'A — พื้นที่โล่ง')], ['B', T('B — suburban / urban', 'B — ชานเมือง / เมือง')]], p.exp))}${fld('C<sub>g</sub>', bk('wind.TH.Cg', p.Cg, 'type="number" step="0.05"'))}</div>`;
+        return `<div class="an-row4"><label class="chkl an-f"><span>&nbsp;</span><span><input type="checkbox" data-bk="wind.on" ${w.on ? 'checked' : ''}> <b>${T('Automatic wind loads', 'คำนวณแรงลมอัตโนมัติ')}</b></span></label>${fld(T('Code', 'มาตรฐาน'), bks('wind.code', [['AS', 'AS/NZS 1170.2:2021'], ['EN', 'EN 1991-1-4'], ['TH', T('DPT 1311-50 (Thai)', 'มยผ. 1311-50')]], c))}${fld(T('Parapet above roof', 'กำแพงกันตกเหนือหลังคา') + ul('L'), bk('wind.par', uv(+w.par || 0, 'L'), 'type="number" step="any" data-q="L"'))}<span class="an-f"><span>${T('Directions', 'ทิศทาง')}</span><span class="an-chks"><label class="chkl sm"><input type="checkbox" data-bk="wind.X" ${w.X ? 'checked' : ''}> X</label><label class="chkl sm"><input type="checkbox" data-bk="wind.Y" ${w.Y ? 'checked' : ''}> Y</label><label class="chkl sm"><input type="checkbox" data-bk="wind.neg" ${w.neg ? 'checked' : ''}> ± ${T('both signs', 'สองทิศ')}</label></span></span></div>` + par +
+          `<div class="an-row4">${fld('C<sub>p</sub> ' + T('windward (blank = code)', 'ต้นลม (ว่าง = ตามมาตรฐาน)'), bk('wind.' + c + '.cpw', p.cpw, 'type="number" step="0.05"'))}${fld('C<sub>p</sub> ' + T('leeward (blank = code)', 'ท้ายลม (ว่าง = ตามมาตรฐาน)'), bk('wind.' + c + '.cpl', p.cpl, 'type="number" step="0.05"'))}${fld(T('Cases +X / +Y', 'กรณี +X / +Y'), `<span class="an-pair">${bk('wind.cases.X', w.cases.X, '', 60)}${bk('wind.cases.Y', w.cases.Y, '', 60)}</span>`)}${fld(T('Cases −X / −Y', 'กรณี −X / −Y'), `<span class="an-pair">${bk('wind.cases.XN', w.cases.XN, '', 60)}${bk('wind.cases.YN', w.cases.YN, '', 60)}</span>`)}</div>` +
+          `<div id="bwRes">${windCalcHTML()}</div>` + wfoot('', `<button class="btn btn-ghost sm" data-act="an-rb" data-c="bwcases">${T('Update cases & combinations', 'ปรับกรณีและการรวมน้ำหนัก')}</button><button class="btn btn-ghost sm" data-act="an-rb" data-c="bshow" data-v="${esc(w.cases.X)}">${T('Show on model', 'แสดงบนแบบจำลอง')}</button>`);
+      } },
+      bstr: { t: () => T('Story results — drift and shear', 'ผลรายชั้น — ดริฟต์และแรงเฉือน'), body: () => fresh() ? fld(T('Results for', 'ผลของ'), sel(srcList().filter(q => /^(case|combo):/.test(q[0])), A.src, 'id="an-src2"')) + `<div id="bstrBody">${storyResHTML(current())}</div>` + wfoot('') : hint(T('Run the analysis first.', 'วิเคราะห์ก่อน')) },
+      qto: { t: () => T('Quantity take-off (3D model)', 'ถอดปริมาณวัสดุ (แบบจำลอง 3 มิติ)'), body: () => {
+        const o = QO(), qi = (k, v, a, w2) => inp(v, `data-qo="${k}" type="number" step="any" ${a || ''}`, w2 || 70);
+        return hint(T('Quantities from the elements and slabs of the model. Concrete beams are measured below the slab and between column faces (joints counted in the columns); slabs by area × thickness. Rebar from typical ratios — replace them with your own.', 'ปริมาณจากชิ้นส่วนและแผ่นพื้นในแบบจำลอง คาน คสล. วัดใต้พื้นและระหว่างผิวเสา (จุดต่อนับในเสา) แผ่นพื้นจากพื้นที่ × ความหนา เหล็กเสริมจากอัตราทั่วไป — แก้เป็นค่าของท่านได้')) +
+          `<div class="an-row4">${fld(T('Rebar kg/m³ — columns', 'เหล็กเสริม กก./ลบ.ม. — เสา'), qi('rebar.col', o.rebar.col))}${fld(T('beams', 'คาน'), qi('rebar.beam', o.rebar.beam))}${fld(T('slabs', 'พื้น'), qi('rebar.slab', o.rebar.slab))}${fld(T('braces / other', 'ค้ำยัน / อื่น ๆ'), qi('rebar.brace', o.rebar.brace))}</div>` +
+          `<div class="an-row4">${fld(T('Concrete waste %', 'เผื่อคอนกรีต %'), qi('waste', o.waste))}${fld(T('Steel connections %', 'เผื่อจุดต่อเหล็ก %'), qi('conn', o.conn))}${fld(T('Currency', 'สกุลเงิน'), inp(o.cur || '', 'data-qo="cur" placeholder="THB"', 70))}<span></span></div><label class="chkl"><input type="checkbox" data-qo="deduct" ${o.deduct ? 'checked' : ''}> ${T('Measure concrete beams between column faces', 'วัดคาน คสล. ระหว่างผิวเสา')}</label>` +
+          `<div class="an-row4">${fld(T('Rate: concrete / m³', 'ราคา: คอนกรีต / ลบ.ม.'), qi('rates.conc', o.rates.conc))}${fld(T('formwork / m²', 'แบบหล่อ / ตร.ม.'), qi('rates.form', o.rates.form))}${fld(T('rebar / t', 'เหล็กเสริม / ตัน'), qi('rates.rebar', o.rates.rebar))}${fld(T('structural steel / t', 'เหล็กรูปพรรณ / ตัน'), qi('rates.steel', o.rates.steel))}</div>` +
+          `<div id="qtoBody">${qtoHTML()}</div>` + wfoot('', `<button class="btn btn-ghost sm" data-act="an-rb" data-c="qtocsv">${T('Export CSV', 'ส่งออก CSV')}</button>`);
+      } }
+    });
+    WIDE.push('bgrid', 'bstory', 'bfloor', 'bwind', 'bstr', 'qto');
+    // inputs: data-bk (m.bld path), data-bg (grids), data-bs (stories), data-qo (take-off options)
+    function bldInput(t) {
+      if (t.id === 'an-src2') { A.src = t.value; const bb = $('#bstrBody'); if (bb) bb.innerHTML = storyResHTML(current()); drawAll(); return true; }
+      if (t.dataset.qo) { const o = QO(), ps = t.dataset.qo.split('.'); let tg = o; for (let i = 0; i < ps.length - 1; i++) tg = tg[ps[i]]; tg[ps[ps.length - 1]] = t.type === 'checkbox' ? t.checked : t.dataset.qo === 'cur' ? t.value : +t.value || 0; persist(); const qb = $('#qtoBody'); if (qb) qb.innerHTML = qtoHTML(); return true; }
+      if (!BLD) return false;
+      const b = BDATA();
+      if (t.dataset.bgm) { A.gridMove = t.checked; return true; }
+      if (t.dataset.bg) {
+        const [k, i, fd] = t.dataset.bg.split('.'), g = b[k] && b[k][+i]; if (!g) return true;
+        if (fd === 'id') { const v = t.value.trim(); if (!v) return true; g.id = v; persist(); ribRefresh(); redraw(); return true; }
+        const nv = r4(frU(+t.value, 'L')); if (!isFinite(nv) || t.value === '') return true; const old = g[fd]; if (Math.abs(nv - old) < 1e-9) return true;
+        snap(); g[fd] = nv;
+        if (A.gridMove !== false) { A.model.nodes.forEach(n => { if (Math.abs((+n[fd] || 0) - old) < 1e-3) n[fd] = nv; }); b.slabs.forEach(s => { const a0 = fd + '0', a1 = fd + '1'; if (Math.abs(s[a0] - old) < 1e-3) s[a0] = nv; if (Math.abs(s[a1] - old) < 1e-3) s[a1] = nv; if (s[a0] > s[a1]) { const q = s[a0]; s[a0] = s[a1]; s[a1] = q; } }); }
+        changed(false); return true;
+      }
+      if (t.dataset.bs) {
+        const [id, fd] = t.dataset.bs.split('.'), s = b.stories.find(q => q.id === id); if (!s) return true;
+        if (fd === 'id') { const v = t.value.trim(); if (!v || b.stories.some(q => q !== s && q.id === v)) { t.classList.add('bad'); return true; } t.classList.remove('bad'); snap(); b.slabs.forEach(q => { if (q.st === s.id) q.st = v; }); if (A.story === s.id) A.story = v; s.id = v; t.dataset.bs = v + '.id'; changed(false); ribRefresh(); return true; }
+        const st = storyList(), k = st.indexOf(s); if (k < 1) return true; const h = frU(+t.value, 'L'); if (!(h > 0.05)) return true; const d = r4(h - (s.z - st[k - 1].z)); if (Math.abs(d) < 1e-9) return true;
+        snap(); const z0 = s.z; A.model.nodes.forEach(n => { if ((+n.z || 0) >= z0 - 1e-3) n.z = r4((+n.z || 0) + d); }); st.slice(k).forEach(q => { q.z = r4(q.z + d); }); if (A.cut !== 'all' && +A.cut >= z0 - 1e-3) A.cut = r4(+A.cut + d);
+        changed(false); return true;
+      }
+      if (!t.dataset.bk) return false;
+      const ps = t.dataset.bk.split('.'); let o = b; for (let i = 0; i < ps.length - 1; i++) { if (o[ps[i]] == null) o[ps[i]] = {}; o = o[ps[i]]; }
+      const k = ps[ps.length - 1], q = t.dataset.q; let v = t.type === 'checkbox' ? t.checked : t.type === 'number' || t.tagName === 'SELECT' && /^(R)$/.test(k) ? (t.value === '' ? '' : +t.value) : t.value;
+      if (q && v !== '') v = frU(+v, q);
+      snap(); o[k] = v; changed(false);
+      if (ps[0] === 'wind') { if (t.tagName === 'SELECT' || t.type === 'checkbox') { if (k === 'code') winRefresh(); else { const r = $('#bwRes'); if (r) r.innerHTML = windCalcHTML(); } ribRefresh(); } else { const r = $('#bwRes'); if (r) r.innerHTML = windCalcHTML(); } }
+      if (ps[0] === 'floor' && (t.tagName === 'SELECT' || t.type === 'checkbox')) winRefresh();
+      return true;
+    }
+    // tree step "Building" (building mode)
+    function bldPanel() {
+      const b = BDATA(), row = (c, lbl, n, extra) => `<button class="an-lirow an-pickrow" data-act="an-rb" data-c="${c}"><span class="an-lim">${lbl}</span><span class="an-lis">${extra || ''}</span><span class="an-lit mono">${n}</span></button>`, st = storyList();
+      const wc = b.wind.on ? ['X', 'Y'].filter(d => b.wind[d]).map(d => BD.windCalc(A.model, d)).filter(Boolean) : [];
+      return hint(T('Grids and stories organise the building; draw columns, beams and slabs in a story plan; floor loads and wind are generated from them every time the model changes.', 'กริดและชั้นจัดระเบียบอาคาร วาดเสา คาน และแผ่นพื้นในแปลนชั้น น้ำหนักบนพื้นและแรงลมสร้างอัตโนมัติทุกครั้งที่แบบจำลองเปลี่ยน')) +
+        `<div class="an-list">${row('bgrid', T('Grid lines', 'เส้นกริด'), b.gx.length + ' × ' + b.gy.length, b.gx.map(g => g.id).join(' ') + ' / ' + b.gy.map(g => g.id).join(' '))}${row('bstory', T('Stories', 'ชั้น'), Math.max(0, st.length - 1), st.length ? T('H = ', 'H = ') + fu(st[st.length - 1].z - st[0].z, 'L', 2) + ul('L') : '')}${row('bstm', T('Story plan', 'แปลนชั้น'), '›', curStory() ? curStory().id : '')}${row('bfloor', T('Slabs & floor loads', 'แผ่นพื้นและน้ำหนักบนพื้น'), b.slabs.length, A.model.loads.filter(l => l.gen === 'slab').length + T(' beam loads', ' แรงบนคาน'))}${row('bwind', T('Wind loads', 'แรงลม'), b.wind.on ? '✓' : T('off', 'ปิด'), wc.map(c => c.dir + ': ' + fu(c.base, 'F', 0) + ul('F')).join(' · '))}${row('bdia', T('Rigid diaphragms', 'ไดอะแฟรมแข็ง'), b.dia ? T('on', 'เปิด') : T('off', 'ปิด'))}${row('bstr', T('Story results', 'ผลรายชั้น'), fresh() ? '✓' : '—')}${row('qto', T('Quantity take-off', 'ถอดปริมาณวัสดุ'), '›')}</div>` +
+        `<div class="an-adds"><button class="btn btn-ghost xs" data-act="an-rb" data-c="bcol">${T('Draw columns', 'วาดเสา')}</button><button class="btn btn-ghost xs" data-act="an-rb" data-c="bbeam">${T('Draw beams', 'วาดคาน')}</button><button class="btn btn-ghost xs" data-act="an-rb" data-c="bslab">${T('Draw slabs', 'วาดแผ่นพื้น')}</button></div>`;
+    }
+    // report sections (building)
+    function bldReport(sec, tbl, n0) {
+      const b = BDATA(); let n = n0, html = '';
+      const tots = floorTotals();
+      html += sec(n++, T('Building — grids, stories and floor loads', 'อาคาร — กริด ชั้น และน้ำหนักบนพื้น'), `<p class="rp-txt">${T('Grid X: ', 'กริด X: ')}${gxs().map(g => esc(g.id) + ' ' + fu(g.x, 'L', 2)).join(' · ')}<br>${T('Grid Y: ', 'กริด Y: ')}${gys().map(g => esc(g.id) + ' ' + fu(g.y, 'L', 2)).join(' · ')}<br>${T('Rigid floor diaphragms: ', 'ไดอะแฟรมแข็ง: ')}${b.dia ? T('yes', 'ใช่') : T('no', 'ไม่')}</p>` +
+        tbl([T('Story', 'ชั้น'), T('Elevation', 'ระดับ') + ' (' + ulab('L') + ')', T('Slabs', 'แผ่นพื้น'), T('Area', 'พื้นที่') + ' (m²)', 'SDL (' + ulab('F') + ')', T('Slab weight', 'น้ำหนักพื้น') + ' (' + ulab('F') + ')', T('Live', 'จร') + ' (' + ulab('F') + ')'], tots.map(r => [esc(r.s.id), fu(r.s.z, 'L', 2), r.n, f(r.A, 1), fu(r.sdl, 'F', 0), fu(r.sw, 'F', 0), fu(r.ll, 'F', 0)])));
+      if (b.wind.on) { const w = ['X', 'Y'].filter(d => b.wind[d]).map(d => BD.windCalc(A.model, d)).filter(Boolean); if (w.length) html += sec(n++, T('Wind loads', 'แรงลม') + ' — ' + ({ AS: 'AS/NZS 1170.2:2021', EN: 'EN 1991-1-4', TH: 'DPT 1311-50' }[b.wind.code]), w.map(c => `<p class="rp-txt"><b>${T('Wind ', 'ลม ')}${c.dir}</b> · ${esc(c.note)} · H ${fu(c.H, 'L', 2)}, B ${fu(c.B, 'L', 2)}, D ${fu(c.D, 'L', 2)} ${ulab('L')} · C<sub>p</sub> ${f(c.cp[0], 2)} / ${f(c.cp[1], 2)}</p>` + tbl([T('Story', 'ชั้น'), 'z', 'B', 'p<sub>w</sub> (' + ulab('p') + ')', 'p<sub>l</sub> (' + ulab('p') + ')', 'F (' + ulab('F') + ')', 'V (' + ulab('F') + ')'], c.rows.slice().reverse().map(r => [esc(r.id), fu(r.z, 'L', 2), fu(r.B, 'L', 1), fu(r.pw, 'p', 3), fu(r.pl, 'p', 3), fu(r.F, 'F', 2), fu(r.V, 'F', 1)]))).join('')); }
+      const keep = A.src, sr = A.model.cases.filter(c => c.type === 'W' && A.res.cases[c.id]).map(c => { A.src = 'case:' + c.id; const cur = current(), rows = BD.storyResults(A.model, cur); return [c, rows]; }); A.src = keep;
+      if (sr.length) html += sec(n++, T('Story drift and shear under wind', 'ดริฟต์และแรงเฉือนรายชั้นภายใต้แรงลม'), sr.map(([c, rows]) => `<p class="rp-txt"><b>${esc(c.id)}</b> — ${esc(c.name)}</p>` + tbl([T('Story', 'ชั้น'), 'h (' + ulab('L') + ')', T('Drift X', 'ดริฟต์ X') + ' (' + ulab('d') + ')', T('Drift Y', 'ดริฟต์ Y') + ' (' + ulab('d') + ')', 'h/δ', 'V<sub>x</sub> (' + ulab('F') + ')', 'V<sub>y</sub> (' + ulab('F') + ')'], rows.slice().reverse().map(r => [esc(r.id), fu(r.h, 'L', 2), fu(r.dx, 'd'), fu(r.dy, 'd'), isFinite(Math.min(r.rx, r.ry)) && Math.min(r.rx, r.ry) < 1e5 ? f(Math.min(r.rx, r.ry), 0) : '—', fu(r.Vx, 'F', 1), fu(r.Vy, 'F', 1)]))).join(''));
+      return { html, n };
+    }
+    function qtoReport(sec, tbl, n) {
+      const q = qtoRun(); if (!q.rows.length) return { html: '', n };
+      return { html: sec(n, T('Quantity take-off', 'ปริมาณวัสดุ'), tbl([T('Item', 'รายการ'), T('No.', 'จำนวน'), T('Concrete', 'คอนกรีต') + ' (m³)', T('Formwork', 'แบบหล่อ') + ' (m²)', T('Rebar', 'เหล็กเสริม') + ' (t)', T('Steel', 'เหล็กรูปพรรณ') + ' (t)'], q.byCat.map(g => { const [c, mk] = g.k.split('|'); return [(CATN()[c] || c) + ' · ' + (MKN()[mk] || mk), g.n, g.V ? f(g.V, 2) : '—', g.form ? f(g.form, 1) : '—', g.rebar ? f(g.rebar / 1000, 2) : '—', g.steel ? f(g.steel / 1000, 2) : '—']; }).concat([['<b>' + T('Total', 'รวม') + '</b>', q.tot.n, '<b>' + f(q.tot.V, 2) + '</b>', '<b>' + f(q.tot.form, 1) + '</b>', '<b>' + f(q.tot.rebar / 1000, 2) + '</b>', '<b>' + f(q.tot.steel / 1000, 2) + '</b>']])) + `<p class="rp-txt">${T('Rebar from ratios (kg/m³): columns ', 'เหล็กเสริมจากอัตรา (กก./ลบ.ม.): เสา ')}${q.opts.rebar.col}, ${T('beams', 'คาน')} ${q.opts.rebar.beam}, ${T('slabs', 'พื้น')} ${q.opts.rebar.slab}.${q.cost.tot > 0 ? ' ' + T('Estimated cost ', 'ราคาประมาณ ') + f(q.cost.tot, 0) + ' ' + esc(q.opts.cur || '') : ''}</p>`), n: n + 1 };
+    }
+    return { view, mount, onClick, onInput, run, state: A, build, preset, TPL, migrate, openQto: () => { openWin('qto'); } };
   };
 })(typeof window !== 'undefined' ? window : globalThis);
