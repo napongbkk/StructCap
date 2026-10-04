@@ -440,7 +440,7 @@
   }
 
   // ------------------------------------------------------------------ navigation
-  const ANV = ['analysis', 'building', 'bridge'];
+  const ANV = ['analysis', 'building', 'bridge', 'conn'];
   function go(view, patch) { Object.assign(S, patch || {}); S.view = view; S.codePop = false; S.reportOpen = false; render(); window.scrollTo(0, 0); }
   function saveSession() { ss.set('srcSession', { role: S.role, user: S.user }); }
   function logout() { S.role = 'guest'; S.user = null; ss.del('srcSession'); ss.del('scAdminToken'); ss.del('scUserToken'); A.loaded = false; go('landing'); toast(T('Signed out', 'ออกจากระบบแล้ว')); }
@@ -794,11 +794,12 @@
             <span class="pick-go">${locked ? T('Sign in with Pro to unlock', 'เข้าสู่ระบบ Pro เพื่อใช้งาน') : T('Open designer →', 'เปิดหน้าออกแบบ →')}</span></button>`;
       }).join('')}</div></div></div>` : ''}
       <section class="menu-box box-analysis">
-        <div class="menu-hd"><span class="menu-n">2</span><div><p class="eyebrow">${T('Structural analysis', 'วิเคราะห์โครงสร้าง')}</p><h2>${T('3D analysis — frames, buildings and bridges', 'วิเคราะห์ 3 มิติ — โครงข้อแข็ง อาคาร และสะพาน')}</h2><p class="muted">${T('Three apps on one finite-element engine, each with a ribbon, model tree, 3D view, load combinations to AS, Eurocode or Thai EIT, and a calculation report.', 'สามแอปบนเครื่องคำนวณไฟไนต์เอลิเมนต์เดียวกัน มีริบบอน ผังแบบจำลอง มุมมอง 3 มิติ การรวมน้ำหนักตาม AS, Eurocode หรือ วสท. และรายงานการคำนวณ')}</p></div></div>
+        <div class="menu-hd"><span class="menu-n">2</span><div><p class="eyebrow">${T('Structural analysis', 'วิเคราะห์โครงสร้าง')}</p><h2>${T('3D analysis — frames, buildings, bridges and steel connections', 'วิเคราะห์ 3 มิติ — โครงข้อแข็ง อาคาร สะพาน และรอยต่อเหล็ก')}</h2><p class="muted">${T('Four apps on finite-element engines, each with a ribbon, model tree, 3D view, design to AS, Eurocode or Thai EIT / AISC, and a calculation report.', 'สี่แอปบนเครื่องคำนวณไฟไนต์เอลิเมนต์ มีริบบอน ผังแบบจำลอง มุมมอง 3 มิติ การออกแบบตาม AS, Eurocode หรือ วสท. / AISC และรายงานการคำนวณ')}</p></div></div>
         <div class="an-apps">${[
           ['analysis', analysisIcon(), T('3D frame & truss', 'โครงข้อแข็งและโครงถัก 3 มิติ'), T('Any frame, truss or grillage: nodes and elements, supports, releases, loads and combinations.', 'โครงข้อแข็ง โครงถัก หรือกริลเลจ: จุดต่อ ชิ้นส่วน จุดรองรับ การปลดแรง น้ำหนัก และการรวมน้ำหนัก'), [T('Linear static', 'สถิตเชิงเส้น'), 'P-Delta', T('Modal', 'โหมด'), T('Buckling', 'การโก่งเดาะ'), T('Results → RC design', 'ผล → ออกแบบ RC')]],
           ['building', buildingIcon(), T('Building design', 'อาคาร'), T('Grid lines and stories, draw columns, beams and slabs on plan, floor loads by tributary area, automatic wind, story drift.', 'เส้นกริดและชั้น วาดเสา คาน แผ่นพื้นบนแปลน น้ำหนักบนพื้นตามพื้นที่รับ แรงลมอัตโนมัติ ดริฟต์รายชั้น'), [T('Grids & stories', 'กริดและชั้น'), T('Floor loads', 'น้ำหนักบนพื้น'), T('Wind AS · EN · DPT 1311-50', 'ลม AS · EN · มยผ. 1311-50'), T('Rigid diaphragm', 'ไดอะแฟรมแข็ง'), T('Story drift', 'ดริฟต์')]],
-          ['bridge', bridgeIcon(), T('Bridge', 'สะพาน'), T('Girder decks, box girders, truss, arch and cable-stayed bridges under moving traffic loads.', 'สะพานคาน คานกล่อง โครงถัก โค้ง และขึงเคเบิล ภายใต้น้ำหนักจราจรเคลื่อนที่'), ['AS 5100 · EN 1991-2 · HL-93', T('Influence lines', 'เส้นอิทธิพล'), T('Construction stages', 'ขั้นตอนก่อสร้าง'), T('Prestress', 'แรงอัดล่วงหน้า')]]
+          ['bridge', bridgeIcon(), T('Bridge', 'สะพาน'), T('Girder decks, box girders, truss, arch and cable-stayed bridges under moving traffic loads.', 'สะพานคาน คานกล่อง โครงถัก โค้ง และขึงเคเบิล ภายใต้น้ำหนักจราจรเคลื่อนที่'), ['AS 5100 · EN 1991-2 · HL-93', T('Influence lines', 'เส้นอิทธิพล'), T('Construction stages', 'ขั้นตอนก่อสร้าง'), T('Prestress', 'แรงอัดล่วงหน้า')]],
+          ['conn', connIcon(), T('Steel connections', 'รอยต่อเหล็ก'), T('Bolted and welded joints: end plates, fin plates, cleats, base plates, splices, gussets and tube joints, checked by plate FE (CBFEM) and the component method.', 'รอยต่อสลักเกลียวและรอยเชื่อม: แผ่นปลาย แผ่นครีบ เหล็กฉาก แผ่นฐาน รอยต่อทาบ แผ่นกัสเซ็ท และรอยต่อท่อ ตรวจสอบด้วยไฟไนต์เอลิเมนต์แผ่น (CBFEM) และวิธีชิ้นส่วน'), ['AS 4100 · EN 1993-1-8 · AISC 360', 'CBFEM', T('Bolts · welds · plates', 'สลัก · รอยเชื่อม · แผ่น'), 'I · SHS · RHS · CHS']]
         ].map(([v, ic, t, d, ch]) => `<button class="an-appc" data-act="nav" data-v="${v}">${ic}<b>${t}</b><span class="muted small">${d}</span><span class="an-chips">${ch.map(c => `<i>${c}</i>`).join('')}</span><span class="pick-go">${T('Open →', 'เปิด →')}</span></button>`).join('')}</div>
       </section>
     </main>`;
@@ -851,6 +852,9 @@
   }
   function buildingIcon() {
     return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M6 66h108" class="ln"/>${[0, 1, 2, 3].map(k => `<path d="M${22 + k * 4} ${62 - k * 14}h${64 - k * 0}" class="ln"/>`).join('')}${[22, 54, 86].map(x => `<path d="M${x} 66V${66 - 4 * 14 - 2}" class="ln"/>`).join('')}<path d="M86 66l20-10V8L86 18M106 8L86 18H22l20-10h64" class="ln-thin"/><path d="M96 9v50M74 8v52" class="ln-dash"/><g class="ln-acc"><path d="M4 22h12M4 34h12M4 46h12"/><path d="M12 19l4 3-4 3M12 31l4 3-4 3M12 43l4 3-4 3"/></g></svg>`;
+  }
+  function connIcon() {
+    return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M30 4v64M44 4v64" class="ln"/><path d="M30 4h14M30 68h14" class="ln-thin"/><path d="M46 14v42" class="ln"/><path d="M50 18h62M50 52h62M50 20v30" class="ln"/><path d="M50 35h62" class="ln-thin"/>${[22, 30, 42, 48].map(y => `<circle cx="47" cy="${y + 0.5}" r="2.2" class="ln-acc"/>`).join('')}<path d="M36 18h8M36 52h8" class="ln-dash"/><path d="M52 18l4 3M52 52l4-3" class="ln-acc"/></svg>`;
   }
   function qtoIcon() {
     return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M14 58l30-14 30 14-30 14z" class="ln-thin"/><path d="M14 58V30l30-14 30 14v28M44 44V16M14 30l30 14 30-14" class="ln"/><rect x="84" y="10" width="30" height="40" rx="3" class="ln"/><path d="M90 20h18M90 28h18M90 36h12" class="ln-thin"/><path d="M90 44h18" class="ln-acc"/></svg>`;
@@ -1649,7 +1653,7 @@
         pdf.text('Page ' + (i + 1) + ' of ' + n, 210 - mm.r, 297 - mm.b + 8.5, { align: 'right' });
       }
       const blob = pdf.output('blob');
-      const name = ANV.includes(S.view) ? (S.meta.ref || S.view).replace(/[^\w\-]+/g, '_') + '_frame-analysis_' + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
+      const name = ANV.includes(S.view) ? (S.meta.ref || S.view).replace(/[^\w\-]+/g, '_') + (S.view === 'conn' ? '_steel-connection_' : '_frame-analysis_') + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
       if (dl) await dl.save({ filename: name, data: blob }); else pdf.save(name);
       toast(T('PDF saved', 'บันทึก PDF แล้ว'), 'ok');
     } catch (e) {
@@ -1859,6 +1863,7 @@
   function anUI(view) {
     view = ANV.includes(view) ? view : 'analysis';
     if (!AN2[view]) {
+      if (view === 'conn') { if (!window.SC_CONN_UI || !window.CONN || !window.CONN.fe) return null; AN2[view] = window.SC_CONN_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile }); AN = AN2[view]; window.SC_AN = AN; return AN; }
       if (!window.SC_ANALYSIS_UI || !window.FRAME || (view === 'bridge' && !window.BRIDGE) || (view === 'building' && !window.BUILDING)) return null;
       AN2[view] = window.SC_ANALYSIS_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, toDesign, mode: view === 'bridge' ? 'bridge' : view === 'building' ? 'building' : 'frame', viewName: view });
     }
@@ -1891,6 +1896,7 @@
     const b = ev.target.closest('[data-act]'); if (!b) return;
     const a = b.dataset.act;
     if (a.startsWith('an-') && ANV.includes(S.view) && AN) { AN.onClick(a, b); return; }
+    if (a.startsWith('cn-') && S.view === 'conn' && AN) { AN.onClick(a, b); return; }
     if (a === 'lang') { if (A.edit) syncModalDraft(); const wasReport = S.reportOpen; setLang(b.dataset.l); if (wasReport && S.view === 'design') { S.reportOpen = true; renderReport(); } }
     else if (a === 'nav') { const v = b.dataset.v; if ((v === 'home' || v === 'codes' || ANV.includes(v)) && S.role === 'guest') { S.role = 'free'; saveSession(); } go(v); if (b.dataset.qto && ANV.includes(v)) setTimeout(() => { const an = anUI(v); if (an && an.openQto) an.openQto(); }, 30); }
     else if (a === 'scroll') { const t = document.getElementById(b.dataset.t); if (t) t.scrollIntoView({ behavior: 'smooth' }); }
