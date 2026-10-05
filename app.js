@@ -225,6 +225,17 @@
   // ------------------------------------------------------------------ session
   const sess = ss.get('srcSession'); if (sess) Object.assign(S, { role: sess.role, user: sess.user });
   const isPro = () => S.role === 'pro' || S.role === 'admin' || !!S.promo;
+  // functions the administrator has switched off (settings/global.off = { key: true }); the administrator still sees them
+  const FEATS = [
+    ['Structural design', 'ออกแบบโครงสร้าง', [['beam', 'RC Beam', 'คาน คสล.'], ['column', 'RC Column', 'เสา คสล.'], ['pilecap', 'RC Pile Cap', 'ฐานรากบนเสาเข็ม'], ['stm3d', 'Pile Cap 3D STM', 'ฐานรากเข็ม STM 3 มิติ'], ['lwall', 'Limestone Block Wall', 'กำแพงกันดินก้อนหินปูน'], ['gantry', 'Sign Gantry', 'โครงป้ายจราจรยื่น']]],
+    ['Structural analysis', 'วิเคราะห์โครงสร้าง', [['analysis', '3D frame & truss', 'โครงข้อแข็งและโครงถัก 3 มิติ'], ['building', 'Building design', 'อาคาร'], ['bridge', 'Bridge', 'สะพาน'], ['conn', 'Steel connections', 'รอยต่อเหล็ก']]],
+    ['Timber bridges', 'สะพานไม้', [['timber', 'Timber bridge assessment', 'ประเมินสะพานไม้'], ['tdraw', 'Repair detail drawings', 'แบบรายละเอียดการซ่อม']]],
+    ['Output', 'ผลลัพธ์', [['pdf', 'PDF export (reports and drawings)', 'ส่งออก PDF (รายงานและแบบ)'], ['dxf', 'AutoCAD DXF export', 'ส่งออก DXF สำหรับ AutoCAD']]]
+  ];
+  const featOff = k => !!(S.off && S.off[k]);                 // switched off by the administrator
+  const isOff = k => featOff(k) && S.role !== 'admin';        // blocked for this user
+  const offMsg = () => T('This function is switched off by the administrator for now.', 'ผู้ดูแลระบบปิดฟังก์ชันนี้ไว้ชั่วคราว');
+  window.SC_FEAT_OFF = k => { if (isOff(k)) { toast(offMsg(), 'bad'); return true; } return false; };
   const inp = () => { const k = S.elem + ':' + S.code; if (!S.inputs[k]) S.inputs[k] = JSON.parse(JSON.stringify(DEF[S.elem][S.code])); return S.inputs[k]; };
 
   // ------------------------------------------------------------------ crypto
@@ -393,7 +404,7 @@
       A.messages = (j.messages || []).map(m => Object.assign({ _id: m.id }, m));
       A.mail = !!j.mail; A.mailUsers = !!j.mailUsers; S.payInfo = j.payInfo || S.payInfo;
       ['en', 'th'].forEach(k => { const el = $('#pi-' + k); if (el && document.activeElement !== el) el.value = (S.payInfo || {})[k] || ''; });
-      S.promo = !!j.proFree;
+      S.promo = !!j.proFree; S.off = j.off || {};
       if (S.view === 'admin') adminBody();
     },
     async saveUser(isNew, user, member, password) {
@@ -419,18 +430,21 @@
       if (ext) await Ops.extend(data.username, data.days);
     },
     async deletePayment(id) { if (CLOUD) { await api('deletePayment', { id }); return Ops.refresh(); } await Store.del('payments', id); },
-    async setPromo(on) { if (CLOUD) { await api('setPromo', { on }); S.promo = on; return; } await Store.set('settings', 'global', { proFree: on, changed: new Date().toISOString() }); S.promo = on; },
+    async setPromo(on) { if (CLOUD) { await api('setPromo', { on }); S.promo = on; return; } await Store.set('settings', 'global', Object.assign({}, Store._load().settings.global || {}, { proFree: on, changed: new Date().toISOString() })); S.promo = on; },
+    async setFeatures(off) { if (CLOUD) { await api('setFeatures', { off }); S.off = off; return; } await Store.set('settings', 'global', Object.assign({}, Store._load().settings.global || {}, { off, changed: new Date().toISOString() })); S.off = off; },
     async reset() { if (CLOUD) { await api('reset'); return Ops.refresh(); } await Store.reset(); }
   };
   const opErr = x => x && x.code === 'auth' ? (ss.del('scAdminToken'), T('Your admin session has expired. Sign in again.', 'เซสชันผู้ดูแลหมดอายุ กรุณาเข้าสู่ระบบใหม่'))
+    : x && x.msg === 'Unknown action' ? T('The server does not support this yet — the api function on Supabase needs to be redeployed.', 'เซิร์ฟเวอร์ยังไม่รองรับ — ต้องอัปเดตฟังก์ชัน api บน Supabase')
     : x && x.msg === 'Username taken' ? T('That username is already taken.', 'มีชื่อผู้ใช้นี้แล้ว')
       : T('Could not save. Check the connection and try again.', 'บันทึกไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง');
   // "Pro for free" switch set by the administrator (settings/global.proFree)
   const promoOn = () => { const g = Store._load().settings.global; return !!(g && g.proFree); };
   S.promo = CLOUD ? false : promoOn();
+  S.off = CLOUD ? {} : ((Store._load().settings.global || {}).off || {});
   S.payInfo = CLOUD ? { en: '', th: '' } : ((Store._load().settings.global || {}).payInfo || { en: '', th: '' });
-  if (CLOUD) api('settings').then(j => { S.payInfo = j.payInfo || S.payInfo; if (!!j.proFree !== S.promo) { S.promo = !!j.proFree; if (S.view !== 'design') render(); } else if (S.view === 'register' || S.view === 'account') render(); }).catch(() => { });
-  if (!CLOUD) Store.watch('settings', () => { const was = S.promo; S.promo = promoOn(); if (was !== S.promo && S.view !== 'design') render(); });
+  if (CLOUD) api('settings').then(j => { S.payInfo = j.payInfo || S.payInfo; const offWas = JSON.stringify(S.off); S.off = j.off || {}; if (JSON.stringify(S.off) !== offWas) { if (S.view !== 'design') render(); } if (!!j.proFree !== S.promo) { S.promo = !!j.proFree; if (S.view !== 'design') render(); } else if (S.view === 'register' || S.view === 'account') render(); }).catch(() => { });
+  if (!CLOUD) Store.watch('settings', () => { const was = S.promo + JSON.stringify(S.off); S.promo = promoOn(); S.off = (Store._load().settings.global || {}).off || {}; if (was !== S.promo + JSON.stringify(S.off) && S.view !== 'design') render(); });
   window.addEventListener('storage', e => { if (e.key === DBKEY) ['accounts', 'members', 'payments', 'settings'].forEach(c => Store._emit(c)); });
 
   // ------------------------------------------------------------------ toast
@@ -788,10 +802,10 @@
       ${sel && S.codePop ? `<div class="modal-bg pop" data-act="closePop"><div class="modal elem-pop tone-${CODES[sel].tone}" role="dialog" aria-modal="true" aria-labelledby="popT">
         <div class="pop-head"><span class="code-big">${CODES[sel].tag}</span><div><p class="eyebrow">${cName(sel)} · ${cStd(sel)}</p><h2 id="popT">${T('What are you designing?', 'เลือกชิ้นส่วนที่ต้องการออกแบบ')}</h2></div><button class="icon-btn pop-x" data-act="closePop" aria-label="${T('Close', 'ปิด')}">×</button></div>
         <div class="pop-grid">${Object.entries(ELEMS).filter(([k, e]) => !e.codes || e.codes.includes(sel)).map(([k, e]) => {
-        const locked = !e.free && !isPro();
-        return `<button class="pick elem ${locked ? 'locked' : ''}" data-act="elem" data-e="${k}">
-            ${elemIcon(k)}<span class="pick-t">${T(e.en, e.th)} <span class="pill ${e.free || S.promo ? 'free' : 'pro'}">${e.free ? 'Free' : S.promo ? T('Pro · free now', 'Pro · ฟรี') : 'Pro'}</span></span><span class="pick-s">${T(e.den, e.dth)}</span>
-            <span class="pick-go">${locked ? T('Sign in with Pro to unlock', 'เข้าสู่ระบบ Pro เพื่อใช้งาน') : T('Open designer →', 'เปิดหน้าออกแบบ →')}</span></button>`;
+        const off = isOff(k), locked = off || (!e.free && !isPro());
+        return `<button class="pick elem ${locked ? 'locked' : ''} ${off ? 'feat-off' : ''}" data-act="elem" data-e="${k}">
+            ${elemIcon(k)}<span class="pick-t">${T(e.en, e.th)} <span class="pill ${e.free || S.promo ? 'free' : 'pro'}">${e.free ? 'Free' : S.promo ? T('Pro · free now', 'Pro · ฟรี') : 'Pro'}</span>${offPill(k)}</span><span class="pick-s">${T(e.den, e.dth)}</span>
+            <span class="pick-go">${off ? T('Unavailable for now', 'ปิดใช้งานชั่วคราว') : locked ? T('Sign in with Pro to unlock', 'เข้าสู่ระบบ Pro เพื่อใช้งาน') : T('Open designer →', 'เปิดหน้าออกแบบ →')}</span></button>`;
       }).join('')}</div></div></div>` : ''}
       <section class="menu-box box-analysis">
         <div class="menu-hd"><span class="menu-n">2</span><div><p class="eyebrow">${T('Structural analysis', 'วิเคราะห์โครงสร้าง')}</p><h2>${T('3D analysis — frames, buildings, bridges and steel connections', 'วิเคราะห์ 3 มิติ — โครงข้อแข็ง อาคาร สะพาน และรอยต่อเหล็ก')}</h2><p class="muted">${T('Four apps on finite-element engines, each with a ribbon, model tree, 3D view, design to AS, Eurocode or Thai EIT / AISC, and a calculation report.', 'สี่แอปบนเครื่องคำนวณไฟไนต์เอลิเมนต์ มีริบบอน ผังแบบจำลอง มุมมอง 3 มิติ การออกแบบตาม AS, Eurocode หรือ วสท. / AISC และรายงานการคำนวณ')}</p></div></div>
@@ -811,7 +825,8 @@
       </section>
     </main>`;
   }
-  function appCard([v, ic, t, d, ch]) { return `<button class="an-appc" data-act="nav" data-v="${v}">${ic}<b>${t}</b><span class="muted small">${d}</span><span class="an-chips">${ch.map(c => `<i>${c}</i>`).join('')}</span><span class="pick-go">${T('Open →', 'เปิด →')}</span></button>`; }
+  function offPill(k) { return featOff(k) ? `<span class="pill off">${S.role === 'admin' ? T('Off for users', 'ปิดสำหรับผู้ใช้') : T('Off', 'ปิด')}</span>` : ''; }
+  function appCard([v, ic, t, d, ch]) { const off = isOff(v); return `<button class="an-appc ${off ? 'feat-off' : ''}" data-act="nav" data-v="${v}">${ic}<b>${t}${offPill(v)}</b><span class="muted small">${d}</span><span class="an-chips">${ch.map(c => `<i>${c}</i>`).join('')}</span><span class="pick-go">${off ? T('Unavailable for now', 'ปิดใช้งานชั่วคราว') : T('Open →', 'เปิด →')}</span></button>`; }
   // Line-sketch icons in drafting style: ink outlines, accent for loads / struts
   function elemIcon(k) {
     const o = '<svg class="ei" viewBox="0 0 120 72" aria-hidden="true">';
@@ -1626,6 +1641,7 @@
     return libs[src];
   }
   async function exportPdf() {
+    if (window.SC_FEAT_OFF('pdf')) return;
     const btn = $('#pdfBtn'); btn.disabled = true; btn.textContent = T('Preparing PDF…', 'กำลังสร้าง PDF…');
     const src = $('#report');
     let host = null;
@@ -1694,10 +1710,18 @@
         <span class="grow"></span>${A.resetAsk ? `<span class="confirm">${CLOUD ? T('Delete ALL users and payments from the database?', 'ลบผู้ใช้และรายการชำระเงินทั้งหมดในฐานข้อมูล?') : T('Delete all test users and payments?', 'ลบผู้ใช้และรายการชำระเงินทดสอบทั้งหมด?')} <button class="btn btn-danger xs" data-act="resetYes">${T('Delete all', 'ลบทั้งหมด')}</button> <button class="btn btn-ghost xs" data-act="resetNo">${T('Cancel', 'ยกเลิก')}</button></span>` : `<button class="btn btn-danger-ghost xs" data-act="resetAsk">${CLOUD ? T('Delete all data', 'ลบข้อมูลทั้งหมด') : T('Clear test data', 'ล้างข้อมูลทดสอบ')}</button>`}</div>
       <div class="promo-card ${S.promo ? 'on' : ''}"><div><b>${T('Open Pro for free', 'เปิดใช้งาน Pro ฟรี')}</b><p>${S.promo ? T('On: every user can use all Pro features, and the landing page announces that Pro is free.', 'เปิดอยู่: ผู้ใช้ทุกคนใช้ฟังก์ชัน Pro ได้ทั้งหมด และหน้าแรกแจ้งว่า Pro ใช้งานฟรี') : T('Off: Pro features need a Pro account. Turn on to unlock everything for all users.', 'ปิดอยู่: ต้องใช้บัญชี Pro เปิดเพื่อให้ผู้ใช้ทุกคนใช้ได้ทุกฟังก์ชัน')}</p></div>
         <button class="switch" role="switch" aria-checked="${!!S.promo}" aria-label="${T('Open Pro for free', 'เปิดใช้งาน Pro ฟรี')}" data-act="promo"><i></i></button></div>
+      ${featCard()}
       <details class="card payinfo-card"><summary><b>${T('Payment instructions shown to members', 'วิธีชำระเงินที่แสดงให้สมาชิก')}</b> <span class="muted small">${T('bank account, PromptPay, PayPal …', 'บัญชีธนาคาร พร้อมเพย์ PayPal …')}</span></summary>
         <div class="mgrid"><label>English<textarea id="pi-en" rows="4" maxlength="2000">${esc((S.payInfo || {}).en)}</textarea></label><label>ไทย<textarea id="pi-th" rows="4" maxlength="2000">${esc((S.payInfo || {}).th)}</textarea></label></div>
         <div class="mfoot"><span class="muted small">${T('Prices: USD 0.99 / month (English page), 30 THB / month (Thai page).', 'ราคา: USD 0.99 / เดือน (หน้าภาษาอังกฤษ) 30 บาท / เดือน (หน้าภาษาไทย)')}</span><span class="grow"></span><button class="btn btn-hot sm" data-act="savePayInfo">${T('Save', 'บันทึก')}</button></div></details>
       <div id="adminBody"></div></main>`;
+  }
+  function featName(k) { for (const g of FEATS) for (const f of g[2]) if (f[0] === k) return T(f[1], f[2]); return k; }
+  function featCard() {
+    const n = Object.keys(S.off || {}).filter(k => S.off[k]).length;
+    return `<section class="card feat-card"><div class="feat-hd"><div><b>${T('Functions', 'ฟังก์ชัน')}</b><p class="muted small">${T('Switch a function off to make it unavailable to all users — its menu card is greyed out and it cannot be opened. You still see and can open it, marked “Off for users”.', 'ปิดฟังก์ชันเพื่อไม่ให้ผู้ใช้ทุกคนใช้งาน — การ์ดในเมนูจะเป็นสีเทาและเปิดไม่ได้ ผู้ดูแลยังเห็นและเปิดได้ โดยมีป้าย “ปิดสำหรับผู้ใช้”')}</p></div>
+      <span class="feat-n ${n ? 'on' : ''}">${n ? n + T(' off', ' ปิดอยู่') : T('All on', 'เปิดทั้งหมด')}</span>${n ? `<button class="btn btn-ghost sm" data-act="featAll">${T('Turn all on', 'เปิดทั้งหมด')}</button>` : ''}</div>
+      <div class="feat-grid">${FEATS.map(([gen, gth, list]) => `<div class="feat-grp"><h4>${T(gen, gth)}</h4>${list.map(([k, en, th]) => `<div class="feat-row ${featOff(k) ? 'is-off' : ''}"><span>${T(en, th)}</span><button class="switch sm" role="switch" aria-checked="${!featOff(k)}" aria-label="${esc(T(en, th))}" data-act="feat" data-k="${k}"><i></i></button></div>`).join('')}</div>`).join('')}</div></section>`;
   }
   function adminBody() {
     const el = $('#adminBody'); if (!el) return;
@@ -1861,6 +1885,7 @@
     document.documentElement.lang = S.ui;
     if (S.view === 'adminLogin' && S.role === 'admin') S.view = 'admin';
     if (S.view === 'codes' || S.view === 'elems') S.view = 'home';
+    if ((ANV.includes(S.view) && isOff(S.view)) || (S.view === 'design' && isOff(S.elem))) { S.view = 'home'; setTimeout(() => toast(offMsg(), 'bad'), 0); }
     if (S.view === 'landing') root.innerHTML = viewLanding();
     else if (S.view === 'login') root.innerHTML = viewLogin(false) + siteFoot();
     else if (S.view === 'register') { const d = regDraft(); root.innerHTML = viewRegister() + siteFoot(); regRestore(d); }
@@ -1916,7 +1941,7 @@
     if (a.startsWith('tb-') && S.view === 'timber' && AN) { AN.onClick(a, b); return; }
     if (a.startsWith('td-') && S.view === 'tdraw' && AN) { AN.onClick(a, b); return; }
     if (a === 'lang') { if (A.edit) syncModalDraft(); const wasReport = S.reportOpen; setLang(b.dataset.l); if (wasReport && S.view === 'design') { S.reportOpen = true; renderReport(); } }
-    else if (a === 'nav') { const v = b.dataset.v; if ((v === 'home' || v === 'codes' || ANV.includes(v)) && S.role === 'guest') { S.role = 'free'; saveSession(); } go(v); if (b.dataset.qto && ANV.includes(v)) setTimeout(() => { const an = anUI(v); if (an && an.openQto) an.openQto(); }, 30); }
+    else if (a === 'nav') { const v = b.dataset.v; if (ANV.includes(v) && isOff(v)) { toast(offMsg(), 'bad'); return; } if ((v === 'home' || v === 'codes' || ANV.includes(v)) && S.role === 'guest') { S.role = 'free'; saveSession(); } go(v); if (b.dataset.qto && ANV.includes(v)) setTimeout(() => { const an = anUI(v); if (an && an.openQto) an.openQto(); }, 30); }
     else if (a === 'scroll') { const t = document.getElementById(b.dataset.t); if (t) t.scrollIntoView({ behavior: 'smooth' }); }
     else if (a === 'free') { if (S.role === 'guest') { S.role = 'free'; saveSession(); } go('home'); }
     else if (a === 'logout') logout();
@@ -1932,7 +1957,7 @@
     else if (a === 'mread') Ops.readMessage(b.dataset.m, !!b.dataset.u).catch(x => toast(opErr(x), 'bad'));
     else if (a === 'mdel') Ops.deleteMessage(b.dataset.m).then(() => toast(T('Message deleted', 'ลบข้อความแล้ว'), 'ok')).catch(x => toast(opErr(x), 'bad'));
     else if (a === 'code') { S.codeSel = b.dataset.c; S.code = b.dataset.c; S.codePop = true; render(); const p = $('.elem-pop .pick'); if (p) p.focus(); }
-    else if (a === 'elem') { const e = b.dataset.e; if (!ELEMS[e].free && !isPro()) { toast(T('This designer is part of Pro. Sign in with a Pro account to use it.', 'ฟังก์ชันนี้สำหรับสมาชิก Pro กรุณาเข้าสู่ระบบด้วยบัญชี Pro'), 'bad'); return; } go('design', { elem: e, code: S.codeSel || S.code }); }
+    else if (a === 'elem') { const e = b.dataset.e; if (isOff(e)) { toast(offMsg(), 'bad'); return; } if (!ELEMS[e].free && !isPro()) { toast(T('This designer is part of Pro. Sign in with a Pro account to use it.', 'ฟังก์ชันนี้สำหรับสมาชิก Pro กรุณาเข้าสู่ระบบด้วยบัญชี Pro'), 'bad'); return; } go('design', { elem: e, code: S.codeSel || S.code }); }
     else if (a === 'reset') { delete S.inputs[S.elem + ':' + S.code]; $('#dzIn').innerHTML = inputsHTML(); compute(); }
     else if (a === 'rowadd' && b.dataset.row === 'crs') { const v = inp(); if (v.crs.length < 20) v.crs.push({ n: Math.max(1, v.crs[v.crs.length - 1].n) }); $('#dzIn').innerHTML = inputsHTML(); schedule(); }
     else if (a === 'rowadd') { const v = inp(), k = b.dataset.row; v[k].push({ n: 2, d: v[k][v[k].length - 1].d }); $('#dzIn').innerHTML = inputsHTML(); schedule(); }
@@ -1961,6 +1986,7 @@
     else if (a === 'delNo') { syncModalDraft(); A.confirm = null; renderModal(); }
     else if (a === 'delUserYes') { const id = A.edit.data.username; Ops.deleteUser(id).then(() => { A.edit = null; renderModal(); toast(T('User ' + id + ' deleted', 'ลบผู้ใช้ ' + id + ' แล้ว'), 'ok'); }).catch(x => toast(opErr(x), 'bad')); }
     else if (a === 'delPayYes') { Ops.deletePayment(A.edit.id).then(() => { A.edit = null; renderModal(); toast(T('Payment deleted', 'ลบรายการแล้ว'), 'ok'); }).catch(x => toast(opErr(x), 'bad')); }
+    else if (a === 'feat' || a === 'featAll') { const off = a === 'featAll' ? {} : Object.assign({}, S.off || {}), k = b.dataset.k; if (a === 'feat') { if (off[k]) delete off[k]; else off[k] = true; } Ops.setFeatures(off).then(() => { render(); toast(a === 'featAll' ? T('All functions are on', 'เปิดทุกฟังก์ชันแล้ว') : (off[k] ? T('Switched off for users: ', 'ปิดสำหรับผู้ใช้: ') : T('Switched on: ', 'เปิดใช้งาน: ')) + featName(k), 'ok'); }).catch(x => toast(opErr(x), 'bad')); }
     else if (a === 'promo') { const on = !S.promo; Ops.setPromo(on).then(() => { render(); toast(on ? T('Pro is now free for all users', 'เปิด Pro ฟรีให้ผู้ใช้ทุกคนแล้ว') : T('Pro is back to paid accounts only', 'กลับเป็น Pro เฉพาะบัญชีที่ชำระเงิน'), 'ok'); }).catch(x => toast(opErr(x), 'bad')); }
     else if (a === 'closePop') { if (ev.target === b || b.tagName === 'BUTTON') { S.codePop = false; render(); } }
     else if (a === 'resetAsk' || a === 'resetNo') { A.resetAsk = a === 'resetAsk'; render(); }

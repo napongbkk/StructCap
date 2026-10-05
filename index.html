@@ -429,6 +429,17 @@ tr.ok .ur i{background:var(--ok)} tr.warn .ur i{background:var(--warn)} tr.bad .
 .switch{flex:none;width:54px;height:30px;border-radius:99px;border:0;background:var(--line2);position:relative;transition:background .2s}
 .switch i{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
 .switch[aria-checked="true"]{background:var(--acc)} .switch[aria-checked="true"] i{transform:translateX(24px)}
+.switch.sm{width:42px;height:24px}.switch.sm i{width:18px;height:18px}.switch.sm[aria-checked="true"] i{transform:translateX(18px)}
+.feat-card{padding:14px 18px;margin-bottom:18px}
+.feat-hd{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}.feat-hd>div{flex:1}.feat-hd b{font-family:var(--f-disp);font-size:17px}
+.feat-n{font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:color-mix(in srgb,#16a34a 15%,transparent);color:#15803d;white-space:nowrap}.feat-n.on{background:color-mix(in srgb,#dc2626 14%,transparent);color:#dc2626}
+.feat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 22px}
+@media (max-width:1100px){.feat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:640px){.feat-grid{grid-template-columns:1fr}.feat-hd{flex-wrap:wrap}}
+.feat-grp h4{margin:0 0 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.feat-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.feat-row.is-off span{color:var(--muted);text-decoration:line-through}
+.pill.off{background:color-mix(in srgb,#dc2626 14%,transparent);color:#dc2626;margin-left:6px}
+.feat-off{opacity:.55;filter:grayscale(.8)}.feat-off .pick-go{color:#dc2626}
 .code-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .code-big{font-family:var(--f-mono);font-weight:600;font-size:30px;line-height:1;letter-spacing:.04em;color:var(--tone);border:2px solid var(--tone);border-radius:10px;padding:6px 9px;flex:none}
 .code-pick.on{background:color-mix(in srgb,var(--tone) 11%,var(--card))}

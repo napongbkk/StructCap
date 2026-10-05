@@ -350,6 +350,7 @@
       if (c === 'sheetnew') { snapH(); const t = JSON.parse(JSON.stringify(SH().title || {})); const s = newSheet('Sheet ' + (A.doc.sheets.length + 1)); s.title = Object.assign(t, { sheet: (A.doc.sheets.length + 1) + ' OF ' + (A.doc.sheets.length + 1) }); A.doc.sheets.push(s); A.doc.cur = A.doc.sheets.length - 1; A.sel = []; A.cam = null; persist(); redraw(); refreshSide(); return; }
       if (c === 'libpanel') { const l = $('#tdLib'); if (l) l.scrollIntoView({ behavior: 'smooth' }); return; }
       if (c === 'fit') { A.cam = null; redraw(); return; }
+      if ((c === 'dxf' || c === 'pdf') && G.SC_FEAT_OFF && G.SC_FEAT_OFF(c)) return;
       if (c === 'dxf') { const s = dxf(A.doc, SH()); saveFile(fname('dxf'), new Blob([s], { type: 'application/dxf' })); return; }
       if (c === 'svg') { saveFile(fname('svg'), new Blob([svgStandalone(A.doc, SH(), false).replace(/currentColor/g, '#111')], { type: 'image/svg+xml' })); return; }
       if (c === 'pdf') { exportPDF(); return; }

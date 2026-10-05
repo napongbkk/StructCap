@@ -16,6 +16,9 @@ const EMAIL_ID_RE = /^[a-z0-9._%+-]{1,64}@[a-z0-9.-]{1,190}\.[a-z]{2,24}$/;   //
 const normId = (u: unknown) => { const s = String(u ?? "").trim(); return s.includes("@") ? s.toLowerCase() : s; };
 const isId = (u: string) => USER_RE.test(u) || EMAIL_ID_RE.test(u);
 const PRICE: Record<string, number> = { USD: 0.99, THB: 30 };
+// functions the administrator can switch off for users: { key: true } = off
+const FEAT_RE = /^[a-z0-9]{1,24}$/;
+const offMap = (v: unknown) => { const o: Record<string, boolean> = {}; if (v && typeof v === "object") Object.entries(v as Record<string, unknown>).slice(0, 64).forEach(([k, x]) => { if (FEAT_RE.test(k) && x === true) o[k] = true; }); return o; };
 const SLIP_TYPES: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/heic": "heic", "application/pdf": "pdf" };
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
@@ -170,7 +173,7 @@ Deno.serve(async (req) => {
     // ---------- public
     if (a === "settings") {
       const s = await getSettings();
-      return json({ proFree: !!s.proFree, payInfo: s.payInfo || { en: "", th: "" }, price: PRICE });
+      return json({ proFree: !!s.proFree, payInfo: s.payInfo || { en: "", th: "" }, off: offMap(s.off), price: PRICE });
     }
     if (a === "adminLogin") {
       const h = await pbkdf2(String(body.username) + "\u0000" + String(body.password), ADMIN_SALT, ADMIN_ITER);
@@ -272,7 +275,7 @@ Deno.serve(async (req) => {
         getSettings(),
       ]);
       [acc, mem, pay, rq, msg].forEach(check);
-      return json({ accounts: acc.data, members: mem.data, payments: pay.data, requests: rq.data, messages: msg.data, proFree: !!set.proFree, payInfo: set.payInfo || { en: "", th: "" }, mail: !!Deno.env.get("RESEND_API_KEY"), mailUsers: !!Deno.env.get("RESEND_API_KEY") && !!Deno.env.get("MAIL_FROM") });
+      return json({ accounts: acc.data, members: mem.data, payments: pay.data, requests: rq.data, messages: msg.data, proFree: !!set.proFree, payInfo: set.payInfo || { en: "", th: "" }, off: offMap(set.off), mail: !!Deno.env.get("RESEND_API_KEY"), mailUsers: !!Deno.env.get("RESEND_API_KEY") && !!Deno.env.get("MAIL_FROM") });
     }
     if (a === "saveUser") {
       const u = body.user || {}, m = body.member || {}, pw = body.password ? String(body.password) : "";
@@ -304,6 +307,7 @@ Deno.serve(async (req) => {
     }
     if (a === "deletePayment") { check(await db.from("payments").delete().eq("id", String(body.id))); return json({ ok: true }); }
     if (a === "setPromo") { await putSettings({ proFree: !!body.on }); return json({ ok: true }); }
+    if (a === "setFeatures") { await putSettings({ off: offMap(body.off) }); return json({ ok: true }); }
     if (a === "setPayInfo") { await putSettings({ payInfo: { en: str(body.en, 2000), th: str(body.th, 2000) } }); return json({ ok: true }); }
     if (a === "decide") {
       const { data: r } = await db.from("requests").select("*").eq("id", String(body.id)).maybeSingle();
