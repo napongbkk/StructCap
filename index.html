@@ -1,3 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="StructCap — structural design and analysis: RC beams, columns and pile caps to Eurocode 2 (EN 1992-1-1:2023), AS 3600:2018 and the Thai EIT standard.">
+<meta name="theme-color" content="#F2387A">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23FF7A2B'/%3E%3Cstop offset='.55' stop-color='%23F2387A'/%3E%3Cstop offset='1' stop-color='%233A6BFF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='1' y='1' width='38' height='38' rx='11' fill='url(%23g)'/%3E%3Crect x='11' y='9' width='18' height='22' rx='3.5' fill='none' stroke='%23fff' stroke-width='2.6'/%3E%3Ccircle cx='16' cy='14' r='2.1' fill='%23fff'/%3E%3Ccircle cx='24' cy='14' r='2.1' fill='%23fff'/%3E%3Ccircle cx='16' cy='26' r='2.1' fill='%23fff'/%3E%3Ccircle cx='24' cy='26' r='2.1' fill='%23fff'/%3E%3C/svg%3E">
 <title>StructCap</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1160,8 +1168,12 @@ body.an-resizing,body.an-resizing *{cursor:ns-resize!important;user-select:none!
 @media (max-width:1180px) and (min-width:901px){.cn-app{grid-template-columns:250px minmax(0,1fr);grid-template-rows:auto minmax(0,1.1fr) minmax(0,1fr)}.cn-app>.cn-side{grid-column:1;grid-row:2}.cn-app>.cn-props{grid-column:1;grid-row:3;border-left:0;border-top:1px solid var(--line2);border-right:1px solid var(--line)}.cn-app>.cn-work{grid-column:2;grid-row:2/4}}
 @media (max-width:900px){.cn-app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto auto;max-width:100vw;overflow-x:hidden}.cn-app>.cn-side,.cn-app>.cn-work,.cn-app>.cn-props{grid-row:auto;grid-column:1}.cn-app>.cn-work{order:1}.cn-app>.cn-side{order:2;max-height:300px;border-right:0;border-top:1px solid var(--line)}.cn-app>.cn-props{order:3;border-left:0;border-top:1px solid var(--line)}.cn-app .an-rib{order:0}.cn-app .an-rgi{flex-wrap:wrap}.cn-app .an-rg{max-width:100%}.cn-drawer.on{height:auto;max-height:70vh}.cn-canvas{height:58vh;flex:none}.cn-galg{grid-template-columns:1fr}.cn-stat{max-width:calc(100% - 20px)}.cn-legend{top:auto;bottom:8px}}
 </style>
+</head>
+<body>
 <div id="app"></div>
 <div id="toasts" aria-live="polite"></div>
+<!-- config.js sets the Supabase API (cloud mode: accounts, Pro, settings shared by all users). Without it the site runs in local test mode. -->
+<script src="config.js"></script>
 <script src="engine.js"></script>
 <script src="gantry.js"></script>
 <script src="stm3d.js"></script>
@@ -1183,3 +1195,5 @@ body.an-resizing,body.an-resizing *{cursor:ns-resize!important;user-select:none!
 <script src="tdetails.js"></script>
 <script src="tdraw.js"></script>
 <script src="app.js"></script>
+</body>
+</html>

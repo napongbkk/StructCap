@@ -508,7 +508,13 @@
   S.promo = CLOUD ? false : promoOn();
   S.off = CLOUD ? {} : ((Store._load().settings.global || {}).off || {});
   S.payInfo = CLOUD ? { en: '', th: '' } : ((Store._load().settings.global || {}).payInfo || { en: '', th: '' });
-  if (CLOUD) api('settings').then(j => { S.payInfo = j.payInfo || S.payInfo; const offWas = JSON.stringify(S.off); S.off = j.off || {}; if (JSON.stringify(S.off) !== offWas) { if (S.view !== 'design') render(); } if (!!j.proFree !== S.promo) { S.promo = !!j.proFree; if (S.view !== 'design') render(); } else if (S.view === 'register' || S.view === 'account') render(); }).catch(() => { });
+  // Shared settings (Pro free for all, functions switched off, payment text) come from the server. Loaded at start,
+  // retried once on failure, and re-read when the tab comes back into view so a long-open page picks up changes.
+  const applySettings = j => { S.payInfo = j.payInfo || S.payInfo; const offWas = JSON.stringify(S.off); S.off = j.off || {}; if (JSON.stringify(S.off) !== offWas) { if (S.view !== 'design') render(); } if (!!j.proFree !== S.promo) { S.promo = !!j.proFree; if (S.view !== 'design') render(); } else if (S.view === 'register' || S.view === 'account') render(); };
+  const loadSettings = () => api('settings').then(applySettings);
+  let settingsReady = CLOUD ? loadSettings().catch(() => new Promise(r => setTimeout(r, 2500)).then(loadSettings)).catch(() => { }).finally(() => { S.settingsDone = true; }) : Promise.resolve();
+  if (!CLOUD) S.settingsDone = true;
+  if (CLOUD) document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.settingsDone && S.role !== 'admin') loadSettings().catch(() => { }); });
   if (!CLOUD) Store.watch('settings', () => { const was = S.promo + JSON.stringify(S.off); S.promo = promoOn(); S.off = (Store._load().settings.global || {}).off || {}; if (was !== S.promo + JSON.stringify(S.off) && S.view !== 'design') render(); });
   window.addEventListener('storage', e => { if (e.key === DBKEY) ['accounts', 'members', 'payments', 'settings'].forEach(c => Store._emit(c)); });
 
@@ -2137,6 +2143,9 @@
   document.addEventListener('click', ev => {
     const b = ev.target.closest('[data-act]'); if (!b) return;
     const a = b.dataset.act;
+    // a Pro-gated click before the shared settings have arrived (slow first server call): wait for them, then retry once
+    if (!S.settingsDone && !isPro() && (a === 'elem' || a === 'report' || (a === 'nav' && ANV.includes(b.dataset.v))) && !b.dataset.waited) { b.dataset.waited = '1'; const sel = Object.entries(b.dataset).filter(([k]) => k !== 'waited').map(([k, v]) => '[data-' + k.replace(/[A-Z]/g, c => '-' + c.toLowerCase()) + '="' + CSS.escape(v) + '"]').join('');
+      settingsReady.then(() => { const nb = b.isConnected ? b : document.querySelector(sel); if (nb) { nb.dataset.waited = '1'; nb.click(); delete nb.dataset.waited; } }); return; }
     if (a.startsWith('an-') && ANV.includes(S.view) && AN) { AN.onClick(a, b); return; }
     if (a.startsWith('cn-') && S.view === 'conn' && AN) { AN.onClick(a, b); return; }
     if (a.startsWith('tb-') && S.view === 'timber' && AN) { AN.onClick(a, b); return; }
