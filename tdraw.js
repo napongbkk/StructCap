@@ -7,7 +7,7 @@
   const D = () => G.TDET;
   const SIZES = { A1: [841, 594], A2: [594, 420], A3: [420, 297], A0: [1189, 841] };
   const ACI = { 1: '#e03030', 2: '#d9b400', 3: '#1f9d55', 4: '#1c8fbf', 5: '#3a5bd9', 6: '#b03ab0', 7: 'currentColor', 8: '#8a8f99', 9: '#b7bcc6', 32: '#a0522d' };
-  const DASH = { CONTINUOUS: '', DASHED: '3 1.5', HIDDEN: '1.6 0.9', CENTER: '8 1.5 1.5 1.5', PHANTOM: '10 1.5 1.5 1.5 1.5 1.5' };
+  const DASH = { CONTINUOUS: '', DASHED: '3 1.5', HIDDEN: '1.6 0.9', CENTER: '8 1.5 1.5 1.5', DASHDOT: '5 1.2 0.6 1.2', PHANTOM: '10 1.5 1.5 1.5 1.5 1.5' };
   const layerDef = (doc, L) => (doc.layers && doc.layers[L]) || (D().LAYERS[L]) || { c: 7, lt: 'CONTINUOUS', lw: 0.25 };
 
   // ------------------------------------------------------------------ geometry helpers
@@ -34,9 +34,11 @@
   // hatch pattern lines clipped to the boundary (paper mm)
   function hatchLines(e) {
     const out = [], P = e.p, b = bboxOf([{ t: 'pl', p: P }]), sc = e.sc || 1;
-    const fam = e.pat === 'ansi37' ? [[45, 2.5 * sc], [135, 2.5 * sc]] : e.pat === 'conc' ? [] : e.pat === 'earth' ? [[0, 3 * sc]] : [[45, 2.5 * sc]];
+    const fam = e.pat === 'ansi37' ? [[45, 2.5 * sc], [135, 2.5 * sc]] : e.pat === 'conc' || e.pat === 'gravel' || e.pat === 'timber' ? [] : e.pat === 'earth' ? [[0, 3 * sc]] : [[45, 2.5 * sc]];
     fam.forEach(([ang, sp]) => { const a = ang * PI / 180, ux = Math.cos(a), uy = Math.sin(a), nx = -uy, ny = ux, cs = [[b.x0, b.y0], [b.x1, b.y0], [b.x1, b.y1], [b.x0, b.y1]].map(q => q[0] * nx + q[1] * ny), d0 = min(...cs), d1 = max(...cs);
       for (let d = Math.ceil(d0 / sp) * sp; d <= d1; d += sp) { const ts = []; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const p0 = P[j], p1 = P[i], s0 = p0[0] * nx + p0[1] * ny - d, s1 = p1[0] * nx + p1[1] * ny - d; if ((s0 < 0) !== (s1 < 0)) { const t = s0 / (s0 - s1), x = p0[0] + t * (p1[0] - p0[0]), y = p0[1] + t * (p1[1] - p0[1]); ts.push(x * ux + y * uy); } } ts.sort((q, r) => q - r); for (let k = 0; k + 1 < ts.length; k += 2) out.push([[d * nx + ts[k] * ux, d * ny + ts[k] * uy], [d * nx + ts[k + 1] * ux, d * ny + ts[k + 1] * uy]]); } });
+    if (e.pat === 'timber') { const sp = 2.2 * sc, w = b.x1 - b.x0, hh = b.y1 - b.y0, along = w >= hh; for (let k = 1; ; k++) { const o = k * sp; if (o >= (along ? hh : w)) break; const pts = []; for (let t = 0; t <= 1.0001; t += 0.05) { const u = along ? b.x0 + t * w : b.y0 + t * hh, wv = Math.sin(t * 9 + k * 1.7) * sp * 0.25, q = along ? [u, b.y0 + o + wv] : [b.x0 + o + wv, u]; pts.push(q); } for (let i = 0; i + 1 < pts.length; i++) { const m = [(pts[i][0] + pts[i + 1][0]) / 2, (pts[i][1] + pts[i + 1][1]) / 2]; if (inPoly(m, P) && (i + k) % 7 !== 0) out.push([pts[i], pts[i + 1]]); } } }
+    if (e.pat === 'gravel') { const sp = 3 * sc; let k = 0; for (let x = b.x0 + sp / 2; x < b.x1; x += sp) for (let y = b.y0 + sp / 2; y < b.y1; y += sp) { k++; const jx = x + ((k * 37) % 10) / 10 * sp * 0.5, jy = y + ((k * 53) % 10) / 10 * sp * 0.5, r = (0.4 + ((k * 7) % 5) / 10) * sc; if (!inPoly([jx, jy], P)) continue; const n = 6; for (let i = 0; i < n; i++) { const a0 = 2 * PI * i / n, a1 = 2 * PI * (i + 1) / n; out.push([[jx + r * Math.cos(a0), jy + r * Math.sin(a0)], [jx + r * Math.cos(a1), jy + r * Math.sin(a1)]]); } } }
     if (e.pat === 'conc') { const sp = 4.5 * sc; let k = 0; for (let x = b.x0 + sp / 2; x < b.x1; x += sp) for (let y = b.y0 + sp / 2; y < b.y1; y += sp) { k++; const jx = x + ((k * 37) % 10) / 10 * sp * 0.6 - sp * 0.3, jy = y + ((k * 53) % 10) / 10 * sp * 0.6 - sp * 0.3; if (!inPoly([jx, jy], P)) continue; if (k % 3 === 0) { const r = 0.5 * sc; out.push([[jx, jy + r], [jx - r * 0.87, jy - r / 2]], [[jx - r * 0.87, jy - r / 2], [jx + r * 0.87, jy - r / 2]], [[jx + r * 0.87, jy - r / 2], [jx, jy + r]]); } else out.push([[jx, jy], [jx + 0.2 * sc, jy]]); } }
     return out;
   }
@@ -72,10 +74,10 @@
       case 'line': return `<line x1="${e.a[0]}" y1="${Y(e.a[1])}" x2="${e.b[0]}" y2="${Y(e.b[1])}" ${st} ${at}/>`;
       case 'pl': return `<polyline points="${e.p.concat(e.closed ? [e.p[0]] : []).map(q => q[0] + ',' + Y(q[1])).join(' ')}" ${st} stroke-linejoin="round" ${at}/>`;
       case 'circle': return `<circle cx="${e.c[0]}" cy="${Y(e.c[1])}" r="${e.r}" ${st} ${at}/>`;
-      case 'arc': { const a0 = e.a0 * PI / 180, a1 = e.a1 * PI / 180, sweep = ((e.a1 - e.a0) % 360 + 360) % 360, large = sweep > 180 ? 1 : 0, p0 = [e.c[0] + e.r * Math.cos(a0), Y(e.c[1] + e.r * Math.sin(a0))], p1 = [e.c[0] + e.r * Math.cos(a1), Y(e.c[1] + e.r * Math.sin(a1))]; return `<path d="M${p0[0]},${p0[1]} A${e.r},${e.r} 0 ${large} 0 ${p1[0]},${p1[1]}" ${st} ${at}/>`; }
+      case 'arc': { if (Math.abs(e.a1 - e.a0) >= 359.99) return `<circle cx="${e.c[0]}" cy="${Y(e.c[1])}" r="${e.r}" ${st} ${at}/>`; const a0 = e.a0 * PI / 180, a1 = e.a1 * PI / 180, sweep = ((e.a1 - e.a0) % 360 + 360) % 360, large = sweep > 180 ? 1 : 0, p0 = [e.c[0] + e.r * Math.cos(a0), Y(e.c[1] + e.r * Math.sin(a0))], p1 = [e.c[0] + e.r * Math.cos(a1), Y(e.c[1] + e.r * Math.sin(a1))]; return `<path d="M${p0[0]},${p0[1]} A${e.r},${e.r} 0 ${large} 0 ${p1[0]},${p1[1]}" ${st} ${at}/>`; }
       case 'solid': return `<polygon points="${e.p.map(q => q[0] + ',' + Y(q[1])).join(' ')}" fill="${col}" stroke="none" ${at}/>`;
       case 'hatch': { const L = hatchLines(e); return `<g ${at}><path d="${L.map(s => `M${s[0][0].toFixed(2)},${Y(s[0][1]).toFixed(2)}L${s[1][0].toFixed(2)},${Y(s[1][1]).toFixed(2)}`).join('')}" stroke="${col}" stroke-width="0.13" fill="none"/></g>`; }
-      case 'text': { const anc = e.al === 'c' ? 'middle' : e.al === 'r' ? 'end' : 'start', dy = e.v === 'm' ? e.h * 0.5 : e.v === 't' ? e.h : 0, x = e.p[0], y = Y(e.p[1]); return `<text x="${x}" y="${y + dy}" font-size="${(e.h * 1.38).toFixed(2)}" text-anchor="${anc}" fill="${col}" font-family="ISOCPEUR, 'Arial Narrow', 'Roboto Condensed', Arial, sans-serif"${e.ang ? ` transform="rotate(${-e.ang} ${x} ${y})"` : ''} ${at}>${escX(e.s)}</text>`; }
+      case 'text': { const anc = e.al === 'c' ? 'middle' : e.al === 'r' ? 'end' : 'start', dy = e.v === 'm' ? e.h * 0.5 : e.v === 't' ? e.h : 0, x = e.p[0], y = Y(e.p[1]); return `<text x="0" y="${dy}" font-size="${(e.h * 1.38).toFixed(2)}" text-anchor="${anc}" fill="${col}" font-family="Arial, 'Liberation Sans', Helvetica, sans-serif" transform="translate(${x} ${y})${e.ang ? ` rotate(${-e.ang})` : ''} scale(0.86 1)" ${at}>${escX(e.s)}</text>`; }
     }
     return '';
   }
@@ -97,7 +99,7 @@
     w(0, 'SECTION'); w(2, 'HEADER'); w(9, '$ACADVER'); w(1, 'AC1009'); w(9, '$INSBASE'); w(10, '0.0'); w(20, '0.0'); w(30, '0.0'); w(9, '$EXTMIN'); w(10, '0.0'); w(20, '0.0'); w(30, '0.0'); w(9, '$EXTMAX'); w(10, f(W)); w(20, f(H)); w(30, '0.0');
     w(9, '$LIMMIN'); w(10, '0.0'); w(20, '0.0'); w(9, '$LIMMAX'); w(10, f(W)); w(20, f(H)); w(9, '$LTSCALE'); w(40, '1.0'); w(9, '$TEXTSTYLE'); w(7, 'STANDARD'); w(9, '$MEASUREMENT'); w(70, 1); w(0, 'ENDSEC');
     w(0, 'SECTION'); w(2, 'TABLES');
-    const LT = { CONTINUOUS: ['Solid line', []], DASHED: ['Dashed __ __ __', [3, -1.5]], HIDDEN: ['Hidden _ _ _', [1.6, -0.9]], CENTER: ['Center ____ _ ____', [8, -1.5, 1.5, -1.5]], PHANTOM: ['Phantom ____ _ _ ____', [10, -1.5, 1.5, -1.5, 1.5, -1.5]] };
+    const LT = { CONTINUOUS: ['Solid line', []], DASHED: ['Dashed __ __ __', [3, -1.5]], HIDDEN: ['Hidden _ _ _', [1.6, -0.9]], CENTER: ['Center ____ _ ____', [8, -1.5, 1.5, -1.5]], DASHDOT: ['Dash dot __ . __ .', [5, -1.2, 0.6, -1.2]], PHANTOM: ['Phantom ____ _ _ ____', [10, -1.5, 1.5, -1.5, 1.5, -1.5]] };
     w(0, 'TABLE'); w(2, 'LTYPE'); w(70, Object.keys(LT).length); Object.entries(LT).forEach(([n, [d, p]]) => { w(0, 'LTYPE'); w(2, n); w(70, 0); w(3, d); w(72, 65); w(73, p.length); w(40, f(p.reduce((a, v) => a + abs(v), 0))); p.forEach(v => w(49, f(v))); }); w(0, 'ENDTAB');
     w(0, 'TABLE'); w(2, 'LAYER'); w(70, Object.keys(Ls).length + 1); w(0, 'LAYER'); w(2, '0'); w(70, 0); w(62, 7); w(6, 'CONTINUOUS');
     Object.keys(Ls).filter(k => k !== '0').forEach(k => { const ld = layerDef(doc, k); w(0, 'LAYER'); w(2, k); w(70, 0); w(62, typeof ld.c === 'number' ? ld.c : 7); w(6, ld.lt || 'CONTINUOUS'); }); w(0, 'ENDTAB');

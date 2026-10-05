@@ -3,7 +3,7 @@
 // Run: node tests/timber.test.js
 const path = require('path');
 globalThis.window = globalThis;
-['timber.js', 'tdetails.js', 'tdraw.js'].forEach(f => require(path.join(__dirname, '..', f)));
+['timber.js', 'tdetails.js', 'tdet_mr1.js', 'tdet_mr2.js', 'tdet_p21a.js', 'tdet_p21b.js', 'tdet_p21c.js', 'tdet_p22.js', 'tdet_p23a.js', 'tdet_p23b.js', 'tdet_p23c.js', 'tdet_p31a.js', 'tdet_p31b.js', 'tdet_p32.js', 'tdet_p4.js', 'tdet_p42.js', 'tdraw.js'].forEach(f => require(path.join(__dirname, '..', f)));
 const TB = globalThis.TIMBER, D = globalThis.TDET, X = globalThis.TDRAW;
 let bad = 0;
 const P = (lbl, got, exp, tol = 0.005) => { const ok = Math.abs(got - exp) <= tol * Math.max(1, Math.abs(exp)); if (!ok) bad++; console.log(ok ? 'OK ' : 'BAD', lbl.padEnd(60), (+got).toFixed(4), 'expected', (+exp).toFixed(4)); };
@@ -77,7 +77,15 @@ for (const d of D.DEF) {
   T(`detail ${d.id} (${d.ref}) generates ${E ? E.length : 0} entities, ${w.toFixed(0)} × ${h.toFixed(0)} mm`, E && E.length > 20 && w > 100 && w < 800 && h > 60 && h < 560 && E.every(e => D.LAYERS[e.L]));
   for (const q of d.params.filter(q => q.opts)) { const v = q.opts[q.opts.length - 1]; let ok = true; try { D.generate(d.id, { [q.k]: v }); } catch (e) { ok = false; } if (!ok) T(`detail ${d.id} with ${q.k} = ${v}`, false); }
 }
-T('every suggested repair family maps to existing details', Object.values(D.SUGGEST).flat().every(id => D.DEF.some(d => d.id === id)));
+{ // every source sheet (MRWA 1330-0001…0027, repair manual PN30 sheets except the two example covers) has a detail
+  const rng = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => String(a + i));
+  const sheets = rng(1, 27).map(n => '1330-' + n.padStart(4, '0')).concat(['PN30-'].flatMap(p => rng(2101, 2133).concat(['2201', '2202', '2202A', '2202B'], rng(2203, 2207), rng(2301, 2304), ['2304A', '2305'], rng(2306, 2317), ['2317A', '2317B', '2317C', '2318', '2319', '2319A', '2320', '2321', '2321A', '2322', '2323', '2323A', '2324', '2325', '2325A'], rng(2326, 2329), rng(3101, 3116), ['3116A'], rng(3117, 3123), rng(3201, 3210), ['3210A', '3211', '3212', '3213', '3213A', '3214'], rng(4101, 4109), rng(4201, 4209)).map(n => p + n)));
+  const has = s => { const [pre, n] = s.split('-'); return D.DEF.some(d => new RegExp('(^|[^0-9A-Z])' + n + '(?![0-9A-Z])').test(d.ref) && d.ref.includes(pre)); };
+  const miss = sheets.filter(s => !has(s));
+  T(`every source sheet has a detail (${sheets.length - miss.length}/${sheets.length})` + (miss.length ? ' — missing ' + miss.join(', ') : ''), !miss.length);
+  const ids = D.DEF.map(d => d.id); T('detail ids are unique', new Set(ids).size === ids.length);
+}
+T('every suggested repair family maps to existing details',Object.values(D.SUGGEST).flat().every(id => D.DEF.some(d => d.id === id)));
 
 // 4. DXF R12 output and round trip
 {
