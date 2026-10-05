@@ -20,10 +20,10 @@
   // species: default grades per element (LRRD 1.5 / workshop), compression perpendicular F'p, density kN/m3
   const SPECIES = {
     jarrah: { n: 'Jarrah', stringer: 'F17', sawn: 'F14', pile: 'F17', halfcap: 'F14', deck: 'F7', fp: 6.6, gamma: 10.8 },
-    wandoo: { n: 'Wandoo', stringer: 'F27', sawn: 'F17', pile: 'F27', halfcap: 'F17', deck: 'F11', fp: 9.0, gamma: 12.3 },
-    wjE: { n: 'Wandoo with Jarrah E', stringer: 'F27', sawn: 'F17', pile: 'F27', halfcap: 'F17', deck: 'F11', fp: 9.0, gamma: 12.3, E: 14000 },
-    karri: { n: 'Karri', stringer: 'F22', sawn: 'F22', pile: 'F22', halfcap: 'F22', deck: 'F8', fp: 6.6, gamma: 11.3 },
-    marri: { n: 'Marri', stringer: 'F22', sawn: 'F17', pile: 'F17', halfcap: 'F17', deck: 'F8', fp: 6.6, gamma: 11.0, friableIsRot: true },
+    wandoo: { n: 'Wandoo', stringer: 'F27', sawn: 'F17', pile: 'F27', halfcap: 'F17', deck: 'F11', fp: 7.8, gamma: 12.3 },
+    wjE: { n: 'Wandoo with Jarrah E', stringer: 'F27', sawn: 'F17', pile: 'F27', halfcap: 'F17', deck: 'F11', fp: 7.8, gamma: 12.3, E: 14000 },
+    karri: { n: 'Karri', stringer: 'F22', sawn: 'F22', pile: 'F22', halfcap: 'F22', deck: 'F8', fp: 9.0, gamma: 11.3 },
+    marri: { n: 'Marri', stringer: 'F22', sawn: 'F17', pile: 'F17', halfcap: 'F17', deck: 'F8', fp: 7.8, gamma: 11.0, friableIsRot: true },
     steel: { n: 'Steel', gamma: 77 }
   };
   // condition factors on permissible stresses (Table 3-1): bending/axial compression, bending tension, shear
@@ -115,11 +115,19 @@
       case 'Q4': return { id, n: '484 Quad', W: 36, Wk: 360, dla: 0.30, side: 0.6, width: 1.8, pm: true, models: [{ name: '', axles: W2(90, [0, 1.2, 3.6, 4.8], L2(1.8)) }] };
       case 'H3': return { id, n: 'HLP320', W: 320, Wk: 3200, dla: 0.10, side: 0.25, width: 3.1, centre: 1.0, models: [{ name: '', axles: W2(200, Array.from({ length: 16 }, (_, i) => 1.8 * i), [-1.55, -0.65, 0.65, 1.55]) }] };
       case 'H4': return { id, n: 'HLP400', W: 400, Wk: 4000, dla: 0.10, side: 0.25, width: 4.0, centre: 1.0, models: [{ name: '', axles: W2(250, Array.from({ length: 16 }, (_, i) => 1.8 * i), [-2.0, -1.1, 1.1, 2.0]) }] };
+      // models 2 / 3: wider multi-wheel axles (axle width 2.6 / 3.2 m, dual-wheel spacing B 1.1 / 1.7 m), 540 / 720 kN, DLA 0.10
+      case 'TR2': case 'TR3': case 'QU2': case 'QU3': case 'Q42': case 'Q43': {
+        const m3 = id.slice(-1) === '3', w = m3 ? 3.2 : 2.6, Bd = m3 ? 1.7 : 1.1, lines = [-w / 2, -w / 2 + Bd, w / 2 - Bd, w / 2], tri = id[0] === 'T', four = id[1] === '4';
+        const xs = tri ? [0, 1.8, 3.6] : four ? [0, 1.2, 3.6, 4.8] : [0, 1.2, 2.4, 3.6], Wk = tri ? 540 : 720;
+        return { id, n: (tri ? 'Triaxle' : four ? '484 Quad' : 'Quad') + ' model ' + id.slice(-1), W: Wk / 10, Wk, dla: 0.10, side: 0.6, width: w, opt: true, models: [{ name: '', axles: W2(Wk / xs.length, xs, lines) }] };
+      }
       case 'M16': { const xs = []; let x = 0; [0, 3.75, 6.25, 5.0].forEach((gap, k) => { x += k ? gap : 0; for (let i = 0; i < 3; i++) { xs.push(x); x += i < 2 ? 1.25 : 0; } }); return { id, n: 'M1600', W: 144, Wk: 1440, dla: 0.35, side: 0.6, width: 2.0, models: [{ name: '', axles: W2(120, xs, L2(2.0)) }], pair: 'm1600', udl: 6.0 }; }
       default: return null;
     }
   }
-  const VEH_ORDER = ['T44', 'MT', 'TA', 'TR', 'QU', 'Q4', 'H3', 'H4', 'M16'];
+  const VEH_ORDER = ['T44', 'MT', 'TA', 'TR', 'QU', 'Q4', 'H3', 'H4', 'M16', 'TR2', 'TR3', 'QU2', 'QU3', 'Q42', 'Q43'];
+  // vehicles rated for a bridge: standard ones unless switched off (B.veh.off), optional ones (models 2 / 3) only when switched on (B.veh.on)
+  const vehOn = (B, k) => { const v = vehicle(k); return v && (v.opt ? ((B.veh && B.veh.on) || []).includes(k) : !((B.veh && B.veh.off) || []).includes(k)); };
   // prime mover for tandem / tri / quad groups (6 t steer 3.7 m ahead of a 16.5 t drive tandem, 3 m to the trailer group)
   const PRIME = [{ dx: -3.0 - 1.2 - 3.7, P: 60 }, { dx: -3.0 - 1.2, P: 82.5 }, { dx: -3.0, P: 82.5 }];
 
@@ -136,9 +144,11 @@
     let xs0, xs1; const nsp = B.spans.length, ab0 = si === 0, ab1 = si === nsp - 1;
     // face of support for shear: 0.3 m from an abutment centreline, the rest of (L - Lo) at a pier
     const cl = L - Lo; let xf0 = cl / 2, xf1 = L - cl / 2;
-    if (ab0 && !ab1) { xf0 = min(0.3, cl); xf1 = L - max(0, cl - xf0); } else if (ab1 && !ab0) { xf1 = L - min(0.3, cl); xf0 = max(0, cl - (L - xf1)); }
+    if (ab0 && ab1) { xf0 = min(0.3, cl / 2); xf1 = L - xf0; } // single span: both faces 0.3 m from the abutment centrelines
+    else if (ab0) { xf0 = min(0.3, cl); xf1 = L - max(0, cl - xf0); } else if (ab1) { xf1 = L - min(0.3, cl); xf0 = max(0, cl - (L - xf1)); }
     if (S.face1 != null) xf0 = +S.face1; if (S.face2 != null) xf1 = L - (+S.face2);
     xs0 = xf0 / 2; xs1 = L - (L - xf1) / 2; // effective supports mid-way between the centreline and the face (Le = (L + Lo)/2)
+    if (ab0 && ab1 && S.face1 == null && S.face2 == null) { xs0 = (L - Le) / 2; xs1 = L - xs0; }
     const kerbL = S.kerbL != null ? +S.kerbL : 0.15, kerbR = S.kerbR != null ? +S.kerbR : 0.15;
     return { L, Lo, Le, ys, ns, width, xs0, xs1, xf0, xf1, cw0: kerbL, cw1: width - kerbR };
   }
@@ -155,6 +165,7 @@
   function buildGrillage(B, si) {
     const S = B.spans[si], gm = spanGeom(B, si), P = stringerProps(B, S), ns = gm.ns, nd = Math.max(4, (+S.ndiv || 12) & ~1);
     const xmid = (gm.xs0 + gm.xs1) / 2; let xs = [gm.xs0, gm.xs1, xmid, gm.xf0, gm.xf1]; for (let i = 1; i < nd; i++) xs.push(gm.xs0 + (gm.Le * i) / nd);
+    for (let i = 8; i <= 16; i++) xs.push(gm.xs0 + gm.Le * i / 24); // middle third at Le / 24 for the maximum moment
     xs = [...new Set(xs.map(v => Math.round(v * 1e4) / 1e4))].sort((a, b) => a - b).filter((v, i, a) => !i || v - a[i - 1] > 0.02);
     const nx = xs.length, nn = nx * ns, N = 3 * nn, K = new Float64Array(N * N), id = (s, i) => s * nx + i;
     const deck = S.deck || {}, Ed = (+deck.E || 7900) * 1e3, td = +deck.t || 0.127, Jd = +deck.J || 1e-6;
@@ -182,8 +193,8 @@
     for (let a = 0; a < n; a++) if (free[a] % 3) Kf[a * n + a] += 1e-6;
     const Lc = chol(Kf, n); if (!Lc) throw new Error('Span ' + (si + 1) + ': the grillage is unstable — check stringer spacings and sections.');
     const ix = v => xs.findIndex(q => abs(q - v) < 1e-3), im = ix(xmid), if0 = ix(gm.xf0), if1 = ix(gm.xf1);
-    // effects per unit nodal load: for each stringer [M_mid, V_face1, V_face2, R_support0, R_support1]
-    const NE = 5, infl = new Float64Array(nn * ns * NE);
+    // effects per unit nodal load: for each stringer [M_mid, V_face1, V_face2, R_support0, R_support1, M at every node...]
+    const NE = 5 + nx, infl = new Float64Array(nn * ns * NE);
     const elemOf = (s, i) => strEl[s * (nx - 1) + i];
     const endForces = (el, u) => { const ug = [u[3 * el.na], u[3 * el.na + 1], u[3 * el.na + 2], u[3 * el.nb], u[3 * el.nb + 1], u[3 * el.nb + 2]], ul = new Float64Array(6); for (let p = 0; p < 6; p++) { const bi = p < 3 ? 0 : 3; for (let q = 0; q < 3; q++) ul[p] += el.T[p - bi][q] * ug[bi + q]; } const f = new Float64Array(6); for (let p = 0; p < 6; p++) for (let q = 0; q < 6; q++) f[p] += el.kl[p][q] * ul[q]; return f; };
     const effects = (u, load) => { // load: Float64Array(nn) of applied w loads (kN) -> per stringer effects
@@ -196,6 +207,7 @@
         // support reactions (upward +): load at node minus element forces at the node
         const rx = (i) => { const nd2 = id(s, i); let r = load[nd2]; strEl.concat(trEl).forEach(el => { if (el.na === nd2 || el.nb === nd2) { const f = endForces(el, u); r -= el.na === nd2 ? f[0] : f[3]; } }); return r; };
         out[s * NE + 3] = rx(i0); out[s * NE + 4] = rx(i1);
+        for (let i = i0 + 1; i < i1; i++) out[s * NE + 5 + i] = -endForces(elemOf(s, i - 1), u)[4];
       }
       return out;
     };
@@ -252,7 +264,7 @@
     const lines0 = v.models[0].axles[0].lines; const pos = lateralPositions(gm, gm.ys, { lines: lines0, side: v.side, centre: v.centre }, gm.cw0, gm.cw1);
     const env = new Float64Array(ns * NE), envA = new Float64Array(ns * NE); let skip = !pos.length;
     if (skip) return { v, env, skip: true, note: v.n + ' does not fit the carriageway (' + (gm.cw1 - gm.cw0).toFixed(2) + ' m)' };
-    const withPrime = v.pm && gm.L > 0.2 * (v.Wk / 2 - 82.5) + 9.8;
+    const withPrime = !!v.pm; // the prime mover is always on the bridge when it fits (whole or part of it)
     const one = (axles, yc, xFront) => { const load = new Float64Array(Gr.nn); axles.forEach(a => a.lines.forEach(l => { const x = xFront - a.x; if (x < -0.5 || x > gm.L + 0.5) return; pointToNodes(Gr, Math.max(0, Math.min(gm.L, x)), yc + l, a.P / a.lines.length, load); })); return effectsOf(Gr, load); };
     const pair = v.pair && pos.length > 1;
     // M1600 lane UDL (6 kN/m over a 3.2 m lane, the whole span) is added to the axle effects
@@ -268,6 +280,7 @@
         }
       }
     });
+    for (let s = 0; s < ns; s++) { const o = s * NE; for (let i = Gr.i0 + 1; i < Gr.i1; i++) if (env[o + 5 + i] > env[o]) env[o] = env[o + 5 + i]; }
     return { v, env, skip: false, withPrime };
   }
 
@@ -293,9 +306,9 @@
     const toPiles = (rL, rR) => { const R1 = new Float64Array(np), R2 = new Float64Array(np); rL.forEach((r, s) => inf[s].forEach((f, p) => { R1[p] += r * f; })); rR.forEach((r, s) => inf[yL.length + s].forEach((f, p) => { R2[p] += r * f; })); return { R1, R2 }; };
     // dead
     const dL = left != null ? deads[left].eff : null, dR = right != null ? deads[right].eff : null;
-    const rDL = left != null ? Array.from({ length: grs[left].ns }, (_, s) => dL[s * 5 + 4] + sideLoad(grs[left], deads[left].load, s, 1)) : [];
-    const rDR = right != null ? Array.from({ length: grs[right].ns }, (_, s) => dR[s * 5 + 3] + sideLoad(grs[right], deads[right].load, s, 0)) : [];
-    const dead = toPiles(rDL, rDR), vDL = left != null ? Array.from({ length: grs[left].ns }, (_, s) => abs(dL[s * 5 + 2])) : Array.from({ length: grs[right].ns }, (_, s) => abs(dR[s * 5 + 1]));
+    const rDL = left != null ? Array.from({ length: grs[left].ns }, (_, s) => dL[s * grs[left].NE + 4] + sideLoad(grs[left], deads[left].load, s, 1)) : [];
+    const rDR = right != null ? Array.from({ length: grs[right].ns }, (_, s) => dR[s * grs[right].NE + 3] + sideLoad(grs[right], deads[right].load, s, 0)) : [];
+    const dead = toPiles(rDL, rDR), vDL = left != null ? Array.from({ length: grs[left].ns }, (_, s) => abs(dL[s * grs[left].NE + 2])) : Array.from({ length: grs[right].ns }, (_, s) => abs(dR[s * grs[right].NE + 1]));
     const veh = {};
     (opt.vehicles || VEH_ORDER).forEach(vid => {
       const v = vehicle(vid, { A: (B.veh && B.veh.t44A) || 0 }); if (!v) return;
@@ -303,20 +316,30 @@
       const grL = left != null ? grs[left] : null, grR = right != null ? grs[right] : null, gL = grL && grL.gm, gR = grR && grR.gm;
       const cw0 = max(gL ? gL.cw0 : -1e9, gR ? gR.cw0 : -1e9), cw1 = min(gL ? gL.cw1 : 1e9, gR ? gR.cw1 : 1e9), ysA = (gL ? gL.ys : []).concat(gR ? gR.ys : []);
       const pos = lateralPositions(null, ysA, { lines: v.models[0].axles[0].lines, side: v.side, centre: v.centre }, cw0, cw1); if (!pos.length) { veh[vid] = Object.assign(res, { skip: true }); return; }
-      const LL = gL ? gL.L : 0, LR = gR ? gR.L : 0, withPrime = v.pm && max(LL, LR) > 0.2 * (v.Wk / 2 - 82.5) + 9.8;
+      const LL = gL ? gL.L : 0, LR = gR ? gR.L : 0, withPrime = !!v.pm; // prime mover included whenever it is on the bridge (LRRD 1.9)
+      const reac = (gr, load, end) => { if (!gr) return []; const e = effectsOf(gr, load); return Array.from({ length: gr.ns }, (_, s) => e[s * gr.NE + (end ? 4 : 3)] + sideLoad(gr, load, s, end)); };
+      // M1600 lane UDL (6 kN/m over a 3.2 m lane) on the whole of each adjacent span
+      const udl = v.udl ? pos.map(yc => { const one = (gr, end) => { if (!gr) return []; const load = new Float64Array(gr.nn), n = 40, m = 8; for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) pointToNodes(gr, (i + 0.5) * gr.gm.L / n, yc - 1.6 + (j + 0.5) * 3.2 / m, v.udl * gr.gm.L / n / m, load); return reac(gr, load, end); }; return toPiles(one(grL, 1), one(grR, 0)); }) : null;
+      const take = (R1, R2, onL, onR) => { for (let p = 0; p < np; p++) { const t = R1[p] + R2[p]; if (t > res.axS[p]) { res.axS[p] = t; res.ax1[p] = R1[p]; res.ax2[p] = R2[p]; } if (onL && !onR && R1[p] > res.m1[p]) res.m1[p] = R1[p]; if (onR && !onL && R2[p] > res.m2[p]) res.m2[p] = R2[p]; } };
       v.models.forEach(m => { const tr = trainOf(v, m, 0, withPrime), len = max(...tr.map(a => a.x));
         for (const dir of [1, -1]) { const axles = dir > 0 ? tr : tr.map(a => ({ x: len - a.x, P: a.P, lines: a.lines }));
-          for (let xf = -LL; xf <= LR + len + 1e-9; xf += 0.1) pos.forEach(yc => {
-            // x measured from the support centreline: left span occupies [-LL, 0], right span [0, LR]
-            const loadL = grL ? new Float64Array(grL.nn) : null, loadR = grR ? new Float64Array(grR.nn) : null; let onL = false, onR = false;
-            axles.forEach(a => { const x = xf - a.x; a.lines.forEach(l => { const P = a.P / a.lines.length;
-              if (grL && x <= 0 && x >= -LL) { pointToNodes(grL, LL + x, yc + l, P, loadL); onL = true; } else if (grR && x > 0 && x <= LR) { pointToNodes(grR, x, yc + l, P, loadR); onR = true; } }); });
-            const eL = grL ? effectsOf(grL, loadL) : null, eR = grR ? effectsOf(grR, loadR) : null;
-            const rL = grL ? Array.from({ length: grL.ns }, (_, s) => eL[s * 5 + 4] + sideLoad(grL, loadL, s, 1)) : [];
-            const rR = grR ? Array.from({ length: grR.ns }, (_, s) => eR[s * 5 + 3] + sideLoad(grR, loadR, s, 0)) : [];
-            const { R1, R2 } = toPiles(rL, rR);
-            for (let p = 0; p < np; p++) { const t = R1[p] + R2[p]; if (t > res.axS[p]) { res.axS[p] = t; res.ax1[p] = R1[p]; res.ax2[p] = R2[p]; } if (onL && !onR && R1[p] > res.m1[p]) res.m1[p] = R1[p]; if (onR && !onL && R2[p] > res.m2[p]) res.m2[p] = R2[p]; }
-          }); } });
+          for (let xf = -LL; xf <= LR + len + 1e-9; xf += 0.1) {
+            const one = pos.map((yc, pi) => {
+              // x measured from the support centreline: left span occupies [-LL, 0], right span [0, LR]
+              const loadL = grL ? new Float64Array(grL.nn) : null, loadR = grR ? new Float64Array(grR.nn) : null; let onL = false, onR = false;
+              axles.forEach(a => { const x = xf - a.x; a.lines.forEach(l => { const P = a.P / a.lines.length;
+                if (grL && x <= 0 && x >= -LL) { pointToNodes(grL, LL + x, yc + l, P, loadL); onL = true; } else if (grR && x > 0 && x <= LR) { pointToNodes(grR, x, yc + l, P, loadR); onR = true; } }); });
+              const { R1, R2 } = toPiles(reac(grL, loadL, 1), reac(grR, loadR, 0));
+              if (udl) for (let p = 0; p < np; p++) { if (onL || !onR) R1[p] += udl[pi].R1[p]; if (onR || !onL) R2[p] += udl[pi].R2[p]; }
+              return { R1, R2, onL, onR };
+            });
+            one.forEach(q => take(q.R1, q.R2, q.onL, q.onR));
+            // two vehicles side by side (LRRD 1.8 / 1.9): T44 0.9 + 0.9, M1600 1.0 + 0.8
+            if (v.pair && pos.length > 1) for (let a = 0; a < pos.length; a++) for (let b = a + 1; b < pos.length; b++) { if (pos[b] - pos[a] < v.width + 1.2 - 1e-9) continue;
+              const A = one[a], Bq = one[b], R1 = new Float64Array(np), R2 = new Float64Array(np);
+              for (let p = 0; p < np; p++) { const ta = A.R1[p] + A.R2[p], tb = Bq.R1[p] + Bq.R2[p], [fa, fb] = v.pair === 'm1600' ? (ta >= tb ? [1, 0.8] : [0.8, 1]) : [0.9, 0.9]; R1[p] = fa * A.R1[p] + fb * Bq.R1[p]; R2[p] = fa * A.R2[p] + fb * Bq.R2[p]; }
+              take(R1, R2, A.onL || Bq.onL, A.onR || Bq.onR); }
+          } } });
       veh[vid] = res;
     });
     return { ki, kind: Sup.kind || (ki === 0 || ki === B.spans.length ? 'abut' : 'pier'), piles, dead, veh, rDL, rDR, vDL, yL, yR, inf, left, right };
@@ -325,24 +348,24 @@
   function sideLoad(Gr, load, s, end) { const i = end ? Gr.i1 : Gr.i0; let r = 0; const nx = Gr.nx; if (end) { for (let k = i + 1; k < nx; k++) r += load[s * nx + k]; } else { for (let k = 0; k < i; k++) r += load[s * nx + k]; } return r; }
 
   // ------------------------------------------------------------------ ratings
-  const rate = (cap, dl, ll, dla, W) => (ll > 1e-9 ? (cap - dl) / (ll * (1 + dla)) * W : Infinity);
+  const rate = (cap, dl, ll, dla, W) => (ll > 1e-9 ? max(0, (cap - dl) / (ll * (1 + dla)) * W) : cap >= dl ? Infinity : 0); // 0 = dead load alone exceeds the capacity
   function rateStringers(B, si, Gr, dead, vres) {
     const S = B.spans[si], k1 = K1(B.road), out = [];
     for (let s = 0; s < Gr.ns; s++) {
-      const st = S.stringers[s], p = Gr.P[s], d = dead.eff, o = s * 5;
+      const st = S.stringers[s], p = Gr.P[s], d = dead.eff, o = s * Gr.NE;
       let Fb, Fs1, Fs2, Mcap, V1cap, V2cap, info;
       if (p.mat === 'steel') { const gr = STEELGR[+st.steelGrade || 250] || STEELGR[250], q = steelSec(st.steel || '410UB54'); Fb = gr.fb; Fs1 = Fs2 = gr.fs; Mcap = Fb * q.I / q.ymax * 1e-6; V1cap = V2cap = gr.fs * q.Aw * 1e-3; info = { grade: 'Gr' + (+st.steelGrade || 250), I: q.I, ymax: q.ymax, A1: q.Aw, A2: q.Aw }; }
       else {
-        const sp = SPECIES[p.mat] || SPECIES.jarrah, gr = GRADES[st.grade || sp.stringer] || GRADES.F17, cm = condOf((st.mid || {}).cond || 'G', p.mat), c1 = condOf((st.e1 || {}).cond || 'G', p.mat), c2 = condOf((st.e2 || {}).cond || 'G', p.mat);
+        const sp = SPECIES[p.mat] || SPECIES.jarrah, sawn = [st.e1, st.mid, st.e2].some(q => q && +q.W >= 999), grN = st.grade || (sawn ? sp.sawn : sp.stringer), gr = GRADES[grN] || GRADES.F17, cm = condOf((st.mid || {}).cond || 'G', p.mat), c1 = condOf((st.e1 || {}).cond || 'G', p.mat), c2 = condOf((st.e2 || {}).cond || 'G', p.mat);
         Fb = k1 * gr.fb * cm.t; const fs0 = k1 * gr.fs * 0.66; Fs1 = fs0 * c1.s; Fs2 = fs0 * c2.s;
         Mcap = Fb * p.mid.I / p.mid.ymax * 1e-6; V1cap = Fs1 * p.e1.A * 1e-3; V2cap = Fs2 * p.e2.A * 1e-3;
-        info = { grade: st.grade || sp.stringer, I: p.mid.I, ymax: p.mid.ymax, A1: p.e1.A, A2: p.e2.A, I1: p.e1.I, I2: p.e2.I, Ag: p.mid.Ag };
+        info = { grade: grN, sawn, I: p.mid.I, ymax: p.mid.ymax, A1: p.e1.A, A2: p.e2.A, I1: p.e1.I, I2: p.e2.I, Ag: p.mid.Ag };
       }
       const DL = { M: d[o], V1: abs(d[o + 1]), V2: abs(d[o + 2]) }, r = { s: s + 1, Fb, Fs1, Fs2, Mcap, V1cap, V2cap, DL, info, veh: {} };
       Object.entries(vres).forEach(([vid, vr]) => { if (!vr || vr.skip) { r.veh[vid] = { skip: true }; return; } const e = vr.env, v = vr.v;
         const LL = { M: e[o], V1: e[o + 1], V2: e[o + 2] }, rb = rate(Mcap, DL.M, LL.M, v.dla, v.W), r1 = rate(V1cap, DL.V1, LL.V1, v.dla, v.W), r2 = rate(V2cap, DL.V2, LL.V2, v.dla, v.W);
         const lim = min(rb, r1, r2), crit = lim === rb ? 'Bending' : lim === r1 ? 'Shear end 1' : 'Shear end 2';
-        r.veh[vid] = { LL, rb, r1, r2, t: lim, pct: lim / v.W * 100, crit, W: v.W }; });
+        r.veh[vid] = { LL, rb, r1, r2, t: lim, pct: lim / v.W * 100, crit, W: v.W, dlx: lim === 0 }; });
       out.push(r);
     }
     return out;
@@ -396,9 +419,14 @@
       const f = P => P / cap.P + abs(Ms - P * e * fac) / cap.M - 1; let lo = 0, hi = 1; if (f(0) >= 0) return 0; while (f(hi) < 0 && hi < 1e7) hi *= 2; for (let i = 0; i < 80; i++) { const m = (lo + hi) / 2; if (f(m) < 0) lo = m; else hi = m; } const Pcb = lo;
       const kv = 1.5 * e / L, Psh = kv > 0 ? (cap.V - abs(Vs)) / kv : Infinity; return min(Pcb, Psh); };
     const s2c = s2.at(zc), fc = 1 - 1.5 * zc / L;
-    const top = allowP(0, s2.RA, 1, cp.top), crit = allowP(s2c.M, s2c.V, fc, { P: cp.crit.P, M: cp.crit.M, V: cp.crit.V }), fix = allowP(s2.MB, s2.RB, -0.5, cp.top);
+    const top = allowP(0, s2.RA, 1, cp.top);
+    let critCap = { P: cp.crit.P, M: cp.crit.M, V: cp.crit.V }, crit = allowP(s2c.M, s2c.V, fc, critCap);
+    for (let it = 0; it < 2; it++) { const Mn = s2c.M - crit * e * fc; critCap = { P: cp.crit.P, M: Mn >= 0 ? cp.crit.Mb : cp.crit.Mf, V: cp.crit.V }; crit = allowP(s2c.M, s2c.V, fc, critCap); }
+    const fix = allowP(s2.MB, s2.RB, -0.5, cp.top);
+    // tension in the pile (soil moment less the dead-load compression) must not exceed F_b,t
+    const Zt = s1c.M >= 0 ? cp.crit.Zf : cp.crit.Zb, sigT = abs(s1c.M) / Zt * 1e-3 - Dd / cp.crit.A * 1e-3, tensionOK = sigT <= cp.Fbt + 1e-9;
     const case2 = min(top, crit, fix) - Dd, liveCap = min(case1, case2), lam = Rv > 1e-9 ? liveCap / (Rv * (1 + v.dla)) : Infinity;
-    return { t: lam * v.W, pct: lam * 100, crit: liveCap === case1 ? 'Case 1 (max soil)' : top <= crit && top <= fix ? 'Case 2 Top' : crit <= fix ? 'Case 2 Crit' : 'Case 2 Fixed', liveCap, case1, case2, soil1: s1, soil2: s2, shearOK: shear1 <= 1 };
+    return { t: lam * v.W, pct: lam * 100, crit: liveCap === case1 ? 'Case 1 (max soil)' : top <= crit && top <= fix ? 'Case 2 Top' : crit <= fix ? 'Case 2 Crit' : 'Case 2 Fixed', liveCap, case1, case2, soil1: s1, soil2: s2, shearOK: shear1 <= 1, shear1, sigT, tensionOK, case2Top: top - Dd, case2Crit: crit - Dd, case2Fix: fix - Dd };
   }
   function halfcapBearing(B, pl, D, Vlive, v, share, Sup) {
     const k1 = K1(B.road), R = (+pl.d || 350) / 2, seg = h => (h > 0 ? R * R * Math.acos((R - h) / R) - (R - h) * sq(max(0, 2 * R * h - h * h)) : 0);
@@ -410,7 +438,7 @@
   function rateHalfcap(B, Sup, sl, vehRes) {
     const cap = Sup.cap || {}, k1 = K1(B.road), mat = cap.mat || 'jarrah', sp = SPECIES[mat] || SPECIES.jarrah, gr = GRADES[cap.grade || sp.halfcap] || GRADES.F14, cd = condOf(cap.cond || 'G', mat);
     const b = (+cap.bh || +cap.b || 0.3) * 1000, H = (+cap.d || 0.3) * 1000, Fb = k1 * gr.fb * cd.t, Fs = k1 * gr.fs * cd.s, Z = b * H * H / 6, As = 2 / 3 * b * H;
-    const piles = sl.piles, pd = (Sup.piles || []).map(p => +p.d || 350), share = Sup.share != null ? +Sup.share : (sl.kind === 'pier' ? 2 / 3 : 1.0);
+    const piles = sl.piles, pd = (Sup.piles || []).map(p => +p.d || 350), share = Sup.share != null && Sup.share !== '' ? +Sup.share : (sl.kind === 'pier' ? 2 / 3 : 1.0);
     const ys = sl.yL.length ? sl.yL : sl.yR, rD = sl.vDL && sl.vDL.length ? sl.vDL : (sl.rDL.length ? sl.rDL : sl.rDR);
     const pct = ys.map(y => { let best = { x: Infinity }; piles.forEach((p, i) => { const x = abs(y - p) * 1000; if (x < best.x) best = { x, D: pd[i] }; }); const c = best.D / 2 + H / 4, c5 = best.D / 2 + 5 * H / 4; return { M: best.x <= c ? 0 : 1, V: best.x <= c ? 0 : best.x >= c5 ? 1 : (best.x - c) / H }; });
     // beam on piles: moment / shear envelopes for point loads at stringer positions
@@ -423,22 +451,32 @@
       const fixed = new Set(piles.map(p => 2 * xsAll.findIndex(x => abs(x - p) < 1e-3))), free = []; for (let d = 0; d < N; d++) if (!fixed.has(d)) free.push(d);
       const n = free.length, Kf = new Float64Array(n * n); for (let a = 0; a < n; a++) for (let c = 0; c < n; c++) Kf[a * n + c] = K[free[a] * N + free[c]];
       const Lc = chol(Kf, n); if (!Lc) return { M: 0, V: 0 }; const uf = cholSolve(Lc, n, free.map(d => F[d])), u = new Float64Array(N); free.forEach((d, a) => { u[d] = uf[a]; });
-      let Mx = 0, Vx = 0; for (let i = 0; i + 1 < nx; i++) { const l = xsAll[i + 1] - xsAll[i], ue = [u[2 * i], u[2 * i + 1], u[2 * i + 2], u[2 * i + 3]], k = [[12 / l ** 3, 6 / l ** 2, -12 / l ** 3, 6 / l ** 2], [6 / l ** 2, 4 / l, -6 / l ** 2, 2 / l], [-12 / l ** 3, -6 / l ** 2, 12 / l ** 3, -6 / l ** 2], [6 / l ** 2, 2 / l, -6 / l ** 2, 4 / l]]; const f = k.map(r => r.reduce((s, kv, c) => s + kv * ue[c], 0)); Mx = max(Mx, abs(f[1]), abs(f[3])); if (faceSide[i] === 1) Vx = max(Vx, abs(f[0])); if (faceSide[i + 1] === -1) Vx = max(Vx, abs(f[2])); }
-      return { M: Mx, V: Vx }; };
+      // signed moment at every node (sagging +) and shear at every pile face
+      const Mn = new Float64Array(nx), Vf = new Float64Array(nx); let Mx = 0, Vx = 0;
+      for (let i = 0; i + 1 < nx; i++) { const l = xsAll[i + 1] - xsAll[i], ue = [u[2 * i], u[2 * i + 1], u[2 * i + 2], u[2 * i + 3]], k = [[12 / l ** 3, 6 / l ** 2, -12 / l ** 3, 6 / l ** 2], [6 / l ** 2, 4 / l, -6 / l ** 2, 2 / l], [-12 / l ** 3, -6 / l ** 2, 12 / l ** 3, -6 / l ** 2], [6 / l ** 2, 2 / l, -6 / l ** 2, 4 / l]]; const f = k.map(r => r.reduce((s, kv, c) => s + kv * ue[c], 0));
+        Mn[i] = -f[1]; Mn[i + 1] = f[3]; Mx = max(Mx, abs(f[1]), abs(f[3])); if (faceSide[i] === 1) { Vf[i] = f[0]; Vx = max(Vx, abs(f[0])); } if (faceSide[i + 1] === -1) { Vf[i + 1] = -f[2]; Vx = max(Vx, abs(f[2])); } }
+      return { M: Mx, V: Vx, Mn, Vf }; };
+    const locName = (j, kind) => { const x = xsAll[j], pi = piles.findIndex(p => abs(p - x) < 1e-3); if (kind === 'V') { const k = piles.findIndex((p, q) => abs(abs(p - x) - pd[q] / 2000) < 1e-3); return 'V at pile ' + (k + 1) + (x < piles[k] ? ' left face' : ' right face'); } return pi >= 0 ? 'M over pile ' + (pi + 1) : 'M at x = ' + x.toFixed(2) + ' m'; };
+    // rating at one location: |f_DL + λ f_LL| ≤ F with the dead and live effects at the same place
+    const rateAt = (cap, d, l) => { if (abs(l) < 1e-12) return Infinity; const same = Math.sign(d) === Math.sign(l) || !d; return max(0, (same ? cap - abs(d) : cap + abs(d)) / abs(l)); };
     const dM = solveBeam(ys.map((y, s) => ({ x: y, P: rD[s] * pct[s].M }))), dV = solveBeam(ys.map((y, s) => ({ x: y, P: rD[s] * pct[s].V })));
-    const out = { Fb, Fs, Z, As, MD: dM.M, VD: dV.V, share, veh: {} };
-    Object.entries(vehRes).forEach(([vid, r]) => { if (!r || !r.cases) return; const v = vehicle(vid); let best = { t: Infinity };
+    const Mcap = Fb * Z * 1e-6, Vcap = Fs * As * 1e-3; // kNm, kN
+    const out = { Fb, Fs, Z, As, Mcap, Vcap, MD: dM.M, VD: dV.V, share, veh: {} };
+    Object.entries(vehRes).forEach(([vid, r]) => { if (!r || !r.cases) return; const v = vehicle(vid); let bm = { r: Infinity }, bv = { r: Infinity };
       r.cases.forEach(cs => { const m = solveBeam(ys.map((y, s) => ({ x: y, P: (cs[s] || 0) * pct[s].M * share * (1 + v.dla) }))), vv = solveBeam(ys.map((y, s) => ({ x: y, P: (cs[s] || 0) * pct[s].V * share * (1 + v.dla) })));
-        const fbD = dM.M * 1e6 / Z, fsD = dV.V * 1e3 / As, fbL = m.M * 1e6 / Z, fsL = vv.V * 1e3 / As, rm = fbL > 0 ? (Fb - fbD) / fbL : Infinity, rv = fsL > 0 ? (Fs - fsD) / fsL : Infinity, t = min(rm, rv) * v.W;
-        if (t < best.t) best = { t, pct: min(rm, rv) * 100, crit: rm <= rv ? 'Bending' : 'Shear', M: m.M, V: vv.V }; });
-      out.veh[vid] = best; });
+        for (let j = 0; j < xsAll.length; j++) {
+          const rm = rateAt(Mcap, dM.Mn[j], m.Mn[j]); if (rm < bm.r) bm = { r: rm, loc: locName(j, 'M'), MD: dM.Mn[j], ML: m.Mn[j] };
+          if (isFace[j]) { const rv = rateAt(Vcap, dV.Vf[j], vv.Vf[j]); if (rv < bv.r) bv = { r: rv, loc: locName(j, 'V'), VD: dV.Vf[j], VL: vv.Vf[j] }; }
+        } });
+      const rr = min(bm.r, bv.r);
+      out.veh[vid] = { t: rr * v.W, pct: rr * 100, crit: bm.r <= bv.r ? 'Bending — ' + bm.loc : 'Shear — ' + bv.loc, tM: bm.r * v.W, tV: bv.r * v.W, locM: bm.loc, locV: bv.loc, M: bm.ML, V: bv.VL, MD: bm.MD, VD: bv.VD }; });
     return out;
   }
   // deck planks: continuous beam over stringers, two wheel patches 1.8 m apart, 45 deg spread through pavement
   function rateDeckPlanks(B, si) {
     const S = B.spans[si], dp = S.planks || {}, gm = spanGeom(B, si), k1 = K1(B.road), mat = dp.mat || 'jarrah', sp = SPECIES[mat] || SPECIES.jarrah, gr = GRADES[dp.grade || sp.deck] || GRADES.F7, cd = condOf(dp.cond || 'G', mat);
     const bw = +dp.b || 220, d = +dp.d || 127, rot = +dp.rot || 0, t = (+dp.pave || 0) * 1000, deff = d * (1 - rot / 100), topCut = +dp.topCut || 200;
-    const len = 200 + 2 * t, wid = 400 + 2 * t, beff = 400, nPl = beff / bw;
+    const len = 200 + 2 * t, wid = 400 + 2 * t, beff = len, nPl = beff / bw; // b_eff = patch length on the plank top (TIMBAR deck plank sheet)
     const Fb = k1 * gr.fb * cd.t, Fs = k1 * gr.fs * 0.667 * cd.s, Z = beff * deff * deff / 6, A = beff * deff, Mcap = Fb * Z * 1e-6, Vcap = Fs * A * 1e-3;
     const ys = gm.ys, x0 = ys[0], x1 = ys[ys.length - 1]; if (ys.length < 2) return null;
     const nE = 200, h = (x1 - x0) / nE, xsN = Array.from({ length: nE + 1 }, (_, i) => x0 + i * h);
@@ -458,7 +496,8 @@
     // live: wheel patches of length wid along the plank (transverse), stepping; zones near stringers ignored
     const zb = (topCut + 2 * deff) / 2000, zs = (topCut + 2 * deff + 2 * t) / 2000, wheel = 48 * 1.3, qLL = wheel / (wid / 1000);
     let LM = 0, LV = 0;
-    for (let c = x0 - 0.9 + 0.3; c <= x1 + 0.9 - 0.3; c += 0.05) {
+    const kL = gm.cw0 + 0.6, kR = gm.cw1 - 0.6; // centre of a wheel patch at least 0.6 m from the kerb
+    for (let c = max(x0 - 0.9 + 0.3, kL + 0.9); c <= min(x1 + 0.9 - 0.3, kR - 0.9) + 1e-9; c += 0.02) {
       const pos = [c - 0.9, c + 0.9];
       const build = zone => xsN.map((x, i) => { let p = 0; pos.forEach(pc => { if (abs(x - pc) <= wid / 2000) p += qLL * h; }); if (ys.some(y => abs(x - y) <= zone)) p = 0; return p; });
       const rM = analyse(build(zb)), rV = analyse(build(zs)); LM = max(LM, rM.M); LV = max(LV, rV.V);
@@ -471,7 +510,7 @@
 
   // ------------------------------------------------------------------ whole bridge
   function analyse(B, opt) {
-    opt = opt || {}; const t0 = Date.now(), vids = VEH_ORDER.filter(k => !B.veh || !B.veh.off || !B.veh.off.includes(k)), warn = [];
+    opt = opt || {}; const t0 = Date.now(), vids = VEH_ORDER.filter(k => vehOn(B, k)), warn = [];
     const grs = [], deads = [], spans = [];
     B.spans.forEach((S, si) => {
       const Gr = buildGrillage(B, si), dead = deadLoad(B, si, Gr); grs.push(Gr); deads.push(dead);
@@ -490,9 +529,10 @@
           const Vp = { ax1: V.ax1[p], ax2: V.ax2[p], m1: V.m1[p], m2: V.m2[p] }; r.load = r.load || {}; r.load[vid] = Vp;
           if (sl.kind === 'pier') r.veh[vid] = ratePierPile(B, pl, r.D1, r.D2, Vp, v, cp);
           else r.veh[vid] = rateAbutPile(B, pl, r.D1 + r.D2, Vp.ax1 + Vp.ax2, v, cp, wtrib);
-          // halfcap bearing: the side of the pile carrying more load
-          const share = sl.kind === 'pier' ? 2 / 3 : 1, D = max(r.D1, r.D2), Vl = sl.kind === 'pier' ? max(Vp.ax1 + Vp.ax2, Vp.m1, Vp.m2) : Vp.ax1 + Vp.ax2;
-          r.bear[vid] = halfcapBearing(B, pl, sl.kind === 'pier' ? r.D1 : D, Vl, v, share, Sup);
+          // halfcap bearing at a pier: two halfcaps (k_sh = 2/3); abutment: one halfcap (k_sh = 1.0 unless set)
+          // (TIMBAR halfcap-bearing sheet: dead load of the facing side, live = R1 + R2 of the max case x 2/3; both facing sides checked)
+          if (sl.kind === 'pier') { const Vl = max(Vp.ax1 + Vp.ax2, Vp.m1, Vp.m2), b1 = halfcapBearing(B, pl, r.D1, Vl, v, 2 / 3, Sup), b2 = halfcapBearing(B, pl, r.D2, Vl, v, 2 / 3, Sup); r.bear[vid] = Object.assign(b1.t <= b2.t ? b1 : b2, { side: b1.t <= b2.t ? 1 : 2, t1: b1.t, t2: b2.t }); }
+          else r.bear[vid] = halfcapBearing(B, pl, r.D1 + r.D2, Vp.ax1 + Vp.ax2, v, Sup.share != null && Sup.share !== '' ? +Sup.share : 1, Sup);
         });
         return r;
       });
@@ -508,7 +548,8 @@
   function stringerCases(B, ki, grs, vid, sl) {
     const si = ki > 0 ? ki - 1 : 0, end = ki > 0 ? 1 : 0, Gr = grs[si]; if (!Gr) return [];
     const v = vehicle(vid), gm = Gr.gm, pos = lateralPositions(gm, gm.ys, { lines: v.models[0].axles[0].lines, side: v.side, centre: v.centre }, gm.cw0, gm.cw1), cases = [];
-    pos.forEach(yc => { let best = null, bt = -1; v.models.forEach(m => { const tr = trainOf(v, m, gm.L, false), len = max(...tr.map(a => a.x)); for (let xf = 0; xf <= gm.L + len; xf += 0.2) { const load = new Float64Array(Gr.nn); tr.forEach(a => a.lines.forEach(l => { const x = xf - a.x; if (x < 0 || x > gm.L) return; pointToNodes(Gr, x, yc + l, a.P / a.lines.length, load); })); const e = effectsOf(Gr, load), r = Array.from({ length: Gr.ns }, (_, s) => abs(e[s * 5 + 1 + end])), tt = r.reduce((a, c) => a + c, 0); if (tt > bt) { bt = tt; best = r; } } }); if (best) cases.push(best); });
+    const udl = yc => { if (!v.udl) return null; const load = new Float64Array(Gr.nn), n = 40, mm = 8; for (let i = 0; i < n; i++) for (let j = 0; j < mm; j++) pointToNodes(Gr, (i + 0.5) * gm.L / n, yc - 1.6 + (j + 0.5) * 3.2 / mm, v.udl * gm.L / n / mm, load); const e = effectsOf(Gr, load); return Array.from({ length: Gr.ns }, (_, s) => abs(e[s * Gr.NE + 1 + end])); };
+    pos.forEach(yc => { let best = null, bt = -1; const u = udl(yc); v.models.forEach(m => { const tr = trainOf(v, m, gm.L, !!v.pm), len = max(...tr.map(a => a.x)); for (let xf = 0; xf <= gm.L + len; xf += 0.2) { const load = new Float64Array(Gr.nn); tr.forEach(a => a.lines.forEach(l => { const x = xf - a.x; if (x < 0 || x > gm.L) return; pointToNodes(Gr, x, yc + l, a.P / a.lines.length, load); })); const e = effectsOf(Gr, load), r = Array.from({ length: Gr.ns }, (_, s) => abs(e[s * Gr.NE + 1 + end]) + (u ? u[s] : 0)), tt = r.reduce((a, c) => a + c, 0); if (tt > bt) { bt = tt; best = r; } } }); if (best) cases.push(best); });
     return cases;
   }
   // wing wall piles (unbraced cantilevers fixed below GL, sloping backfill, LL surcharge) — capacity/demand PASS/FAIL
@@ -519,8 +560,10 @@
     (w.piles || []).forEach((p, i) => {
       const H = +p.h || 1.5, dfix = p.dfix != null ? +p.dfix : 1, ds = p.ds != null ? +p.ds : 0.6, dc = p.dc != null ? +p.dc : 1, L = H + dfix, wt = i < sp.length - 1 ? (sp[i] + sp[i + 1]) / 2 : sp[i] / 2 + (+w.osw || 0.5), d = (+p.d || 350) / 1000;
       const mat = p.mat || 'jarrah', spc = SPECIES[mat] || SPECIES.jarrah, gr = GRADES[p.grade || spc.pile] || GRADES.F17, cd = condOf(p.cond || 'G', mat);
-      const sur = i === 0 ? 1.0 : 0; const n = 300, dz = L / n; let Mf = 0, Vf = 0, Mc = 0, Vc = 0; const zc = H + dc;
-      for (let k = 0; k < n; k++) { const z = (k + 0.5) * dz; const width = z <= H + ds ? wt : d; let pr = Ka2 * gs * z * width + (z <= 3 ? Ka1 * gs * sur * width : 0); if (z > H && pas) pr -= Kp * gs * (z - H) * d; pr = max(0, pr); const f = pr * dz; Vf += f; Mf += f * (L - z); if (z < zc) { Vc += f; Mc += f * (zc - z); } }
+      // top of the live-load surcharge measured up from GL (default: the edge-most pile at its full height, none for the others)
+      const sTop = p.sur != null && p.sur !== '' ? +p.sur : i === 0 ? H : -1, z0s = H - sTop, surAt = z => { if (sTop < 0) return 0; const zz = z - z0s; return zz < 0 ? 0 : zz <= 3 ? 1 : zz <= 8 ? 1 - (zz - 3) / 5 : 0; };
+      const n = 300, dz = L / n; let Mf = 0, Vf = 0, Mc = 0, Vc = 0; const zc = H + dc;
+      for (let k = 0; k < n; k++) { const z = (k + 0.5) * dz; const width = z <= H + ds ? wt : d; let pr = Ka2 * gs * z * width + Ka1 * gs * 1.0 * surAt(z) * width; if (z > H && pas) pr -= Kp * gs * (z - H) * d; pr = max(0, pr); const f = pr * dz; Vf += f; Mf += f * (L - z); if (z < zc) { Vc += f; Mc += f * (zc - z); } }
       const sc = pileSection(p), s0 = pileSection({ d: p.d }), Fbt = gr.fb * cd.t, Fbc = gr.fb * cd.c, Fs = gr.fs * (p.asf != null ? +p.asf : 1) * cd.s;
       const MrC = min(sc.Zb * Fbt, sc.Zf * Fbc) * 1e-6, VrC = sc.A * Fs * 1e-3, MrF = s0.Z0 * gr.fb * 1e-6, VrF = s0.A * gr.fs * 1e-3;
       const r = { p: p.id || i + 1, H, L, wt, Ka1, Ka2, Kp, beta: beta * 180 / PI, Mf, Vf, Mc, Vc, MrC, VrC, MrF, VrF, rMF: Mf > 1e-6 ? MrF / Mf : 99.99, rVF: Vf > 1e-6 ? VrF / Vf : 99.99, rMC: Mc > 1e-6 ? MrC / Mc : 99.99, rVC: Vc > 1e-6 ? VrC / Vc : 99.99 };
@@ -530,7 +573,7 @@
   }
   function summarise(B, spans, supports, vids) {
     const rows = {}; const push = (vid, comp, t, W, crit) => { if (!isFinite(t)) return; const r = rows[vid]; if (!r || t < r.t) rows[vid] = { t, pct: t / W * 100, comp, crit, W }; };
-    const low = [];
+    const low = [], lowP = low.push.bind(low); low.push = q => (q.vid === 'M16' ? 0 : lowP(q)); // M1600 is recorded, not a deficiency (LRRD)
     spans.forEach((sp, si) => { if (!sp) return; sp.str.forEach(st => vids.forEach(vid => { const r = st.veh[vid]; if (r && !r.skip) { push(vid, 'Span ' + (si + 1) + ' stringer ' + st.s, r.t, r.W, r.crit); if (r.t < r.W) low.push({ comp: 'Span ' + (si + 1) + ' stringer ' + st.s, vid, t: r.t, pct: r.pct, crit: r.crit }); } }));
       if (sp.planks) Object.entries(sp.planks.veh).forEach(([vid, r]) => { if (vids.includes(vid)) { push(vid, 'Span ' + (si + 1) + ' deck planks', r.t, r.W, r.crit); if (r.t < r.W) low.push({ comp: 'Span ' + (si + 1) + ' deck planks', vid, t: r.t, pct: r.pct, crit: r.crit }); } }); });
     supports.forEach(su => { if (!su) return; su.piles.forEach(pr => vids.forEach(vid => { const r = pr.veh[vid], v = vehicle(vid); if (r && !r.skip) { push(vid, su.name + ' pile ' + pr.p, r.t, v.W, r.crit); if (r.t < v.W) low.push({ comp: su.name + ' pile ' + pr.p, vid, t: r.t, pct: r.t / v.W * 100, crit: r.crit }); } const b = pr.bear[vid]; if (b) { push(vid, su.name + ' pile ' + pr.p + ' halfcap bearing', b.t, v.W, 'Bearing'); if (b.t < v.W) low.push({ comp: su.name + ' pile ' + pr.p + ' halfcap bearing', vid, t: b.t, pct: b.pct, crit: 'Bearing' }); } }));
@@ -552,7 +595,7 @@
     const piles = [0.5, 2.5, 4.5, 6.5].map(x => pile(x, 380));
     return { no: 'NEW', name: 'New timber bridge', designer: '', road: 'local', spans: [span(6.0), span(6.0), span(6.0)],
       supports: [0, 1, 2, 3].map(k => ({ kind: k === 0 || k === 3 ? 'abut' : 'pier', piles: JSON.parse(JSON.stringify(piles)), cap: { b: k === 0 || k === 3 ? 0.17 : 0.34, bh: 0.17, d: 0.35, E: 12000, mat: 'jarrah', grade: 'F14', bear: 80 }, wing: [] })),
-      veh: { off: [] }, soil: { gamma: 20, ka: 0.33, sur: 1.0 } };
+      veh: { off: ['M16'], on: [] }, soil: { gamma: 20, ka: 0.33, sur: 1.0 } }; // M1600 not normally checked (workshop notes) — tick it to include
   }
   // Bridge 3393 (TIMBAR manual App C) – span 3 and the substructure as published
   function example3393() {
@@ -566,7 +609,10 @@
     sp3.patches = [{ name: 'Kerb L', gamma: 10.8, x: 0, y: 0, lx: 4.4, ly: 0.15, t: [0.485, 0.485, 0.485, 0.485] }, { name: 'Kerb R', gamma: 10.8, x: 0, y: 6.9, lx: 4.4, ly: 0.15, t: [0.485, 0.485, 0.485, 0.485] },
       { name: 'Pavement L', gamma: 22, x: 0, y: 0.15, lx: 4.4, ly: 3.375, t: [0.197, 0.19, 0.1, 0.1] }, { name: 'Pavement R', gamma: 22, x: 0, y: 3.525, lx: 4.4, ly: 3.375, t: [0.12, 0.113, 0.197, 0.19] }];
     sp3.planks = { on: true, b: 220, d: 120, rot: 5, pave: 0.1, paveDL: 0.12, mat: 'jarrah', grade: 'F7', topCut: 200 };
-    B.spans[1].L = 6.05; B.spans[1].Lo = 4.56; B.spans[1].patches.forEach(p => { p.lx = 6.05; });
+    B.veh.off = []; // the App C printout includes M1600
+    B.spans[1].L = 6.05; B.spans[1].Lo = 4.56;
+    B.spans[1].patches = [{ name: 'Kerb L', gamma: 10.8, x: 0, y: 0, lx: 6.05, ly: 0.15, t: [0.485, 0.485, 0.485, 0.485] }, { name: 'Kerb R', gamma: 10.8, x: 0, y: 6.9, lx: 6.05, ly: 0.15, t: [0.485, 0.485, 0.485, 0.485] },
+      { name: 'Pavement L', gamma: 22, x: 0, y: 0.15, lx: 6.05, ly: 3.375, t: [0.19, 0.184, 0.1, 0.1] }, { name: 'Pavement R', gamma: 22, x: 0, y: 3.525, lx: 6.05, ly: 3.375, t: [0.113, 0.107, 0.19, 0.184] }];
     B.spans[0].L = 6.05; B.spans[0].rate = false; B.spans[0].patches.forEach(p => { p.lx = 6.05; });
     // pier 2 (between spans 2 and 3), abutment 2
     const pp = (x, d, o) => Object.assign({ x, d, def: 0, cond: 'G', mat: 'jarrah', grade: 'F17', dfix: 1.0, dc: 1.0 }, o);
@@ -579,6 +625,6 @@
     return B;
   }
 
-  G.TIMBER = { GRADES, SPECIES, COND, K1, STEELGR, steelSec, stringerSection, pileSection, vehicle, VEH_ORDER, spanGeom, stringerProps, buildGrillage, deadLoad, vehicleSpan, supportLoads, effectsOf, pointToNodes,
+  G.TIMBER = { GRADES, SPECIES, COND, K1, STEELGR, steelSec, stringerSection, pileSection, vehicle, VEH_ORDER, vehOn, spanGeom, stringerProps, buildGrillage, deadLoad, vehicleSpan, supportLoads, effectsOf, pointToNodes,
     rate, rateStringers, pileCaps, ratePierPile, rateAbutPile, soilPile, halfcapBearing, rateHalfcap, rateDeckPlanks, rateWingWall, analyse, newBridge, example3393, polyProps };
 })(typeof window !== 'undefined' ? window : globalThis);
