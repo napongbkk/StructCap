@@ -1167,6 +1167,36 @@ body.an-resizing,body.an-resizing *{cursor:ns-resize!important;user-select:none!
 .cn-app>.cn-side{grid-column:1;grid-row:2}.cn-app>.cn-work{grid-column:2;grid-row:2}
 @media (max-width:1180px) and (min-width:901px){.cn-app{grid-template-columns:250px minmax(0,1fr);grid-template-rows:auto minmax(0,1.1fr) minmax(0,1fr)}.cn-app>.cn-side{grid-column:1;grid-row:2}.cn-app>.cn-props{grid-column:1;grid-row:3;border-left:0;border-top:1px solid var(--line2);border-right:1px solid var(--line)}.cn-app>.cn-work{grid-column:2;grid-row:2/4}}
 @media (max-width:900px){.cn-app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto auto;max-width:100vw;overflow-x:hidden}.cn-app>.cn-side,.cn-app>.cn-work,.cn-app>.cn-props{grid-row:auto;grid-column:1}.cn-app>.cn-work{order:1}.cn-app>.cn-side{order:2;max-height:300px;border-right:0;border-top:1px solid var(--line)}.cn-app>.cn-props{order:3;border-left:0;border-top:1px solid var(--line)}.cn-app .an-rib{order:0}.cn-app .an-rgi{flex-wrap:wrap}.cn-app .an-rg{max-width:100%}.cn-drawer.on{height:auto;max-height:70vh}.cn-canvas{height:58vh;flex:none}.cn-galg{grid-template-columns:1fr}.cn-stat{max-width:calc(100% - 20px)}.cn-legend{top:auto;bottom:8px}}
+
+/* connection 3D workspace: WebGL view, toolbox, gizmo info, notes */
+.cn-canvas{background:radial-gradient(120% 90% at 50% 35%,#ffffff 0%,#eef2f8 55%,#e2e8f1 100%)}
+:root[data-theme=dark] .cn-canvas{background:radial-gradient(120% 90% at 50% 35%,#1b2230 0%,#131924 60%,#0e131b 100%)}
+@media (prefers-color-scheme: dark){:root:not([data-theme=light]) .cn-canvas{background:radial-gradient(120% 90% at 50% 35%,#1b2230 0%,#131924 60%,#0e131b 100%)}}
+.cn-canvas #cnGl{pointer-events:none;cursor:default}
+.cn-tools{position:absolute;left:10px;top:46px;display:flex;flex-direction:column;gap:5px;z-index:2;background:color-mix(in srgb,var(--card) 90%,transparent);border:1px solid var(--line);border-radius:10px;padding:6px 5px;box-shadow:0 2px 8px rgba(20,30,50,.08)}
+.cn-tools-h{font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;text-align:center}
+.cn-tool{display:flex;flex-direction:column;align-items:center;gap:1px;width:58px;padding:4px 2px 3px;border:1px solid transparent;border-radius:8px;background:none;color:var(--ink);font:inherit;font-size:11px;cursor:grab;user-select:none}
+.cn-tool:hover{background:color-mix(in srgb,var(--blue) 9%,transparent);border-color:color-mix(in srgb,var(--blue) 35%,transparent)}
+.cn-tool:active{cursor:grabbing}
+.cn-tool.on{background:color-mix(in srgb,var(--pink) 14%,transparent);border-color:var(--pink)}
+.cn-tool .an-ic{width:20px;height:20px}
+.cn-hint{left:78px}
+.cn-gz{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:#1d2433;color:#fff;font-size:12.5px;font-weight:600;padding:4px 10px;border-radius:7px;pointer-events:none;z-index:3;white-space:nowrap}
+.cn-gz[hidden]{display:none}
+.cn-notes{position:absolute;left:84px;bottom:30px;max-width:min(560px,calc(100% - 260px));display:flex;flex-direction:column;align-items:flex-start;gap:3px;z-index:2}
+.cn-notes p.one{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cn-nbtn{font:inherit;font-size:11.5px;font-weight:700;border:1px solid var(--line2);background:var(--card);color:var(--muted);border-radius:7px;padding:2px 8px;cursor:pointer;display:inline-flex;gap:6px}
+.cn-nbtn.bad{color:#b91c1c;border-color:color-mix(in srgb,#dc2626 50%,transparent)}
+.cn-notes p{margin:0;font-size:11.5px;background:color-mix(in srgb,var(--card) 92%,transparent);border:1px solid var(--line);border-radius:7px;padding:3px 8px;color:var(--muted)}
+.cn-notes p.bad{color:#b91c1c;border-color:color-mix(in srgb,#dc2626 45%,transparent);background:color-mix(in srgb,#fde8ea 92%,transparent)}
+.cn-note.bad{color:#dc2626}
+.cn-empty{font-size:11.5px;color:var(--muted);padding:2px 8px 4px 26px;list-style:none}
+.cn-rot{display:flex;flex-direction:column;gap:4px}
+.cn-rotg{display:flex;flex-direction:column;gap:2px;font-size:12px}
+.cn-rotg span{display:flex;gap:3px}
+.cn-rotg b{font-weight:600}
+.cn-rotg .btn{padding:1px 6px}
+.cn-drawer.on{height:min(32%,300px)}
 </style>
 </head>
 <body>
@@ -1189,6 +1219,7 @@ body.an-resizing,body.an-resizing *{cursor:ns-resize!important;user-select:none!
 <script src="conn.js"></script>
 <script src="conncheck.js"></script>
 <script src="connfe.js"></script>
+<script src="conn3d.js"></script>
 <script src="connui.js"></script>
 <script src="timber.js"></script>
 <script src="timberui.js"></script>

@@ -1,6 +1,7 @@
 /* StructCap Connection — steel joint model (pure, no DOM).
    Codes: AS 4100, EN 1993-1-8, AISC 360 (also used with Thai TIS steels).
-   A joint = type + members + parameters + load effects. build(J) turns it into plates, bolts, welds, contacts
+   A joint = type + members + parameters + load effects, plus the setting out (J.so) and the parts added in the
+   workspace (J.ops: plates, members, welds, bolt groups). build(J) turns it into plates, bolts, welds, contacts
    and supports (geometry for the 3D view and the plate FE model); conncheck.js checks the components; connfe.js
    runs the plate finite-element analysis. Units: N, mm, MPa (loads entered in kN, kNm). */
 (function (G) {
@@ -269,9 +270,162 @@
       }
       g.load = 'D'; g.gus = { th, tg, Lw, Lg, Hg, zf, Wb, start, dir, angle };
     }
+    setOut(g, J, col, bm);
+    applyOps(g, J);
     // corner points and dimensions for every plate in its own axes
     g.plates.forEach(p => { p.loc = p.c.map(q => { const d = V.sub(q, p.o); return [V.dot(d, p.u), V.dot(d, p.v)]; }); p.area = polyArea(p.loc); const st = steel(p.mat, p.t); p.fy = st.fy; p.fu = st.fu; p.E = st.E; p.bw = st.bw || 1; });
     return g;
+  }
+
+  // ------------------------------------------------------------------ setting out (eccentricity of the connected member)
+  // Column–beam joints: J.so = { dy, dz } moves the beam and all its connection parts along the column face
+  // (dz also moves the column stiffeners at the flange levels). Base plates: J.so = { dx, dy } moves the column
+  // (with its welds and stiffeners) on the base plate. The plate FE includes the eccentricity; the component
+  // method keeps the centred layout and says so in a note.
+  const SO_TYPES = { ep: 1, wld: 1, fin: 1, hdr: 1, clt: 1, base: 1 };
+  function setOut(g, J, col, bm) {
+    const so = J.so || {}; if (!SO_TYPES[J.type]) return;
+    // points can be shared between plates, welds and members (same array object): move each one only once
+    const done = new Set(), mv = (o, d) => { if (done.has(o)) return; done.add(o); for (let i = 0; i < 3; i++) o[i] += d[i]; };
+    const movePlate = (p, d) => { p.c.forEach(q => mv(q, d)); mv(p.o, d); };
+    if (J.type === 'base') {
+      const d = [+so.dx || 0, +so.dy || 0, 0]; if (!d[0] && !d[1]) return;
+      const set = new Set(); g.plates.forEach(p => { if (p.mem === 'C' || p.op === 'ST') { movePlate(p, d); set.add(p.id); } });
+      g.members.forEach(m => { if (m.id === 'C') mv(m.O, d); });
+      g.welds.forEach(w => { if (set.has(w.a)) { mv(w.p0, d); mv(w.p1, d); } });
+      const b = g.base; if (b && (Math.abs(d[0]) + (col.d || col.D) / 2 > b.L / 2 || Math.abs(d[1]) + (col.bf || col.B || col.D) / 2 > b.B / 2)) g.notes.push({ bad: 1, en: 'The column is set out beyond the base plate edge.', th: 'เสาเยื้องออกนอกขอบแผ่นฐาน' });
+      g.so = { d }; g.notes.push({ en: 'Column set out on the base plate by ' + d[0] + ' / ' + d[1] + ' mm (x / y): included in CBFEM; the component method assumes a centred column.', th: 'เสาเยื้องบนแผ่นฐาน ' + d[0] + ' / ' + d[1] + ' มม. (x / y): รวมใน CBFEM ส่วนวิธีชิ้นส่วนถือว่าเสาอยู่กึ่งกลาง' });
+      return;
+    }
+    if (g.tube) return;
+    const dy = +so.dy || 0, dz = +so.dz || 0; if (!dy && !dz) return;
+    const web = J.type === 'fin' && J.p.to === 'web', lat = web ? [-1, 0, 0] : [0, 1, 0], d = V.lin([0, 0, 0], lat, dy, [0, 0, 1], dz), dzv = [0, 0, dz];
+    const moved = new Set(), st = new Set();
+    g.plates.forEach(p => { if (p.mem === 'C') return; if (p.op === 'ST') { movePlate(p, dzv); st.add(p.id); } else { movePlate(p, d); moved.add(p.id); } });
+    g.members.forEach(m => { if (m.id !== 'C') mv(m.O, d); });
+    g.bolts.forEach(b => mv(b.p, d));
+    g.welds.forEach(w => { const dd = moved.has(w.a) || moved.has(w.b) ? d : st.has(w.a) ? dzv : null; if (dd) { mv(w.p0, dd); mv(w.p1, dd); } });
+    // the connection must stay on the column face
+    const half = web ? (col.d / 2 - col.tf) : (col.bf || col.B || col.D) / 2; let ext = 0;
+    g.plates.forEach(p => { if (!moved.has(p.id) || p.role === 'member') return; p.c.forEach(q => { ext = Math.max(ext, Math.abs(V.dot(q, lat))); }); });
+    if (ext > half + 0.5) g.notes.push({ bad: 1, en: 'The connection is set out beyond the column ' + (web ? 'web' : 'flange') + ' (' + Math.round(ext) + ' > ' + Math.round(half) + ' mm from the column axis).', th: 'รอยต่อเยื้องออกนอก' + (web ? 'เอว' : 'ปีก') + 'เสา (' + Math.round(ext) + ' > ' + Math.round(half) + ' มม. จากแกนเสา)' });
+    g.so = { d, lat }; g.notes.push({ en: 'Beam set out ' + dy + ' mm sideways and ' + dz + ' mm vertically on the column: included in CBFEM; the component method assumes the centred layout.', th: 'คานเยื้อง ' + dy + ' มม. ด้านข้าง และ ' + dz + ' มม. แนวดิ่งบนเสา: รวมใน CBFEM ส่วนวิธีชิ้นส่วนถือว่าอยู่กึ่งกลาง' });
+  }
+
+  // ------------------------------------------------------------------ user operations (added in the workspace)
+  // J.ops: [{ id, kind: 'plate', o, u, v, w, h, t } | { kind: 'member', sec, o, x, roll, L, end } |
+  //         { kind: 'weld', a, b, a_, sides, type } | { kind: 'bolts', host, o, dir, nr, nc, p, gg, size }]
+  // Plates are flat rectangles (o = centre, u / v = in-plane axes); a member starts at o and runs along x.
+  // Welds join an edge of plate a (or the start of member 'M:id') to the face of plate b; bolts pass through every
+  // plate stacked at their position along the host normal. Items that end up connected to nothing are left out of
+  // the analysis and listed in g.floating.
+  const OPKINDS = ['plate', 'member', 'weld', 'bolts'];
+  function memberFrame(x, roll) {
+    x = V.unit(x); let z = Math.abs(x[2]) > 0.999 ? [1, 0, 0] : V.unit(V.sub([0, 0, 1], V.mul(x, x[2]))), y = V.cross(z, x);
+    const a = (+roll || 0) * PI / 180; if (a) { const c = Math.cos(a), sn = Math.sin(a), z2 = V.add(V.mul(z, c), V.mul(y, -sn)), y2 = V.add(V.mul(y, c), V.mul(z, sn)); z = z2; y = y2; }
+    return { x, y: V.unit(y), z: V.unit(z) };
+  }
+  // local 2D coordinates of a point on plate p (corner c[0] = origin, axes u, v)
+  const loc2 = (p, q) => { const d = V.sub(q, p.c[0]); return [V.dot(d, p.u), V.dot(d, p.v)]; };
+  const loc2all = p => p.c.map(q => loc2(p, q));
+  function inQuad(L, x, y, tol) { // convex quad, either winding
+    let sgn = 0; for (let i = 0; i < 4; i++) { const a = L[i], b = L[(i + 1) % 4], cr = (b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]), e = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1, d = cr / e; if (Math.abs(d) <= (tol || 0)) continue; const s2 = Math.sign(d); if (sgn && s2 !== sgn) return false; sgn = s2; } return true;
+  }
+  // clip the segment a–b (3D, lying on or near plate p) to the outline of p; returns [t0, t1] or null
+  function clipToPlate(p, a, b) {
+    const L = loc2all(p), A = loc2(p, a), B = loc2(p, b); let t0 = 0, t1 = 1;
+    const area = (L[1][0] - L[0][0]) * (L[2][1] - L[0][1]) - (L[2][0] - L[0][0]) * (L[1][1] - L[0][1]), wnd = area >= 0 ? 1 : -1;
+    for (let i = 0; i < 4; i++) { const e0 = L[i], e1 = L[(i + 1) % 4], nx = -(e1[1] - e0[1]) * wnd, ny = (e1[0] - e0[0]) * wnd; // inward normal
+      const fa = nx * (A[0] - e0[0]) + ny * (A[1] - e0[1]) + 0.5, fb = nx * (B[0] - e0[0]) + ny * (B[1] - e0[1]) + 0.5;
+      if (fa < 0 && fb < 0) return null; if (fa < 0) t0 = Math.max(t0, fa / (fa - fb)); else if (fb < 0) t1 = Math.min(t1, fa / (fa - fb)); }
+    return t1 - t0 > 1e-3 ? [t0, t1] : null;
+  }
+  // the edge of plate a that lies on plate b: [p0, p1] or null
+  function weldEdge(a, b, starts, all) {
+    let best = null; const out = [];
+    for (let k = 0; k < 4; k++) {
+      if (starts && k !== 3) continue; // member wall: the start edge c[3] → c[0]
+      const q0 = a.c[k], q1 = a.c[(k + 1) % 4], d0 = V.dot(V.sub(q0, b.o), b.n), d1 = V.dot(V.sub(q1, b.o), b.n), lim = b.t / 2 + a.t / 2 + 3;
+      if (Math.abs(d0) > lim || Math.abs(d1) > lim) continue;
+      const cl = clipToPlate(b, q0, q1); if (!cl) continue;
+      const sc = Math.abs(d0) + Math.abs(d1) - 0.01 * V.len(V.sub(q1, q0)) * (cl[1] - cl[0]), e = V.sub(q1, q0), hit = { sc, k, p0: V.lin(q0, e, cl[0]), p1: V.lin(q0, e, cl[1]) };
+      out.push(hit); if (!best || sc < best.sc) best = hit;
+    }
+    return all ? out : best;
+  }
+  function applyOps(g, J) {
+    const ops = Array.isArray(J.ops) ? J.ops : []; g.user = []; g.floating = { plates: [], bolts: [], welds: [], members: [] };
+    if (!ops.length) return;
+    const M = J.mat, sg = M.steel, pl = id => g.plates.find(q => q.id === id), note = (bad, en, th) => g.notes.push({ bad, en, th });
+    // 1 plates and members
+    ops.forEach(op => {
+      if (op.kind === 'plate') {
+        const o = op.o, u = V.unit(op.u), v = V.unit(V.sub(op.v, V.mul(u, V.dot(op.v, u)))), w = Math.max(1, +op.w || 100), h = Math.max(1, +op.h || 100);
+        rectPlate(g, op.id, op.name || 'Plate ' + op.id, o, u, v, w, h, Math.max(1, +op.t || 10), op.mat || sg, { op: 'UP', user: true, part: op.id });
+        g.user.push(op.id);
+      } else if (op.kind === 'member') {
+        let s; try { s = dims(op.sec); } catch (e) { s = null; } if (!s) { note(1, 'Member ' + op.id + ': unknown section.', 'ชิ้นส่วน ' + op.id + ': ไม่รู้จักหน้าตัด'); return; }
+        const fr = memberFrame(op.x || [1, 0, 0], op.roll), L = Math.max(50, +op.L || memLen(s));
+        member(g, op.id, op.name || 'Member ' + op.id, s, op.mat || sg, op.o.slice(), fr, 0, L, { role: op.end === 'supported' ? 'bearing' : 'connected', ends: 'far', user: true });
+        g.user.push(op.id);
+      }
+    });
+    // 2 welds
+    ops.forEach(op => {
+      if (op.kind !== 'weld') return;
+      const B = pl(op.b), mem = /^M:/.test(op.a || '') ? g.members.find(m => m.id === op.a.slice(2)) : null, As = mem ? mem.plates.map(pl) : [pl(op.a)].filter(Boolean);
+      if (!B || !As.length) { note(1, 'Weld ' + op.id + ': choose the two parts it joins.', 'รอยเชื่อม ' + op.id + ': เลือกชิ้นส่วนที่ต้องการเชื่อม'); return; }
+      // all round: every edge of the plate that lies on the face (a lap plate or a stiffener welded on several sides)
+      const list = []; As.forEach(A => { if (A.id === B.id) return; if (op.all && !mem) weldEdge(A, B, false, true).forEach(e => list.push([A, e])); else { const e = weldEdge(A, B, !!mem); if (e) list.push([A, e]); } });
+      let n = 0; list.forEach(([A, e], i) => { n++;
+        const lap = Math.abs(V.dot(A.n, B.n)) > 0.9;
+        weld(g, list.length > 1 ? op.id + '.' + (i + 1) : op.id, A.id, B.id, e.p0, e.p1, Math.max(2, +op.a_ || 6), { name: op.name || ((mem ? mem.name + ' ' + A.tag : A.name) + ' to ' + B.name), type: op.type === 'butt' ? 'butt' : 'fillet', sides: lap ? 1 : +op.sides === 1 ? 1 : 2, lap, user: op.id }); });
+      if (!n) note(1, 'Weld ' + op.id + ': ' + (mem ? 'the member does not start on ' : 'no edge of ' + op.a + ' lies on ') + op.b + ' — move the part onto the face.', 'รอยเชื่อม ' + op.id + ': ชิ้นส่วนไม่ได้วางชิดผิว ' + op.b);
+      else if (mem && n < As.length) note(0, 'Weld ' + op.id + ': ' + n + ' of ' + As.length + ' walls of ' + mem.id + ' reach ' + op.b + ' (a member set at an angle is not cut to the face).', 'รอยเชื่อม ' + op.id + ': ผนัง ' + n + ' จาก ' + As.length + ' ของ ' + mem.id + ' ถึงผิว ' + op.b + ' (ชิ้นส่วนที่เอียงไม่ได้ตัดให้ชิดผิว)');
+    });
+    // 3 bolt groups
+    ops.forEach(op => {
+      if (op.kind !== 'bolts') return;
+      const H = pl(op.host); if (!H) { note(1, 'Bolts ' + op.id + ': host plate ' + op.host + ' not found.', 'สลัก ' + op.id + ': ไม่พบแผ่น ' + op.host); return; }
+      const Bt = bolt(J.code, M.bolt, op.size || 'M20'), nr = Math.max(1, +op.nr | 0), nc = Math.max(1, +op.nc | 0), pp = +op.p || 3 * Bt.d, gg = +op.gg || 3 * Bt.d;
+      const n = H.n, dir = V.unit(V.sub(op.dir || H.u, V.mul(n, V.dot(op.dir || H.u, n)))), per = V.cross(n, dir);
+      let made = 0;
+      for (let i = 0; i < nr; i++) for (let j = 0; j < nc; j++) {
+        const q = V.lin(op.o, dir, (i - (nr - 1) / 2) * pp, per, (j - (nc - 1) / 2) * gg);
+        // plates crossed by the bolt line next to the host, in order along the normal
+        const hit = g.plates.map(p => { const dn = V.dot(p.n, n); if (Math.abs(dn) < 0.95) return null; const s = V.dot(V.sub(p.o, q), p.n) / dn, x = V.lin(q, n, s), l = loc2(p, x); return inQuad(loc2all(p), l[0], l[1], -Math.max(4, 0.6 * Bt.d)) ? { p, s } : null; }).filter(Boolean).sort((a, b) => a.s - b.s);
+        const hi = hit.findIndex(x => x.p.id === H.id); if (hi < 0) continue;
+        let lo = hi, up = hi; while (lo > 0 && hit[lo].s - hit[lo - 1].s <= (hit[lo].p.t + hit[lo - 1].p.t) / 2 + 2) lo--; while (up < hit.length - 1 && hit[up + 1].s - hit[up].s <= (hit[up].p.t + hit[up + 1].p.t) / 2 + 2) up++;
+        const stack = hit.slice(lo, up + 1).map(x => x.p.id); if (stack.length < 2) continue;
+        boltAt(g, op.id + '.' + (++made), V.lin(q, n, hit[hi].s), n, stack, Bt, { user: op.id, grp: 'user' });
+        for (let k = 0; k + 1 < stack.length; k++) if (!g.contacts.some(c => (c.a === stack[k] && c.b === stack[k + 1]) || (c.b === stack[k] && c.a === stack[k + 1]))) g.contacts.push({ a: stack[k], b: stack[k + 1], gap: 0, user: op.id });
+      }
+      if (!made) note(1, 'Bolts ' + op.id + ': no other plate lies against ' + op.host + ' at the bolt positions.', 'สลัก ' + op.id + ': ไม่มีแผ่นอื่นแนบกับ ' + op.host + ' ที่ตำแหน่งสลัก');
+      else if (made < nr * nc) note(0, 'Bolts ' + op.id + ': ' + (nr * nc - made) + ' position(s) pass through only one plate and were left out.', 'สลัก ' + op.id + ': ' + (nr * nc - made) + ' ตำแหน่งผ่านแผ่นเดียวจึงไม่นำมาคิด');
+    });
+    // 4 connectivity: everything must hang from a supported member (or the loaded member's support path)
+    const partOf = id => { const p = pl(id); return p ? (p.mem ? 'M' + p.mem : p.part || p.id) : id; }, adj = {};
+    const link = (a, b) => { (adj[a] = adj[a] || new Set()).add(b); (adj[b] = adj[b] || new Set()).add(a); };
+    const expand = id => (/\.\*$/.test(id) ? g.plates.filter(q => q.mem === id.slice(0, -2)).map(q => q.id) : [id]);
+    g.welds.forEach(w => expand(w.a).forEach(a => expand(w.b).forEach(b => link(partOf(a), partOf(b)))));
+    g.bolts.forEach(b => { const ps = b.stack.filter(Boolean).map(partOf); ps.forEach(x => ps.forEach(y => { if (x !== y) link(x, y); })); });
+    g.contacts.forEach(c => { if (c.a && c.b) link(partOf(c.a), partOf(c.b)); });
+    g.anchors.forEach(a => link(partOf(a.plate), 'GROUND'));
+    const seen = new Set(), stackQ = g.members.filter(m => m.role === 'bearing' && !m.user).map(m => 'M' + m.id).concat(g.anchors.length ? ['GROUND'] : []);
+    if (!stackQ.length) g.members.forEach(m => { if (!m.user) stackQ.push('M' + m.id); });
+    g.members.filter(m => m.user && m.role === 'bearing').forEach(m => stackQ.push('M' + m.id));
+    while (stackQ.length) { const x = stackQ.pop(); if (seen.has(x)) continue; seen.add(x); (adj[x] || []).forEach(y => { if (!seen.has(y)) stackQ.push(y); }); }
+    const floatP = new Set(g.plates.filter(p => !seen.has(partOf(p.id))).map(p => p.id));
+    if (floatP.size) {
+      const userFloat = [...new Set([...floatP].map(id => { const p = pl(id); return p.user ? p.id : p.mem && g.members.find(m => m.id === p.mem && m.user) ? p.mem : null; }).filter(Boolean))];
+      g.floating.plates = g.plates.filter(p => floatP.has(p.id)); g.plates = g.plates.filter(p => !floatP.has(p.id));
+      g.floating.members = g.members.filter(m => m.plates.every(id => floatP.has(id))); g.members = g.members.filter(m => !m.plates.every(id => floatP.has(id)));
+      const touches = id => expand(id).some(x => floatP.has(x));
+      g.floating.welds = g.welds.filter(w => touches(w.a) || touches(w.b)); g.welds = g.welds.filter(w => !(touches(w.a) || touches(w.b)));
+      g.floating.bolts = g.bolts.filter(b => b.stack.some(id => id && floatP.has(id))); g.bolts = g.bolts.filter(b => !b.stack.some(id => id && floatP.has(id)));
+      g.contacts = g.contacts.filter(c => !floatP.has(c.a) && !floatP.has(c.b));
+      if (userFloat.length) note(1, userFloat.join(', ') + ' ' + (userFloat.length > 1 ? 'are' : 'is') + ' not connected (add a weld or bolts) — left out of the analysis.', userFloat.join(', ') + ' ยังไม่ได้ต่อกับชิ้นส่วนอื่น (เพิ่มรอยเชื่อมหรือสลัก) — ไม่นำมาวิเคราะห์');
+    }
   }
   function polyArea(loc) { let a = 0; for (let i = 0; i < loc.length; i++) { const p = loc[i], q = loc[(i + 1) % loc.length]; a += p[0] * q[1] - q[0] * p[1]; } return Math.abs(a) / 2; }
   // column continuity stiffeners at the beam flange levels (both sides of the web)
@@ -283,5 +437,5 @@
       weld(g, 'W' + id + 'b', id, 'C.bf', [-xm, 0, z], [-xm, s * (col.tw / 2 + bs), z], Math.max(5, Math.round(0.5 * ts)), { name: 'Stiffener to flange' }); }));
   }
 
-  G.CONN = { CODES, TYPES, TYPE_ORDER, steel, bolt, anchor, weldMetal, BSIZE, dims, secPlates, frame, newJoint, build, V, polyArea, defI };
+  G.CONN = { CODES, TYPES, TYPE_ORDER, steel, bolt, anchor, weldMetal, BSIZE, dims, secPlates, frame, newJoint, build, V, polyArea, defI, memberFrame, weldEdge, OPKINDS, SO_TYPES, memLen };
 })(typeof window !== 'undefined' ? window : globalThis);

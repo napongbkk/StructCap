@@ -92,7 +92,9 @@
       const A = nodesOf(w.a), Bn = nodesOf(w.b), tol = 0.3 * M.h, onL = A.map(i => ({ i, d: segDist(xyz(i), w.p0, w.p1) })).filter(q => q.d.d < tol).sort((a, b) => a.d.t - b.d.t), ties = [];
       onL.forEach((q, k) => { const pq = xyz(q.i); let best = -1, bd = Infinity; Bn.forEach(j => { if (j === q.i) return; const d = V.len(V.sub(xyz(j), pq)); if (d < bd) { bd = d; best = j; } }); if (best < 0 || bd > max(2 * M.h, 30)) return;
         const t0 = k ? (q.d.t - onL[k - 1].d.t) / 2 : q.d.t, t1 = k < onL.length - 1 ? (onL[k + 1].d.t - q.d.t) / 2 : 1 - q.d.t, trib = max(1, (t0 + t1) * w.L);
-        const kk = Eref * trib * 4, gi = caps.length, ids = [0, 1, 2].map(c => sp.push({ terms: [[6 * q.i + c, 1], [6 * best + c, -1]], k: kk, kind: 'lin', on: true, w: w.id, cg: gi }) - 1); caps.push({ cap: wcap(w, (M.plOf(w.b)[0] || M.plOf(w.a)[0] || {})) * trib, ids, pl: false }); ties.push({ i: q.i, j: best, trib, ids, cg: gi }); });
+        const kk = Eref * trib * 4, gi = caps.length, ids = [0, 1, 2].map(c => sp.push({ terms: [[6 * q.i + c, 1], [6 * best + c, -1]], k: kk, kind: 'lin', on: true, w: w.id, cg: gi }) - 1); caps.push({ cap: wcap(w, (M.plOf(w.b)[0] || M.plOf(w.a)[0] || {})) * trib, ids, pl: false }); ties.push({ i: q.i, j: best, trib, ids, cg: gi });
+          // a weld added in the workspace may be the only support of its plate: a double fillet also holds the rotation
+          if (w.user && (w.sides || 2) === 2) { const ta = (M.plOf(w.a)[0] || {}).t || 10, kr = kk * ta * ta / 4; [3, 4, 5].forEach(c => sp.push({ terms: [[6 * q.i + c, 1], [6 * best + c, -1]], k: kr, kind: 'lin', on: true, wr: w.id })); } });
       if (!ties.length) warn.push('Weld ' + w.id + ' (' + (w.name || '') + ') found no nodes to connect.');
       return { w, ties };
     });
