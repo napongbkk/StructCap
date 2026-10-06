@@ -63,7 +63,7 @@
     T(x0 + 92, y0 + 18, 'SCALE  ' + (t.scale || 'AS SHOWN'), 2.2); T(x0 + 92, y0 + 4, 'SHEET  ' + (t.sheet || '1 OF 1'), 2.2);
     T(x0 + 137, y0 + 20, 'DRAWING No', 2); T(x0 + 137, y0 + 15, t.dwg || 'XXXX-XXXX', 3.5, 'l', 'S-TITLE'); T(x0 + 137, y0 + 4, 'REV  ' + (t.rev || 'A'), 2.5);
     if (t.status) { E.push({ t: 'pl', p: [[x0 + 20, y0 + bh + 8], [x0 + bw - 20, y0 + bh + 8], [x0 + bw - 20, y0 + bh + 20], [x0 + 20, y0 + bh + 20]], closed: true, L: 'S-BORDER' }); T(x0 + bw / 2, y0 + bh + 12, String(t.status).toUpperCase(), 4.5, 'c', 'S-TITLE'); }
-    T(m + 2, m + 2, 'Drawn with StructCap · details redrawn after the road authority standard drawings — verify against the current issue before use', 1.8, 'l');
+    T(m + 2, m + 2, 'Drawn with StructCap', 1.8, 'l');
     return E;
   }
   function allEnts(sh, opt) { opt = opt || {}; let E = (opt.noFrame ? [] : sheetFrame(sh)).concat(sh.ents || []); (sh.items || []).forEach(it => { E = E.concat(itemEnts(it)); }); return E; }
