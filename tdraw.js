@@ -166,7 +166,7 @@
     const { T, esc, $, S, toast, saveFile, today } = ctx, VIEW = 'tdraw', LS = 'sc.tdraw.v1';
     const store = { get() { try { return JSON.parse(localStorage.getItem(LS) || 'null'); } catch (e) { return null; } }, set(v) { try { localStorage.setItem(LS, JSON.stringify(v, (k, x) => (k === '_ents' || k === '_k' ? undefined : x))); } catch (e) { } } };
     const newSheet = n => ({ name: n || 'Sheet 1', size: 'A1', title: { client: 'ASSET OWNER', project: 'TIMBER BRIDGE REFURBISHMENT', title1: 'TIMBER BRIDGE REPAIR DETAILS', title2: 'SUBSTRUCTURE / SUPERSTRUCTURE', bridge: '', dwg: 'XXXX-XXXX', rev: 'A', drawn: '', checked: '', designed: '', date: today(), scale: 'AS SHOWN', sheet: '1 OF 1', status: 'PRELIMINARY' }, ents: [], items: [] });
-    const bgGet = () => { try { return localStorage.getItem('sc.tdraw.bg') === 'black' ? 'black' : 'white'; } catch (e) { return 'white'; } };
+    const bgGet = () => { try { return localStorage.getItem('sc.tdraw.bg') === 'white' ? 'white' : 'black'; } catch (e) { return 'black'; } };   // black (CAD style) unless the user chose white
     const saved = store.get(), A = { bg: bgGet(), doc: saved && saved.sheets ? saved : { sheets: [newSheet()], cur: 0, hidden: {}, layers: {} }, tool: 'select', sel: [], cam: null, draft: null, place: null, hist: [], fut: [], snap: { end: true, mid: true, grid: true, ortho: false }, lib: 'Piles', curL: 'S-NEW', rib: 'home', cursor: [0, 0], clip: null };
     const SH = () => A.doc.sheets[A.doc.cur] || A.doc.sheets[0];
     const persist = () => store.set(A.doc);
