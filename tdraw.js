@@ -7,6 +7,9 @@
   const D = () => G.TDET;
   const SIZES = { A1: [841, 594], A2: [594, 420], A3: [420, 297], A0: [1189, 841] };
   const ACI = { 1: '#e03030', 2: '#d9b400', 3: '#1f9d55', 4: '#1c8fbf', 5: '#3a5bd9', 6: '#b03ab0', 7: 'currentColor', 8: '#8a8f99', 9: '#b7bcc6', 32: '#a0522d' };
+  // colours on a black working background (CAD style): brighter versions of the same layer colours; colour 7 becomes white
+  const ACI_DARK = { 1: '#ff5a5a', 2: '#ffd400', 3: '#3ddc84', 4: '#38c6f4', 5: '#7b96ff', 6: '#e070e0', 8: '#a9afb9', 9: '#6b7280', 32: '#e0915c' };
+  let PAPER_DARK = false;
   const DASH = { CONTINUOUS: '', DASHED: '3 1.5', HIDDEN: '1.6 0.9', CENTER: '8 1.5 1.5 1.5', DASHDOT: '5 1.2 0.6 1.2', PHANTOM: '10 1.5 1.5 1.5 1.5 1.5' };
   const layerDef = (doc, L) => (doc.layers && doc.layers[L]) || (D().LAYERS[L]) || { c: 7, lt: 'CONTINUOUS', lw: 0.25 };
 
@@ -68,7 +71,7 @@
   // ------------------------------------------------------------------ SVG rendering
   const escX = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   function svgEnt(e, doc, H, extra) {
-    const ld = layerDef(doc, e.L), col = e.col != null ? (ACI[e.col] || e.col) : (ACI[ld.c] || ld.c || 'currentColor'), dash = DASH[e.lt || ld.lt] || '', lw = max(0.13, e.lw || ld.lw || 0.25), Y = y => H - y, at = extra || '';
+    const ld = layerDef(doc, e.L), aci = c => (PAPER_DARK && ACI_DARK[c]) || ACI[c], col = e.col != null ? (aci(e.col) || e.col) : (aci(ld.c) || ld.c || 'currentColor'), dash = DASH[e.lt || ld.lt] || '', lw = max(0.13, e.lw || ld.lw || 0.25), Y = y => H - y, at = extra || '';
     const st = `stroke="${col}" stroke-width="${lw}" fill="none"${dash ? ` stroke-dasharray="${dash}"` : ''}`;
     switch (e.t) {
       case 'line': return `<line x1="${e.a[0]}" y1="${Y(e.a[1])}" x2="${e.b[0]}" y2="${Y(e.b[1])}" ${st} ${at}/>`;
@@ -163,7 +166,8 @@
     const { T, esc, $, S, toast, saveFile, today } = ctx, VIEW = 'tdraw', LS = 'sc.tdraw.v1';
     const store = { get() { try { return JSON.parse(localStorage.getItem(LS) || 'null'); } catch (e) { return null; } }, set(v) { try { localStorage.setItem(LS, JSON.stringify(v, (k, x) => (k === '_ents' || k === '_k' ? undefined : x))); } catch (e) { } } };
     const newSheet = n => ({ name: n || 'Sheet 1', size: 'A1', title: { client: 'ASSET OWNER', project: 'TIMBER BRIDGE REFURBISHMENT', title1: 'TIMBER BRIDGE REPAIR DETAILS', title2: 'SUBSTRUCTURE / SUPERSTRUCTURE', bridge: '', dwg: 'XXXX-XXXX', rev: 'A', drawn: '', checked: '', designed: '', date: today(), scale: 'AS SHOWN', sheet: '1 OF 1', status: 'PRELIMINARY' }, ents: [], items: [] });
-    const saved = store.get(), A = { doc: saved && saved.sheets ? saved : { sheets: [newSheet()], cur: 0, hidden: {}, layers: {} }, tool: 'select', sel: [], cam: null, draft: null, place: null, hist: [], fut: [], snap: { end: true, mid: true, grid: true, ortho: false }, lib: 'Piles', curL: 'S-NEW', rib: 'home', cursor: [0, 0], clip: null };
+    const bgGet = () => { try { return localStorage.getItem('sc.tdraw.bg') === 'black' ? 'black' : 'white'; } catch (e) { return 'white'; } };
+    const saved = store.get(), A = { bg: bgGet(), doc: saved && saved.sheets ? saved : { sheets: [newSheet()], cur: 0, hidden: {}, layers: {} }, tool: 'select', sel: [], cam: null, draft: null, place: null, hist: [], fut: [], snap: { end: true, mid: true, grid: true, ortho: false }, lib: 'Piles', curL: 'S-NEW', rib: 'home', cursor: [0, 0], clip: null };
     const SH = () => A.doc.sheets[A.doc.cur] || A.doc.sheets[0];
     const persist = () => store.set(A.doc);
     const snapH = () => { A.hist.push(JSON.stringify(A.doc, (k, x) => (k === '_ents' || k === '_k' ? undefined : x))); if (A.hist.length > 80) A.hist.shift(); A.fut = []; };
@@ -188,7 +192,7 @@
         ['export', T('Export', 'ส่งออก'), [
           [T('AutoCAD', 'AutoCAD'), [{ c: 'dxf', i: 'dxf', l: T('Export DXF', 'ส่งออก DXF') }, { dxfin: 1, i: 'imp', l: T('Import DXF', 'นำเข้า DXF') }]],
           [T('Print', 'พิมพ์'), [{ c: 'pdf', i: 'pdf', l: T('Export PDF', 'ส่งออก PDF') }, { c: 'svg', i: 'svg', l: T('Export SVG', 'ส่งออก SVG') }]]]],
-        ['view', T('View', 'มุมมอง'), [[T('View', 'มุมมอง'), [{ c: 'fit', i: 'fit', l: T('Zoom to sheet', 'พอดีแผ่น') }]]]]
+        ['view', T('View', 'มุมมอง'), [[T('View', 'มุมมอง'), [{ c: 'fit', i: 'fit', l: T('Zoom to sheet', 'พอดีแผ่น') }]], [T('Background', 'พื้นหลัง'), [{ col: [['white', T('White paper', 'กระดาษขาว')], ['black', T('Black (CAD style)', 'สีดำ (แบบ CAD)')]].map(([v, l]) => ({ radio: 1, c: 'bg', v, l, on: () => A.bg === v })) }]]]]
       ];
     }
     function rbtn(it, big) {
@@ -248,10 +252,11 @@
     function redraw() {
       svg = $('#tdSvg'); if (!svg) return; const el = $('#tdCanvas'), r = el.getBoundingClientRect(), c = vb(); if (!c) return; const sh = SH(), [W, H] = SIZES[sh.size] || SIZES.A1;
       svg.setAttribute('viewBox', `${c.x} ${c.y} ${r.width / c.k} ${r.height / c.k}`);
-      const body = svgSheet(A.doc, sh);
+      PAPER_DARK = A.bg === 'black'; let body; try { body = svgSheet(A.doc, sh); } finally { PAPER_DARK = false; }
+      svg.style.color = A.bg === 'black' ? '#f1f3f5' : '#111'; el.classList.toggle('td-dark', A.bg === 'black');
       let selH = ''; A.sel.forEach(s => { const E = s.k === 'i' ? itemEnts(sh.items[s.i] || {}) : [sh.ents[s.i]].filter(Boolean); const b = bboxOf(E); selH += `<rect x="${b.x0 - 1}" y="${H - b.y1 - 1}" width="${b.x1 - b.x0 + 2}" height="${b.y1 - b.y0 + 2}" class="td-selb"/>`; if (s.k === 'e' && E[0]) entPoints(E[0]).forEach(q => { selH += `<rect x="${q[0] - 1.2}" y="${H - q[1] - 1.2}" width="2.4" height="2.4" class="td-grip"/>`; }); });
-      let ghost = ''; if (A.place) { const E = itemEnts(A.place); ghost = `<g class="td-ghost">${E.map(e => svgEnt(e, A.doc, H)).join('')}</g>`; }
-      if (A.draft) ghost += `<g class="td-ghost">${A.draft.map(e => svgEnt(e, A.doc, H)).join('')}</g>`;
+      let ghost = ''; PAPER_DARK = A.bg === 'black'; if (A.place) { const E = itemEnts(A.place); ghost = `<g class="td-ghost">${E.map(e => svgEnt(e, A.doc, H)).join('')}</g>`; }
+      if (A.draft) ghost += `<g class="td-ghost">${A.draft.map(e => svgEnt(e, A.doc, H)).join('')}</g>`; PAPER_DARK = false;
       if (A.box) { const b = A.box; ghost += `<rect x="${min(b.a[0], b.b[0])}" y="${H - max(b.a[1], b.b[1])}" width="${abs(b.b[0] - b.a[0])}" height="${abs(b.b[1] - b.a[1])}" class="${b.b[0] >= b.a[0] ? 'td-win' : 'td-cross'}"/>`; }
       if (A.snapPt) ghost += `<rect x="${A.snapPt[0] - 1.5}" y="${H - A.snapPt[1] - 1.5}" width="3" height="3" class="td-snap"/>`;
       svg.innerHTML = `<rect x="0" y="0" width="${W}" height="${H}" class="td-paper"/>${body.body}${selH}${ghost}`;
@@ -352,6 +357,7 @@
       if (c === 'sheetnew') { snapH(); const t = JSON.parse(JSON.stringify(SH().title || {})); const s = newSheet('Sheet ' + (A.doc.sheets.length + 1)); s.title = Object.assign(t, { sheet: (A.doc.sheets.length + 1) + ' OF ' + (A.doc.sheets.length + 1) }); A.doc.sheets.push(s); A.doc.cur = A.doc.sheets.length - 1; A.sel = []; A.cam = null; persist(); redraw(); refreshSide(); return; }
       if (c === 'libpanel') { const l = $('#tdLib'); if (l) l.scrollIntoView({ behavior: 'smooth' }); return; }
       if (c === 'fit') { A.cam = null; redraw(); return; }
+      if (c === 'bg') { A.bg = v === 'black' ? 'black' : 'white'; try { localStorage.setItem('sc.tdraw.bg', A.bg); } catch (e) { } redraw(); ribRefresh(); return; }
       if ((c === 'dxf' || c === 'pdf') && G.SC_FEAT_OFF && G.SC_FEAT_OFF(c)) return;
       if (c === 'dxf') { const s = dxf(A.doc, SH()); saveFile(fname('dxf'), new Blob([s], { type: 'application/dxf' })); return; }
       if (c === 'svg') { saveFile(fname('svg'), new Blob([svgStandalone(A.doc, SH(), false).replace(/currentColor/g, '#111')], { type: 'image/svg+xml' })); return; }
