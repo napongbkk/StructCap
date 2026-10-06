@@ -327,7 +327,7 @@
       let d = null;
       if (raw) { try { d = JSON.parse(raw); } catch (e) { } }
       d = d || this._mem || {};
-      ['accounts', 'members', 'payments', 'settings', 'requests', 'messages'].forEach(c => { d[c] = d[c] || {}; });
+      ['accounts', 'members', 'payments', 'settings', 'requests', 'messages', 'visits'].forEach(c => { d[c] = d[c] || {}; });
       return d;
     },
     _save(d) { this.persistent = ls.set(DBKEY, JSON.stringify(d)); if (!this.persistent) this._mem = d; },
@@ -346,10 +346,19 @@
   // through the server API; passwords are hashed server-side and the tables are closed to the browser.
   const CFG = window.STRUCTCAP_CONFIG || {};
   const CLOUD = !!CFG.apiUrl;
+  // ---- access log: a random id kept in this browser counts devices without an account; the server adds the IP address
+  const VID = (() => { let v = ls.get('sc.vid'); if (!v || !/^[a-z0-9-]{8,40}$/.test(v)) { v = 'v-' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); ls.set('sc.vid', v); } return v; })();
+  function track(event) {
+    const k = 'scTrack.' + event; if ((event === 'open' || event === 'free') && ss.get(k)) return; ss.set(k, 1);
+    const ref = (() => { try { const r = document.referrer && new URL(document.referrer); return r && r.host !== location.host ? r.host : ''; } catch (e) { return ''; } })();
+    const row = { event, role: S.role, page: S.view, lang: S.ui, ref };
+    if (CLOUD) { api('visit', row).catch(() => { }); return; }
+    Store.set('visits', uidLocal('vis'), Object.assign(row, { at: new Date().toISOString(), ip: '127.0.0.1 (local test)', vid: VID, username: S.user && S.user.member ? S.user.username : (S.role === 'admin' ? 'admin' : null), ua: navigator.userAgent }));
+  }
   async function api(action, payload) {
     const headers = { 'content-type': 'application/json' };
     if (CFG.anonKey) { headers.apikey = CFG.anonKey; }
-    const r = await fetch(CFG.apiUrl, { method: 'POST', headers, body: JSON.stringify(Object.assign({ action, token: S.role === 'admin' ? ss.get('scAdminToken') : ss.get('scUserToken') }, payload || {})) });
+    const r = await fetch(CFG.apiUrl, { method: 'POST', headers, body: JSON.stringify(Object.assign({ action, token: S.role === 'admin' ? ss.get('scAdminToken') : ss.get('scUserToken'), vid: VID, lang: S.ui, page: S.view }, payload || {})) });
     const j = await r.json().catch(() => ({}));
     if (r.status === 401) { const e = new Error('auth'); e.code = 'auth'; throw e; }
     if (!r.ok) { const e = new Error(j.error || 'http ' + r.status); e.code = 'http'; e.msg = j.error; throw e; }
@@ -450,14 +459,15 @@
     async setPayInfo(en, th) { if (CLOUD) { await api('setPayInfo', { en, th }); S.payInfo = { en, th }; return; } const g = Store._load().settings.global || {}; await Store.set('settings', 'global', Object.assign({}, g, { payInfo: { en, th } })); S.payInfo = { en, th }; },
     async adminLogin(u, p) {
       if (CLOUD) { const j = await api('adminLogin', { username: u, password: p }); if (j.ok) ss.set('scAdminToken', j.token); return !!j.ok; }
-      const h = await pbkdf2(u + '\u0000' + p, ADMIN.salt, ADMIN.iter); return u === ADMIN.user && h === ADMIN.hash;
+      const h = await pbkdf2(u + '\u0000' + p, ADMIN.salt, ADMIN.iter), ok = u === ADMIN.user && h === ADMIN.hash; if (ok) Store.set('visits', uidLocal('vis'), { at: new Date().toISOString(), ip: '127.0.0.1 (local test)', vid: VID, username: u, role: 'admin', event: 'admin', page: S.view, lang: S.ui, ua: navigator.userAgent }); return ok;
     },
     async userLogin(u, p) {
       if (CLOUD) return api('login', { username: u, password: p });
       const acc = await Store.get('accounts', u);
       if (!acc || (await pbkdf2(p, acc.salt, acc.iter || USER_ITER)) !== acc.hash) return { ok: false, err: 'bad' };
       if (acc.status !== 'active') return { ok: false, err: 'suspended' };
-      return { ok: true, account: await localAccount(u) };
+      const la = await localAccount(u); Store.set('visits', uidLocal('vis'), { at: new Date().toISOString(), ip: '127.0.0.1 (local test)', vid: VID, username: u, role: la && la.plan === 'pro' ? 'pro' : 'free', event: 'login', page: S.view, lang: S.ui, ua: navigator.userAgent });
+      return { ok: true, account: la };
     },
     async refresh() {
       if (!CLOUD) return;
@@ -497,7 +507,12 @@
     async deletePayment(id) { if (CLOUD) { await api('deletePayment', { id }); return Ops.refresh(); } await Store.del('payments', id); },
     async setPromo(on) { if (CLOUD) { await api('setPromo', { on }); S.promo = on; return; } await Store.set('settings', 'global', Object.assign({}, Store._load().settings.global || {}, { proFree: on, changed: new Date().toISOString() })); S.promo = on; },
     async setFeatures(off) { if (CLOUD) { await api('setFeatures', { off }); S.off = off; return; } await Store.set('settings', 'global', Object.assign({}, Store._load().settings.global || {}, { off, changed: new Date().toISOString() })); S.off = off; },
-    async reset() { if (CLOUD) { await api('reset'); return Ops.refresh(); } await Store.reset(); }
+    async reset() { if (CLOUD) { await api('reset'); return Ops.refresh(); } await Store.reset(); },
+    async visits(days) {
+      if (CLOUD) { const j = await api('visits', { days }); A.myIp = j.ip || ''; return j.visits || []; }
+      const since = Date.now() - days * 864e5; return Store._rows('visits').filter(v => Date.parse(v.at) >= since).sort((a, b) => b.at.localeCompare(a.at));
+    },
+    async clearVisits() { if (CLOUD) return api('clearVisits'); const d = Store._load(); d.visits = {}; Store._save(d); }
   };
   const opErr = x => x && x.code === 'auth' ? (ss.del('scAdminToken'), T('Your admin session has expired. Sign in again.', 'เซสชันผู้ดูแลหมดอายุ กรุณาเข้าสู่ระบบใหม่'))
     : x && x.msg === 'Unknown action' ? T('The server does not support this yet — the api function on Supabase needs to be redeployed.', 'เซิร์ฟเวอร์ยังไม่รองรับ — ต้องอัปเดตฟังก์ชัน api บน Supabase')
@@ -557,7 +572,7 @@
   }
 
   const COPY = '© ' + new Date().getFullYear() + ' StructCap · Developed by NS';
-  const siteFoot = () => `<footer class="foot"><div class="wrap foot-in"><span>${T('StructCap is a design aid. Results must be checked by a licensed engineer.', 'StructCap เป็นเครื่องมือช่วยคำนวณ ผลลัพธ์ต้องตรวจสอบโดยวิศวกรผู้มีใบอนุญาต')}</span><span class="copy">${COPY} · ${T('All rights reserved', 'สงวนลิขสิทธิ์')}</span>${S.role === 'guest' ? `<button class="linkbtn" data-act="nav" data-v="adminLogin">${T('Administrator sign in', 'เข้าสู่ระบบผู้ดูแล')}</button>` : ''}</div></footer>`;
+  const siteFoot = () => `<footer class="foot"><div class="wrap foot-in"><span>${T('StructCap is a design aid. Results must be checked by a licensed engineer.', 'StructCap เป็นเครื่องมือช่วยคำนวณ ผลลัพธ์ต้องตรวจสอบโดยวิศวกรผู้มีใบอนุญาต')}</span><span class="copy">${COPY} · ${T('All rights reserved', 'สงวนลิขสิทธิ์')}</span><span class="muted small">${T('For security and usage statistics we record the IP address, browser and time of each visit.', 'เพื่อความปลอดภัยและสถิติการใช้งาน ระบบบันทึกที่อยู่ IP เบราว์เซอร์ และเวลาที่เข้าใช้งาน')}</span>${S.role === 'guest' ? `<button class="linkbtn" data-act="nav" data-v="adminLogin">${T('Administrator sign in', 'เข้าสู่ระบบผู้ดูแล')}</button>` : ''}</div></footer>`;
 
   // ------------------------------------------------------------------ LANDING
   // isometric 3D frame (2 × 2 bays, 3 storeys) with the bending moment on the front frame; fitted to its own view box
@@ -1900,7 +1915,7 @@
   }
 
   // ------------------------------------------------------------------ ADMIN
-  const A = { tab: 'users', accounts: [], members: [], payments: [], requests: [], messages: [], mail: false, q: '', filter: 'all', edit: null, unsub: [], confirm: null, resetAsk: false };
+  const A = { tab: 'users', accounts: [], members: [], payments: [], requests: [], messages: [], mail: false, q: '', filter: 'all', edit: null, unsub: [], confirm: null, resetAsk: false, vis: { days: 7, rows: null, busy: false, q: '', who: 'people', group: 'list', clearAsk: false } };
   const METHODS = [['card', 'Credit / debit card', 'บัตรเครดิต / เดบิต'], ['paypal', 'PayPal', 'PayPal'], ['bank', 'Bank transfer', 'โอนธนาคาร'], ['promptpay', 'PromptPay', 'พร้อมเพย์'], ['cash', 'Cash', 'เงินสด'], ['other', 'Other', 'อื่น ๆ']];
   const PSTAT = { paid: ['Paid', 'ชำระแล้ว', 'ok'], pending: ['Pending', 'รอตรวจสอบ', 'warn'], refunded: ['Refunded', 'คืนเงิน', 'bad'] };
   function adminSubscribe() {
@@ -1947,10 +1962,10 @@
     el.innerHTML = `<div class="stats">
         <div class="stat"><span>${T('Users', 'ผู้ใช้ทั้งหมด')}</span><b>${acc.length}</b></div><div class="stat"><span>${T('Active Pro', 'Pro ที่ใช้งานอยู่')}</span><b>${pro.length}</b></div>
         <div class="stat ${soon.length ? 'warn' : ''}"><span>${T('Expiring in 14 days', 'หมดอายุใน 14 วัน')}</span><b>${soon.length}</b></div><div class="stat"><span>${T('Paid this month', 'รายรับเดือนนี้')}${pend ? ' · ' + pend + T(' pending', ' รอตรวจ') : ''}</span><b>$${f(rev, 2)}${revT ? ` <small>+ ${f(revT, 0)} ฿</small>` : ''}</b></div></div>
-      <div class="tabs" role="tablist"><button role="tab" aria-selected="${A.tab === 'users'}" data-act="tab" data-t="users">${T('Users', 'ผู้ใช้งาน')}</button><button role="tab" aria-selected="${A.tab === 'req'}" data-act="tab" data-t="req">${T('Pro applications', 'คำขอ Pro')}${nReq ? ` <span class="badge">${nReq}</span>` : ''}</button><button role="tab" aria-selected="${A.tab === 'pay'}" data-act="tab" data-t="pay">${T('Payments', 'การชำระเงิน')}</button><button role="tab" aria-selected="${A.tab === 'msg'}" data-act="tab" data-t="msg">${T('Messages', 'ข้อความ')}${nMsg ? ` <span class="badge">${nMsg}</span>` : ''}</button></div>
+      <div class="tabs" role="tablist"><button role="tab" aria-selected="${A.tab === 'users'}" data-act="tab" data-t="users">${T('Users', 'ผู้ใช้งาน')}</button><button role="tab" aria-selected="${A.tab === 'req'}" data-act="tab" data-t="req">${T('Pro applications', 'คำขอ Pro')}${nReq ? ` <span class="badge">${nReq}</span>` : ''}</button><button role="tab" aria-selected="${A.tab === 'pay'}" data-act="tab" data-t="pay">${T('Payments', 'การชำระเงิน')}</button><button role="tab" aria-selected="${A.tab === 'msg'}" data-act="tab" data-t="msg">${T('Messages', 'ข้อความ')}${nMsg ? ` <span class="badge">${nMsg}</span>` : ''}</button><button role="tab" aria-selected="${A.tab === 'vis'}" data-act="tab" data-t="vis">${T('Visitors & IP', 'ผู้เข้าใช้งานและ IP')}</button></div>
       <p class="mail-state ${A.mailUsers ? 'ok' : ''}">${T('Member emails (registration confirmation, payment received, Pro switched on): ', 'อีเมลถึงสมาชิก (ยืนยันการสมัคร ได้รับการชำระเงิน เปิดใช้ Pro): ') + (A.mailUsers ? T('on.', 'เปิดใช้งาน') : T('off — needs RESEND_API_KEY and MAIL_FROM on a domain verified in Resend (Supabase → Edge Functions → Secrets).', 'ปิดอยู่ — ต้องตั้งค่า RESEND_API_KEY และ MAIL_FROM บนโดเมนที่ยืนยันใน Resend (Supabase → Edge Functions → Secrets)'))}</p>
       <p class="mail-state ${A.mail ? 'ok' : ''}">${A.mail ? T('Email to ' + ADMIN_EMAIL + ': sent by the server.', 'อีเมลถึง ' + ADMIN_EMAIL + ': ส่งจากเซิร์ฟเวอร์') : T('Email to ' + ADMIN_EMAIL + ': sent through the browser relay (FormSubmit) — confirm the address once from the first FormSubmit email. For server email with the slip attached, set RESEND_API_KEY in Supabase.', 'อีเมลถึง ' + ADMIN_EMAIL + ': ส่งผ่านตัวส่งต่อในเบราว์เซอร์ (FormSubmit) — ยืนยันที่อยู่อีเมลครั้งแรกจากอีเมลของ FormSubmit หากต้องการส่งจากเซิร์ฟเวอร์พร้อมแนบสลิป ให้ตั้งค่า RESEND_API_KEY ใน Supabase')}</p>
-      ${A.tab === 'req' ? reqTab() : A.tab === 'msg' ? msgTab() : A.tab === 'users' ? `<div class="card"><div class="tbl-tools"><input id="adm-q" placeholder="${T('Search username, name or email', 'ค้นหาชื่อผู้ใช้ ชื่อ หรืออีเมล')}" value="${esc(A.q)}" aria-label="${T('Search', 'ค้นหา')}"><div class="seg">${filters.map(([k, l]) => `<button data-act="filter" data-f="${k}" aria-pressed="${A.filter === k}">${l}</button>`).join('')}</div></div>
+      ${A.tab === 'vis' ? visTab() : A.tab === 'req' ? reqTab() : A.tab === 'msg' ? msgTab() : A.tab === 'users' ? `<div class="card"><div class="tbl-tools"><input id="adm-q" placeholder="${T('Search username, name or email', 'ค้นหาชื่อผู้ใช้ ชื่อ หรืออีเมล')}" value="${esc(A.q)}" aria-label="${T('Search', 'ค้นหา')}"><div class="seg">${filters.map(([k, l]) => `<button data-act="filter" data-f="${k}" aria-pressed="${A.filter === k}">${l}</button>`).join('')}</div></div>
         ${acc.length ? (list.length ? `<div class="tbl-wrap"><table class="chk adm"><thead><tr><th>${T('User', 'ผู้ใช้')}</th><th>${T('Plan', 'แพ็กเกจ')}</th><th>${T('Start', 'เริ่ม')}</th><th>${T('Expiry', 'หมดอายุ')}</th><th>${T('Status', 'สถานะ')}</th><th></th></tr></thead><tbody>
         ${list.map(a => { const [c, l] = stat(a), dl = daysLeft(a); return `<tr><td><b>${esc(a.username)}</b><br>${mem(a._id).email && mem(a._id).email !== a.username ? `<span class="muted small">${esc(mem(a._id).email)}</span>` : ''}</td><td>${a.plan === 'pro' ? '<span class="pill pro">Pro</span>' : '<span class="pill free">Free</span>'}</td><td class="mono">${esc(a.start || '')}</td><td class="mono">${esc(a.expiry || '—')}${dl !== null ? `<br><span class="muted small">${dl >= 0 ? T(dl + ' days left', 'เหลือ ' + dl + ' วัน') : T(-dl + ' days ago', 'เกินมา ' + -dl + ' วัน')}</span>` : ''}</td><td><span class="pill st-${c}">${l}</span></td>
           <td class="act"><button class="btn btn-ghost xs" data-act="ext" data-u="${esc(a._id)}" data-d="30">+30 ${T('d', 'วัน')}</button><button class="btn btn-ghost xs" data-act="ext" data-u="${esc(a._id)}" data-d="365">+1 ${T('yr', 'ปี')}</button><button class="btn btn-ghost xs" data-act="editUser" data-u="${esc(a._id)}">${T('Edit', 'แก้ไข')}</button></td></tr>`; }).join('')}
@@ -1973,6 +1988,52 @@
         <td><button class="btn btn-ghost xs" data-act="slip" data-r="${esc(r._id)}">${T('View', 'ดู')}</button><br><span class="muted small">${esc(r.slip_name || '')}</span></td><td><span class="pill st-${st[2]}">${T(st[0], st[1])}</span></td>
         <td class="act">${r.status === 'pending' ? `<label class="days-in">${T('Days', 'วัน')} <input type="number" min="1" id="rd-${esc(r._id)}" value="${r.months * 30}"></label><button class="btn btn-hot xs" data-act="approve" data-r="${esc(r._id)}">${T('Approve · turn on Pro', 'อนุมัติ · เปิด Pro')}</button><button class="btn btn-danger-ghost xs" data-act="reject" data-r="${esc(r._id)}">${T('Reject', 'ไม่อนุมัติ')}</button>` : `<span class="muted small">${esc((r.decided || '').slice(0, 10))}</span>`}</td></tr>`; }).join('')}
       </tbody></table></div><p class="hint">${T('Approving switches the member to Pro (adding the days to any time left), records the payment and emails the member that Pro is on. Members are told it takes up to 2 hours.', 'การอนุมัติจะเปิด Pro ให้สมาชิก (บวกวันเพิ่มจากเวลาที่เหลือ) บันทึกการชำระเงิน และส่งอีเมลแจ้งสมาชิก สมาชิกได้รับแจ้งว่าใช้เวลาไม่เกิน 2 ชั่วโมง')}</p></div>`;
+  }
+  // ---- access log: every visit with the IP address the server saw, including people using the app without an account
+  const VEV = { open: ['Opened the app', 'เปิดแอป'], free: ['Started without an account', 'เริ่มใช้งานโดยไม่สมัคร'], login: ['Signed in', 'เข้าสู่ระบบ'], register: ['Registered', 'สมัครสมาชิก'], admin: ['Administrator sign-in', 'ผู้ดูแลเข้าสู่ระบบ'], view: ['Viewed', 'เปิดดู'] };
+  function devOf(ua) {
+    ua = ua || ''; const b = /Edg\//.test(ua) ? 'Edge' : /OPR\/|Opera/.test(ua) ? 'Opera' : /SamsungBrowser/.test(ua) ? 'Samsung Internet' : /Line\//.test(ua) ? 'LINE' : /FBAN|FBAV/.test(ua) ? 'Facebook' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\/|CriOS/.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : ua ? T('Other', 'อื่น ๆ') : '';
+    const o = /iPhone|iPod/.test(ua) ? 'iPhone' : /iPad/.test(ua) ? 'iPad' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'Windows' : /Mac OS X|Macintosh/.test(ua) ? 'macOS' : /CrOS/.test(ua) ? 'ChromeOS' : /Linux/.test(ua) ? 'Linux' : '';
+    return [b, o].filter(Boolean).join(' · ');
+  }
+  const tLocal = at => { const d = new Date(at); if (isNaN(d)) return at || ''; const z = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`; };
+  function loadVisits() { const V = A.vis; V.busy = true; if (A.tab === 'vis') adminBody(); Ops.visits(V.days).then(r => { V.rows = r; }).catch(x => { V.rows = V.rows || []; toast(opErr(x), 'bad'); }).finally(() => { V.busy = false; if (A.tab === 'vis') adminBody(); }); }
+  function visList() {
+    const V = A.vis, q = V.q.trim().toLowerCase();
+    return (V.rows || []).filter(v => (V.who === 'all' || (V.who === 'people' && v.role !== 'admin') || (V.who === 'noacc' && !v.username && v.role !== 'admin') || (V.who === 'members' && v.username && v.role !== 'admin') || (V.who === 'admin' && v.role === 'admin'))
+      && (!q || [v.ip, v.username, v.country, v.vid, v.ua, v.ref].join(' ').toLowerCase().includes(q)));
+  }
+  const whoOf = v => v.role === 'admin' ? T('Administrator', 'ผู้ดูแลระบบ') : v.username ? v.username : v.role === 'free' ? T('Free — no account', 'Free — ไม่มีบัญชี') : T('Visitor (landing page)', 'ผู้เยี่ยมชม (หน้าแรก)');
+  function visTab() {
+    const V = A.vis; if (!V.rows && !V.busy) { setTimeout(loadVisits); }
+    const L = visList(), uniq = k => new Set(L.map(v => v[k]).filter(Boolean)).size, ev = e => L.filter(v => v.event === e).length;
+    const days = [[1, T('24 h', '24 ชม.')], [7, T('7 days', '7 วัน')], [30, T('30 days', '30 วัน')], [90, T('90 days', '90 วัน')], [365, T('1 year', '1 ปี')]];
+    const whos = [['people', T('Everyone (no admin)', 'ทุกคน (ไม่รวมผู้ดูแล)')], ['noacc', T('Without an account', 'ไม่มีบัญชี')], ['members', T('Members', 'สมาชิก')], ['admin', T('Admin', 'ผู้ดูแล')], ['all', T('All', 'ทั้งหมด')]];
+    let body;
+    if (!V.rows) body = `<p class="muted pad">${T('Loading the access log…', 'กำลังโหลดบันทึกการเข้าใช้งาน…')}</p>`;
+    else if (!L.length) body = `<div class="empty"><b>${T('No visits in this period', 'ไม่มีการเข้าใช้งานในช่วงนี้')}</b><p>${T('Each time someone opens StructCap, starts without an account, signs in or registers, the time, IP address and browser are recorded here.', 'ทุกครั้งที่มีผู้เปิด StructCap เริ่มใช้งานโดยไม่สมัคร เข้าสู่ระบบ หรือสมัครสมาชิก ระบบจะบันทึกเวลา ที่อยู่ IP และเบราว์เซอร์ไว้ที่นี่')}</p></div>`;
+    else if (V.group === 'ip') {
+      const G = new Map(); L.forEach(v => { const k = v.ip || '—'; const g = G.get(k) || { ip: k, n: 0, dev: new Set(), who: new Set(), first: v.at, last: v.at, country: v.country, ev: {} }; g.n++; if (v.vid) g.dev.add(v.vid); g.who.add(whoOf(v)); if (v.at < g.first) g.first = v.at; if (v.at > g.last) g.last = v.at; g.ev[v.event] = (g.ev[v.event] || 0) + 1; G.set(k, g); });
+      const gs = [...G.values()].sort((a, b) => b.last.localeCompare(a.last));
+      body = `<div class="tbl-wrap"><table class="chk adm vis"><thead><tr><th>${T('IP address', 'ที่อยู่ IP')}</th><th class="num">${T('Visits', 'ครั้ง')}</th><th class="num">${T('Devices', 'อุปกรณ์')}</th><th>${T('Who', 'ผู้ใช้')}</th><th>${T('Activity', 'กิจกรรม')}</th><th>${T('First seen', 'ครั้งแรก')}</th><th>${T('Last seen', 'ล่าสุด')}</th></tr></thead><tbody>
+        ${gs.map(g => `<tr><td class="mono"><b>${esc(g.ip)}</b>${g.country ? ` <span class="pill">${esc(g.country)}</span>` : ''}</td><td class="num mono">${g.n}</td><td class="num mono">${g.dev.size}</td><td class="small">${[...g.who].map(esc).join('<br>')}</td><td class="small">${Object.entries(g.ev).map(([e, n]) => esc(T(...(VEV[e] || [e, e]))) + ' ×' + n).join('<br>')}</td><td class="mono small">${tLocal(g.first)}</td><td class="mono small">${tLocal(g.last)}</td></tr>`).join('')}</tbody></table></div>`;
+    } else body = `<div class="tbl-wrap"><table class="chk adm vis"><thead><tr><th>${T('Time', 'เวลา')}</th><th>${T('IP address', 'ที่อยู่ IP')}</th><th>${T('Who', 'ผู้ใช้')}</th><th>${T('Activity', 'กิจกรรม')}</th><th>${T('Browser · device', 'เบราว์เซอร์ · อุปกรณ์')}</th><th>${T('Lang.', 'ภาษา')}</th><th>${T('Came from', 'มาจาก')}</th><th>${T('Device id', 'รหัสอุปกรณ์')}</th></tr></thead><tbody>
+        ${L.slice(0, 1000).map(v => `<tr><td class="mono small">${tLocal(v.at)}</td><td class="mono"><b>${esc(v.ip || '—')}</b>${v.country ? ` <span class="pill">${esc(v.country)}</span>` : ''}</td><td>${v.username && v.role !== 'admin' ? `<b>${esc(v.username)}</b> <span class="pill ${v.role === 'pro' ? 'pro' : 'free'}">${v.role === 'pro' ? 'Pro' : 'Free'}</span>` : esc(whoOf(v))}</td><td class="small">${esc(T(...(VEV[v.event] || [v.event, v.event])))}</td><td class="small" title="${esc(v.ua || '')}">${esc(devOf(v.ua))}</td><td class="small">${esc((v.lang || '').toUpperCase())}</td><td class="small">${esc(v.ref || '')}</td><td class="mono small muted">${esc((v.vid || '').slice(-8))}</td></tr>`).join('')}</tbody></table></div>${L.length > 1000 ? `<p class="muted small pad">${T('Showing the latest 1000 of ' + L.length + ' — download the CSV for all.', 'แสดง 1000 รายการล่าสุดจาก ' + L.length + ' — ดาวน์โหลด CSV เพื่อดูทั้งหมด')}</p>` : ''}`;
+    return `<div class="stats vis-stats"><div class="stat"><span>${T('Visits', 'การเข้าใช้งาน')}</span><b>${L.length}</b></div><div class="stat"><span>${T('Different IP addresses', 'ที่อยู่ IP ที่ต่างกัน')}</span><b>${uniq('ip')}</b></div><div class="stat"><span>${T('Devices', 'อุปกรณ์')}</span><b>${uniq('vid')}</b></div><div class="stat"><span>${T('Started without an account', 'เริ่มใช้งานโดยไม่สมัคร')}</span><b>${ev('free')}</b></div><div class="stat"><span>${T('Sign-ins · registrations', 'เข้าสู่ระบบ · สมัครใหม่')}</span><b>${ev('login')} · ${ev('register')}</b></div></div>
+      <div class="card"><div class="tbl-tools"><input id="vis-q" placeholder="${T('Search IP address, email, browser…', 'ค้นหา IP อีเมล เบราว์เซอร์…')}" value="${esc(V.q)}" aria-label="${T('Search', 'ค้นหา')}">
+        <div class="seg">${days.map(([d, l]) => `<button data-act="visDays" data-d="${d}" aria-pressed="${V.days === d}">${l}</button>`).join('')}</div>
+        <div class="seg">${whos.map(([k, l]) => `<button data-act="visWho" data-w="${k}" aria-pressed="${V.who === k}">${l}</button>`).join('')}</div>
+        <div class="seg"><button data-act="visGroup" data-g="list" aria-pressed="${V.group === 'list'}">${T('Each visit', 'ทุกครั้ง')}</button><button data-act="visGroup" data-g="ip" aria-pressed="${V.group === 'ip'}">${T('By IP address', 'ตาม IP')}</button></div>
+        <span class="grow"></span><button class="btn btn-ghost xs" data-act="visReload" ${V.busy ? 'disabled' : ''}>${V.busy ? T('Loading…', 'กำลังโหลด…') : T('Refresh', 'รีเฟรช')}</button><button class="btn btn-ghost xs" data-act="visCsv" ${L.length ? '' : 'disabled'}>CSV</button>
+        ${V.clearAsk ? `<span class="confirm">${T('Delete the whole access log?', 'ลบบันทึกการเข้าใช้งานทั้งหมด?')} <button class="btn btn-danger xs" data-act="visClearYes">${T('Delete', 'ลบ')}</button><button class="btn btn-ghost xs" data-act="visClearNo">${T('Cancel', 'ยกเลิก')}</button></span>` : `<button class="btn btn-ghost xs" data-act="visClear" ${V.rows && V.rows.length ? '' : 'disabled'}>${T('Clear log', 'ล้างบันทึก')}</button>`}</div>
+        ${body}
+        <p class="muted small pad">${T('The IP address is the one the server received, taken from the proxy headers (the first public address in X-Forwarded-For). Visitors behind a mobile network or office router can share one address; the device id separates browsers. Times are shown in your time zone. Entries older than 400 days are deleted automatically.', 'ที่อยู่ IP คือที่อยู่ที่เซิร์ฟเวอร์ได้รับจากส่วนหัวของพร็อกซี (ที่อยู่สาธารณะแรกใน X-Forwarded-For) ผู้ใช้เครือข่ายมือถือหรือเราเตอร์สำนักงานเดียวกันอาจใช้ IP เดียวกัน รหัสอุปกรณ์ช่วยแยกเบราว์เซอร์ เวลาแสดงตามเขตเวลาของท่าน รายการที่เก่ากว่า 400 วันจะถูกลบอัตโนมัติ')}${A.myIp ? ' ' + T('Your own IP address, as the server sees it now: ', 'ที่อยู่ IP ของท่านที่เซิร์ฟเวอร์เห็นขณะนี้: ') + `<b class="mono">${esc(A.myIp)}</b>` : ''}</p></div>`;
+  }
+  function visCsv() {
+    const L = visList(), q = x => '"' + String(x == null ? '' : x).replace(/"/g, '""') + '"';
+    const rows = [['time_utc', 'local_time', 'ip', 'country', 'who', 'username', 'role', 'event', 'browser_device', 'language', 'referrer', 'device_id', 'user_agent']].concat(L.map(v => [v.at, tLocal(v.at), v.ip, v.country, whoOf(v), v.username, v.role, v.event, devOf(v.ua), v.lang, v.ref, v.vid, v.ua]));
+    const blob = new Blob(['﻿' + rows.map(r => r.map(q).join(',')).join('\r\n')], { type: 'text/csv' }), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'structcap-visitors-' + today() + '.csv'; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
   function msgTab() {
     const ms = A.messages.slice().sort((a, b) => (b.created || '').localeCompare(a.created || ''));
@@ -2151,9 +2212,9 @@
     if (a.startsWith('tb-') && S.view === 'timber' && AN) { AN.onClick(a, b); return; }
     if (a.startsWith('td-') && S.view === 'tdraw' && AN) { AN.onClick(a, b); return; }
     if (a === 'lang') { if (A.edit) syncModalDraft(); const wasReport = S.reportOpen; setLang(b.dataset.l); if (wasReport && S.view === 'design') { S.reportOpen = true; renderReport(); } }
-    else if (a === 'nav') { const v = b.dataset.v; if (ANV.includes(v) && isOff(v)) { toast(offMsg(), 'bad'); return; } if ((v === 'home' || v === 'codes' || ANV.includes(v)) && S.role === 'guest') { S.role = 'free'; saveSession(); } go(v); if (b.dataset.qto && ANV.includes(v)) setTimeout(() => { const an = anUI(v); if (an && an.openQto) an.openQto(); }, 30); }
+    else if (a === 'nav') { const v = b.dataset.v; if (ANV.includes(v) && isOff(v)) { toast(offMsg(), 'bad'); return; } if ((v === 'home' || v === 'codes' || ANV.includes(v)) && S.role === 'guest') { S.role = 'free'; saveSession(); track('free'); } go(v); if (b.dataset.qto && ANV.includes(v)) setTimeout(() => { const an = anUI(v); if (an && an.openQto) an.openQto(); }, 30); }
     else if (a === 'scroll') { const t = document.getElementById(b.dataset.t); if (t) t.scrollIntoView({ behavior: 'smooth' }); }
-    else if (a === 'free') { if (S.role === 'guest') { S.role = 'free'; saveSession(); } go('home'); }
+    else if (a === 'free') { if (S.role === 'guest') { S.role = 'free'; saveSession(); track('free'); } go('home'); }
     else if (a === 'logout') logout();
     else if (a === 'register') { if (b.dataset.plan) S.regPlan = b.dataset.plan; else if (!S.regPlan) S.regPlan = 'free'; S.payCur = null; if (S.user && S.user.member) { S.applyOpen = b.dataset.plan === 'pro'; go('account'); } else go('register'); }
     else if (a === 'regplan') { S.regPlan = b.dataset.p; render(); }
@@ -2183,6 +2244,13 @@
       S.v3.cam = null; if (S.res) { $$('[data-act=v3view]').forEach(x => x.setAttribute('aria-pressed', x.dataset.p === S.v3.view)); const cs = $('#v3case'); if (cs) cs.value = S.v3.cs; const md = $('#v3mode'); if (md) md.disabled = S.v3.cs === 'none'; mount3D(S.res); }
     }
     else if (a === 'tab') { A.tab = b.dataset.t; adminBody(); }
+    else if (a === 'visDays') { A.vis.days = +b.dataset.d; loadVisits(); }
+    else if (a === 'visWho') { A.vis.who = b.dataset.w; adminBody(); }
+    else if (a === 'visGroup') { A.vis.group = b.dataset.g; adminBody(); }
+    else if (a === 'visReload') loadVisits();
+    else if (a === 'visCsv') visCsv();
+    else if (a === 'visClear' || a === 'visClearNo') { A.vis.clearAsk = a === 'visClear'; adminBody(); }
+    else if (a === 'visClearYes') { A.vis.clearAsk = false; Ops.clearVisits().then(() => { A.vis.rows = []; adminBody(); toast(T('Access log cleared', 'ล้างบันทึกการเข้าใช้งานแล้ว'), 'ok'); }).catch(x => toast(opErr(x), 'bad')); }
     else if (a === 'filter') { A.filter = b.dataset.f; adminBody(); }
     else if (a === 'newUser') openUser(null);
     else if (a === 'editUser') openUser(b.dataset.u);
@@ -2218,6 +2286,7 @@
     else if (t.id === 'v3case' || t.id === 'v3mode') { if (t.id === 'v3case') S.v3.cs = t.value; else S.v3.mode = t.value; const md = $('#v3mode'); if (md) md.disabled = S.v3.cs === 'none'; if (S.res) mount3D(S.res); }
     else if (t.id === 'rp-months' || t.id === 'ap-months') updPro(t.id.split('-')[0]);
     else if (t.dataset.meta) { S.meta[t.dataset.meta] = t.value; const o = $('#rv-' + t.dataset.meta); if (o) o.textContent = t.value; }
+    else if (t.id === 'vis-q') { A.vis.q = t.value; const pos = t.selectionStart; adminBody(); const n = $('#vis-q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }
     else if (t.id === 'adm-q') { A.q = t.value; const pos = t.selectionStart; adminBody(); const n = $('#adm-q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }
   });
   document.addEventListener('submit', ev => {
@@ -2235,5 +2304,6 @@
 
   if (S.role !== 'guest') S.view = S.role === 'admin' ? 'admin' : 'home';
   render();
+  track('open');
   if (S.user && S.user.member) refreshMe(true);
 })();

@@ -1,4 +1,4 @@
-// StructCap API — the only way the website reads or writes accounts, members, payments, requests and messages.
+// StructCap API — the only way the website reads or writes accounts, members, payments, requests, messages and the access log.
 // Tables have RLS on with no policies, so the browser cannot touch them directly; this function uses
 // the service role after checking who is calling. Passwords are hashed here (PBKDF2-SHA256).
 // Email to the administrator goes through Resend when the RESEND_API_KEY secret is set (optional MAIL_FROM).
@@ -152,6 +152,48 @@ async function createRequest(username: string, b: any) {
   check(await db.from("requests").insert({ id, username, months, amount, currency: cur, method: str(pro.method, 40) || null, ref: str(pro.ref, 120) || null, slip_path: slip.path, slip_name: slip.name, status: "pending", note: str(pro.note, 1000) || null }));
   return { id, months, amount, currency: cur, slip };
 }
+// ---------- access log (who opens the app, including visitors without an account)
+// The client IP comes from the edge proxy headers. x-forwarded-for may hold a chain "client, proxy1, proxy2":
+// the first public address is the visitor. Private / loopback addresses are skipped.
+const IPV4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+const IPV6 = /^[0-9a-f:]{2,39}(%\w+)?$/i;
+function normIp(raw: string) {
+  let s = raw.trim().replace(/^"|"$/g, "");
+  if (s.startsWith("[")) s = s.slice(1, s.indexOf("]") > 0 ? s.indexOf("]") : undefined);   // [v6]:port
+  else if (/^\d+\.\d+\.\d+\.\d+:\d+$/.test(s)) s = s.split(":")[0];                       // v4:port
+  if (s.toLowerCase().startsWith("::ffff:") && IPV4.test(s.slice(7))) s = s.slice(7);        // v4-mapped v6
+  const m = IPV4.exec(s);
+  if (m) return m.slice(1).every((x) => +x <= 255) ? s : "";
+  return IPV6.test(s) && s.includes(":") ? s.toLowerCase() : "";
+}
+function isPrivate(ip: string) {
+  const m = IPV4.exec(ip);
+  if (m) { const [a, b] = [+m[1], +m[2]]; return a === 10 || a === 127 || a === 0 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254) || (a === 100 && b >= 64 && b <= 127); }
+  return ip === "::1" || /^f[cd]/.test(ip) || /^fe80/.test(ip);
+}
+function clientIp(req: Request) {
+  const h = req.headers, list: string[] = [];
+  ["cf-connecting-ip", "true-client-ip", "x-real-ip", "x-client-ip"].forEach((k) => { const v = h.get(k); if (v) list.push(v); });
+  (h.get("x-forwarded-for") || "").split(",").forEach((v) => list.push(v));
+  const fwd = /for=("?\[?[^;,"]+\]?"?)/gi, fh = h.get("forwarded") || ""; let mm; while ((mm = fwd.exec(fh))) list.push(mm[1]);
+  const ips = list.map(normIp).filter(Boolean);
+  return ips.find((ip) => !isPrivate(ip)) || ips[0] || null;
+}
+const EVENTS = ["open", "free", "login", "register", "admin", "view"];
+async function logVisit(req: Request, b: Record<string, any>, ev: string, who: { username?: string | null; role?: string } = {}) {
+  try {
+    const ip = clientIp(req), vid = /^[a-z0-9-]{8,40}$/i.test(String(b.vid || "")) ? String(b.vid) : null, event = EVENTS.includes(ev) ? ev : "view";
+    if (event === "open" || event === "view") {   // one row per device and event every 30 minutes
+      let q = db.from("visits").select("id").eq("event", event).gte("at", new Date(Date.now() - 30 * 60e3).toISOString()).limit(1);
+      q = vid ? q.eq("vid", vid) : q.eq("ip", ip || "");
+      const { data } = await q; if (data && data.length) return;
+    }
+    await db.from("visits").insert({ ip, country: str(req.headers.get("cf-ipcountry") || req.headers.get("x-country-code"), 8) || null, vid, username: who.username || null,
+      role: who.role || (["guest", "free", "pro", "admin"].includes(b.role) ? b.role : "guest"), event, page: str(b.page, 40) || null, lang: b.lang === "th" ? "th" : b.lang === "en" ? "en" : null,
+      ua: str(req.headers.get("user-agent"), 300) || null, ref: str(b.ref, 120) || null });
+    if (Math.random() < 0.01) await db.from("visits").delete().lt("at", new Date(Date.now() - 400 * 864e5).toISOString());
+  } catch (e) { console.error("visit", e); }
+}
 async function account(username: string) {
   const [{ data: a }, { data: m }, { data: rq }] = await Promise.all([
     db.from("accounts").select("username,name,plan,status,start,expiry").eq("username", username).maybeSingle(),
@@ -175,9 +217,16 @@ Deno.serve(async (req) => {
       const s = await getSettings();
       return json({ proFree: !!s.proFree, payInfo: s.payInfo || { en: "", th: "" }, off: offMap(s.off), price: PRICE });
     }
+    if (a === "visit") {
+      const c = await verify(body.token);
+      const who = c?.role === "user" ? { username: c.sub, role: body.role === "pro" ? "pro" : "free" } : c?.role === "admin" ? { username: c.sub, role: "admin" } : {};
+      await logVisit(req, body, String(body.event || "open"), who);
+      return json({ ok: true });
+    }
     if (a === "adminLogin") {
       const h = await pbkdf2(String(body.username) + "\u0000" + String(body.password), ADMIN_SALT, ADMIN_ITER);
       if (body.username !== ADMIN_USER || !same(h, ADMIN_HASH)) return json({ ok: false });
+      await logVisit(req, body, "admin", { username: ADMIN_USER, role: "admin" });
       return json({ ok: true, token: await issue("admin", ADMIN_USER, 12) });
     }
     if (a === "login") {
@@ -186,7 +235,9 @@ Deno.serve(async (req) => {
       const { data: acc } = await db.from("accounts").select("*").eq("username", u).maybeSingle();
       if (!acc || !same(await pbkdf2(String(body.password || ""), acc.salt, acc.iter), acc.hash)) return json({ ok: false, err: "bad" });
       if (acc.status !== "active") return json({ ok: false, err: "suspended" });
-      return json({ ok: true, account: await account(u), token: await issue("user", u, 24) });
+      const accInfo = await account(u);
+      await logVisit(req, body, "login", { username: u, role: accInfo?.plan === "pro" ? "pro" : "free" });
+      return json({ ok: true, account: accInfo, token: await issue("user", u, 24) });
     }
     if (a === "register") {
       if (body.website) return json({ ok: true }); // honeypot
@@ -210,6 +261,7 @@ Deno.serve(async (req) => {
         userMail(email, lang, rq && !rq.error ? "welcomePro" : "welcome", rq && !rq.error ? rq : {}),
       ]);
       await db.from("messages").insert({ id: uid("msg"), kind: body.plan === "pro" ? "pro" : "register", name, email, username: u, message: (body.plan === "pro" ? "Registered and applied for Pro" + (rq && !rq.error ? ` (${rq.months} month(s), ${rq.amount} ${rq.currency})` : " — slip upload failed") : "Registered (Free)") + (body.note ? " — " + str(body.note, 500) : "") });
+      await logVisit(req, body, "register", { username: u, role: "free" });
       return json({ ok: true, emailed, emailedUser, request: rq && !rq.error ? { id: rq.id, months: rq.months, amount: rq.amount, currency: rq.currency } : null, slipError: rq?.error || null, account: await account(u), token: await issue("user", u, 24) });
     }
     if (a === "contact") {
@@ -330,6 +382,13 @@ Deno.serve(async (req) => {
       if (error) throw error;
       return json({ ok: true, url: data.signedUrl });
     }
+    if (a === "visits") {
+      const days = Math.min(400, Math.max(1, body.days | 0 || 30));
+      const { data, error } = await db.from("visits").select("id,at,ip,country,vid,username,role,event,page,lang,ua,ref").gte("at", new Date(Date.now() - days * 864e5).toISOString()).order("at", { ascending: false }).limit(5000);
+      if (error) throw error;
+      return json({ ok: true, days, visits: data, ip: clientIp(req) });
+    }
+    if (a === "clearVisits") { check(await db.from("visits").delete().gte("id", 0)); return json({ ok: true }); }
     if (a === "readMessage") { check(await db.from("messages").update({ status: body.unread ? "new" : "read" }).eq("id", String(body.id))); return json({ ok: true }); }
     if (a === "deleteMessage") { check(await db.from("messages").delete().eq("id", String(body.id))); return json({ ok: true }); }
     if (a === "reset") {
