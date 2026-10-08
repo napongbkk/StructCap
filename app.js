@@ -248,7 +248,7 @@
   ];
   const SHM = window.SHELTER;
   const SHS_OPTS = GA.sizeOptions('SHS').filter(o => +o[0].split('x')[0] <= 200).map(([k, l]) => [k, l, l]);
-  const isPad = v => v.ftype === 'pad', isStrip = v => v.ftype !== 'pad', userV = v => v.region === 'user';
+  const isPad = v => v.ftype === 'pad', isStrip = v => v.ftype !== 'pad', isPadR = v => v.rtype === 'pad', isStripR = v => v.rtype !== 'pad', FTYPES = [['strip', 'Continuous strip (all posts)', 'แถบต่อเนื่อง (ทุกเสา)'], ['pad', 'One strip per post', 'แถบแยก เสาละหนึ่ง']], userV = v => v.region === 'user';
   SCHEMA.shelter = [
     F('L', 'shg', 'Shelter length L', 'ความยาวที่พัก L', 'lenm'), F('Dp', 'shg', 'Front to rear post line spacing D_p', 'ระยะแนวเสาหน้า–หลัง D_p', 'lenm'),
     F('hF', 'shg', 'Roof height at front posts', 'ความสูงหลังคาที่เสาหน้า', 'lenm'), F('hR', 'shg', 'Roof height at rear posts', 'ความสูงหลังคาที่เสาหลัง', 'lenm'),
@@ -260,7 +260,7 @@
     F('groof', 'shw', 'Roof self-weight', 'น้ำหนักหลังคา', 'kpa'), F('gwall', 'shw', 'Wall self-weight (battens + rails)', 'น้ำหนักผนัง (ระแนง + คาน)', 'kpa'),
     F('wseat', 'shw', 'Seat self-weight', 'น้ำหนักที่นั่ง', 'kNm1'), F('Lseat', 'shw', 'Seat length', 'ความยาวที่นั่ง', 'lenm'), F('qroof', 'shw', 'Roof live load Q (non-trafficable)', 'น้ำหนักจรหลังคา Q', 'kpa'),
     F('post', 'shp', 'Post section (AS/NZS 1163)', 'หน้าตัดเสา (AS/NZS 1163)', 'none', { type: 'sel', opts: SHS_OPTS }), F('pgrade', 'shp', 'Grade', 'เกรด', 'none', { type: 'sel', opts: [['C350L0', 'C350L0', 'C350L0'], ['C450L0', 'C450L0', 'C450L0']] }),
-    F('path', 'shp', 'Roof-to-post connections', 'รอยต่อหลังคา-เสา', 'none', { type: 'sel', opts: [['cant', 'Pinned — posts act as cantilevers (conservative)', 'ข้อหมุน — เสาเป็นคานยื่น (ปลอดภัย)'], ['frame', 'Moment connections — portal frame', 'รับโมเมนต์ — โครงข้อแข็ง']] }),
+    F('path', 'shp', 'Roof-to-post connections', 'รอยต่อหลังคา-เสา', 'none', { type: 'sel', opts: [['cant', 'Pinned (cantilever posts)', 'ข้อหมุน (เสายื่น)'], ['frame', 'Moment (portal frame)', 'รับโมเมนต์ (โครงข้อแข็ง)']] }),
     F('dlim', 'shp', 'Sway limit h/…', 'ขีดจำกัดการเซ h/…', 'none'),
     F('region', 'wind', 'Wind region', 'เขตลม', 'none', { type: 'sel', re: true, opts: [['A', 'A0–A5 (non-cyclonic)', 'A0–A5 (ไม่มีพายุไซโคลน)'], ['W', 'W', 'W'], ['B1', 'B1', 'B1'], ['C', 'C (cyclonic)', 'C (ไซโคลน)'], ['D', 'D (cyclonic)', 'D (ไซโคลน)'], ['user', 'Enter V_R', 'กำหนด V_R']] }),
     F('Ru', 'wind', 'ULS annual exceedance 1/R', 'ความน่าจะเป็น ULS 1/R', 'none', { type: 'sel', opts: [[100, '1/100', '1/100'], [250, '1/250', '1/250'], [500, '1/500 (IL2, 50 years)', '1/500 (IL2, 50 ปี)'], [1000, '1/1000', '1/1000']], when: v => !userV(v) }),
@@ -269,14 +269,16 @@
     F('Md', 'wind', 'Direction multiplier M_d', 'ตัวคูณทิศทาง M_d', 'none'), F('tc', 'wind', 'Terrain category', 'ประเภทภูมิประเทศ', 'none', { type: 'sel', opts: [[1, 'TC1 (M_z = 0.99)', 'TC1 (M_z = 0.99)'], [2, 'TC2 (0.91)', 'TC2 (0.91)'], [2.5, 'TC2.5 (0.87)', 'TC2.5 (0.87)'], [3, 'TC3 (0.83)', 'TC3 (0.83)'], [4, 'TC4 (0.75)', 'TC4 (0.75)']] }),
     F('Ms', 'wind', 'Shielding multiplier M_s', 'ตัวคูณการบัง M_s', 'none'), F('Mt', 'wind', 'Topographic multiplier M_t', 'ตัวคูณภูมิประเทศ M_t', 'none'),
     F('cpw', 'wind', 'Back wall C_p,n', 'C_p,n ผนังหลัง', 'none'), F('cps', 'wind', 'Side wall C_p,n', 'C_p,n ผนังข้าง', 'none'), F('Kp', 'wind', 'Wall porosity factor K_p', 'ตัวคูณความพรุนผนัง K_p', 'none'),
-    F('r1w', 'wind', 'Roof C_p,n, front wind — windward half', 'C_p,n หลังคา ลมหน้า — ครึ่งต้นลม', 'none'), F('r1l', 'wind', 'Roof C_p,n, front wind — leeward half', 'C_p,n หลังคา ลมหน้า — ครึ่งท้ายลม', 'none'),
-    F('r2w', 'wind', 'Roof C_p,n, rear wind — windward half', 'C_p,n หลังคา ลมหลัง — ครึ่งต้นลม', 'none'), F('r2l', 'wind', 'Roof C_p,n, rear wind — leeward half', 'C_p,n หลังคา ลมหลัง — ครึ่งท้ายลม', 'none'),
-    F('r3', 'wind', 'Roof C_p,n, wind along the shelter', 'C_p,n หลังคา ลมตามยาว', 'none'), F('rd', 'wind', 'Roof C_p,n, downward', 'C_p,n หลังคา กดลง', 'none'),
+    F('r1w', 'wind', 'Roof C_p,n front wind, windward ½', 'C_p,n หลังคา ลมหน้า ครึ่งต้นลม', 'none'), F('r1l', 'wind', 'Roof C_p,n front wind, leeward ½', 'C_p,n หลังคา ลมหน้า ครึ่งท้ายลม', 'none'),
+    F('r2w', 'wind', 'Roof C_p,n rear wind, windward ½', 'C_p,n หลังคา ลมหลัง ครึ่งต้นลม', 'none'), F('r2l', 'wind', 'Roof C_p,n rear wind, leeward ½', 'C_p,n หลังคา ลมหลัง ครึ่งท้ายลม', 'none'),
+    F('r3', 'wind', 'Roof C_p,n wind along shelter', 'C_p,n หลังคา ลมตามยาว', 'none'), F('rd', 'wind', 'Roof C_p,n downward', 'C_p,n หลังคา กดลง', 'none'),
     F('dcov', 'shf', 'Top of footing below ground (base plate level)', 'ผิวบนฐานรากใต้ดิน (ระดับแผ่นฐาน)', 'mm'), F('Df', 'shf', 'Footing depth D', 'ความลึกฐานราก D', 'mm'),
-    F('Lsr', 'shf', 'Rear strip length', 'ความยาวแถบหลัง', 'lenm'), F('Br', 'shf', 'Rear strip width', 'ความกว้างแถบหลัง', 'mm'),
-    F('ftype', 'shf', 'Front footing', 'ฐานรากแนวหน้า', 'none', { type: 'sel', re: true, opts: [['strip', 'Strip footing', 'ฐานรากแถบ'], ['pad', 'Pad under each post', 'ฐานเดี่ยวใต้เสา']] }),
+    F('rtype', 'shf', 'Rear footing (back wall line)', 'ฐานรากแนวหลัง (แนวผนัง)', 'none', { type: 'sel', re: true, opts: FTYPES }),
+    F('Lsr', 'shf', 'Rear strip length', 'ความยาวแถบหลัง', 'lenm', { when: isStripR }), F('Br', 'shf', 'Rear strip width', 'ความกว้างแถบหลัง', 'mm', { when: isStripR }),
+    F('Lpr', 'shf', 'Rear footing length (along the shelter)', 'ความยาวฐานรากหลัง (ตามแนวที่พัก)', 'mm', { when: isPadR }), F('Bpr', 'shf', 'Rear footing width (across)', 'ความกว้างฐานรากหลัง (ขวาง)', 'mm', { when: isPadR }),
+    F('ftype', 'shf', 'Front footing', 'ฐานรากแนวหน้า', 'none', { type: 'sel', re: true, opts: FTYPES }),
     F('Lsf', 'shf', 'Front strip length', 'ความยาวแถบหน้า', 'lenm', { when: isStrip }), F('Bf', 'shf', 'Front strip width', 'ความกว้างแถบหน้า', 'mm', { when: isStrip }),
-    F('Lp', 'shf', 'Pad length (along the shelter)', 'ความยาวฐานเดี่ยว (ตามแนวที่พัก)', 'mm', { when: isPad }), F('Bp', 'shf', 'Pad width', 'ความกว้างฐานเดี่ยว', 'mm', { when: isPad }),
+    F('Lp', 'shf', 'Front footing length (along the shelter)', 'ความยาวฐานรากหน้า (ตามแนวที่พัก)', 'mm', { when: isPad }), F('Bp', 'shf', 'Front footing width (across)', 'ความกว้างฐานรากหน้า (ขวาง)', 'mm', { when: isPad }),
     F('fc', 'shf', "Concrete f'c", "f'c คอนกรีต", 'stress'), F('gc', 'shf', 'Concrete density', 'หน่วยน้ำหนักคอนกรีต', 'density'),
     F('db', 'shf', 'Longitudinal bar size N', 'ขนาดเหล็กยืน N', 'none', { type: 'sel', opts: [[12, 'N12', 'N12'], [16, 'N16', 'N16'], [20, 'N20', 'N20']] }),
     F('nt', 'shf', 'Top bars (number)', 'จำนวนเหล็กบน', 'none', { type: 'int' }), F('nb', 'shf', 'Bottom bars (number)', 'จำนวนเหล็กล่าง', 'none', { type: 'int' }),
@@ -334,7 +336,7 @@
 
   DEF.shelter = { AS: { L: 8.0, Dp: 1.8, hF: 2.512, hR: 2.4, ofF: 150, ofR: 300, ep: 365, nR: 5, nF: 2, Lw: 7.3, hw: 1952, zwb: 250, bs: 1.6, nsw: 2, groof: 0.25, gwall: 0.2, wseat: 0.25, Lseat: 3.82, qroof: 0.25,
     post: '100x100x6', pgrade: 'C350L0', path: 'cant', dlim: 100, region: 'A', Ru: 500, Rs: 25, VRu: 45, VRs: 37, Md: 1.0, tc: 2, Ms: 1.0, Mt: 1.0, cpw: 1.3, cps: 1.3, Kp: 1.0, r1w: -1.3, r1l: -0.8, r2w: -0.8, r2l: -0.5, r3: -0.6, rd: 0.5,
-    dcov: 310, Df: 400, Lsr: 7.9, Br: 900, ftype: 'strip', Lsf: 7.9, Bf: 600, Lp: 800, Bp: 800, fc: 25, gc: 24, db: 16, nt: 4, nb: 4, dl: 10, cover: 50, gs: 18, soil: 'yes', mu: 0.4, qult: 150, qa: 100,
+    dcov: 310, Df: 400, rtype: 'strip', Lsr: 7.9, Br: 900, Lpr: 1200, Bpr: 1200, ftype: 'strip', Lsf: 7.9, Bf: 600, Lp: 800, Bp: 800, fc: 25, gc: 24, db: 16, nt: 4, nb: 4, dl: 10, cover: 50, gs: 18, soil: 'yes', mu: 0.4, qult: 150, qa: 100,
     nbolt: 4, bolt: 'M16', bgrade: '4.6', sbolt: 170, hef: 250, Bpl: 250, tpl: 16, fyp: 250, sw: 6 } };
 
   // ------------------------------------------------------------------ session
@@ -1060,12 +1062,12 @@
   function diaOpts(v) { return DIAS[S.code].map(d => `<option value="${d}" ${+v === d ? 'selected' : ''}>${RC.barName(S.code, d)}</option>`).join(''); }
   function fieldHTML(fd, v) {
     const id = 'in-' + fd.k, [u] = unitOf(fd.u);
-    let ctrl;
+    let ctrl, wide = false;
     if (fd.type === 'dia') ctrl = `<select id="${id}" data-k="${fd.k}">${diaOpts(v[fd.k])}</select>`;
-    else if (fd.type === 'sel') ctrl = `<select id="${id}" data-k="${fd.k}">${(typeof fd.opts === 'function' ? fd.opts(v) : fd.opts).map(o => `<option value="${o[0]}" ${v[fd.k] === o[0] ? 'selected' : ''}>${T(o[1], o[2])}</option>`).join('')}</select>`;
+    else if (fd.type === 'sel') { const os = typeof fd.opts === 'function' ? fd.opts(v) : fd.opts; wide = os.some(o => String(T(o[1], o[2])).length > 15); ctrl = `<select id="${id}" data-k="${fd.k}">${os.map(o => `<option value="${o[0]}" ${String(v[fd.k]) === String(o[0]) ? 'selected' : ''}>${T(o[1], o[2])}</option>`).join('')}</select>`; }
     else if (fd.type === 'txt') ctrl = `<input id="${id}" data-k="${fd.k}" type="text" inputmode="numeric" value="${esc(v[fd.k])}">`;
     else ctrl = `<input id="${id}" data-k="${fd.k}" type="number" inputmode="decimal" step="any" value="${esc(v[fd.k])}">`;
-    return `<div class="fld"><label for="${id}">${fmLabel(fieldLabel(fd))}</label><div class="ctl">${ctrl}${u ? `<span class="unit">${u}</span>` : ''}</div></div>`;
+    return `<div class="fld${wide ? ' fld-wide' : ''}"><label for="${id}">${fmLabel(fieldLabel(fd))}</label><div class="ctl">${ctrl}${u ? `<span class="unit">${u}</span>` : ''}</div></div>`;
   }
   function courseRowsHTML(rows) {
     const n = rows.length;
@@ -1216,7 +1218,7 @@
       if (!(x.L >= 1000 && x.Dp >= 500)) e.push(T('Enter the shelter length and the post line spacing.', 'กรอกความยาวที่พักและระยะแนวเสา'));
       if (!(x.hF > 1000 && x.hR > 1000)) e.push(T('Roof heights must be more than 1 m.', 'ความสูงหลังคาต้องมากกว่า 1 ม.'));
       if (!(x.nR >= 2 && x.nF >= 2)) e.push(T('Each post line needs at least 2 posts.', 'แต่ละแนวต้องมีเสาอย่างน้อย 2 ต้น'));
-      if (!(x.Df >= 150 && x.Br >= 200 && (x.ftype === 'pad' ? x.Bp >= 200 && x.Lp >= 200 : x.Bf >= 200 && x.Lsf >= 500) && x.Lsr >= 500)) e.push(T('Check the footing sizes.', 'ตรวจสอบขนาดฐานราก'));
+      if (!(x.Df >= 150 && (x.rtype === 'pad' ? x.Bpr >= 200 && x.Lpr >= 200 : x.Br >= 200 && x.Lsr >= 500) && (x.ftype === 'pad' ? x.Bp >= 200 && x.Lp >= 200 : x.Bf >= 200 && x.Lsf >= 500))) e.push(T('Check the footing sizes.', 'ตรวจสอบขนาดฐานราก'));
       if (!(x.fc >= 15 && x.qult > 0 && x.mu > 0)) e.push(T('Check concrete strength, bearing capacity and friction.', 'ตรวจสอบกำลังคอนกรีต กำลังแบกทาน และแรงเสียดทาน'));
       if (!(x.sbolt > 0 && x.Bpl > x.sbolt && x.tpl > 0 && x.hef > 50)) e.push(T('Check the base plate, bolt gauge and embedment.', 'ตรวจสอบแผ่นฐาน ระยะสลัก และความลึกฝัง'));
       if (!(x.region !== 'user' || (x.VRu > 0 && x.VRs > 0))) e.push(T('Enter the regional wind speeds.', 'กรอกความเร็วลมภูมิภาค'));

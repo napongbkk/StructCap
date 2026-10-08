@@ -46,7 +46,8 @@
     const post = GA.section('SHS', g.post, g.pgrade || 'C350L0'), dc = post.D, tc = post.t;
     const front = g.ftype === 'pad' ? 'pad' : 'strip';
     const Bf = front === 'pad' ? g.Bp : g.Bf, Lf = front === 'pad' ? g.Lp : g.Lsf;
-    const Br = g.Br, Lr = g.Lsr;
+    const rear = g.rtype === 'pad' ? 'pad' : 'strip';
+    const Br = rear === 'pad' ? g.Bpr : g.Br, Lr = rear === 'pad' ? g.Lpr : g.Lsr;
 
     R.sec(L('Shelter geometry and materials', 'รูปทรงที่พักผู้โดยสารและวัสดุ'), '');
     R.eq(L('Shelter length × roof depth', 'ความยาว × ความลึกหลังคา'), 'L × d_r = ' + f(Ls / 1000, 2) + ' × ' + f(dr / 1000, 2) + ' m', Ar, 'm²');
@@ -56,8 +57,8 @@
     R.eq(L('Side walls', 'ผนังข้าง'), g.nsw + ' × ' + f(g.bs / 1000, 2) + ' × ' + f(g.hw / 1000, 3) + ' m', As * g.nsw, 'm²');
     R.eq(L('Posts', 'เสา'), post.label + ' ' + post.grade + ' (f_y = ' + post.fy + ' MPa)', f(post.mass, 1), 'kg/m');
     R.eq(L('Base plates', 'แผ่นฐาน'), L('top of footing ', 'ผิวบนฐานราก ') + f(dcov, 0) + L(' mm below ground', ' มม. ใต้ระดับดิน'), '', '');
-    R.eq(L('Rear footing', 'ฐานรากแนวหลัง'), L('strip ', 'แถบ ') + f(Lr / 1000, 2) + ' × ' + f(Br / 1000, 2) + ' × ' + f(Df / 1000, 2) + ' m', '', '');
-    R.eq(L('Front footing', 'ฐานรากแนวหน้า'), front === 'pad' ? nF + L(' pads ', ' ฐานเดี่ยว ') + f(Lf / 1000, 2) + ' × ' + f(Bf / 1000, 2) + ' × ' + f(Df / 1000, 2) + ' m' : L('strip ', 'แถบ ') + f(Lf / 1000, 2) + ' × ' + f(Bf / 1000, 2) + ' × ' + f(Df / 1000, 2) + ' m', '', '');
+    R.eq(L('Rear footing', 'ฐานรากแนวหลัง'), rear === 'pad' ? nR + L(' individual footings (one per post) ', ' ฐานรากแยก (เสาละหนึ่ง) ') + f(Lr / 1000, 2) + ' × ' + f(Br / 1000, 2) + ' × ' + f(Df / 1000, 2) + ' m' : L('continuous strip ', 'แถบต่อเนื่อง ') + f(Lr / 1000, 2) + ' × ' + f(Br / 1000, 2) + ' × ' + f(Df / 1000, 2) + ' m', '', '');
+    R.eq(L('Front footing', 'ฐานรากแนวหน้า'), front === 'pad' ? nF + L(' individual footings (one per post) ', ' ฐานรากแยก (เสาละหนึ่ง) ') + f(Lf / 1000, 2) + ' × ' + f(Bf / 1000, 2) + ' × ' + f(Df / 1000, 2) + ' m' : L('continuous strip ', 'แถบต่อเนื่อง ') + f(Lf / 1000, 2) + ' × ' + f(Bf / 1000, 2) + ' × ' + f(Df / 1000, 2) + ' m', '', '');
     R.eq(L('Concrete', 'คอนกรีต'), "f'c, " + L('density ', 'หน่วยน้ำหนัก ') + f(g.gc, 1) + ' kN/m³', g.fc, 'MPa');
     R.eq(L('Soil over footings', 'ดินบนฐานราก'), 'γ_s, ' + L('cover ', 'ระยะกลบ ') + f(dcov, 0) + ' mm' + (g.soil === 'yes' ? '' : L(' (not counted)', ' (ไม่นับ)')), g.gs, 'kN/m³');
     if (Br < dc + 2 * 100 || Bf < dc + 2 * 100) warn.push(L('A footing is narrow for the base plate and bolt edge distances.', 'ฐานรากแคบเมื่อเทียบกับแผ่นฐานและระยะขอบสลัก'));
@@ -97,14 +98,14 @@
     const Wsup = Gs.reduce((s, q) => s + q.W, 0);
     const soilOn = g.soil === 'yes';
     const ftgW = (Lx, B) => g.gc * Lx * B * Df / 1e9, soilW = (Lx, B) => soilOn ? g.gs * Lx * B * dcov / 1e9 : 0;
-    const WrF = ftgW(Lr, Br), WrS = soilW(Lr, Br);
+    const nPadR = rear === 'pad' ? nR : 1, WrF = nPadR * ftgW(Lr, Br), WrS = nPadR * soilW(Lr, Br);
     const nPad = front === 'pad' ? nF : 1, WfF = nPad * ftgW(Lf, Bf), WfS = nPad * soilW(Lf, Bf);
     R.sec(L('Permanent actions G', 'น้ำหนักบรรทุกคงที่ G'), 'AS/NZS 1170.1');
     R.eq(L('Roof', 'หลังคา'), 'g_roof·A_r = ' + f(g.groof, 2) + ' × ' + f(Ar, 2), Gs[0].W, 'kN');
     R.eq(L('Walls', 'ผนัง'), 'g_wall·(A_w + n·A_s) = ' + f(g.gwall, 2) + ' × ' + f(Aw + As * g.nsw, 2), Gs[1].W + (g.nsw > 0 ? Gs[2].W : 0), 'kN');
     R.eq(L('Seat and posts', 'ที่นั่งและเสา'), 'w_seat·L_seat + Σ m·g·(h + cover)', Wsup - Gs[0].W - Gs[1].W - (g.nsw > 0 ? Gs[2].W : 0), 'kN');
     R.eq(L('Superstructure total', 'รวมโครงสร้างส่วนบน'), 'ΣG', Wsup, 'kN');
-    R.eq(L('Rear footing + soil', 'ฐานรากแนวหลัง + ดิน'), 'γ_c·L·B·D + γ_s·L·B·cover', f(WrF, 2) + ' + ' + f(WrS, 2), 'kN');
+    R.eq(L('Rear footing(s) + soil', 'ฐานรากแนวหลัง + ดิน'), (rear === 'pad' ? nR + ' × ' : '') + 'γ_c·L·B·D + γ_s·L·B·cover', f(WrF, 2) + ' + ' + f(WrS, 2), 'kN');
     R.eq(L('Front footing(s) + soil', 'ฐานรากแนวหน้า + ดิน'), (front === 'pad' ? nF + ' × ' : '') + 'γ_c·L·B·D + γ_s·L·B·cover', f(WfF, 2) + ' + ' + f(WfS, 2), 'kN');
     R.eq(L('Roof live load (non-trafficable)', 'น้ำหนักจรหลังคา (ไม่มีผู้ใช้เดิน)'), 'Q = q_roof·A_r = ' + f(g.qroof, 2) + ' × ' + f(Ar, 2), g.qroof * Ar, 'kN', 'AS/NZS 1170.1 Table 3.2');
 
@@ -162,7 +163,7 @@
         c.V.forEach(v => { const m = -v.F * arm(v.y) / 1000; if (m > 0) Md += m; });   // wind is never relied on to stabilise
         gAll.forEach(q => { Ms += 0.9 * q.W * arm(q.y) / 1000; });
       } else {
-        const Lmax = max(Lr, front === 'pad' ? (Ls - 2 * ep) + Lf : Lf);
+        const Lmax = max(rear === 'pad' ? (Ls - 2 * ep) + Lr : Lr, front === 'pad' ? (Ls - 2 * ep) + Lf : Lf);
         piv = Lmax / 2;
         c.H.forEach(h => { Md += abs(h.F) * (h.z - zb) / 1000; });
         c.V.forEach(v => { const m = -v.F * (piv - v.x) / 1000; if (m > 0) Md += m; });
@@ -278,8 +279,9 @@
       }
       return { worstRot, worstUp, worstBr };
     }
-    const fR = footing(L('Rear strip footing', 'ฐานรากแถบแนวหลัง'), 'fr', 'R', Br, Lr, nR, WrF, WrS, false);
-    const fF = front === 'pad' ? footing(L('Front pad footings', 'ฐานรากเดี่ยวแนวหน้า'), 'ff', 'F', Bf, Lf, nF, WfF / nF, WfS / nF, true)
+    const fR = rear === 'pad' ? footing(L('Rear individual footings', 'ฐานรากแยกแนวหลัง'), 'fr', 'R', Br, Lr, nR, WrF / nR, WrS / nR, true)
+      : footing(L('Rear strip footing', 'ฐานรากแถบแนวหลัง'), 'fr', 'R', Br, Lr, nR, WrF, WrS, false);
+    const fF = front === 'pad' ? footing(L('Front individual footings', 'ฐานรากแยกแนวหน้า'), 'ff', 'F', Bf, Lf, nF, WfF / nF, WfS / nF, true)
       : footing(L('Front strip footing', 'ฐานรากแถบแนวหน้า'), 'ff', 'F', Bf, Lf, nF, WfF, WfS, false);
 
     // ---------- strip reinforcement (longitudinal bending between posts) — AS 3600 §8.1
@@ -308,8 +310,18 @@
       R.eq(L('Minimum strength', 'กำลังต่ำสุด'), "M_uo ≥ (M_uo)_min = 1.2·M_cr,  M_cr = 0.6√f'c·B·D²/6", 1.2 * Mcr, 'kNm', '§8.1.6.1');
       add(idk + 'mmin', nm + L(': minimum strength 1.2M_cr', ': กำลังต่ำสุด 1.2M_cr'), 1.2 * Mcr, min(phiM(Ast), phiM(Asb)) / 0.85, 'kNm', R.chk('1.2·M_cr ≤ M_uo (' + L('lesser face', 'ด้านที่น้อยกว่า') + ')', 1.2 * Mcr, min(phiM(Ast), phiM(Asb)) / 0.85, 'kNm'), 'rc');
     }
-    stripBend(L('Rear strip', 'ฐานรากแถบหลัง'), 'fr', Br, Lr, sR, 'R', nR);
-    if (front === 'strip') stripBend(L('Front strip', 'ฐานรากแถบหน้า'), 'ff', Bf, Lf, sF, 'F', nF);
+    // individual footing: cantilever beyond the base plate under the worst bearing pressure (bottom bars each way)
+    function padBend(nm, idk, B, Lx, fo) {
+      const q = fo.worstBr && isFinite(fo.worstBr.qmax) ? fo.worstBr.qmax : 0, c = max(0, (B - g.Bpl) / 2), cl = max(0, (Lx - g.Bpl) / 2);
+      const dbar = g.db, d = Df - g.cover - dbar, fsy = 500, a2 = max(0.67, 0.85 - 0.0015 * g.fc);
+      const phiM = (As, b) => { const aa = As * fsy / (a2 * g.fc * b); return 0.85 * As * fsy * (d - aa / 2) / 1e6; };
+      const Mx = q * Lx / 1000 * Math.pow(c / 1000, 2) / 2, My = q * B / 1000 * Math.pow(cl / 1000, 2) / 2, As = g.nb * barA(dbar);
+      R.eq(nm + ' — ' + L('cantilever beyond the plate', 'ส่วนยื่นจากแผ่นฐาน'), 'M* = q_max·L·c²/2,  c = (B − B_pl)/2 = ' + f(c, 0) + ' mm; ' + L('other way c = ', 'อีกทิศ c = ') + f(cl, 0) + ' mm', f(Mx, 2) + ' / ' + f(My, 2), 'kNm');
+      R.eq(L('Bottom bars each way', 'เหล็กล่างแต่ละทิศ'), g.nb + 'N' + dbar + ', d = ' + f(d, 0) + ' mm → φM_u', f(phiM(As, Lx), 2) + ' / ' + f(phiM(As, B), 2), 'kNm');
+      add(idk + 'mp', nm + L(': bending (bottom bars)', ': การดัด (เหล็กล่าง)'), max(Mx, My), min(phiM(As, Lx), phiM(As, B)), 'kNm', R.chk('M* ≤ φM_u', max(Mx, My), min(phiM(As, Lx), phiM(As, B)), 'kNm'), 'rc');
+    }
+    if (rear === 'strip') stripBend(L('Rear strip', 'ฐานรากแถบหลัง'), 'fr', Br, Lr, sR, 'R', nR); else padBend(L('Rear individual footing', 'ฐานรากแยกหลัง'), 'fr', Br, Lr, fR);
+    if (front === 'strip') stripBend(L('Front strip', 'ฐานรากแถบหน้า'), 'ff', Bf, Lf, sF, 'F', nF); else padBend(L('Front individual footing', 'ฐานรากแยกหน้า'), 'ff', Bf, Lf, fF);
     R.txt(L('Detail: N12 ligatures at 300 mm maximum around the longitudinal bars, 50 mm cover to bars cast against blinding (65 mm against ground).', 'รายละเอียด: เหล็กปลอก N12 ระยะไม่เกิน 300 มม. ระยะหุ้ม 50 มม. เมื่อเทบนคอนกรีตหยาบ (65 มม. เมื่อเทบนดิน)'));
 
     // ---------- governing post actions (per post) for the post, base plate, bolts and weld
@@ -369,15 +381,16 @@
     const Bfoot = min(Br, Bf);                                                      // narrowest footing carrying posts
     const c1 = (Bfoot - sb) / 2;                                                    // edge distance across the footing
     const ccr = 1.5 * hef, scr = 3 * hef;
+    const c2 = min(rear === 'pad' ? (Lr - sb) / 2 : 1e9, front === 'pad' ? (Lf - sb) / 2 : 1e9);  // edge along the line (individual footings)
     const N0 = 8.9 * sq(fc) * Math.pow(hef, 1.5) / 1e3;                             // kN, k_cr,N = 8.9
     const nTb = nb === 4 ? 2 : 1;
     // projected area of the tension bolts (one row; across the footing the edge distance c1 applies on one side when the row is at the edge)
-    const AcN0 = scr * scr, wx = min(sb, scr) * (nTb - 1) + 2 * ccr, wy = min(c1, ccr) + min(sb + c1, ccr);
+    const AcN0 = scr * scr, wx = min(sb, scr) * (nTb - 1) + 2 * min(ccr, c2), wy = min(c1, ccr) + min(sb + c1, ccr);
     const AcN = min(AcN0 * nTb, wx * wy);
-    const psiS = min(1, 0.7 + 0.3 * c1 / ccr), psiRe = min(1, 0.5 + hef / 200);
+    const psiS = min(1, 0.7 + 0.3 * min(c1, c2) / ccr), psiRe = min(1, 0.5 + hef / 200);
     const NRkc = N0 * AcN / AcN0 * psiS * psiRe, NRdc = phic * NRkc;
     R.eq('N⁰_Rk,c', "k₁·√f'c·h_ef^1.5 = 8.9·√" + f(fc, 0) + '·' + hef + '^1.5', N0, 'kN', '§7.2.1.4');
-    R.eq('A_c,N / A⁰_c,N, ψ_s,N, ψ_re,N', L('edge distance c = ', 'ระยะขอบ c = ') + f(c1, 0) + ' mm, c_cr,N = 1.5h_ef = ' + f(ccr, 0) + ' mm', f(AcN / AcN0, 2) + ', ' + f(psiS, 3) + ', ' + f(psiRe, 2), '');
+    R.eq('A_c,N / A⁰_c,N, ψ_s,N, ψ_re,N', L('edge distance c = ', 'ระยะขอบ c = ') + f(c1, 0) + (c2 < 1e8 ? ' / ' + f(c2, 0) : '') + ' mm, c_cr,N = 1.5h_ef = ' + f(ccr, 0) + ' mm', f(AcN / AcN0, 2) + ', ' + f(psiS, 3) + ', ' + f(psiRe, 2), '');
     R.eq('φN_Rk,c', L('concrete cone, tension row (', 'กรวยคอนกรีต แถวรับแรงดึง (') + nTb + L(' bolts)', ' ตัว)'), NRdc, 'kN');
     const AF = NUT_AF[bt] || 1.5 * bd, Ah = 0.866 * AF * AF - PI * bd * bd / 4, NRdp = phic * 7.5 * Ah * fc / 1e3;
     R.eq('φN_Rk,p', L('pull-out of the nut head, k₂ = 7.5, A_h = 0.866·AF² − π·d²/4 = ', 'การถอนของหัวน็อต k₂ = 7.5, A_h = 0.866·AF² − π·d²/4 = ') + f(Ah, 0) + ' mm²', NRdp, 'kN', '§7.2.1.5');
@@ -435,7 +448,7 @@
     warn.splice(0, warn.length, ...warn.filter(Boolean));
     return {
       code: 'AS', elem: 'shelter', checks, rep: R, warn: [...new Set(warn)],
-      geo: { Ls, Dp, hF, hR, ofF, ofR, ep, nR, nF, xR, xF, dr, dcov, Df, Br, Bf, Lr, Lf, front, zwb: g.zwb, hw: g.hw, bs: g.bs, nsw: g.nsw, Lw: g.Lw, dc, Bp, tp, sb, nb, bolt: bt, hef, sw, slope },
+      geo: { Ls, Dp, hF, hR, ofF, ofR, ep, nR, nF, xR, xF, dr, dcov, Df, Br, Bf, Lr, Lf, front, rear, zwb: g.zwb, hw: g.hw, bs: g.bs, nsw: g.nsw, Lw: g.Lw, dc, Bp, tp, sb, nb, bolt: bt, hef, sw, slope },
       wind: { Vu, Vs, qu, qs, WU, WS }, stab, Gtot, Wsup, post, BA, fR, fF, bw, frame
     };
   }
@@ -447,20 +460,21 @@
     const dimH = (x1, x2, y, t) => `<path d="M${x1} ${y}H${x2}M${x1} ${y - 3}v6M${x2} ${y - 3}v6" class="sh-d"/><text x="${(x1 + x2) / 2}" y="${y - 3}" text-anchor="middle" class="sh-t">${t}</text>`;
     const dimV = (x, y1, y2, t) => `<path d="M${x} ${y1}V${y2}M${x - 3} ${y1}h6M${x - 3} ${y2}h6" class="sh-d"/><text x="${x - 4}" y="${(y1 + y2) / 2 + 3}" text-anchor="end" class="sh-t">${t}</text>`;
     // ---- plan
-    const Lmax = max(g.Ls, g.Lr, g.front === 'strip' ? g.Lf : g.Ls), k = (W - 64) / Lmax;
+    const Lmax = max(g.Ls, g.rear === 'strip' ? g.Lr : g.Ls, g.front === 'strip' ? g.Lf : g.Ls), k = (W - 64) / Lmax;
     const yTop = 22 + g.ofR * k, X = x => 12 + (x + Lmax / 2) * k, Y = y => yTop + (g.Dp - y) * k + max(g.Br / 2 - g.ofR, 0) * k;
     let s = `<text x="8" y="14" class="sh-h">${T('PLAN', 'ผัง')}</text>`;
     s += `<rect x="${X(-g.Ls / 2)}" y="${Y(g.Dp + g.ofR)}" width="${g.Ls * k}" height="${g.dr * k}" class="sh-r"/>`;
-    s += `<rect x="${X(-g.Lr / 2)}" y="${Y(g.Dp + g.Br / 2)}" width="${g.Lr * k}" height="${g.Br * k}" class="sh-f"/>`;
+    if (g.rear === 'strip') s += `<rect x="${X(-g.Lr / 2)}" y="${Y(g.Dp + g.Br / 2)}" width="${g.Lr * k}" height="${g.Br * k}" class="sh-f"/>`;
+    else g.xR.forEach(x => { s += `<rect x="${X(x - g.Lr / 2)}" y="${Y(g.Dp + g.Br / 2)}" width="${g.Lr * k}" height="${g.Br * k}" class="sh-f"/>`; });
     if (g.front === 'strip') s += `<rect x="${X(-g.Lf / 2)}" y="${Y(g.Bf / 2)}" width="${g.Lf * k}" height="${g.Bf * k}" class="sh-f"/>`;
     else g.xF.forEach(x => { s += `<rect x="${X(x - g.Lf / 2)}" y="${Y(g.Bf / 2)}" width="${g.Lf * k}" height="${g.Bf * k}" class="sh-f"/>`; });
     s += `<line x1="${X(-g.Lw / 2)}" y1="${Y(g.Dp) - 3.5}" x2="${X(g.Lw / 2)}" y2="${Y(g.Dp) - 3.5}" class="sh-w"/>`;
     const pw = max(4, g.dc * k);
     g.xR.forEach(x => { s += `<rect x="${X(x) - pw / 2}" y="${Y(g.Dp) - pw / 2}" width="${pw}" height="${pw}" class="sh-p"/>`; });
     g.xF.forEach(x => { s += `<rect x="${X(x) - pw / 2}" y="${Y(0) - pw / 2}" width="${pw}" height="${pw}" class="sh-p"/>`; });
-    s += `<text x="${X(-g.Ls / 2) + 4}" y="${Y(g.Dp) + g.Br / 2 * k + 11}" class="sh-t">${T('rear strip', 'แถบหลัง')} ${fmt(g.Lr)} × ${fmt(g.Br)} × ${fmt(g.Df)}</text>`;
+    s += `<text x="${X(-g.Ls / 2) + 4}" y="${Y(g.Dp) + g.Br / 2 * k + 11}" class="sh-t">${g.rear === 'strip' ? T('rear strip', 'แถบหลัง') : g.nR + ' ' + T('footings', 'ฐานราก')} ${fmt(g.Lr)} × ${fmt(g.Br)} × ${fmt(g.Df)}</text>`;
     const yF = Y(-(g.front === 'strip' ? g.Bf : g.Bf) / 2);
-    s += `<text x="${X(-g.Ls / 2) + 4}" y="${yF + 11}" class="sh-t">${g.front === 'strip' ? T('front strip', 'แถบหน้า') + ' ' + fmt(g.Lf) + ' × ' + fmt(g.Bf) : g.nF + ' ' + T('pads', 'ฐานเดี่ยว') + ' ' + fmt(g.Lf) + ' × ' + fmt(g.Bf)} × ${fmt(g.Df)}</text>`;
+    s += `<text x="${X(-g.Ls / 2) + 4}" y="${yF + 11}" class="sh-t">${g.front === 'strip' ? T('front strip', 'แถบหน้า') + ' ' + fmt(g.Lf) + ' × ' + fmt(g.Bf) : g.nF + ' ' + T('footings', 'ฐานราก') + ' ' + fmt(g.Lf) + ' × ' + fmt(g.Bf)} × ${fmt(g.Df)}</text>`;
     s += dimH(X(-g.Ls / 2), X(g.Ls / 2), yF + 26, fmt(g.Ls));
     s += `<text x="${X(Lmax / 2) + 5}" y="${Y(g.Dp) + 3}" class="sh-t">${T('REAR', 'หลัง')}</text><text x="${X(Lmax / 2) + 5}" y="${Y(0) + 3}" class="sh-t">${T('FRONT', 'หน้า')}</text>`;
     const planH = yF + 34;
