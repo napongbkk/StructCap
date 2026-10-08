@@ -33,7 +33,7 @@
   const cName = k => T(CODES[k].name[0], CODES[k].name[1]);
   const cStd = k => (S.ui === 'th' && CODES[k].stdTh) || CODES[k].std;
   const cSub = k => T(CODES[k].sub[0], CODES[k].sub[1]);
-  const stdFor = () => S.elem === 'sbarrier' ? 'Austroads AP-G108-25 §5.4 · AASHTO LRFD A13.3.2 · ' + (S.code === 'AS' ? 'AS 4100' : T('AISC 360 / EIT', 'AISC 360 / วสท.')) : S.elem === 'barrier' ? (S.code === 'AS' ? 'Austroads AP-G108-25 §5.3 · AS 5100.2 / AS 5100.5' : T('AASHTO LRFD Sec. 13 (DOH practice) · EIT / ACI 318-19', 'AASHTO LRFD หมวด 13 (แนวทางกรมทางหลวง) · วสท. / ACI 318-19')) : S.elem === 'gantry' ? 'AS 4100:2020 · AS/NZS 1170.2 · AS/NZS 1163' : S.elem === 'stm3d' ? 'AS 3600:2018 Section 7 · Strut-and-tie' : S.elem === 'lwall' ? 'AS 4678:2002 · AS/NZS 1170.1 · AS 1170.4' : S.code === 'AS' ? 'AS 3600:2018' : cStd(S.code);
+  const stdFor = () => S.elem === 'shelter' ? 'AS/NZS 1170.0 · AS/NZS 1170.2:2021 · AS 4100 · AS 5216 · AS 3600' : S.elem === 'sbarrier' ? 'Austroads AP-G108-25 §5.4 · AASHTO LRFD A13.3.2 · ' + (S.code === 'AS' ? 'AS 4100' : T('AISC 360 / EIT', 'AISC 360 / วสท.')) : S.elem === 'barrier' ? (S.code === 'AS' ? 'Austroads AP-G108-25 §5.3 · AS 5100.2 / AS 5100.5' : T('AASHTO LRFD Sec. 13 (DOH practice) · EIT / ACI 318-19', 'AASHTO LRFD หมวด 13 (แนวทางกรมทางหลวง) · วสท. / ACI 318-19')) : S.elem === 'gantry' ? 'AS 4100:2020 · AS/NZS 1170.2 · AS/NZS 1163' : S.elem === 'stm3d' ? 'AS 3600:2018 Section 7 · Strut-and-tie' : S.elem === 'lwall' ? 'AS 4678:2002 · AS/NZS 1170.1 · AS 1170.4' : S.code === 'AS' ? 'AS 3600:2018' : cStd(S.code);
   const ELEMS = {
     beam: { en: 'RC Beam', th: 'คาน คสล.', den: 'Bending about both axes, shear, torsion, crack width and service stresses.', dth: 'ดัดสองแกน แรงเฉือน แรงบิด ความกว้างรอยร้าว และหน่วยแรงใช้งาน', free: true },
     column: { en: 'RC Column', th: 'เสา คสล.', den: 'N–M interaction for both axes plus the full biaxial N–Mx–My contour.', dth: 'แผนภาพปฏิสัมพันธ์ N–M ทั้งสองแกน และ N–Mx–My สองแกน', free: false },
@@ -42,6 +42,7 @@
     lwall: { en: 'Limestone Block Wall', th: 'กำแพงกันดินก้อนหินปูน', den: 'Gravity wall of stacked limestone blocks: overturning, sliding and shear between blocks at every course, bearing; handrail, surcharge, back slope and earthquake.', dth: 'กำแพงกันดินแบบน้ำหนักจากก้อนหินปูนวางซ้อน: การพลิกคว่ำ การเลื่อนไถล และแรงเฉือนระหว่างก้อนทุกชั้น แรงแบกทาน พร้อมแรงราวกันตก น้ำหนักแผ่ ลาดด้านหลัง และแผ่นดินไหว', free: false, codes: ['AS'] },
     barrier: { en: 'Bridge Barrier', th: 'ราวกันตกสะพาน คสล.', den: 'Concrete traffic barrier to Department of Highways practice: AASHTO crash test levels, yield-line resistance, deck interface shear, deck overhang and bar anchorage.', dth: 'ราวกันตกคอนกรีตตามแนวทางกรมทางหลวง: ระดับการทดสอบการชนตาม AASHTO กำลังตามทฤษฎีเส้นคราก แรงเฉือนที่รอยต่อกับพื้น พื้นยื่น และการฝังยึดเหล็ก', free: false, codes: ['TH', 'AS'] },
     sbarrier: { en: 'Steel Post-and-Rail Barrier', th: 'ราวกันตกเหล็ก (เสาและราว)', den: 'Steel bridge railing by the plastic-mechanism method (Austroads AP-G108-25 §5.4, AASHTO A13.3.2): rail and post capacities, 1–N span failure modes, effective height, geometry, post base and deck actions.', dth: 'ราวกันตกเหล็กบนสะพานด้วยวิธีกลไกพลาสติก (Austroads AP-G108-25 §5.4, AASHTO A13.3.2): กำลังราวและเสา รูปแบบการวิบัติ 1–N ช่วง ความสูงประสิทธิผล รูปทรง ฐานเสา และแรงบนพื้นยื่น', free: false, codes: ['TH', 'AS'] },
+    shelter: { en: 'Bus Shelter Footing', th: 'ฐานรากที่พักผู้โดยสารรถประจำทาง', den: 'Concrete strip footings for a steel bus shelter: wind to AS/NZS 1170.2, overall stability, sliding, uplift, bearing, hold-down bolts, base plate and weld.', dth: 'ฐานรากแถบคอนกรีตของที่พักผู้โดยสารโครงเหล็ก: แรงลมตาม AS/NZS 1170.2 เสถียรภาพ การเลื่อน แรงยก แรงแบกทาน สลักยึด แผ่นฐาน และรอยเชื่อม', free: false, codes: ['AS'], steel: true },
     gantry: { en: 'Sign Gantry', th: 'โครงป้ายจราจรยื่น', den: 'Steel cantilever sign structure: CHS / SHS / RHS members, welded or bolted arm, base plate, fatigue.', dth: 'โครงเหล็กป้ายจราจรแบบคานยื่น: หน้าตัด CHS / SHS / RHS รอยต่อเชื่อมหรือสลัก แผ่นฐาน และความล้า', free: false, codes: ['AS'], steel: true }
   };
   const UNITS = {
@@ -245,6 +246,50 @@
     F('cA', 'fat', 'Category: bolts in tension', 'หมวด: สลักรับแรงดึง', 'none', { type: 'sel', opts: CAT_OPTS, when: yes('fon') }),
     F('limH', 'lim', 'Horizontal tip deflection limit L/…', 'ขีดจำกัดการโก่งแนวนอน L/…', 'none'), F('limV', 'lim', 'Vertical tip deflection limit L/…', 'ขีดจำกัดการโก่งแนวดิ่ง L/…', 'none')
   ];
+  const SHM = window.SHELTER;
+  const SHS_OPTS = GA.sizeOptions('SHS').filter(o => +o[0].split('x')[0] <= 200).map(([k, l]) => [k, l, l]);
+  const isPad = v => v.ftype === 'pad', isStrip = v => v.ftype !== 'pad', userV = v => v.region === 'user';
+  SCHEMA.shelter = [
+    F('L', 'shg', 'Shelter length L', 'ความยาวที่พัก L', 'lenm'), F('Dp', 'shg', 'Front to rear post line spacing D_p', 'ระยะแนวเสาหน้า–หลัง D_p', 'lenm'),
+    F('hF', 'shg', 'Roof height at front posts', 'ความสูงหลังคาที่เสาหน้า', 'lenm'), F('hR', 'shg', 'Roof height at rear posts', 'ความสูงหลังคาที่เสาหลัง', 'lenm'),
+    F('ofF', 'shg', 'Roof overhang in front of front posts', 'หลังคายื่นหน้าแนวเสาหน้า', 'mm'), F('ofR', 'shg', 'Roof overhang behind rear posts', 'หลังคายื่นหลังแนวเสาหลัง', 'mm'),
+    F('ep', 'shg', 'End posts from shelter ends', 'ระยะเสาริมจากปลายที่พัก', 'mm'),
+    F('nR', 'shg', 'Rear posts (back wall line)', 'จำนวนเสาแนวหลัง (แนวผนัง)', 'none', { type: 'int' }), F('nF', 'shg', 'Front posts', 'จำนวนเสาแนวหน้า', 'none', { type: 'int' }),
+    F('Lw', 'shw', 'Back wall length', 'ความยาวผนังหลัง', 'lenm'), F('hw', 'shw', 'Wall panel height', 'ความสูงแผงผนัง', 'mm'), F('zwb', 'shw', 'Wall bottom above ground', 'ขอบล่างผนังเหนือดิน', 'mm'),
+    F('bs', 'shw', 'Side wall width (each end)', 'ความกว้างผนังข้าง (แต่ละด้าน)', 'lenm'), F('nsw', 'shw', 'Number of side walls', 'จำนวนผนังข้าง', 'none', { type: 'int' }),
+    F('groof', 'shw', 'Roof self-weight', 'น้ำหนักหลังคา', 'kpa'), F('gwall', 'shw', 'Wall self-weight (battens + rails)', 'น้ำหนักผนัง (ระแนง + คาน)', 'kpa'),
+    F('wseat', 'shw', 'Seat self-weight', 'น้ำหนักที่นั่ง', 'kNm1'), F('Lseat', 'shw', 'Seat length', 'ความยาวที่นั่ง', 'lenm'), F('qroof', 'shw', 'Roof live load Q (non-trafficable)', 'น้ำหนักจรหลังคา Q', 'kpa'),
+    F('post', 'shp', 'Post section (AS/NZS 1163)', 'หน้าตัดเสา (AS/NZS 1163)', 'none', { type: 'sel', opts: SHS_OPTS }), F('pgrade', 'shp', 'Grade', 'เกรด', 'none', { type: 'sel', opts: [['C350L0', 'C350L0', 'C350L0'], ['C450L0', 'C450L0', 'C450L0']] }),
+    F('path', 'shp', 'Roof-to-post connections', 'รอยต่อหลังคา-เสา', 'none', { type: 'sel', opts: [['cant', 'Pinned — posts act as cantilevers (conservative)', 'ข้อหมุน — เสาเป็นคานยื่น (ปลอดภัย)'], ['frame', 'Moment connections — portal frame', 'รับโมเมนต์ — โครงข้อแข็ง']] }),
+    F('dlim', 'shp', 'Sway limit h/…', 'ขีดจำกัดการเซ h/…', 'none'),
+    F('region', 'wind', 'Wind region', 'เขตลม', 'none', { type: 'sel', re: true, opts: [['A', 'A0–A5 (non-cyclonic)', 'A0–A5 (ไม่มีพายุไซโคลน)'], ['W', 'W', 'W'], ['B1', 'B1', 'B1'], ['C', 'C (cyclonic)', 'C (ไซโคลน)'], ['D', 'D (cyclonic)', 'D (ไซโคลน)'], ['user', 'Enter V_R', 'กำหนด V_R']] }),
+    F('Ru', 'wind', 'ULS annual exceedance 1/R', 'ความน่าจะเป็น ULS 1/R', 'none', { type: 'sel', opts: [[100, '1/100', '1/100'], [250, '1/250', '1/250'], [500, '1/500 (IL2, 50 years)', '1/500 (IL2, 50 ปี)'], [1000, '1/1000', '1/1000']], when: v => !userV(v) }),
+    F('Rs', 'wind', 'SLS annual exceedance 1/R', 'ความน่าจะเป็น SLS 1/R', 'none', { type: 'sel', opts: [[20, '1/20', '1/20'], [25, '1/25', '1/25']], when: v => !userV(v) }),
+    F('VRu', 'wind', 'Regional wind speed V_R (ULS)', 'ความเร็วลมภูมิภาค V_R (ULS)', 'ms', { when: userV }), F('VRs', 'wind', 'Regional wind speed V_R (SLS)', 'ความเร็วลมภูมิภาค V_R (SLS)', 'ms', { when: userV }),
+    F('Md', 'wind', 'Direction multiplier M_d', 'ตัวคูณทิศทาง M_d', 'none'), F('tc', 'wind', 'Terrain category', 'ประเภทภูมิประเทศ', 'none', { type: 'sel', opts: [[1, 'TC1 (M_z = 0.99)', 'TC1 (M_z = 0.99)'], [2, 'TC2 (0.91)', 'TC2 (0.91)'], [2.5, 'TC2.5 (0.87)', 'TC2.5 (0.87)'], [3, 'TC3 (0.83)', 'TC3 (0.83)'], [4, 'TC4 (0.75)', 'TC4 (0.75)']] }),
+    F('Ms', 'wind', 'Shielding multiplier M_s', 'ตัวคูณการบัง M_s', 'none'), F('Mt', 'wind', 'Topographic multiplier M_t', 'ตัวคูณภูมิประเทศ M_t', 'none'),
+    F('cpw', 'wind', 'Back wall C_p,n', 'C_p,n ผนังหลัง', 'none'), F('cps', 'wind', 'Side wall C_p,n', 'C_p,n ผนังข้าง', 'none'), F('Kp', 'wind', 'Wall porosity factor K_p', 'ตัวคูณความพรุนผนัง K_p', 'none'),
+    F('r1w', 'wind', 'Roof C_p,n, front wind — windward half', 'C_p,n หลังคา ลมหน้า — ครึ่งต้นลม', 'none'), F('r1l', 'wind', 'Roof C_p,n, front wind — leeward half', 'C_p,n หลังคา ลมหน้า — ครึ่งท้ายลม', 'none'),
+    F('r2w', 'wind', 'Roof C_p,n, rear wind — windward half', 'C_p,n หลังคา ลมหลัง — ครึ่งต้นลม', 'none'), F('r2l', 'wind', 'Roof C_p,n, rear wind — leeward half', 'C_p,n หลังคา ลมหลัง — ครึ่งท้ายลม', 'none'),
+    F('r3', 'wind', 'Roof C_p,n, wind along the shelter', 'C_p,n หลังคา ลมตามยาว', 'none'), F('rd', 'wind', 'Roof C_p,n, downward', 'C_p,n หลังคา กดลง', 'none'),
+    F('dcov', 'shf', 'Top of footing below ground (base plate level)', 'ผิวบนฐานรากใต้ดิน (ระดับแผ่นฐาน)', 'mm'), F('Df', 'shf', 'Footing depth D', 'ความลึกฐานราก D', 'mm'),
+    F('Lsr', 'shf', 'Rear strip length', 'ความยาวแถบหลัง', 'lenm'), F('Br', 'shf', 'Rear strip width', 'ความกว้างแถบหลัง', 'mm'),
+    F('ftype', 'shf', 'Front footing', 'ฐานรากแนวหน้า', 'none', { type: 'sel', re: true, opts: [['strip', 'Strip footing', 'ฐานรากแถบ'], ['pad', 'Pad under each post', 'ฐานเดี่ยวใต้เสา']] }),
+    F('Lsf', 'shf', 'Front strip length', 'ความยาวแถบหน้า', 'lenm', { when: isStrip }), F('Bf', 'shf', 'Front strip width', 'ความกว้างแถบหน้า', 'mm', { when: isStrip }),
+    F('Lp', 'shf', 'Pad length (along the shelter)', 'ความยาวฐานเดี่ยว (ตามแนวที่พัก)', 'mm', { when: isPad }), F('Bp', 'shf', 'Pad width', 'ความกว้างฐานเดี่ยว', 'mm', { when: isPad }),
+    F('fc', 'shf', "Concrete f'c", "f'c คอนกรีต", 'stress'), F('gc', 'shf', 'Concrete density', 'หน่วยน้ำหนักคอนกรีต', 'density'),
+    F('db', 'shf', 'Longitudinal bar size N', 'ขนาดเหล็กยืน N', 'none', { type: 'sel', opts: [[12, 'N12', 'N12'], [16, 'N16', 'N16'], [20, 'N20', 'N20']] }),
+    F('nt', 'shf', 'Top bars (number)', 'จำนวนเหล็กบน', 'none', { type: 'int' }), F('nb', 'shf', 'Bottom bars (number)', 'จำนวนเหล็กล่าง', 'none', { type: 'int' }),
+    F('dl', 'shf', 'Ligature diameter', 'ขนาดเหล็กปลอก', 'mm'), F('cover', 'shf', 'Cover', 'ระยะหุ้ม', 'mm'),
+    F('gs', 'fnd', 'Soil unit weight', 'หน่วยน้ำหนักดิน', 'density'), F('soil', 'fnd', 'Count soil over the footings', 'นับน้ำหนักดินบนฐานราก', 'none', { type: 'sel', opts: YN }),
+    F('mu', 'fnd', 'Base friction μ = tan δ (design)', 'แรงเสียดทานที่ฐาน μ = tan δ (ออกแบบ)', 'none'),
+    F('qult', 'fnd', 'Design bearing capacity φ_g·R_ug (ULS)', 'กำลังแบกทานออกแบบ φ_g·R_ug (ULS)', 'kpa'), F('qa', 'fnd', 'Allowable bearing pressure (SLS, 0 = skip)', 'แรงแบกทานยอมให้ (SLS, 0 = ไม่ตรวจ)', 'kpa'),
+    F('nbolt', 'base', 'Hold-down bolts per post', 'สลักยึดต่อเสา', 'none', { type: 'sel', opts: [[4, '4 (one each corner)', '4 (มุมละตัว)'], [2, '2 (on the post axis)', '2 (แนวแกนเสา)']] }),
+    F('bolt', 'base', 'Bolt size', 'ขนาดสลัก', 'none', { type: 'sel', opts: ['M12', 'M16', 'M20', 'M24'].map(b => [b, b, b]) }), F('bgrade', 'base', 'Bolt grade', 'เกรดสลัก', 'none', { type: 'sel', opts: BGR_OPTS }),
+    F('sbolt', 'base', 'Bolt gauge (centre to centre)', 'ระยะสลัก (ศูนย์ถึงศูนย์)', 'mm'), F('hef', 'base', 'Embedment h_ef (cast-in, headed)', 'ความลึกฝัง h_ef (หัวฝังในคอนกรีต)', 'mm'),
+    F('Bpl', 'base', 'Base plate size (square)', 'ขนาดแผ่นฐาน (จัตุรัส)', 'mm'), F('tpl', 'base', 'Base plate thickness', 'ความหนาแผ่นฐาน', 'mm'), F('fyp', 'base', 'Plate yield stress f_y', 'กำลังครากแผ่น f_y', 'stress'),
+    F('sw', 'base', 'Post-to-plate fillet weld size', 'ขนาดรอยเชื่อมพอกเสา-แผ่น', 'mm')
+  ];
   const GROUPS = {
     geo: ['Geometry', 'รูปทรงหน้าตัด'], mat: ['Materials', 'วัสดุ'], coef: ['Code coefficients', 'ค่าสัมประสิทธิ์'], link: ['Shear links', 'เหล็กปลอก'],
     bars: ['Reinforcement', 'เหล็กเสริม'], uls: ['Design actions — ULS', 'แรงประลัย (ULS)'], sls: ['Service actions — SLS', 'แรงใช้งาน (SLS)'], piles: ['Pile group', 'กลุ่มเสาเข็ม'],
@@ -252,7 +297,7 @@
     wall: ['Wall and blocks', 'กำแพงและก้อนหิน'], wat: ['Groundwater', 'น้ำใต้ดิน'], top: ['Top of wall and back slope', 'ด้านบนกำแพงและลาดด้านหลัง'], soil: ['Retained soil', 'ดินถม'], fnd: ['Foundation', 'ดินฐานราก'], joint: ['Bed joints between blocks', 'รอยต่อระหว่างชั้นก้อนหิน'], lds: ['Loads', 'น้ำหนักบรรทุก'], fac: ['Factors (AS 4678)', 'ตัวคูณ (AS 4678)'],
     plvl: ['Performance level and design loads', 'ระดับสมรรถนะและแรงออกแบบ'], rails: ['Rails', 'ราว'], post: ['Post', 'เสา'],
     tl: ['Test level — AASHTO LRFD 13 (DOH)', 'ระดับการทดสอบ — AASHTO LRFD 13 (กรมทางหลวง)'], deck: ['Deck overhang and interface', 'พื้นยื่นและรอยต่อ'], comp: ['Wall flexural resistance', 'กำลังดัดของกำแพง'],
-    conn: ['Arm-to-column connection', 'รอยต่อคาน-เสา'], base: ['Base plate and anchor bolts', 'แผ่นฐานและสลักยึด'], fat: ['Fatigue (AS 4100 §11)', 'ความล้า (AS 4100 §11)'], lim: ['Serviceability limits', 'ขีดจำกัดสภาวะใช้งาน']
+    conn: ['Arm-to-column connection', 'รอยต่อคาน-เสา'], shg: ['Shelter geometry', 'รูปทรงที่พัก'], shw: ['Walls, roof and dead loads', 'ผนัง หลังคา และน้ำหนักคงที่'], shp: ['Posts', 'เสา'], shf: ['Concrete footings', 'ฐานรากคอนกรีต'], base: ['Base plate and anchor bolts', 'แผ่นฐานและสลักยึด'], fat: ['Fatigue (AS 4100 §11)', 'ความล้า (AS 4100 §11)'], lim: ['Serviceability limits', 'ขีดจำกัดสภาวะใช้งาน']
   };
   const DEF = {
     beam: {
@@ -287,6 +332,11 @@
     fon: 'yes', IF: 1.0, phiF: 0.7, PNW: 250, Vm: 5.0, tg: 'yes', PTG: 900, xTG: 4.5, LTG: 3700, dsh: 300, ga: 'no', PG: 1000,
     cB: 'auto', cS: 'auto', cR: 'auto', cA: 'auto', limH: 100, limV: 150 } };
 
+  DEF.shelter = { AS: { L: 8.0, Dp: 1.8, hF: 2.512, hR: 2.4, ofF: 150, ofR: 300, ep: 365, nR: 5, nF: 2, Lw: 7.3, hw: 1952, zwb: 250, bs: 1.6, nsw: 2, groof: 0.25, gwall: 0.2, wseat: 0.25, Lseat: 3.82, qroof: 0.25,
+    post: '100x100x6', pgrade: 'C350L0', path: 'cant', dlim: 100, region: 'A', Ru: 500, Rs: 25, VRu: 45, VRs: 37, Md: 1.0, tc: 2, Ms: 1.0, Mt: 1.0, cpw: 1.3, cps: 1.3, Kp: 1.0, r1w: -1.3, r1l: -0.8, r2w: -0.8, r2l: -0.5, r3: -0.6, rd: 0.5,
+    dcov: 310, Df: 400, Lsr: 7.9, Br: 900, ftype: 'strip', Lsf: 7.9, Bf: 600, Lp: 800, Bp: 800, fc: 25, gc: 24, db: 16, nt: 4, nb: 4, dl: 10, cover: 50, gs: 18, soil: 'yes', mu: 0.4, qult: 150, qa: 100,
+    nbolt: 4, bolt: 'M16', bgrade: '4.6', sbolt: 170, hef: 250, Bpl: 250, tpl: 16, fyp: 250, sw: 6 } };
+
   // ------------------------------------------------------------------ session
   const sess = ss.get('srcSession'); if (sess) Object.assign(S, { role: sess.role, user: sess.user });
   const isPro = () => S.role === 'pro' || S.role === 'admin' || !!S.promo;
@@ -294,6 +344,7 @@
   const FEATS = [
     ['Structural design', 'ออกแบบโครงสร้าง', [['beam', 'RC Beam', 'คาน คสล.'], ['column', 'RC Column', 'เสา คสล.'], ['pilecap', 'RC Pile Cap', 'ฐานรากบนเสาเข็ม'], ['stm3d', 'Pile Cap 3D STM', 'ฐานรากเข็ม STM 3 มิติ'], ['lwall', 'Limestone Block Wall', 'กำแพงกันดินก้อนหินปูน'], ['barrier', 'Bridge Barrier (Thai)', 'ราวกันตกสะพาน (ไทย)'], ['sbarrier', 'Steel Post-and-Rail Barrier', 'ราวกันตกเหล็ก'], ['gantry', 'Sign Gantry', 'โครงป้ายจราจรยื่น']]],
     ['Structural analysis', 'วิเคราะห์โครงสร้าง', [['analysis', '3D frame & truss', 'โครงข้อแข็งและโครงถัก 3 มิติ'], ['building', 'Building design', 'อาคาร'], ['bridge', 'Bridge', 'สะพาน'], ['conn', 'Steel connections', 'รอยต่อเหล็ก']]],
+    ['Special design', 'งานออกแบบพิเศษ', [['shelter', 'Bus shelter footing', 'ฐานรากที่พักผู้โดยสาร']]],
     ['Timber bridges', 'สะพานไม้', [['timber', 'Timber bridge assessment', 'ประเมินสะพานไม้'], ['tdraw', 'Repair detail drawings', 'แบบรายละเอียดการซ่อม']]],
     ['Output', 'ผลลัพธ์', [['pdf', 'PDF export (reports and drawings)', 'ส่งออก PDF (รายงานและแบบ)'], ['dxf', 'AutoCAD DXF export', 'ส่งออก DXF สำหรับ AutoCAD']]]
   ];
@@ -906,8 +957,12 @@
         <div class="menu-hd"><span class="menu-n">3</span><div><p class="eyebrow">${T('Timber bridges', 'สะพานไม้')}</p><h2>${T('Timber bridge load rating and repair drawings', 'ประเมินกำลังรับน้ำหนักสะพานไม้และแบบซ่อมแซม')}</h2><p class="muted">${T('Rate existing timber bridges by the working-stress method, then place standard repair details on a drawing sheet, edit them and export to AutoCAD.', 'ประเมินสะพานไม้เดิมด้วยวิธีหน่วยแรงใช้งาน แล้ววางรายละเอียดซ่อมแซมมาตรฐานบนแผ่นงาน แก้ไข และส่งออกเป็นไฟล์ AutoCAD')}</p></div></div>
         <div class="an-apps an-apps2">${[
           ['timber', timberIcon(), T('Timber bridge assessment', 'ประเมินสะพานไม้'), T('Spans, stringers with defects, decks, halfcaps, piles and wing walls. Grillage analysis, load rating for standard and heavy vehicles, posting limits and repair suggestions.', 'ช่วง คานไม้พร้อมความบกพร่อง พื้น คานหัวเสา เสาเข็ม และกำแพงปีก วิเคราะห์กริลเลจ ประเมินกำลังรับน้ำหนักรถมาตรฐานและรถหนัก ป้ายจำกัดน้ำหนัก และแนะนำการซ่อม'), ['AS 1720.1 WSD', 'T44 · M1600 · HLP', T('Grillage', 'กริลเลจ'), T('Rating factors', 'ค่าประเมิน'), T('Load limits', 'ป้ายจำกัด')]],
-          ['tdraw', tdrawIcon(), T('Repair detail drawings', 'แบบรายละเอียดการซ่อม'), T('A library of 50 parametric timber bridge repair details from the standard drawings and the repair manual. Place them on A1–A4 sheets, edit with CAD tools and export DXF for AutoCAD, or SVG and PDF.', 'คลังรายละเอียดการซ่อมสะพานไม้แบบพารามิเตอร์ 50 แบบ จากแบบมาตรฐานและคู่มือการซ่อม วางบนแผ่นงาน A1–A4 แก้ไขด้วยเครื่องมือ CAD และส่งออก DXF สำหรับ AutoCAD หรือ SVG และ PDF'), ['DXF · SVG · PDF', T('Snap · layers', 'สแนป · เลเยอร์'), T('Import DXF', 'นำเข้า DXF'), T('50 details', '50 แบบ')]]
+          ['tdraw', tdrawIcon(), T('Repair detail drawings', 'แบบรายละเอียดการซ่อม'), T('A library of 152 parametric timber bridge repair details from the standard drawings and the repair manual. Place them on A1–A4 sheets, edit with CAD tools and export DXF for AutoCAD, or SVG and PDF.', 'คลังรายละเอียดการซ่อมสะพานไม้แบบพารามิเตอร์ 152 แบบ จากแบบมาตรฐานและคู่มือการซ่อม วางบนแผ่นงาน A1–A4 แก้ไขด้วยเครื่องมือ CAD และส่งออก DXF สำหรับ AutoCAD หรือ SVG และ PDF'), ['DXF · SVG · PDF', T('Snap · layers', 'สแนป · เลเยอร์'), T('Import DXF', 'นำเข้า DXF'), T('152 details', '152 แบบ')]]
         ].map(appCard).join('')}</div>
+      </section>
+      <section class="menu-box box-special">
+        <div class="menu-hd"><span class="menu-n">4</span><div><p class="eyebrow">${T('Special design', 'งานออกแบบพิเศษ')}</p><h2>${T('Street furniture and small structures', 'อุปกรณ์ริมทางและโครงสร้างขนาดเล็ก')}</h2><p class="muted">${T('Complete designs of particular structures to Australian Standards, from wind loads to the foundations and the connections.', 'ออกแบบโครงสร้างเฉพาะครบชุดตามมาตรฐานออสเตรเลีย ตั้งแต่แรงลมถึงฐานรากและรอยต่อ')}</p></div></div>
+        <div class="an-apps an-apps2">${[['shelter', shelterIcon(), T('Bus shelter footing', 'ฐานรากที่พักผู้โดยสาร'), T('Steel bus shelter on concrete strip footings: wind to AS/NZS 1170.2:2021, overall stability, sliding and uplift, bearing, footing reinforcement, hold-down bolts and anchorage (AS 5216), base plate and weld (AS 4100).', 'ที่พักผู้โดยสารโครงเหล็กบนฐานรากแถบคอนกรีต: แรงลมตาม AS/NZS 1170.2:2021 เสถียรภาพ การเลื่อนและแรงยก แรงแบกทาน เหล็กเสริมฐานราก สลักยึดและการยึดในคอนกรีต (AS 5216) แผ่นฐานและรอยเชื่อม (AS 4100)'), ['AS/NZS 1170.2', 'AS 4100', 'AS 5216', T('Full report', 'รายการคำนวณ')]]].map(([v, ic, t, d, ch]) => { const off = isOff(v), locked = off || !isPro(); return `<button class="an-appc ${off ? 'feat-off' : ''}" data-act="elem" data-e="${v}" data-code="AS">${ic}<b>${t} <span class="pill ${S.promo ? 'free' : 'pro'}">${S.promo ? T('Pro · free now', 'Pro · ฟรี') : 'Pro'}</span>${offPill(v)}</b><span class="muted small">${d}</span><span class="an-chips">${ch.map(c => `<i>${c}</i>`).join('')}</span><span class="pick-go">${off ? T('Unavailable for now', 'ปิดใช้งานชั่วคราว') : locked ? T('Sign in with Pro to unlock', 'เข้าสู่ระบบ Pro เพื่อใช้งาน') : T('Open →', 'เปิด →')}</span></button>`; }).join('')}</div>
       </section>
     </main>`;
   }
@@ -976,6 +1031,16 @@
   function timberIcon() {
     return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M4 66h112" class="ln"/><path d="M6 24h108" class="ln"/><rect x="6" y="18" width="108" height="6" class="ln-thin"/>${[10, 22, 34, 46, 58, 70, 82, 94, 106].map(x => `<path d="M${x} 18v6" class="ln-thin"/>`).join('')}<ellipse cx="20" cy="29" rx="6" ry="5" class="ln"/><ellipse cx="60" cy="29" rx="6" ry="5" class="ln"/><ellipse cx="100" cy="29" rx="6" ry="5" class="ln"/><path d="M12 34h96" class="ln"/>${[30, 50, 70, 90].map(x => `<path d="M${x} 34v32" class="ln"/>`).join('')}<path d="M30 46l20 12M50 46l-20 12M70 46l20 12M90 46l-20 12" class="ln-thin"/><g class="ln-acc"><path d="M44 4v10M41 10l3 4 3-4M76 4v10M73 10l3 4 3-4"/></g></svg>`;
   }
+  function shelterIcon() {
+    return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M4 56h112" class="ln"/><path d="M14 18l92-6" class="ln"/><path d="M24 18v38M96 13v43" class="ln"/><path d="M98 20v30" class="ln-thin"/><path d="M30 40h40M30 44h40" class="ln-thin"/><rect x="16" y="56" width="16" height="10" class="ln-acc"/><rect x="86" y="56" width="22" height="10" class="ln-acc"/><g class="ln-acc"><path d="M2 32h12M10 29l4 3-4 3"/></g></svg>`;
+  }
+  // bus shelter: one row per wind case — overturning, sliding and uplift at a glance
+  function shelterCases(r, rep) {
+    const nm = { W1: T('Wind on the open front', 'ลมเข้าด้านหน้า'), W2: T('Wind on the back wall', 'ลมเข้าด้านหลัง'), W3: T('Wind along the shelter', 'ลมตามแนวยาว') };
+    const row = k => { const st = r.stab[k], sl = r.checks.find(c => c.id === 'sl' + k), up = r.checks.find(c => c.id === 'up' + k), u1 = st.Md / st.Ms; return `<tr><td><b>${k}</b> ${nm[k]}</td><td class="num mono">${f(st.Md, 1)} / ${f(st.Ms, 1)}</td><td class="num mono ${urClass(u1)}">${f(u1, 2)}</td><td class="num mono">${sl ? f(sl.Ed, 1) + ' / ' + f(sl.Rd, 1) : '—'}</td><td class="num mono ${sl ? urClass(sl.ur) : ''}">${sl ? f(sl.ur, 2) : '—'}</td><td class="num mono">${up ? f(up.Ed, 1) : '0'}</td></tr>`; };
+    const t = `<div class="tbl-wrap"><table class="chk"><thead><tr><th>${T('Wind case (ULS)', 'กรณีลม (ULS)')}</th><th class="num">M_dst / M_stb (kNm)</th><th>UR</th><th class="num">H* / μN (kN)</th><th>UR</th><th class="num">${T('Net uplift (kN)', 'แรงยกสุทธิ (kN)')}</th></tr></thead><tbody>${['W1', 'W2', 'W3'].map(row).join('')}</tbody></table></div><p class="hint">${T('Overall rigid-body stability on 0.9G; footings and soil over them included. Footing-by-footing rotation, bearing, bolts and welds are in the design checks.', 'เสถียรภาพแบบวัตถุแข็งเกร็งด้วย 0.9G รวมฐานรากและดินบนฐานราก การหมุนของแต่ละฐานราก แรงแบกทาน สลัก และรอยเชื่อม อยู่ในผลการตรวจสอบ')}</p>`;
+    return rep ? t : `<div class="card"><h2 class="card-h">${T('Overall stability by wind direction', 'เสถียรภาพโดยรวมตามทิศทางลม')}</h2>${t}</div>`;
+  }
   function tdrawIcon() {
     return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><rect x="6" y="6" width="108" height="60" class="ln"/><rect x="82" y="52" width="32" height="14" class="ln-thin"/><path d="M86 57h20M86 61h14" class="ln-thin"/><path d="M18 18h40M18 18v34M58 18v34M18 52h40" class="ln"/><path d="M30 18v34M46 18v34" class="ln-dash"/><circle cx="38" cy="28" r="2.5" class="ln-acc"/><circle cx="38" cy="42" r="2.5" class="ln-acc"/><path d="M64 26h12M76 26l-3-2M76 26l-3 2" class="ln-thin"/><path d="M70 36l28-14 6 6-28 14z" class="ln-acc"/><text x="66" y="48" font-size="8" class="ln-thin" style="stroke:none;fill:currentColor">DXF</text></svg>`;
   }
@@ -1019,7 +1084,7 @@
   }
   function inputsHTML() {
     const v = inp(), sch = SCHEMA[S.elem].filter(fd => (!fd.codes || fd.codes.includes(S.code)) && (!fd.when || fd.when(v)));
-    const order = S.elem === 'sbarrier' ? ['plvl', 'geo', 'rails', 'post', 'base', 'coef'] : S.elem === 'barrier' ? ['tl', 'geo', 'mat', 'comp', 'bars', 'deck', 'coef'] : S.elem === 'lwall' ? ['wall', 'top', 'soil', 'wat', 'fnd', 'joint', 'lds', 'fac'] : S.elem === 'gantry' ? ['geo', 'sign', 'col', 'arm', 'wind', 'conn', 'base', 'fat', 'lim'] : S.elem === 'pilecap' || S.elem === 'stm3d' ? ['piles', 'geo', 'mat', 'bars', 'coef', 'uls', 'sls'] : ['geo', 'mat', 'coef', 'bars', 'link', 'uls', 'sls'];
+    const order = S.elem === 'shelter' ? ['shg', 'shw', 'shp', 'wind', 'shf', 'fnd', 'base'] : S.elem === 'sbarrier' ? ['plvl', 'geo', 'rails', 'post', 'base', 'coef'] : S.elem === 'barrier' ? ['tl', 'geo', 'mat', 'comp', 'bars', 'deck', 'coef'] : S.elem === 'lwall' ? ['wall', 'top', 'soil', 'wat', 'fnd', 'joint', 'lds', 'fac'] : S.elem === 'gantry' ? ['geo', 'sign', 'col', 'arm', 'wind', 'conn', 'base', 'fat', 'lim'] : S.elem === 'pilecap' || S.elem === 'stm3d' ? ['piles', 'geo', 'mat', 'bars', 'coef', 'uls', 'sls'] : ['geo', 'mat', 'coef', 'bars', 'link', 'uls', 'sls'];
     let html = '';
     order.forEach(g => {
       const fs = sch.filter(fd => fd.g === g);
@@ -1036,6 +1101,9 @@
       if (S.elem === 'barrier' && g === 'comp' && v.mode === 'direct') body += `<p class="hint">${T('As in AP-G108-25 Design Example 1: M_b from the top-beam bars, M_w from the horizontal wall bars (b = height over which they act) and M_c from the vertical bars per metre. The bars below are still used for the interface, anchorage and minimum-steel checks.', 'ตามตัวอย่างที่ 1 ของ AP-G108-25: M_b จากเหล็กคานบน M_w จากเหล็กนอนของกำแพง (b = ความสูงที่เหล็กกระจาย) และ M_c จากเหล็กยืนต่อเมตร เหล็กเสริมด้านล่างยังใช้ตรวจรอยต่อ การฝังยึด และเหล็กน้อยสุด')}</p>`;
       if (S.elem === 'barrier' && g === 'coef' && S.code === 'AS') body += `<p class="hint">${T('Ultimate limit state for the collision load (load factor 1.0). The deck overhang is designed for 1.1 M_c and 1.1 T so that the barrier fails first (AP-G108-25 §5.3.3).', 'สภาวะขีดจำกัดประลัยสำหรับแรงชน (ตัวคูณ 1.0) ออกแบบพื้นยื่นสำหรับ 1.1 M_c และ 1.1 T เพื่อให้ราววิบัติก่อน (AP-G108-25 §5.3.3)')}</p>`;
       else if (S.elem === 'barrier' && g === 'coef') body += `<p class="hint">${T('Extreme Event II: load factor 1.0 on the impact and φ = 1.0 (AASHTO LRFD 1.3.2.1, 13.6.1).', 'Extreme Event II: ตัวคูณน้ำหนักแรงชน 1.0 และ φ = 1.0 (AASHTO LRFD 1.3.2.1, 13.6.1)')}</p>`;
+      if (S.elem === 'shelter' && g === 'shp') body += secProps(GA.section('SHS', v.post, v.pgrade));
+      if (S.elem === 'shelter' && g === 'wind') body += `<p class="hint">${T('V_R from AS/NZS 1170.2:2021 Table 3.1(A); M_z,cat for z ≤ 5 m; V_des ≥ 30 m/s at ULS. Negative roof coefficients act upwards — confirm the free-roof and free-standing-wall coefficients (App. B) for the actual roof pitch, blockage under the roof and wall porosity.', 'V_R จาก AS/NZS 1170.2:2021 ตาราง 3.1(A); M_z,cat สำหรับ z ≤ 5 ม.; V_des ≥ 30 ม./วินาที ที่ ULS ค่าลบของหลังคาคือแรงยก — ตรวจสอบค่าสัมประสิทธิ์หลังคาอิสระและผนังอิสระ (ภาคผนวก B) ตามความชันหลังคา การปิดกั้นใต้หลังคา และความพรุนของผนัง')}</p>`;
+      if (S.elem === 'shelter' && g === 'shp') body += `<p class="hint">${T('With pinned roof connections every post carries its share of the wind as a cantilever, and each footing must resist that moment on its own. Choose moment connections only when the roof-to-post joints are detailed for it.', 'เมื่อรอยต่อหลังคาเป็นข้อหมุน เสาแต่ละต้นรับแรงลมส่วนของตนแบบคานยื่น และฐานรากแต่ละแนวต้องต้านโมเมนต์นั้นเอง เลือกรอยต่อรับโมเมนต์เมื่อรายละเอียดรอยต่อหลังคา-เสาออกแบบไว้เท่านั้น')}</p>`;
       if (S.elem === 'gantry' && (g === 'col' || g === 'arm')) body += secProps(GA.section(v[g + 'Shape'], v[g + 'Size'], v[g + 'Grade']));
       if (S.elem === 'gantry' && g === 'wind') body += `<p class="hint">${T('Wind acts normal to the sign face. e/B_s = 0.2 models oblique wind (AS/NZS 1170.2 App. B).', 'ลมกระทำตั้งฉากกับหน้าป้าย ใช้ e/B_s = 0.2 สำหรับลมเฉียง (AS/NZS 1170.2 ภาคผนวก B)')}</p>`;
       if (S.elem === 'gantry' && g === 'fat') body += `<p class="hint">${T('Equivalent static fatigue pressures after AASHTO LTS; defaults 250 Pa natural gust, 900 Pa truck gust, 1000 Pa galloping. Adopt the road authority’s values.', 'แรงดันความล้าสถิตเทียบเท่าตาม AASHTO LTS ค่าเริ่มต้น 250 Pa ลมกระโชก 900 Pa ลมรถบรรทุก 1000 Pa แกลลอปปิง ใช้ค่าตามหน่วยงานทางหลวง')}</p>`;
@@ -1065,7 +1133,7 @@
       <div class="dz">
         <aside class="dz-in" id="dzIn" aria-label="${T('Inputs', 'ข้อมูลนำเข้า')}">${inputsHTML()}</aside>
         <section class="dz-out" aria-live="polite">
-          <div class="out-top"><div class="sketch-card"><h2 class="card-h">${S.elem === 'sbarrier' ? T('Barrier elevation', 'รูปด้านราวกันตก') : S.elem === 'barrier' ? T('Barrier section and reinforcement', 'รูปตัดราวและเหล็กเสริม') : S.elem === 'gantry' ? T('Elevation and plan', 'รูปด้านและผัง') : S.elem === 'pilecap' ? T('Plan & reactions', 'ผังฐานรากและแรงเข็ม') : S.elem === 'stm3d' ? T('Plan of the strut-and-tie model', 'ผังแบบจำลองโครงถักค้ำ-ยึด') : S.elem === 'lwall' ? T('Wall section and loads', 'รูปตัดกำแพงและแรงกระทำ') : T('Section & reinforcement', 'หน้าตัดและเหล็กเสริม')}</h2><div id="sketch"></div></div>
+          <div class="out-top"><div class="sketch-card"><h2 class="card-h">${S.elem === 'shelter' ? T('Footing plan, section and base plate', 'ผังฐานราก รูปตัด และแผ่นฐาน') : S.elem === 'sbarrier' ? T('Barrier elevation', 'รูปด้านราวกันตก') : S.elem === 'barrier' ? T('Barrier section and reinforcement', 'รูปตัดราวและเหล็กเสริม') : S.elem === 'gantry' ? T('Elevation and plan', 'รูปด้านและผัง') : S.elem === 'pilecap' ? T('Plan & reactions', 'ผังฐานรากและแรงเข็ม') : S.elem === 'stm3d' ? T('Plan of the strut-and-tie model', 'ผังแบบจำลองโครงถักค้ำ-ยึด') : S.elem === 'lwall' ? T('Wall section and loads', 'รูปตัดกำแพงและแรงกระทำ') : T('Section & reinforcement', 'หน้าตัดและเหล็กเสริม')}</h2><div id="sketch"></div></div>
             <div class="sum-card" id="summary"></div></div>
           <div id="charts"></div>
           <div class="card"><h2 class="card-h">${T('Design checks', 'ผลการตรวจสอบ')}</h2><div id="checks"></div></div>
@@ -1077,6 +1145,7 @@
   function toSI(v, kind) { const [, k] = unitOf(kind); return (+v || 0) * k; }
   function buildInput() {
     const v = inp(), sch = SCHEMA[S.elem], val = k => { const fd = sch.find(x => x.k === k); return fd ? toSI(v[k], fd.u) : +v[k]; };
+    if (S.elem === 'shelter') { const x = {}; sch.forEach(fd => { const r = v[fd.k]; x[fd.k] = fd.type === 'sel' ? (r !== '' && isFinite(+r) ? +r : r) : val(fd.k); }); return x; }
     if (S.elem === 'gantry') {
       const on = k => v[k] === 'yes';
       return {
@@ -1142,6 +1211,17 @@
     };
   }
   function validate(x) {
+    if (S.elem === 'shelter') {
+      const e = [];
+      if (!(x.L >= 1000 && x.Dp >= 500)) e.push(T('Enter the shelter length and the post line spacing.', 'กรอกความยาวที่พักและระยะแนวเสา'));
+      if (!(x.hF > 1000 && x.hR > 1000)) e.push(T('Roof heights must be more than 1 m.', 'ความสูงหลังคาต้องมากกว่า 1 ม.'));
+      if (!(x.nR >= 2 && x.nF >= 2)) e.push(T('Each post line needs at least 2 posts.', 'แต่ละแนวต้องมีเสาอย่างน้อย 2 ต้น'));
+      if (!(x.Df >= 150 && x.Br >= 200 && (x.ftype === 'pad' ? x.Bp >= 200 && x.Lp >= 200 : x.Bf >= 200 && x.Lsf >= 500) && x.Lsr >= 500)) e.push(T('Check the footing sizes.', 'ตรวจสอบขนาดฐานราก'));
+      if (!(x.fc >= 15 && x.qult > 0 && x.mu > 0)) e.push(T('Check concrete strength, bearing capacity and friction.', 'ตรวจสอบกำลังคอนกรีต กำลังแบกทาน และแรงเสียดทาน'));
+      if (!(x.sbolt > 0 && x.Bpl > x.sbolt && x.tpl > 0 && x.hef > 50)) e.push(T('Check the base plate, bolt gauge and embedment.', 'ตรวจสอบแผ่นฐาน ระยะสลัก และความลึกฝัง'));
+      if (!(x.region !== 'user' || (x.VRu > 0 && x.VRs > 0))) e.push(T('Enter the regional wind speeds.', 'กรอกความเร็วลมภูมิภาค'));
+      return e;
+    }
     const g = x.geo, errs = [];
     if (S.elem === 'gantry') {
       if (!(g.H >= 2000)) errs.push(T('Column height must be at least 2 m.', 'ความสูงเสาต้องไม่น้อยกว่า 2 ม.'));
@@ -1212,7 +1292,7 @@
     const x = buildInput(), errs = validate(x);
     if (errs.length) { $('#checks').innerHTML = `<p class="form-err">${errs.map(esc).join('<br>')}</p>`; $('#summary').innerHTML = ''; return; }
     try {
-      S.res = S.elem === 'sbarrier' ? window.SBARRIER.design(x, lang()) : S.elem === 'barrier' ? window.BARRIER.design(x, lang()) : S.elem === 'lwall' ? LWALL.design(x, lang()) : S.elem === 'stm3d' ? STM3D.design(x, lang()) : S.elem === 'gantry' ? GA.designGantry(x, lang()) : S.elem === 'beam' ? RC.designBeam(S.code, x, lang()) : S.elem === 'column' ? RC.designColumn(S.code, x, lang()) : RC.designPileCap(S.code, x, lang());
+      S.res = S.elem === 'shelter' ? SHM.design(x, lang()) : S.elem === 'sbarrier' ? window.SBARRIER.design(x, lang()) : S.elem === 'barrier' ? window.BARRIER.design(x, lang()) : S.elem === 'lwall' ? LWALL.design(x, lang()) : S.elem === 'stm3d' ? STM3D.design(x, lang()) : S.elem === 'gantry' ? GA.designGantry(x, lang()) : S.elem === 'beam' ? RC.designBeam(S.code, x, lang()) : S.elem === 'column' ? RC.designColumn(S.code, x, lang()) : RC.designPileCap(S.code, x, lang());
       S.res.input = x;
     } catch (e) { console.error(e); $('#checks').innerHTML = `<p class="form-err">${T('Calculation failed for these inputs. Check geometry and reinforcement.', 'คำนวณไม่สำเร็จ ตรวจสอบรูปทรงและเหล็กเสริม')}</p>`; return; }
     renderResults();
@@ -1236,11 +1316,15 @@
       </tbody></table></div>`;
     if (S.elem === 'gantry') setTimeout(() => mount3D(r), 0);
     if (S.elem === 'stm3d') setTimeout(() => mountSTM(r), 0);
-    $('#sketch').innerHTML = S.elem === 'sbarrier' ? sbarSketch(r) : S.elem === 'barrier' ? barrierSketch(r) : S.elem === 'lwall' ? wallSketch(r) : S.elem === 'stm3d' ? stmPlan(r) : S.elem === 'gantry' ? gantrySketch(r) : S.elem === 'pilecap' ? capSketch(r) : sectionSketch(r);
-    $('#charts').innerHTML = S.elem === 'sbarrier' ? `<div class="card"><h2 class="card-h">${T('Barrier resistance for N-span failure modes', 'กำลังต้านทานตามรูปแบบการวิบัติ N ช่วง')}</h2>${sbarChart(r)}</div>` : S.elem === 'barrier' ? `<div class="card"><h2 class="card-h">${T('Yield-line patterns (elevation of the traffic face)', 'รูปแบบเส้นคราก (รูปด้านหน้าจราจร)')}</h2>${yieldSketch(r)}</div>` : S.elem === 'lwall' ? `<div class="card"><h2 class="card-h">${T('Checks at the base and every bed joint', 'ผลตรวจสอบที่ฐานและทุกรอยต่อ')}</h2>${wallTable(r)}</div>` : S.elem === 'stm3d' ? stmCard(r) + `<div class="card"><h2 class="card-h">${T('Members', 'ชิ้นส่วน')}</h2>${stmTable(r)}</div>` : S.elem === 'gantry' ? v3Card(r) + `<div class="card"><h2 class="card-h">${T('Connection details and fatigue', 'รายละเอียดรอยต่อและความล้า')}</h2>${gantryDetails(r)}</div>` : S.elem === 'column' ? columnCharts(r) : S.elem === 'pilecap' ? capElevation(r) : '';
+    $('#sketch').innerHTML = S.elem === 'shelter' ? SHM.sketch(r, T) : S.elem === 'sbarrier' ? sbarSketch(r) : S.elem === 'barrier' ? barrierSketch(r) : S.elem === 'lwall' ? wallSketch(r) : S.elem === 'stm3d' ? stmPlan(r) : S.elem === 'gantry' ? gantrySketch(r) : S.elem === 'pilecap' ? capSketch(r) : sectionSketch(r);
+    $('#charts').innerHTML = S.elem === 'shelter' ? shelterCases(r) : S.elem === 'sbarrier' ? `<div class="card"><h2 class="card-h">${T('Barrier resistance for N-span failure modes', 'กำลังต้านทานตามรูปแบบการวิบัติ N ช่วง')}</h2>${sbarChart(r)}</div>` : S.elem === 'barrier' ? `<div class="card"><h2 class="card-h">${T('Yield-line patterns (elevation of the traffic face)', 'รูปแบบเส้นคราก (รูปด้านหน้าจราจร)')}</h2>${yieldSketch(r)}</div>` : S.elem === 'lwall' ? `<div class="card"><h2 class="card-h">${T('Checks at the base and every bed joint', 'ผลตรวจสอบที่ฐานและทุกรอยต่อ')}</h2>${wallTable(r)}</div>` : S.elem === 'stm3d' ? stmCard(r) + `<div class="card"><h2 class="card-h">${T('Members', 'ชิ้นส่วน')}</h2>${stmTable(r)}</div>` : S.elem === 'gantry' ? v3Card(r) + `<div class="card"><h2 class="card-h">${T('Connection details and fatigue', 'รายละเอียดรอยต่อและความล้า')}</h2>${gantryDetails(r)}</div>` : S.elem === 'column' ? columnCharts(r) : S.elem === 'pilecap' ? capElevation(r) : '';
   }
   function summaryKV(r) {
     const kv = (k, v, u) => { const [a, uu] = outVal(v, u); return `<div><dt>${fmLabel(k)}</dt><dd class="mono">${f(a, 2)} <span class="u">${esc(uu)}</span></dd></div>`; };
+    if (S.elem === 'shelter') {
+      const bt = r.checks.find(c => c.id === 'bT'), ot = Math.max(...['W1', 'W2', 'W3'].map(k => r.stab[k].Md / r.stab[k].Ms));
+      return kv('V_des (ULS)', r.wind.Vu, 'm/s') + kv('q_u', r.wind.qu, 'kPa') + kv(T('Total weight incl. footings', 'น้ำหนักรวมฐานราก'), r.Gtot, 'kN') + kv(T('Overturning M_dst/M_stb (worst)', 'การพลิกคว่ำ M_dst/M_stb (วิกฤต)'), ot, '') + kv(T('Bolt tension (max)', 'แรงดึงสลัก (สูงสุด)'), bt ? bt.Ed : 0, 'kN');
+    }
     if (S.elem === 'gantry') {
       const mx = fn => Math.max(...r.acts.map(c => fn(c.a)));
       return kv(T('N* at base', 'N* ที่โคนเสา'), mx(a => a.base.N) / 1e3, 'kN') + kv(T('M* at base (resultant)', 'M* ที่โคนเสา (ผลลัพธ์)'), mx(a => Math.hypot(a.base.Mop, a.base.Mip)) / 1e6, 'kNm')
@@ -1829,8 +1913,8 @@
       return `<tr><td class="rp-l">${fm(row.label)}</td><td class="rp-ex">${fm(row.expr)}</td><td class="num mono">${val !== '' ? '= ' + val : ''} ${fm(row.unit)}</td><td class="rp-note">${fm(row.note || '')}</td></tr>`;
     }).join('')}</table></section>`).join('');
     const summary = `<table class="rp-sum"><thead><tr><th>${T('Check', 'รายการ')}</th><th class="num">${T('Action', 'แรงกระทำ')}</th><th class="num">${T('Capacity', 'กำลัง')}</th><th class="num">UR</th><th>${T('Result', 'ผล')}</th></tr></thead><tbody>${r.checks.map(x => { const [a, u] = outVal(x.Ed, x.unit), [b] = outVal(x.Rd, x.unit); return `<tr><td>${fmLabel(x.name)}</td><td class="num mono">${x.unit ? f(a, 2) : ''}</td><td class="num mono">${x.unit ? f(b, 2) + ' ' + esc(u) : ''}</td><td class="num mono">${f(x.ur, 3)}</td><td>${x.ur <= 1.0001 ? T('OK', 'ผ่าน') : T('NOT OK', 'ไม่ผ่าน')}</td></tr>`; }).join('')}</tbody></table>`;
-    const drawing = S.elem === 'sbarrier' ? sbarSketch(r) : S.elem === 'barrier' ? barrierSketch(r) : S.elem === 'lwall' ? wallSketch(r) : S.elem === 'stm3d' ? stmPlan(r) : S.elem === 'gantry' ? gantrySketch(r) : S.elem === 'pilecap' ? capSketch(r) : sectionSketch(r);
-    let charts = S.elem === 'column' ? columnChartsInner(r) : S.elem === 'gantry' ? gantryDetails(r) : '';
+    const drawing = S.elem === 'shelter' ? SHM.sketch(r, T) : S.elem === 'sbarrier' ? sbarSketch(r) : S.elem === 'barrier' ? barrierSketch(r) : S.elem === 'lwall' ? wallSketch(r) : S.elem === 'stm3d' ? stmPlan(r) : S.elem === 'gantry' ? gantrySketch(r) : S.elem === 'pilecap' ? capSketch(r) : sectionSketch(r);
+    let charts = S.elem === 'shelter' ? shelterCases(r, true) : S.elem === 'column' ? columnChartsInner(r) : S.elem === 'gantry' ? gantryDetails(r) : '';
     if (S.elem === 'lwall') charts = wallTable(r);
     if (S.elem === 'sbarrier') charts = `<div class="rp-fig" style="max-width:640px;margin:8px auto">${sbarChart(r)}</div>`;
     if (S.elem === 'barrier') charts = `<div class="rp-fig" style="max-width:640px;margin:8px auto">${yieldSketch(r)}</div>`;
@@ -2228,7 +2312,7 @@
     else if (a === 'mread') Ops.readMessage(b.dataset.m, !!b.dataset.u).catch(x => toast(opErr(x), 'bad'));
     else if (a === 'mdel') Ops.deleteMessage(b.dataset.m).then(() => toast(T('Message deleted', 'ลบข้อความแล้ว'), 'ok')).catch(x => toast(opErr(x), 'bad'));
     else if (a === 'code') { S.codeSel = b.dataset.c; S.code = b.dataset.c; S.codePop = true; render(); const p = $('.elem-pop .pick'); if (p) p.focus(); }
-    else if (a === 'elem') { const e = b.dataset.e; if (isOff(e)) { toast(offMsg(), 'bad'); return; } if (!ELEMS[e].free && !isPro()) { toast(T('This designer is part of Pro. Sign in with a Pro account to use it.', 'ฟังก์ชันนี้สำหรับสมาชิก Pro กรุณาเข้าสู่ระบบด้วยบัญชี Pro'), 'bad'); return; } go('design', { elem: e, code: S.codeSel || S.code }); }
+    else if (a === 'elem') { const e = b.dataset.e; if (isOff(e)) { toast(offMsg(), 'bad'); return; } if (!ELEMS[e].free && !isPro()) { toast(T('This designer is part of Pro. Sign in with a Pro account to use it.', 'ฟังก์ชันนี้สำหรับสมาชิก Pro กรุณาเข้าสู่ระบบด้วยบัญชี Pro'), 'bad'); return; } go('design', { elem: e, code: b.dataset.code || S.codeSel || S.code }); }
     else if (a === 'reset') { delete S.inputs[S.elem + ':' + S.code]; $('#dzIn').innerHTML = inputsHTML(); compute(); }
     else if (a === 'rowadd' && b.dataset.row === 'crs') { const v = inp(); if (v.crs.length < 20) v.crs.push({ n: Math.max(1, v.crs[v.crs.length - 1].n) }); $('#dzIn').innerHTML = inputsHTML(); schedule(); }
     else if (a === 'rowadd') { const v = inp(), k = b.dataset.row; v[k].push({ n: 2, d: v[k][v[k].length - 1].d }); $('#dzIn').innerHTML = inputsHTML(); schedule(); }
