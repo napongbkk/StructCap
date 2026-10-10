@@ -152,6 +152,48 @@ async function createRequest(username: string, b: any) {
   check(await db.from("requests").insert({ id, username, months, amount, currency: cur, method: str(pro.method, 40) || null, ref: str(pro.ref, 120) || null, slip_path: slip.path, slip_name: slip.name, status: "pending", note: str(pro.note, 1000) || null }));
   return { id, months, amount, currency: cur, slip };
 }
+// ---------- Omise payment gateway (card, PromptPay QR, mobile banking, TrueMoney). OMISE_SECRET_KEY is a function secret;
+// the public key lives in config.js. Every charge is re-read from the Omise API before Pro is switched on, so neither the
+// browser nor a webhook body is trusted. The payment row uses the charge id as its primary key, which makes the activation
+// idempotent when the webhook and the browser both report the same charge.
+const OMISE_SKEY = Deno.env.get("OMISE_SECRET_KEY") || "";
+const OMISE_MONTHS = [1, 3, 6, 12];
+async function omise(path: string, method = "GET", form?: Record<string, string>) {
+  const r = await fetch("https://api.omise.co" + path, {
+    method, headers: { Authorization: "Basic " + btoa(OMISE_SKEY + ":"), "Content-Type": "application/x-www-form-urlencoded", "Omise-Version": "2019-05-29" },
+    body: form ? new URLSearchParams(form).toString() : undefined,
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.object === "error") { const e = new Error("omise: " + (j.code || r.status) + " " + (j.message || "")); (e as any).omise = j.code || "error"; (e as any).omiseMsg = j.message || ""; throw e; }
+  return j;
+}
+async function omiseQr(ch: any) {
+  const uri = ch?.source?.scannable_code?.image?.download_uri;
+  if (!uri) return null;
+  try {
+    const r = await fetch(uri, { headers: { Authorization: "Basic " + btoa(OMISE_SKEY + ":") } });
+    if (!r.ok) return uri;
+    const buf = new Uint8Array(await r.arrayBuffer());
+    let bin = ""; for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+    return "data:" + (r.headers.get("content-type") || "image/svg+xml") + ";base64," + btoa(bin);
+  } catch { return uri; }
+}
+async function omiseFinish(ch: any) {
+  if (!ch || ch.object !== "charge" || ch.status !== "successful" || !ch.paid) return { done: false };
+  const u = String(ch.metadata?.username || ""), months = Math.min(36, Math.max(1, Number(ch.metadata?.months) | 0));
+  if (!u || ch.metadata?.app !== "structcap") return { done: false };
+  const kind = ch.source?.type || "card";
+  const ins = await db.from("payments").insert({ id: ch.id, username: u, date: today(), amount: ch.amount / 100, currency: String(ch.currency || "thb").toUpperCase(), method: "omise-" + kind, ref: ch.id, days: months * 30, status: "paid" });
+  if (ins.error) { if ((ins.error as any).code === "23505") return { done: true, already: true }; throw ins.error; }
+  await extend(u, months * 30);
+  const [{ data: mm }, { data: ac }] = await Promise.all([db.from("members").select("email,lang").eq("username", u).maybeSingle(), db.from("accounts").select("expiry,name").eq("username", u).maybeSingle()]);
+  await db.from("messages").insert({ id: uid("msg"), kind: "pro", name: ac?.name || null, email: mm?.email || null, username: u, status: "read", message: `Paid online with Omise (${kind}): ${months} month(s), ${ch.amount / 100} ${String(ch.currency).toUpperCase()} — Pro switched on automatically (${ch.id})` });
+  await Promise.all([
+    userMail(mm?.email || (EMAIL_ID_RE.test(u) ? u : ""), mm?.lang || "en", "approved", { expiry: ac?.expiry }),
+    mail("Pro paid online: " + u, [["Member", u], ["Period", months + " month(s)"], ["Amount", ch.amount / 100 + " " + String(ch.currency).toUpperCase()], ["Method", "Omise " + kind], ["Charge", ch.id], ["Pro until", ac?.expiry]]),
+  ]);
+  return { done: true };
+}
 // ---------- access log (who opens the app, including visitors without an account)
 // The client IP comes from the edge proxy headers. x-forwarded-for may hold a chain "client, proxy1, proxy2":
 // the first public address is the visitor. Private / loopback addresses are skipped.
@@ -212,10 +254,18 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return fail("Invalid JSON"); }
   const a = body.action;
   try {
+    // ---------- Omise webhook (event objects carry no action): the charge is re-read from Omise before anything changes
+    if (body.object === "event") {
+      const id = String(body.data?.id || "");
+      if (!OMISE_SKEY || !/^chrg_[A-Za-z0-9_]+$/.test(id)) return json({ ok: true, ignored: true });
+      const ch = await omise("/charges/" + id);
+      const r = await omiseFinish(ch);
+      return json({ ok: true, status: ch.status, done: r.done });
+    }
     // ---------- public
     if (a === "settings") {
       const s = await getSettings();
-      return json({ proFree: !!s.proFree, payInfo: s.payInfo || { en: "", th: "" }, off: offMap(s.off), price: PRICE });
+      return json({ proFree: !!s.proFree, payInfo: s.payInfo || { en: "", th: "" }, off: offMap(s.off), price: PRICE, omise: !!OMISE_SKEY, omiseMonths: OMISE_MONTHS });
     }
     if (a === "visit") {
       const c = await verify(body.token);
@@ -311,6 +361,33 @@ Deno.serve(async (req) => {
         const emailed = await mail("Pro application: " + u, [["Username", u], ["Name", acc?.name], ["Email", (acc as any)?.email], ["Pro period", rq.months + " month(s)"], ["Amount", rq.amount + " " + rq.currency], ["Method / ref.", (body.pro?.method || "") + " " + (body.pro?.ref || "")]], { replyTo: (acc as any)?.email, text: str(body.pro?.note, 1000), attach: { filename: rq.slip.name, content: rq.slip.b64 } });
         await db.from("messages").insert({ id: uid("msg"), kind: "pro", name: acc?.name || null, email: (acc as any)?.email || null, username: u, message: `Applied for Pro (${rq.months} month(s), ${rq.amount} ${rq.currency})` });
         return json({ ok: true, emailed, emailedUser, request: { id: rq.id, months: rq.months, amount: rq.amount, currency: rq.currency }, account: acc });
+      }
+      if (a === "omiseCharge") {
+        if (!OMISE_SKEY) return fail("Online payment is not set up");
+        const months = Number(body.months) | 0, nonce = String(body.nonce || "");
+        if (!OMISE_MONTHS.includes(months)) return fail("Invalid period");
+        if (!/^(tokn|src)_[A-Za-z0-9_]+$/.test(nonce)) return fail("Invalid payment token");
+        const ret = String(body.returnUri || "");
+        if (!/^https?:\/\/[^\s"'<>]{3,300}$/.test(ret)) return fail("Invalid return address");
+        const form: Record<string, string> = {
+          amount: String(Math.round(PRICE.THB * months * 100)), currency: "thb", return_uri: ret,
+          description: `StructCap Pro ${months} month(s) — ${u}`, "metadata[app]": "structcap", "metadata[username]": u, "metadata[months]": String(months),
+        };
+        form[nonce.startsWith("tokn_") ? "card" : "source"] = nonce;
+        let ch;
+        try { ch = await omise("/charges", "POST", form); } catch (e) { console.error(e); return json({ ok: false, err: (e as any).omise || "error", message: (e as any).omiseMsg || "" }); }
+        const fin = await omiseFinish(ch);
+        return json({ ok: true, id: ch.id, status: ch.status, failure: ch.failure_message || ch.failure_code || null, authorize_uri: ch.status === "pending" ? ch.authorize_uri || null : null,
+          qr: ch.status === "pending" ? await omiseQr(ch) : null, expires_at: ch.expires_at || null, amount: ch.amount / 100, done: fin.done, account: fin.done ? await account(u) : null });
+      }
+      if (a === "omiseCheck") {
+        if (!OMISE_SKEY) return fail("Online payment is not set up");
+        const id = String(body.id || "");
+        if (!/^chrg_[A-Za-z0-9_]+$/.test(id)) return fail("Invalid charge");
+        const ch = await omise("/charges/" + id);
+        if (ch.metadata?.username !== u) return fail("Not your payment", 403);
+        const fin = await omiseFinish(ch);
+        return json({ ok: true, id: ch.id, status: ch.status, failure: ch.failure_message || ch.failure_code || null, done: fin.done, account: await account(u) });
       }
       return fail("Unknown action");
     }

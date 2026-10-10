@@ -593,6 +593,8 @@
     async setPromo(on) { if (CLOUD) { await api('setPromo', { on }); S.promo = on; return; } await Store.set('settings', 'global', Object.assign({}, Store._load().settings.global || {}, { proFree: on, changed: new Date().toISOString() })); S.promo = on; },
     async setFeatures(off) { if (CLOUD) { await api('setFeatures', { off }); S.off = off; return; } await Store.set('settings', 'global', Object.assign({}, Store._load().settings.global || {}, { off, changed: new Date().toISOString() })); S.off = off; },
     async reset() { if (CLOUD) { await api('reset'); return Ops.refresh(); } await Store.reset(); },
+    async omiseCharge(nonce, months) { return api('omiseCharge', { nonce, months, returnUri: location.origin + location.pathname + '?omise=return' }); },
+    async omiseCheck(id) { return api('omiseCheck', { id }); },
     async visits(days) {
       if (CLOUD) { const j = await api('visits', { days }); A.myIp = j.ip || ''; return j.visits || []; }
       const since = Date.now() - days * 864e5; return Store._rows('visits').filter(v => Date.parse(v.at) >= since).sort((a, b) => b.at.localeCompare(a.at));
@@ -610,7 +612,7 @@
   S.payInfo = CLOUD ? { en: '', th: '' } : ((Store._load().settings.global || {}).payInfo || { en: '', th: '' });
   // Shared settings (Pro free for all, functions switched off, payment text) come from the server. Loaded at start,
   // retried once on failure, and re-read when the tab comes back into view so a long-open page picks up changes.
-  const applySettings = j => { S.payInfo = j.payInfo || S.payInfo; const offWas = JSON.stringify(S.off); S.off = j.off || {}; if (JSON.stringify(S.off) !== offWas) { if (S.view !== 'design') render(); } if (!!j.proFree !== S.promo) { S.promo = !!j.proFree; if (S.view !== 'design') render(); } else if (S.view === 'register' || S.view === 'account') render(); };
+  const applySettings = j => { const omWas = S.omise; S.omise = !!j.omise; if (omWas !== S.omise && (S.view === 'account' || S.view === 'register')) render(); S.payInfo = j.payInfo || S.payInfo; const offWas = JSON.stringify(S.off); S.off = j.off || {}; if (JSON.stringify(S.off) !== offWas) { if (S.view !== 'design') render(); } if (!!j.proFree !== S.promo) { S.promo = !!j.proFree; if (S.view !== 'design') render(); } else if (S.view === 'register' || S.view === 'account') render(); };
   const loadSettings = () => api('settings').then(applySettings);
   let settingsReady = CLOUD ? loadSettings().catch(() => new Promise(r => setTimeout(r, 2500)).then(loadSettings)).catch(() => { }).finally(() => { S.settingsDone = true; }) : Promise.resolve();
   if (!CLOUD) S.settingsDone = true;
@@ -760,7 +762,7 @@
           ${S.promo ? `<p class="promo-note">${T('Pro is free — every feature is open', 'Pro ฟรี — เปิดทุกฟังก์ชัน')}</p>` : `<button class="btn btn-ghost" data-act="free">${T('Start free', 'เริ่มใช้งานฟรี')}</button><button class="linkbtn" data-act="register" data-plan="free">${T('or register a free account', 'หรือสมัครบัญชี Free')}</button>`}</article>
         <article class="plan plan-pro"><span class="ribbon">${T('Recommended', 'แนะนำ')}</span><h3>Pro</h3><p class="price">${S.promo ? `<s>${priceTxt()}</s> <b>${T('Free now', 'ฟรีตอนนี้')}</b>` : `<b>${money(PRICE[curOf()], curOf())}</b> / ${T('month', 'เดือน')}`}</p><ul>
           <li>${T('Everything in Free', 'ทุกอย่างใน Free')}</li><li>${T('RC columns: N–M and N–Mx–My interaction', 'เสา คสล. แผนภาพ N–M และ N–Mx–My')}</li><li>${T('Pile caps: beam method and STM', 'ฐานรากบนเสาเข็ม วิธีคาน และ STM')}</li><li>${T('Steel sign gantry to AS 4100, including fatigue', 'โครงป้ายจราจรเหล็กตาม AS 4100 รวมความล้า')}</li><li>${T('3D pile cap strut-and-tie and limestone block walls (AS)', 'STM ฐานรากเข็ม 3 มิติ และกำแพงกันดินก้อนหินปูน (AS)')}</li><li>${T('Full calculation report with clause references', 'รายการคำนวณฉบับเต็ม อ้างอิงข้อกำหนด')}</li><li>${T('PDF export', 'ส่งออกรายงานเป็น PDF')}</li></ul>
-          ${S.promo ? `<button class="btn btn-hot" data-act="free">${T('Pro is free — start now', 'Pro ฟรี — เริ่มใช้งานเลย')}</button>` : `<button class="btn btn-hot" data-act="register" data-plan="pro">${T('Register for Pro', 'สมัคร Pro')}</button><p class="muted small">${T('Pay by transfer and attach the slip — Pro is switched on within 2 hours.', 'ชำระเงินโดยการโอนและแนบสลิป — เปิดใช้ Pro ภายใน 2 ชั่วโมง')}</p>`}</article>
+          ${S.promo ? `<button class="btn btn-hot" data-act="free">${T('Pro is free — start now', 'Pro ฟรี — เริ่มใช้งานเลย')}</button>` : `<button class="btn btn-hot" data-act="register" data-plan="pro">${T('Register for Pro', 'สมัคร Pro')}</button><p class="muted small">${(omiseOn() ? T('Pay online by card, PromptPay QR, mobile banking or TrueMoney — Pro switches on immediately. Bank transfer with a slip also works.', 'ชำระออนไลน์ด้วยบัตร พร้อมเพย์ QR โมบายแบงก์กิ้ง หรือ TrueMoney — เปิด Pro ทันที หรือโอนเงินและแนบสลิปก็ได้') : T('Pay by transfer and attach the slip — Pro is switched on within 2 hours.', 'ชำระเงินโดยการโอนและแนบสลิป — เปิดใช้ Pro ภายใน 2 ชั่วโมง'))}</p>`}</article>
       </div></div></section>
 
     <section class="band contact-band" id="contact"><div class="wrap contact-in">
@@ -854,7 +856,7 @@
           <label>${T('Confirm password', 'ยืนยันรหัสผ่าน')} *<input id="r-pass2" type="password" autocomplete="new-password" required minlength="8"></label>
         </div>
         <p class="muted small">${T('We send a confirmation to this email.', 'เราจะส่งอีเมลยืนยันไปยังอีเมลนี้')}</p>
-        ${pro ? proFields('rp') : ''}
+        ${pro ? (omiseOn() ? `<div class="pay-online"><b>${T('Pay online after creating your account', 'ชำระออนไลน์หลังสร้างบัญชี')}</b><p class="muted small">${T('Next step: card, PromptPay QR, mobile banking or TrueMoney (' + money(PRICE.THB, 'THB') + ' / month). Pro switches on as soon as the payment is confirmed.', 'ขั้นต่อไป: บัตร พร้อมเพย์ QR โมบายแบงก์กิ้ง หรือ TrueMoney (' + money(PRICE.THB, 'THB') + ' / เดือน) เปิด Pro ทันทีเมื่อยืนยันการชำระเงิน')}</p></div>` : proFields('rp')) : ''}
         ${pro ? `<label>${T('Note to the administrator (optional)', 'ข้อความถึงผู้ดูแลระบบ (ถ้ามี)')}<input id="r-note" maxlength="500"></label>` : ''}
         <input id="r-web" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
         <label class="chkl"><input id="r-ok" type="checkbox"> ${T('I understand StructCap is a design aid and results must be checked by a licensed engineer.', 'ข้าพเจ้าเข้าใจว่า StructCap เป็นเครื่องมือช่วยออกแบบ ผลลัพธ์ต้องตรวจสอบโดยวิศวกรผู้มีใบอนุญาต')}</label>
@@ -874,6 +876,8 @@
     if (form.password !== $('#r-pass2').value) return fail(T('The passwords do not match.', 'รหัสผ่านไม่ตรงกัน'));
     if (!$('#r-ok').checked) return fail(T('Tick the box to confirm.', 'กรุณาทำเครื่องหมายยืนยัน'));
     btn.disabled = true; btn.textContent = T('Sending…', 'กำลังส่ง…');
+    const payNow = form.plan === 'pro' && omiseOn();
+    if (payNow) form.plan = 'free';
     try {
       if (form.plan === 'pro') form.pro = await readPro('rp');
     } catch (x) { return fail(x.message); }
@@ -881,13 +885,70 @@
       const j = await Ops.register(form);
       if (!j.account) return fail(T('Registration failed. Try again.', 'สมัครไม่สำเร็จ ลองอีกครั้ง'));
       setUser(j.account, j.token);
-      S.notice = form.plan === 'pro' ? (j.request ? 'proSent' : 'proFail') : 'freeOk';
+      S.notice = payNow ? 'payNow' : form.plan === 'pro' ? (j.request ? 'proSent' : 'proFail') : 'freeOk';
       S.mailed = !!j.emailedUser;
       go('account');
       toast(T('Welcome to StructCap', 'ยินดีต้อนรับสู่ StructCap'), 'ok');
     } catch (x) {
       fail(x.msg === 'Username taken' || x.msg === 'Email taken' ? T('This email is already registered — sign in instead.', 'อีเมลนี้สมัครไว้แล้ว — กรุณาเข้าสู่ระบบ') : x.msg === 'Invalid email' ? T('Enter a valid email address.', 'กรอกอีเมลให้ถูกต้อง') : T('Registration failed. Check the connection and try again.', 'สมัครไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง'));
     }
+  }
+  // ---- online payment through Omise (card, PromptPay QR, mobile banking, TrueMoney) — only when the public key is in config.js
+  // and the server has OMISE_SECRET_KEY. The server prices the charge (30 THB / month), re-reads every charge from Omise and
+  // switches Pro on by itself, so the browser only collects the card / source through Omise's own form.
+  const omiseOn = () => CLOUD && !!S.omise && /^pkey_/.test(CFG.omisePublicKey || '');
+  const OMISE_METHODS = 'promptpay,mobile_banking_kbank,mobile_banking_scb,mobile_banking_bbl,mobile_banking_bay,mobile_banking_ktb,truemoney_jumpapp';
+  function payOnlineHTML(pro) {
+    const mo = S.omMonths || 1;
+    return `<div class="pay-online"><div class="po-hd"><b>${pro ? T('Renew Pro online', 'ต่ออายุ Pro ออนไลน์') : T('Get Pro now — pay online', 'สมัคร Pro ทันที — ชำระออนไลน์')}</b><span class="muted small">${T('Card · PromptPay QR · mobile banking · TrueMoney — Pro switches on as soon as the payment is confirmed.', 'บัตร · พร้อมเพย์ QR · โมบายแบงก์กิ้ง · TrueMoney — เปิด Pro ทันทีเมื่อยืนยันการชำระเงิน')}</span></div>
+      <div class="po-row"><label>${T('Period', 'ระยะเวลา')}<select id="om-months">${[1, 3, 6, 12].map(m => `<option value="${m}" ${mo === m ? 'selected' : ''}>${m} ${T(m > 1 ? 'months' : 'month', 'เดือน')}</option>`).join('')}</select></label>
+        <div class="pro-total"><span>${T('Amount', 'ยอดชำระ')}</span><b id="om-total">${money(PRICE.THB * mo, 'THB')}</b></div>
+        <button type="button" class="btn btn-hot" data-act="omPay" id="om-btn">${T('Pay online', 'ชำระเงินออนไลน์')}</button></div>
+      <p class="muted small">${T('Payments are processed securely by Omise (Opn Payments); StructCap never sees your card number. Charged in Thai baht.', 'การชำระเงินดำเนินการอย่างปลอดภัยโดย Omise (Opn Payments) StructCap ไม่เห็นหมายเลขบัตรของท่าน เรียกเก็บเป็นเงินบาท')}</p></div>`;
+  }
+  async function omisePay() {
+    const months = +(($('#om-months') || {}).value || 1), amount = PRICE.THB * months, btn = $('#om-btn');
+    if (btn) { btn.disabled = true; btn.textContent = T('Opening…', 'กำลังเปิด…'); }
+    const reset = () => { if (btn) { btn.disabled = false; btn.textContent = T('Pay online', 'ชำระเงินออนไลน์'); } };
+    try { await loadScript('https://cdn.omise.co/omise.js'); } catch (e) { reset(); toast(T('Could not load the payment form. Check the connection.', 'โหลดแบบฟอร์มชำระเงินไม่สำเร็จ ตรวจสอบการเชื่อมต่อ'), 'bad'); return; }
+    const OC = window.OmiseCard; if (!OC) { reset(); return; }
+    OC.configure({ publicKey: CFG.omisePublicKey });
+    OC.open({ amount: Math.round(amount * 100), currency: 'THB', frameLabel: 'StructCap Pro', submitLabel: T('Pay', 'ชำระเงิน'), locale: S.ui === 'th' ? 'th' : 'en', defaultPaymentMethod: 'credit_card', otherPaymentMethods: OMISE_METHODS,
+      onCreateTokenSuccess: nonce => omiseCharge(nonce, months).finally(reset), onFormClosed: reset });
+  }
+  async function omiseCharge(nonce, months) {
+    let j;
+    try { j = await Ops.omiseCharge(nonce, months); } catch (x) { toast(x && x.code === 'auth' ? T('Your session has expired. Sign in again.', 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่') : T('The payment could not be started. Try again.', 'เริ่มการชำระเงินไม่สำเร็จ ลองอีกครั้ง'), 'bad'); return; }
+    if (!j.ok) { toast(T('Payment declined', 'การชำระเงินถูกปฏิเสธ') + (j.message ? ': ' + j.message : ''), 'bad'); return; }
+    omiseResult(j);
+  }
+  function omiseResult(j) {
+    if (j.account) setUser(j.account);
+    if (j.status === 'successful') { ls.set('sc.omPending', ''); S.omQr = null; S.notice = 'paidOk'; S.applyOpen = false; render(); toast(T('Payment received — Pro is on', 'ได้รับชำระเงินแล้ว — เปิดใช้ Pro แล้ว'), 'ok'); return; }
+    if (j.status === 'failed' || j.status === 'expired' || j.status === 'reversed') { ls.set('sc.omPending', ''); S.omQr = null; render(); toast(T('The payment was not completed', 'การชำระเงินไม่สำเร็จ') + (j.failure ? ': ' + j.failure : ''), 'bad'); return; }
+    // pending
+    ls.set('sc.omPending', j.id);
+    if (j.authorize_uri) { location.href = j.authorize_uri; return; }
+    if (j.qr) { S.omQr = { id: j.id, img: j.qr, amount: j.amount, exp: j.expires_at }; render(); omisePoll(j.id); return; }
+    omisePoll(j.id);
+  }
+  let omTimer = null;
+  function omisePoll(id, n) {
+    clearTimeout(omTimer); n = n || 0;
+    if (n > 225) return;                                                     // stop after about 15 minutes
+    omTimer = setTimeout(async () => {
+      try { const j = await Ops.omiseCheck(id); if (j.status !== 'pending') { omiseResult(j); return; } } catch (e) { }
+      if (S.omQr || ls.get('sc.omPending') === id) omisePoll(id, n + 1);
+    }, 4000);
+  }
+  function omiseQrHTML() {
+    const q = S.omQr; if (!q) return '';
+    return `<div class="modal-bg"><div class="modal om-qr" role="dialog" aria-modal="true" aria-labelledby="omqT"><h2 id="omqT">${T('Scan to pay with PromptPay', 'สแกนเพื่อชำระด้วยพร้อมเพย์')}</h2>
+      <p class="muted">${T('Open your banking app, scan the QR code and pay ', 'เปิดแอปธนาคาร สแกน QR และชำระ ')}<b>${money(q.amount, 'THB')}</b>. ${T('This page updates by itself when the payment arrives.', 'หน้านี้จะอัปเดตเองเมื่อได้รับเงิน')}</p>
+      <img src="${esc(q.img)}" alt="PromptPay QR" class="om-qr-img">
+      ${q.exp ? `<p class="muted small">${T('QR valid until ', 'QR ใช้ได้ถึง ')}${esc(new Date(q.exp).toLocaleString())}</p>` : ''}
+      <p class="om-wait"><span class="spin"></span>${T('Waiting for the payment…', 'กำลังรอการชำระเงิน…')}</p>
+      <div class="mfoot"><span class="grow"></span><button class="btn btn-ghost sm" data-act="omQrClose">${T('Close', 'ปิด')}</button></div></div></div>`;
   }
   const daysTo = d => Math.ceil((new Date(d + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 864e5);
   const RQS = { pending: ['Waiting for review', 'รอตรวจสอบ', 'warn'], approved: ['Approved', 'อนุมัติแล้ว', 'ok'], rejected: ['Not approved', 'ไม่อนุมัติ', 'bad'] };
@@ -897,7 +958,7 @@
     const pro = u.plan === 'pro', dl = pro && u.expiry ? daysTo(u.expiry) : null, pend = (u.requests || []).filter(r => r.status === 'pending');
     const pct = dl !== null ? Math.max(0, Math.min(100, dl / 30 * 100)) : 0;
     const sent = S.mailed ? T(' A confirmation has been emailed to ' + u.username + '.', ' ส่งอีเมลยืนยันไปที่ ' + u.username + ' แล้ว') : '';
-    const notice = { freeOk: ['ok', T('Registration complete — your free account is ready. Sign in any time with your email and password.', 'สมัครสมาชิกเรียบร้อย — บัญชี Free พร้อมใช้งาน เข้าสู่ระบบได้ทุกเมื่อด้วยอีเมลและรหัสผ่าน') + sent], proSent: ['ok', T('Thank you — your registration and payment slip were received. Pro will be switched on within 2 hours and you will get an email when it is on.', 'ขอบคุณ — ได้รับข้อมูลการสมัครและสลิปแล้ว จะเปิดใช้ Pro ภายใน 2 ชั่วโมง และแจ้งทางอีเมลเมื่อเปิดใช้แล้ว') + sent], proFail: ['bad', T('Your account was created, but the slip did not upload. Send it again with “Apply for Pro” below.', 'สร้างบัญชีแล้ว แต่ส่งสลิปไม่สำเร็จ กรุณาส่งอีกครั้งด้วยปุ่ม “สมัคร Pro” ด้านล่าง')], applied: ['ok', T('Payment slip received. Pro will be switched on within 2 hours and you will get an email when it is on.', 'ได้รับสลิปแล้ว จะเปิดใช้ Pro ภายใน 2 ชั่วโมง และแจ้งทางอีเมลเมื่อเปิดใช้แล้ว') + sent] }[S.notice];
+    const notice = { payNow: ['ok', T('Your account is ready. Choose the period below and pay online to switch Pro on.', 'บัญชีพร้อมแล้ว เลือกระยะเวลาด้านล่างและชำระออนไลน์เพื่อเปิด Pro')], paidOk: ['ok', T('Payment received — thank you. Pro is on' + (S.user && S.user.expiry ? ' until ' + S.user.expiry : '') + '.', 'ได้รับชำระเงินแล้ว ขอบคุณ — เปิดใช้ Pro แล้ว' + (S.user && S.user.expiry ? ' ถึง ' + S.user.expiry : ''))], freeOk: ['ok', T('Registration complete — your free account is ready. Sign in any time with your email and password.', 'สมัครสมาชิกเรียบร้อย — บัญชี Free พร้อมใช้งาน เข้าสู่ระบบได้ทุกเมื่อด้วยอีเมลและรหัสผ่าน') + sent], proSent: ['ok', T('Thank you — your registration and payment slip were received. Pro will be switched on within 2 hours and you will get an email when it is on.', 'ขอบคุณ — ได้รับข้อมูลการสมัครและสลิปแล้ว จะเปิดใช้ Pro ภายใน 2 ชั่วโมง และแจ้งทางอีเมลเมื่อเปิดใช้แล้ว') + sent], proFail: ['bad', T('Your account was created, but the slip did not upload. Send it again with “Apply for Pro” below.', 'สร้างบัญชีแล้ว แต่ส่งสลิปไม่สำเร็จ กรุณาส่งอีกครั้งด้วยปุ่ม “สมัคร Pro” ด้านล่าง')], applied: ['ok', T('Payment slip received. Pro will be switched on within 2 hours and you will get an email when it is on.', 'ได้รับสลิปแล้ว จะเปิดใช้ Pro ภายใน 2 ชั่วโมง และแจ้งทางอีเมลเมื่อเปิดใช้แล้ว') + sent] }[S.notice];
     return `${navBar()}<main class="wrap page account">
       <div class="page-head"><div><p class="eyebrow">${T('My account', 'บัญชีของฉัน')}</p><h1>${esc(u.username)}</h1></div>
         <div class="dz-actions"><button class="btn btn-hot sm" data-act="nav" data-v="home">${T('Open designers', 'ไปหน้าออกแบบ')} →</button></div></div>
@@ -908,10 +969,11 @@
           ${pro ? `<div class="remain"><b class="mono">${Math.max(0, dl)}</b><span>${T('days remaining', 'วันคงเหลือ')}</span></div><div class="ur big"><i style="width:${pct}%"></i></div><p class="muted">${T('Pro until ', 'ใช้งาน Pro ถึง ')}<b>${esc(u.expiry)}</b>${dl <= 7 ? ' · ' + T('renew soon to keep Pro', 'ควรต่ออายุเร็ว ๆ นี้') : ''}</p>`
             : `<p class="muted">${u.expired ? T('Your Pro plan ended on ', 'แพ็กเกจ Pro หมดอายุเมื่อ ') + esc(u.expired) + '. ' : ''}${S.promo ? T('Pro is free for everyone right now.', 'ตอนนี้ทุกคนใช้งาน Pro ได้ฟรี') : T('Free covers RC beams to all three codes. Pro unlocks every designer, full calculation reports and PDF export for ', 'Free ใช้ออกแบบคาน คสล. ได้ทุกมาตรฐาน Pro เปิดทุกฟังก์ชัน รายการคำนวณฉบับเต็ม และ PDF ในราคา ') + priceTxt() + '.'}</p>`}
           ${pend.length ? `<p class="notice warn">${T('Pro application waiting for review', 'คำขอ Pro รอการตรวจสอบ')}: ${pend.map(r => r.months + ' ' + T('month(s)', 'เดือน') + ', ' + money(r.amount, r.currency)).join(' · ')}</p>` : ''}
+          ${omiseOn() && !S.promo ? payOnlineHTML(pro) : ''}
           ${S.applyOpen ? `<form id="applyForm" novalidate><h3>${pro ? T('Renew Pro', 'ต่ออายุ Pro') : T('Apply for Pro', 'สมัคร Pro')}</h3>${proFields('ap')}<p class="form-err" id="ap-err" hidden></p><div class="mfoot"><span class="grow"></span><button type="button" class="btn btn-ghost sm" data-act="applyClose">${T('Cancel', 'ยกเลิก')}</button><button class="btn btn-hot sm" type="submit" id="ap-btn">${T('Send slip', 'ส่งสลิป')}</button></div></form>`
-            : `<button class="btn btn-hot" data-act="applyOpen">${pro ? T('Renew / extend Pro', 'ต่ออายุ Pro') : T('Register for Pro', 'สมัคร Pro')} · ${priceTxt()}</button>`}
+            : omiseOn() && !S.promo ? `<button class="linkbtn" data-act="applyOpen">${T('Or pay by bank transfer and send the slip', 'หรือโอนเงินผ่านธนาคารแล้วส่งสลิป')}</button>` : `<button class="btn btn-hot" data-act="applyOpen">${pro ? T('Renew / extend Pro', 'ต่ออายุ Pro') : T('Register for Pro', 'สมัคร Pro')} · ${priceTxt()}</button>`}
           ${(u.requests || []).length ? `<h3>${T('Applications', 'ประวัติคำขอ')}</h3><table class="chk mini"><tbody>${u.requests.map(r => { const st = RQS[r.status] || [r.status, r.status, '']; return `<tr><td class="mono">${esc((r.created || '').slice(0, 10))}</td><td>${r.months} ${T('mo', 'ด.')}</td><td class="num mono">${money(r.amount, r.currency)}</td><td><span class="pill st-${st[2]}">${T(st[0], st[1])}</span></td></tr>`; }).join('')}</tbody></table>` : ''}
-        </section>
+        </section>${omiseQrHTML()}
         <section class="card"><h2 class="card-h">${T('Sign-in', 'การเข้าสู่ระบบ')}</h2>
           <div class="mgrid"><label class="full">${T('Email', 'อีเมล')}<input value="${esc(u.username)}" disabled></label></div>
           <h2 class="card-h">${T('Change password', 'เปลี่ยนรหัสผ่าน')}</h2>
@@ -2047,7 +2109,7 @@
 
   // ------------------------------------------------------------------ ADMIN
   const A = { tab: 'users', accounts: [], members: [], payments: [], requests: [], messages: [], mail: false, q: '', filter: 'all', edit: null, unsub: [], confirm: null, resetAsk: false, vis: { days: 7, rows: null, busy: false, q: '', who: 'people', group: 'list', clearAsk: false } };
-  const METHODS = [['card', 'Credit / debit card', 'บัตรเครดิต / เดบิต'], ['paypal', 'PayPal', 'PayPal'], ['bank', 'Bank transfer', 'โอนธนาคาร'], ['promptpay', 'PromptPay', 'พร้อมเพย์'], ['cash', 'Cash', 'เงินสด'], ['other', 'Other', 'อื่น ๆ']];
+  const METHODS = [['omise-card', 'Card (Omise)', 'บัตร (Omise)'], ['omise-promptpay', 'PromptPay QR (Omise)', 'พร้อมเพย์ QR (Omise)'], ['omise-truemoney_jumpapp', 'TrueMoney (Omise)', 'TrueMoney (Omise)'], ['card', 'Credit / debit card', 'บัตรเครดิต / เดบิต'], ['paypal', 'PayPal', 'PayPal'], ['bank', 'Bank transfer', 'โอนธนาคาร'], ['promptpay', 'PromptPay', 'พร้อมเพย์'], ['cash', 'Cash', 'เงินสด'], ['other', 'Other', 'อื่น ๆ']];
   const PSTAT = { paid: ['Paid', 'ชำระแล้ว', 'ok'], pending: ['Pending', 'รอตรวจสอบ', 'warn'], refunded: ['Refunded', 'คืนเงิน', 'bad'] };
   function adminSubscribe() {
     if (CLOUD) { if (!A.loaded) { A.loaded = true; Ops.refresh().catch(x => { A.loaded = false; toast(opErr(x), 'bad'); }); } return; }
@@ -2350,6 +2412,8 @@
     else if (a === 'register') { if (b.dataset.plan) S.regPlan = b.dataset.plan; else if (!S.regPlan) S.regPlan = 'free'; S.payCur = null; if (S.user && S.user.member) { S.applyOpen = b.dataset.plan === 'pro'; go('account'); } else go('register'); }
     else if (a === 'regplan') { S.regPlan = b.dataset.p; render(); }
     else if (a === 'paycur') { S.payCur = b.dataset.c; const box = b.closest('.pro-box'); const sel = box && box.querySelector('select[id$=-months]'); if (sel) updPro(sel.id.split('-')[0]); }
+    else if (a === 'omPay') omisePay();
+    else if (a === 'omQrClose') { S.omQr = null; render(); toast(T('If you have paid, Pro switches on within a minute — refresh this page.', 'หากชำระแล้ว Pro จะเปิดภายในหนึ่งนาที — รีเฟรชหน้านี้'), ''); }
     else if (a === 'applyOpen') { S.applyOpen = true; S.payCur = null; render(); const f0 = $('#applyForm'); if (f0) f0.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
     else if (a === 'applyClose') { S.applyOpen = false; render(); }
     else if (a === 'ckind') { S.ckind = b.dataset.k; $$('[data-act=ckind]').forEach(x => x.setAttribute('aria-pressed', x.dataset.k === S.ckind)); const t = $('#c-msg'); if (t) t.placeholder = S.ckind === 'feedback' ? T('What works well, what should change, what should we add?', 'อะไรดี อะไรควรปรับ หรือควรเพิ่มอะไร?') : T('How can we help?', 'ให้เราช่วยอะไร?'); }
@@ -2416,6 +2480,7 @@
     else if (t.id === 'v3smode') { S.v3s.mode = t.value; if (S.res && S.elem === 'stm3d') mountSTM(S.res); }
     else if (t.id === 'v3case' || t.id === 'v3mode') { if (t.id === 'v3case') S.v3.cs = t.value; else S.v3.mode = t.value; const md = $('#v3mode'); if (md) md.disabled = S.v3.cs === 'none'; if (S.res) mount3D(S.res); }
     else if (t.id === 'rp-months' || t.id === 'ap-months') updPro(t.id.split('-')[0]);
+    else if (t.id === 'om-months') { S.omMonths = +t.value; const tt = $('#om-total'); if (tt) tt.textContent = money(PRICE.THB * S.omMonths, 'THB'); }
     else if (t.dataset.meta) { S.meta[t.dataset.meta] = t.value; const o = $('#rv-' + t.dataset.meta); if (o) o.textContent = t.value; }
     else if (t.id === 'vis-q') { A.vis.q = t.value; const pos = t.selectionStart; adminBody(); const n = $('#vis-q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }
     else if (t.id === 'adm-q') { A.q = t.value; const pos = t.selectionStart; adminBody(); const n = $('#adm-q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } }
@@ -2436,5 +2501,8 @@
   if (S.role !== 'guest') S.view = S.role === 'admin' ? 'admin' : 'home';
   render();
   track('open');
+  // back from an Omise redirect (3-D Secure, mobile banking): show the account and confirm the charge with the server
+  if (/[?&]omise=return/.test(location.search)) { try { history.replaceState(null, '', location.pathname); } catch (e) { } if (S.user && S.user.member) go('account'); }
+  { const pend = ls.get('sc.omPending'); if (pend && CLOUD && S.user && S.user.member) settingsReady.then(() => Ops.omiseCheck(pend).then(j => { if (j.status === 'pending') omisePoll(pend); else omiseResult(j); }).catch(() => { })); }
   if (S.user && S.user.member) refreshMe(true);
 })();
