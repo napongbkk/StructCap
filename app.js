@@ -659,7 +659,7 @@
   }
 
   const COPY = '© ' + new Date().getFullYear() + ' StructCap · Developed by NS';
-  const siteFoot = () => `<footer class="foot"><div class="wrap foot-in"><span>${T('StructCap is a design aid. Results must be checked by a licensed engineer.', 'StructCap เป็นเครื่องมือช่วยคำนวณ ผลลัพธ์ต้องตรวจสอบโดยวิศวกรผู้มีใบอนุญาต')}</span><span class="copy">${COPY} · ${T('All rights reserved', 'สงวนลิขสิทธิ์')}</span><span class="muted small">${T('For security and usage statistics we record the IP address, browser and time of each visit.', 'เพื่อความปลอดภัยและสถิติการใช้งาน ระบบบันทึกที่อยู่ IP เบราว์เซอร์ และเวลาที่เข้าใช้งาน')}</span>${S.role === 'guest' ? `<button class="linkbtn" data-act="nav" data-v="adminLogin">${T('Administrator sign in', 'เข้าสู่ระบบผู้ดูแล')}</button>` : ''}</div></footer>`;
+  const siteFoot = () => `<footer class="foot"><div class="wrap foot-in"><span>${T('StructCap is a design aid. Results must be checked by a licensed engineer.', 'StructCap เป็นเครื่องมือช่วยคำนวณ ผลลัพธ์ต้องตรวจสอบโดยวิศวกรผู้มีใบอนุญาต')}</span><span class="copy">${COPY} · ${T('All rights reserved', 'สงวนลิขสิทธิ์')}</span>${S.role === 'guest' ? `<button class="linkbtn" data-act="nav" data-v="adminLogin">${T('Administrator sign in', 'เข้าสู่ระบบผู้ดูแล')}</button>` : ''}</div></footer>`;
 
   // ------------------------------------------------------------------ LANDING
   // isometric 3D frame (2 × 2 bays, 3 storeys) with the bending moment on the front frame; fitted to its own view box
