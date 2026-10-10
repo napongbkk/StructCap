@@ -721,6 +721,13 @@ button.an-pickrow:hover{border-color:var(--line2)} button.an-pickrow.on{border-c
 .menu-n{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font:700 16px var(--f-mono);color:#fff;background:linear-gradient(135deg,var(--acc),var(--pink))}
 .box-analysis .menu-n{background:linear-gradient(135deg,var(--blue),var(--teal))}
 .box-special .menu-n{background:linear-gradient(135deg,#7c3aed,#db2777)}
+.box-field .menu-n{background:linear-gradient(135deg,#0f9f8f,#2e6bff)}
+.an-apps.an-apps1{grid-template-columns:minmax(0,1fr)}
+.an-apps1 .an-appc{grid-template-columns:auto minmax(0,1fr);column-gap:18px}
+.an-apps1 .an-appc .ei{grid-row:span 4}
+@media (max-width:520px){.an-apps1 .an-appc{grid-template-columns:minmax(0,1fr)}.an-apps1 .an-appc .ei{grid-row:auto}}
+.an-link{text-decoration:none}
+.an-link:hover b{text-decoration:underline}
 .an-entry{width:100%;display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;text-align:left;padding:16px 20px;border:1px solid var(--line2);border-radius:14px;cursor:pointer;color:inherit;font:inherit;background-image:repeating-linear-gradient(0deg,transparent 0 23px,var(--line) 23px 24px),repeating-linear-gradient(90deg,transparent 0 23px,var(--line) 23px 24px);background-color:var(--bg);transition:border-color .15s,transform .15s}
 .an-entry:hover{border-color:var(--blue);transform:translateY(-1px)}
 .an-entry-tx{display:grid;gap:8px} .an-entry-tx b{font-family:var(--f-disp);font-size:18px}
