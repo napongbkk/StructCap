@@ -1,0 +1,233 @@
+{
+ "sheet": "PN30-3117",
+ "title": "ABUTMENT - STRINGER STRENGTHENING DETAIL",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "NOTE – STEEL STRINGER SHALL BE FABRICATED",
+   "rects": [
+    [
+     26.8,
+     24,
+     48.5,
+     31.3
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – UB STRINGER SHALL BE PLACED AS CLOSE AS POSSIBLE",
+   "rects": [
+    [
+     26.4,
+     36.8,
+     36.6,
+     43.3
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – 300 MIN CAN BE REDUCED",
+   "rects": [
+    [
+     31.5,
+     43.3,
+     40.6,
+     48.4
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – GAP BETWEEN STRINGER AND DECK",
+   "rects": [
+    [
+     31.8,
+     52.4,
+     43.3,
+     62.1
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – STRINGER STRENGTHENING SIZE WILL VARY",
+   "rects": [
+    [
+     18.9,
+     59.2,
+     30.9,
+     66.4
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – DIMENSIONS DENOTED THUS",
+   "rects": [
+    [
+     68.7,
+     54.4,
+     82.2,
+     63.1
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION A",
+   "rects": [
+    [
+     3,
+     24,
+     39.7,
+     58.8
+    ]
+   ]
+  },
+  {
+   "name": "MODIFIED FLANGE DETAILS",
+   "rects": [
+    [
+     73.85,
+     25.6,
+     98.8,
+     52.7
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT - STRINGER STRENGTHENING DETAIL",
+   "rects": [
+    [
+     39.7,
+     24.5,
+     73.85,
+     60.5
+    ],
+    [
+     36.5,
+     60.5,
+     77.5,
+     69.8
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   97.8,
+   100,
+   100
+  ],
+  [
+   87,
+   71,
+   98.5,
+   75
+  ]
+ ],
+ "erase": [
+  [
+   27.8,
+   27.9,
+   47.5,
+   29.3
+  ],
+  [
+   8.6,
+   27.9,
+   16.9,
+   29.3
+  ],
+  [
+   60.5,
+   28.3,
+   63.5,
+   29.6
+  ],
+  [
+   36.05,
+   46.8,
+   36.6,
+   47.7
+  ],
+  [
+   42.4,
+   66.0,
+   43.8,
+   67.2
+  ]
+ ],
+ "text": {
+  "1878": "NOTE:",
+  "1891": "",
+  "1892": "",
+  "1893": "",
+  "1894": "",
+  "1886": "",
+  "1887": "",
+  "1888": "",
+  "1988": "",
+  "1889": "",
+  "1890": "",
+  "1911": "",
+  "1987": "50",
+  "1986": "~",
+  "1960": "SECTIONAL ELEVATION  A",
+  "1959": "",
+  "1918": "WITH Ø3.2 CLOUT HEAD",
+  "1941": "Ø20 THREADED ROD WITH",
+  "1901": "~",
+  "1895": "WITH Ø10x200",
+  "1978": "",
+  "1989": "MIN",
+  "1992": "MIN",
+  "1991": "50",
+  "1979": "ABUTMENT N° X - STRINGER N° X",
+  "1980": "",
+  "1982": "~",
+  "1990": "~",
+  "1932": "SUBJECT TO ENGINEER'S",
+  "1939": "ASSESSMENT & VERIFICATION",
+  "1936": "",
+  "1956": "NOTE:",
+  "1962": "NOTE:",
+  "1981": "DRG NUMBER - REFER TO"
+ },
+ "add": [
+  {
+   "s": "ADEQUATE CLEARANCE FROM ABUTMENT SHEETING",
+   "like": 1900,
+   "dx": 0,
+   "dy": -1.6
+  },
+  {
+   "s": "TO NUT TO PREVENT",
+   "like": 1923,
+   "at": [
+    8.75,
+    29.05
+   ]
+  },
+  {
+   "s": "STRINGER",
+   "like": 1908,
+   "dx": 0,
+   "dy": 1.5
+  },
+  {
+   "s": "ABUTMENT - STRINGER STRENGTHENING DETAIL",
+   "like": 1978,
+   "at": [
+    37.13,
+    65.54
+   ]
+  },
+  {
+   "s": "XX30-XXXX",
+   "like": 1979,
+   "at": [
+    62.78,
+    65.54
+   ]
+  }
+ ],
+ "drop": []
+}

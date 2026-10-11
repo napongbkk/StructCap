@@ -1,0 +1,21 @@
+{
+ "sheet": "PN30-2318",
+ "title": "STEEL ABUTMENT PILES/ABUTMENT FULLCAP STRENGTHENING DETAIL",
+ "cat": "Abutments",
+ "details": [
+  {"name": "DETAIL 1", "rects": [[9.2, 1.0, 33.2, 27.6]]},
+  {"name": "NOTE – FOR PILE RESTRAINTS", "rects": [[44.3, 10.2, 61.2, 29.8]]},
+  {"name": "NOTE – FULLCAP STRENGTHENING CHANNELS WILL VARY", "rects": [[25.2, 67.4, 47.2, 82.6]]},
+  {"name": "NOTE – INSTALL FULLCAP STRENGTHENING", "rects": [[47.4, 67.4, 68.2, 77.6]]},
+  {"name": "SECTION A", "rects": [[2.0, 30.0, 36.8, 73.5]]},
+  {"name": "ELEVATION – STEEL ABUTMENT PILES/ABUTMENT FULLCAP STRENGTHENING DETAIL", "rects": [[36.8, 30.0, 94.5, 93.5]]}
+ ],
+ "exclude": [[81.5, 94.0, 95, 98.8], [95.3, 53.3, 96.8, 55.2]],
+ "erase": [],
+ "text": {"3173": "~", "3091": "", "3154": "PROVIDE CONTINUOUS SUPPORT TO THE", "3128": "~",
+  "3112": "55 – 300 PFC", "3113": "", "3114": "", "3116": "60 – 380 PFC", "3117": "", "3118": "",
+  "3097": "Ø20 THREADED RODS", "3125": "PROPOSED 300 PFC", "3167": "ABUTMENT N° X – PILE N° X",
+  "3168": "ABUTMENT N° X – PILE N° X", "3174": "75", "3170": "DRG NUMBER – REFER TO", "3175": "20"},
+ "add": [{"s": "FOR", "like": 3090, "dx": -2.65, "dy": 0}],
+ "drop": []
+}

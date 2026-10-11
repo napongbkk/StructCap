@@ -1,0 +1,266 @@
+{
+ "sheet": "1330-0020",
+ "title": "ABUTMENT HALF-CAP STRENGTHENING DETAIL",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "ELEVATION – ABUTMENT HALF-CAP STRENGTHENING DETAIL – PACKER OPTION",
+   "rects": [
+    [
+     5.0,
+     4.6,
+     50.0,
+     34.6
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT HALF-CAP STRENGTHENING DETAIL – NO PACKER OPTION",
+   "rects": [
+    [
+     50.3,
+     4.6,
+     96.2,
+     34.4
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     4.9,
+     36.9,
+     26.8,
+     52.6
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – RHS PACKING OPTION",
+   "rects": [
+    [
+     37.4,
+     33.8,
+     57.6,
+     56.8
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – TIMBER PACKING OPTION",
+   "rects": [
+    [
+     57.6,
+     34.4,
+     77.6,
+     56.8
+    ],
+    [
+     54.5,
+     56.8,
+     60.5,
+     61.0
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2",
+   "rects": [
+    [
+     47.0,
+     61.0,
+     67.6,
+     79.2
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 3",
+   "rects": [
+    [
+     47.0,
+     79.2,
+     68.3,
+     95.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     68.3,
+     79.0,
+     83.0,
+     96.6
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – HALF-CAP TO PILE CONNECTION DETAIL - TYPE 1",
+   "rects": [
+    [
+     6.3,
+     62.4,
+     23.8,
+     91.6
+    ],
+    [
+     19.3,
+     92.8,
+     38.0,
+     96.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     23.8,
+     60.3,
+     47.0,
+     92.8
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   82.9,
+   47.3,
+   100,
+   100
+  ],
+  [
+   96.2,
+   0,
+   100,
+   47.3
+  ],
+  [
+   82.4,
+   40,
+   90,
+   44.5
+  ],
+  [
+   0,
+   0,
+   100,
+   3.3
+  ],
+  [
+   0,
+   0,
+   4.9,
+   100
+  ],
+  [
+   0,
+   96.7,
+   83,
+   100
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "5563": "~",
+  "5550": "~",
+  "5541": "Ø20 THREADED RODS WITH",
+  "5547": "Ø20 THREADED RODS",
+  "5553": "THROUGH Ø22 HOLE IN",
+  "5567": "(TYP.)",
+  "5568": "(TYP.)",
+  "5575": "~",
+  "5581": "PFC HALF-CAP",
+  "5584": "HOLE (TYP.)",
+  "5589": "(TYP.)",
+  "5596": "300 MAX.",
+  "5601": "CONNECTION - TYPE 3",
+  "5603": "CONNECTION - TYPE 2",
+  "5606": "(TYP.)",
+  "5610": "ON DRG N° 1330-0021",
+  "5829": "~",
+  "5624": "(TYP.)",
+  "5635": "1:20",
+  "5542": "Ø20 THREADED RODS WITH",
+  "5548": "Ø20 THREADED RODS",
+  "5555": "THROUGH Ø22 HOLE IN",
+  "5636": "",
+  "5569": "(TYP.)",
+  "5571": "~",
+  "5614": "~",
+  "5630": "ABUTMENT HALF-CAP STRENGTHENING DETAIL",
+  "5628": "",
+  "5631": "",
+  "5629": "",
+  "5587": "Ø22 HOLE (TYP.)",
+  "5590": "(TYP.)",
+  "5591": "REFER HALFCAP TO PILE",
+  "5599": "CONNECTION - TYPE 3",
+  "5600": "CONNECTION - TYPE 2",
+  "5607": "(TYP.)",
+  "5608": "ON DRG N° 1330-0021",
+  "5609": "ON DRG N° 1330-0021",
+  "5613": "PILE (TYP.)",
+  "5622": "CONNECTION - TYPE 1",
+  "5625": "(TYP.)",
+  "5637": "1:20",
+  "5656": "~",
+  "5646": "Ø20 THREADED \"U\" ROD",
+  "5684": "STRENGTHENING.",
+  "5640": "(TYP.)",
+  "5655": "",
+  "5659": "50-300",
+  "5668": "130x(6,8,10 OR 12FL)x300 LONG",
+  "5670": "GALV STEEL SHIM IF REQUIRED.",
+  "5681": "REFER NOTE 4.",
+  "5695": "LESS. REFER NOTE 5.",
+  "5701": "RHS PACKING OPTION.",
+  "5641": "Ø20 THREADED ROD",
+  "5642": "(TYP.)",
+  "5653": "JARRAH TIMBER PACKER, 1 N°",
+  "5657": "Ø20 THREADED ROD REQUIRED",
+  "5704": "DETAIL  1",
+  "5666": "GALV STEEL SHIM IF REQUIRED.",
+  "5696": "LESS. REFER NOTE 5.",
+  "5715": "COBEL TO HALFCAP",
+  "5734": "REQUIRED. 65x5FLx65",
+  "5750": "PACKER.",
+  "5830": "~",
+  "5784": "EXISTING TIMBER",
+  "5791": "75",
+  "5797": "TRIM BOLT TO SUIT IF",
+  "5801": "REQUIRED. 65x5FLx65",
+  "5766": "1.",
+  "5773": "2.",
+  "5789": "REPRESENTATIVE.",
+  "5810": "TIMBER HALF-CAP.",
+  "5823": "IF EXISTING BEARING IS LESS THAN REQUIRED MIN.",
+  "5825": "REFER TO DRG N°s 1330-0022",
+  "5822": "HALF-CAP TO PILE CONNECTION DETAIL - TYPE 1",
+  "5720": "Ø20 THREADED ROD",
+  "5725": "WITH 65x5FLx65 WASHER",
+  "5726": "TO TIMBER FACE (TYP.)",
+  "5733": "Ø20 THREADED",
+  "5735": "\"U\" ROD",
+  "5752": "OF THREADED \"U\"-ROD",
+  "5783": "~",
+  "5793": "EXISTING TIMBER",
+  "5739": "~"
+ },
+ "add": [
+  {"s": "50-300", "like": 5655, "at": [43.91, 40.15]},
+  {
+   "s": "NO",
+   "like": 5633,
+   "at": [
+    66.27,
+    33.27
+   ]
+  }
+ ],
+ "drop": []
+}

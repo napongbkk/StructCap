@@ -1,0 +1,330 @@
+{
+ "sheet": "PN30-2126",
+ "title": "WINGWALL PILE REPAIR DETAIL - TYPE 1",
+ "cat": "Wing walls",
+ "details": [
+  {
+   "name": "SECTION A – ROTTEN SECTION TO BE REMOVED",
+   "rects": [
+    [
+     4.5,
+     19.5,
+     34.5,
+     32.3
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A – ROTTEN SECTION TO REMAIN",
+   "rects": [
+    [
+     4.5,
+     32.3,
+     34.5,
+     44.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A – TOP SECTION OF TIMBER PILE IS REMOVED",
+   "rects": [
+    [
+     38.0,
+     14.0,
+     72.8,
+     30.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A – TOP SECTION OF TIMBER PILE REMAINS",
+   "rects": [
+    [
+     38.0,
+     30.6,
+     72.8,
+     44.2
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PROPOSED UB REPAIR SHALL BE PLACED",
+   "rects": [
+    [
+     2.5,
+     46.3,
+     12.8,
+     50.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B – WINGWALL PILE",
+   "rects": [
+    [
+     2.5,
+     44.8,
+     34.5,
+     60.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B – TIMBER PILE REPAIR",
+   "rects": [
+    [
+     38.0,
+     44.2,
+     72.8,
+     61.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – ENSURE WINGWALL SHEETING IS SAFELY PROPPED",
+   "rects": [
+    [
+     31.3,
+     59.2,
+     47.2,
+     65.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – IF Y < 1500 / Y > 1500",
+   "rects": [
+    [
+     30.8,
+     65.0,
+     52.0,
+     72.0
+    ]
+   ]
+  },
+  {
+   "name": "VIEW C – ROTTEN SECTION TO REMAIN",
+   "rects": [
+    [
+     51.5,
+     61.5,
+     74.5,
+     77.3
+    ]
+   ]
+  },
+  {
+   "name": "VIEW C – TIMBER SHEETING BUTTS AT THE TIMBER PILE REPAIR",
+   "rects": [
+    [
+     44.0,
+     77.3,
+     72.0,
+     93.0
+    ]
+   ]
+  },
+  {
+   "name": "VIEW C – TOP SECTION OF TIMBER PILE IS REMOVED",
+   "rects": [
+    [
+     72.0,
+     77.3,
+     99.0,
+     93.0
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – WINGWALL PILE REPAIR DETAIL - TYPE 1",
+   "rects": [
+    [
+     2.5,
+     60.6,
+     40.0,
+     93.0
+    ],
+    [
+     40.0,
+     72.0,
+     44.0,
+     93.0
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   86.0,
+   92.5,
+   99.5,
+   95.5
+  ],
+  [
+   2.5,
+   90.5,
+   4.5,
+   92.0
+  ],
+  [
+   7.5,
+   94.0,
+   10.0,
+   95.5
+  ],
+  [
+   74.5,
+   51.5,
+   76.5,
+   53.0
+  ]
+ ],
+ "erase": [
+  [
+   13.8,
+   89.4,
+   14.95,
+   90.12
+  ],
+  [
+   19.0,
+   90.5,
+   20.6,
+   91.25
+  ],
+  [
+   32.15,
+   65.6,
+   34.1,
+   66.35
+  ],
+  [
+   35.8,
+   65.7,
+   36.7,
+   66.3
+  ],
+  [
+   32.15,
+   70.37,
+   34.1,
+   71.12
+  ],
+  [
+   35.8,
+   70.47,
+   36.7,
+   71.07
+  ]
+ ],
+ "text": {
+  "4522": "SECTION  A",
+  "4547": "SECTION  A",
+  "4546": "",
+  "4532": "Ø20 THREADED RODS WITH",
+  "4534": "1-65x5FLx65 WASHER ABOVE",
+  "4543": "PROPOSED UB",
+  "4504": "Ø20 THREADED RODS",
+  "4519": "WHERE EXISTING TIMBER SHEETING BUTTS",
+  "4527": "Ø20 THREADED RODS",
+  "4545": "WHERE EXISTING TIMBER SHEETING BUTTS",
+  "4737": "40",
+  "4588": "",
+  "4587": "IF",
+  "4613": "SECTION  B",
+  "4559": "150",
+  "4561": "75 COVER",
+  "4579": "THREADED 'U' ROD",
+  "4577": "THREADED 'U' ROD",
+  "4600": "PROVIDE Ø22 HOLES",
+  "4606": "FOR THREADED 'U' ROD.",
+  "4610": "(TYP)",
+  "4573": "~",
+  "4743": "95",
+  "4744": "40",
+  "4612": "SECTION  B",
+  "4745": "300",
+  "4746": "300",
+  "4556": "150",
+  "4583": "30",
+  "4597": "PROVIDE Ø22 HOLES",
+  "4601": "APPLIES SECTION  B  ONLY.",
+  "4598": "",
+  "4602": "",
+  "4645": "~",
+  "4747": "25",
+  "4628": "WITH Ø12 HOLES AT 75",
+  "4665": "WHERE EX",
+  "4748": "90",
+  "4690": "~",
+  "4675": "WITH Ø12 HOLES AT 75",
+  "4721": "WHERE EX",
+  "4692": "~",
+  "4718": "VIEW  C",
+  "4716": "",
+  "4749": "90",
+  "4676": "WITH Ø12 HOLES AT 75",
+  "4733": "MIN",
+  "4734": "100",
+  "4736": "150",
+  "4738": "600",
+  "4739": "MIN",
+  "4740": "10",
+  "4741": "100",
+  "4742": "1500 MIN.",
+  "4636": "~",
+  "4688": "~",
+  "4710": "~",
+  "4672": "~",
+  "4620": "175",
+  "4719": "WINGWALL PILE REPAIR DETAIL - TYPE 1",
+  "4720": "",
+  "4633": "15°",
+  "4637": "WITH SAME SIZE).",
+  "4644": "100",
+  "4661": "U2",
+  "4687": "PERMANENT",
+  "4700": "75x75x10 EA",
+  "4705": "150",
+  "4650": "~",
+  "4726": "ABUTMENT N° X - PILE N° X",
+  "4727": "",
+  "4638": "",
+  "4639": "",
+  "4656": "",
+  "4657": ""
+ },
+ "add": [
+  {
+   "s": "TIMBER",
+   "like": 4587,
+   "dx": 1.4,
+   "dy": 0
+  },
+  {
+   "s": "XX30-XXXX",
+   "like": 4715,
+   "at": [
+    35.9,
+    90.19
+   ]
+  },
+  {
+   "s": "IF 'h' < 1500 -",
+   "like": 4639,
+   "at": [
+    31.57,
+    66.24
+   ]
+  },
+  {
+   "s": "IF 'h' > 1500 -",
+   "like": 4657,
+   "at": [
+    31.59,
+    71.01
+   ]
+  }
+ ],
+ "drop": []
+}

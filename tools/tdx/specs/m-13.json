@@ -1,0 +1,218 @@
+{
+ "sheet": "1330-0013",
+ "title": "PIER PILE REPAIR HALF-CAP BEARING DETAIL – TYPE 5",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "VIEW D",
+   "rects": [
+    [
+     27.5,
+     5.5,
+     50.9,
+     41.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER PILE REPAIR HALF-CAP BEARING DETAIL – TYPE 5",
+   "rects": [
+    [
+     5.0,
+     5.0,
+     26.5,
+     41.5
+    ],
+    [
+     17.0,
+     41.5,
+     41.0,
+     45.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER PILE REPAIR HALF-CAP BEARING DETAIL – TYPE 6",
+   "rects": [
+    [
+     49.2,
+     5.5,
+     72.3,
+     41.5
+    ],
+    [
+     62.0,
+     41.5,
+     84.5,
+     45.5
+    ]
+   ]
+  },
+  {
+   "name": "VIEW E",
+   "rects": [
+    [
+     72.3,
+     5.5,
+     95.3,
+     41.5
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A",
+   "rects": [
+    [
+     6.0,
+     64.5,
+     29.0,
+     84.5
+    ]
+   ]
+  },
+  {
+   "name": "HALF-CAP CONNECTION CHANNEL – TYPE A",
+   "rects": [
+    [
+     30.2,
+     63.0,
+     51.5,
+     85.0
+    ]
+   ]
+  },
+  {
+   "name": "HALF-CAP CONNECTION CHANNEL – TYPE B",
+   "rects": [
+    [
+     54.2,
+     59.5,
+     79.6,
+     85.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     65.5,
+     89.0,
+     83.4,
+     96.9
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   82.8,
+   46,
+   100,
+   100
+  ],
+  [
+   95.5,
+   0,
+   100,
+   100
+  ],
+  [
+   70.5,
+   47.5,
+   78.5,
+   52.5
+  ],
+  [
+   0,
+   0,
+   4.7,
+   100
+  ],
+  [
+   0,
+   0,
+   100,
+   3.3
+  ],
+  [
+   0,
+   96.9,
+   100,
+   100
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "3843": "~",
+  "3868": "~",
+  "3842": "~",
+  "3835": "- TYPE A",
+  "3839": "Ø20 THREADED ROD WITH",
+  "3841": "1-65x5FLx65 WASHER TO",
+  "3847": "GALV. STEEL",
+  "3890": "~",
+  "3859": "M20 BOLT (TYP.)",
+  "3862": "DRILL Ø22 HOLES ON",
+  "4009": "~",
+  "3901": "VIEW  D",
+  "3898": "",
+  "3881": "TYP",
+  "3893": "2 – 90 x 12FL STIFFENERS",
+  "3871": "~",
+  "4010": "~",
+  "3824": "℄ PILE",
+  "4002": "~",
+  "4004": "~",
+  "4005": "~",
+  "3860": "~",
+  "3904": "PIER PILE REPAIR HALF-CAP BEARING DETAIL – TYPE 5",
+  "3837": "℄ PILE",
+  "3855": "PACKER (TYP.)",
+  "3905": "PIER PILE REPAIR HALF-CAP BEARING DETAIL – TYPE 6",
+  "3883": "RADIUS (TYP.)",
+  "3840": "Ø20 THREADED ROD WITH",
+  "3846": "TIMBER FACE (TYP.)",
+  "3853": "PACKER (TYP.)",
+  "3858": "M20 BOLT (TYP.)",
+  "3861": "DRILL Ø22 HOLES",
+  "3903": "VIEW  E",
+  "3899": "",
+  "3874": "TYP",
+  "4001": "",
+  "4003": "~",
+  "3945": "125 – 200 PFC SHIMMED TO FIT",
+  "3956": "~",
+  "3962": "~",
+  "4006": "~",
+  "4007": "75",
+  "4008": "55",
+  "3980": "HALF-CAP CONNECTION CHANNEL – TYPE A",
+  "3928": "35 (125 PFC)",
+  "3946": "Ø22 HOLE",
+  "3950": "(TYP.)",
+  "3938": "~",
+  "3957": "~",
+  "3981": "HALF-CAP CONNECTION CHANNEL – TYPE B",
+  "3922": "35 (125 PFC)",
+  "3923": "45 (150, 180 OR 200 PFC)",
+  "3924": "",
+  "3939": "Ø22 HOLE (TYP.)",
+  "4011": "75",
+  "4012": "75",
+  "4013": "75",
+  "3989": "NOTES:",
+  "3997": "STEEL SHIMS TO BE (3, 5, 8, 10, OR 12 FL) WIDTH AND LENGTH"
+ },
+ "add": [
+  {
+   "s": "VARIES",
+   "like": 4001,
+   "at": [
+    11.42,
+    74.1
+   ]
+  }
+ ],
+ "drop": []
+}

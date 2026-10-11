@@ -1,0 +1,186 @@
+{
+ "sheet": "PN30-2313",
+ "title": "STEEL PIER PILE/PIER HALFCAPS REPLACEMENT DETAIL - TYPE 1",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "NOTE – SUBJECT TO CORBEL CONDITION",
+   "rects": [
+    [
+     41.5,
+     24.6,
+     55,
+     29.2
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – HALFCAP CHANNELS",
+   "rects": [
+    [
+     44,
+     86.5,
+     56,
+     95
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     14.5,
+     0.8,
+     34,
+     21
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STRINGER/CORBEL BRACKET DETAILS",
+   "rects": [
+    [
+     15,
+     21,
+     34,
+     51.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION C",
+   "rects": [
+    [
+     46.5,
+     28.5,
+     75.5,
+     52.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – HALFCAP CONNECTION CHANNEL",
+   "rects": [
+    [
+     34,
+     33.5,
+     51.8,
+     57
+    ]
+   ]
+  },
+  {
+   "name": "VIEW B",
+   "rects": [
+    [
+     3.8,
+     53,
+     32,
+     85.5
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A",
+   "rects": [
+    [
+     32,
+     59,
+     51,
+     85.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STEEL PIER PILE/PIER HALFCAPS REPLACEMENT DETAIL - TYPE 1",
+   "rects": [
+    [
+     51,
+     55.5,
+     81.5,
+     80.5
+    ],
+    [
+     56,
+     80.5,
+     81,
+     95
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   1.6,
+   18
+  ],
+  [
+   70,
+   95,
+   85,
+   100
+  ],
+  [
+   0,
+   97,
+   100,
+   100
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "3225": "NOTE: HALFCAP CHANNELS",
+  "3223": "",
+  "3128": "Ø22 HOLE (TYP)",
+  "3129": "Ø22 x 50 LONG",
+  "3235": "100",
+  "3236": "50",
+  "3237": "25",
+  "3238": "75",
+  "3242": "~",
+  "3158": "40",
+  "3161": "Ø22x40 LONG",
+  "3239": "75",
+  "3240": "75",
+  "3241": "300",
+  "3234": "~",
+  "3212": "VIEW  B",
+  "3192": "TO CORBELS WITH Ø20 THREADED",
+  "3211": "SITE DRILLED Ø22 HOLES (TYP)",
+  "3219": "VIEW  A",
+  "3194": "TYP",
+  "3193": "TYP",
+  "3199": "~",
+  "3181": "~",
+  "3191": "~",
+  "3222": "REPLACEMENT DETAIL - TYPE 1",
+  "3200": "PROPOSED 300 PFC",
+  "3196": "",
+  "3204": "(TYP)",
+  "3215": "PROPPING STRINGERS &",
+  "3165": "",
+  "3167": "SECTION  C",
+  "3133": ""
+ },
+ "add": [
+  {
+   "s": "XX30-XXXX",
+   "like": 3224,
+   "at": [
+    72.8,
+    87.3
+   ]
+  },
+  {
+   "s": "SUBJECT TO CORBEL CONDITION",
+   "like": 3133,
+   "at": [
+    42.74,
+    26.72
+   ]
+  }
+ ],
+ "drop": []
+}

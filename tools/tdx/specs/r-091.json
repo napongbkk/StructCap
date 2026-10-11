@@ -1,0 +1,15 @@
+{"sheet":"PN30-3112","title":"PIER - WIDENING & ADDITIONAL STRINGER DETAIL XX30-XXXX","cat":"Stringers",
+"details":[
+{"name":"PLAN","rects":[[10.5,3.5,56.4,42.5]]},
+{"name":"DETAIL 1","rects":[[56.4,6.5,90.5,49.5]]},
+{"name":"NOTE – STRINGER & CORBEL SIZE","rects":[[12,76.3,23.6,84.5]]},
+{"name":"NOTE – FOR STUB COLUMN AND CAP PLATE","rects":[[48.3,76,64,80]]},
+{"name":"SECTIONAL ELEVATION A","rects":[[60.9,50.3,88.5,80],[65.3,81.3,84.5,87]]},
+{"name":"ELEVATION – PIER - WIDENING & ADDITIONAL STRINGER DETAIL XX30-XXXX","rects":[[11.5,44,60.9,84.3],[18.5,84.3,69.8,93]]}
+],
+"exclude":[[0,0,1.2,8],[78,91,92,97]],
+"erase":[[63.4, 8.8, 64.1, 10.1]],
+"text":{"3025":"600 (NOM.)","3118":"45","3119":"45","3037":"1mm BONDEK PERMANENT","3019":"ANCHOR BOLT - M16x150 LONG BOLT","3022":"WITH 30 O.D. x 3 THICK WASHER","3032":"1mm BONDEK","3054":"DETAIL  1","3053":"","3047":"DRILL Ø18 HOLE IN STRINGER","3120":"110",
+"3098":"DETAILS REFER TO PN30 2311 & 2312","3103":"","3099":"","3069":"(TYP)   (TYP)","3109":"SECTIONAL ELEVATION  A","3107":"","3079":"","3080":"","3086":"310 UB 46 CORBEL","3087":"","3088":"~",
+"3058":"SHEETING","3059":"1000 (NOM.)","3063":"400 CRS (TYP)","3066":"400","3111":"","3081":"(TYP)","3094":"PROPOSED STEEL","3112":"SPAN N° X TO X - STRINGER N° X","3115":"~","3073":"~","3072":"~"},
+"add":[{"s": "PIER - WIDENING & ADDITIONAL STRINGER DETAIL", "like": 3111, "at": [19.47, 87.32]}, {"s": "XX30-XXXX", "like": 3112, "at": [50.17, 87.32]}, {"s": "410 UB 54 STRINGER", "like": 3079, "at": [79.07, 66.7]}],"drop":[]}

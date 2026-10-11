@@ -1,0 +1,166 @@
+{
+ "sheet": "PN30-3101",
+ "title": "PIER - STRINGER REPLACEMENT DETAIL - TYPE 1",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "NOTE – DIMENSIONS DENOTED THUS",
+   "rects": [
+    [
+     42.3,
+     26,
+     58.8,
+     37
+    ]
+   ]
+  },
+  {
+   "name": "MODIFIED FLANGE DETAILS",
+   "rects": [
+    [
+     3.5,
+     1.5,
+     45,
+     39.8
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – GAP BETWEEN STRINGER AND DECK",
+   "rects": [
+    [
+     53.3,
+     58.5,
+     67.6,
+     71.2
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – STRINGER SIZE WILL VARY",
+   "rects": [
+    [
+     52.5,
+     72.8,
+     65,
+     80
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION A",
+   "rects": [
+    [
+     61,
+     41.5,
+     72.8,
+     52
+    ],
+    [
+     67.6,
+     41,
+     98,
+     87
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER - STRINGER REPLACEMENT DETAIL - TYPE 1",
+   "rects": [
+    [
+     5.5,
+     39.8,
+     67.6,
+     84.3
+    ],
+    [
+     11,
+     84.3,
+     67.6,
+     92
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   84.5,
+   91.5,
+   98.5,
+   97.5
+  ],
+  [
+   94.3,
+   21.1,
+   94.9,
+   21.9
+  ],
+  [
+   0.2,
+   65.4,
+   0.8,
+   66.2
+  ],
+  [
+   74,
+   90.4,
+   74.6,
+   91.2
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "1663": "200",
+  "1665": "30",
+  "1666": "(TYP)",
+  "1756": "35",
+  "1668": "~",
+  "1757": "~",
+  "1758": "10",
+  "1759": "200",
+  "1711": "NOTE:",
+  "1732": "NOTE: STRINGER SIZE WILL",
+  "1743": "410 UB 54 STRINGER DRAWN",
+  "1741": "",
+  "1747": "SECTIONAL ELEVATION  A",
+  "1745": "",
+  "1735": "Ø20 THREADED",
+  "1763": "50",
+  "1764": "~",
+  "1682": "WITH Ø10x200 LONG SPIKE",
+  "1698": "PIER",
+  "1760": "50",
+  "1761": "MIN",
+  "1762": "MIN",
+  "1731": "REFER TO DETAIL",
+  "1749": "",
+  "1672": ""
+ },
+ "add": [
+  {
+   "s": "PIER - STRINGER REPLACEMENT DETAIL - TYPE 1",
+   "like": 1749,
+   "at": [
+    11.83,
+    87.16
+   ]
+  },
+  {
+   "s": "XX30-XXXX",
+   "like": 1750,
+   "at": [
+    44.9,
+    87.16
+   ]
+  },
+  {
+   "s": "NOTE:",
+   "like": 1673,
+   "at": [
+    43.45,
+    28.68
+   ]
+  }
+ ],
+ "drop": []
+}

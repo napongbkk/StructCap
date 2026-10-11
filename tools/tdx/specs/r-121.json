@@ -1,0 +1,432 @@
+{
+ "sheet": "PN30-4101",
+ "title": "ELEVATION A",
+ "cat": "Barrier",
+ "details": [
+  {
+   "name": "NOTE – THIS DRAWING SHALL BE READ IN CONJUNCTION",
+   "rects": [
+    [
+     57.5,
+     78.6,
+     79.6,
+     81.5
+    ]
+   ]
+  },
+  {
+   "name": "GUARDRAIL BEAM LAPPING DETAIL",
+   "rects": [
+    [
+     43.3,
+     3.3,
+     62.2,
+     11.6
+    ]
+   ]
+  },
+  {
+   "name": "POST CONNECTION DETAILS",
+   "rects": [
+    [
+     76.5,
+     2.5,
+     92.5,
+     47
+    ]
+   ]
+  },
+  {
+   "name": "THRIEBEAM EXPANSION JOINT KEY PLAN",
+   "rects": [
+    [
+     74.5,
+     47.3,
+     92,
+     57
+    ]
+   ]
+  },
+  {
+   "name": "WIDTH MARKER DETAILS",
+   "rects": [
+    [
+     61.3,
+     53,
+     74.5,
+     72.5
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     6.7,
+     1,
+     76.5,
+     43.6
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION A",
+   "rects": [
+    [
+     6.7,
+     43.6,
+     74.5,
+     59.6
+    ]
+   ]
+  },
+  {
+   "name": "TABLE OF QUANTITIES",
+   "rects": [
+    [
+     6.7,
+     59.6,
+     34.5,
+     82
+    ]
+   ]
+  },
+  {
+   "name": "FORMATION WIDENING DETAILS",
+   "rects": [
+    [
+     34.5,
+     59.6,
+     61.3,
+     81
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     61.3,
+     72.5,
+     79.6,
+     78.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THESE NOTES ARE PART OF PRACTICE NOTE PN30-4108",
+   "rects": [
+    [
+     79.6,
+     72.5,
+     94,
+     79.5
+    ],
+    [79.6, 57, 94, 81.6],
+    [91.5, 0.5, 94, 3]
+   ]
+  },
+  {
+   "name": "NOTE – REFER TO APPROPRIATE DRAWINGS FROM STANDARD DRAWING MANUAL",
+   "rects": [
+    [
+     70,
+     81.5,
+     94,
+     85.2
+    ]
+   ]
+  },
+  {
+   "name": "ENGINEERS NOTE",
+   "rects": [
+    [
+     17,
+     83.4,
+     78,
+     95.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   1.5,
+   6
+  ],
+  [
+   0,
+   97,
+   22,
+   100
+  ],
+  [
+   83,
+   92.5,
+   96,
+   98
+  ],
+  [
+   5.6,
+   0,
+   6.6,
+   86.5
+  ],
+  [
+   94.2,
+   0,
+   95.3,
+   86.5
+  ],
+  [
+   6,
+   85.3,
+   95,
+   86.4
+  ],
+  [
+   6,
+   0,
+   95,
+   0.5
+  ]
+ ],
+ "erase": [[17, 84.6, 78, 95.5], [58.5, 78.75, 79.3, 80.45], [84.5, 76.7, 91.0, 77.6], [86.0, 77.6, 87.8, 78.4]],
+ "text": {
+  "10893": "END TERMINAL",
+  "10895": "TO SUIT",
+  "10896": "IMPACT",
+  "10910": "GUARDRAIL BEAM LAPPING DETAIL",
+  "10899": "AVE TO",
+  "10901": "ADJUSTED TO",
+  "10905": "ACTURER.",
+  "10908": "LAP 'W' BEAMS &",
+  "10909": "'THRIEBEAMS'",
+  "10939": "~",
+  "10936": "VIEW  B",
+  "10986": "", "12292": "",
+  "11038": "~",
+  "11253": "2400",
+  "11103": "N.T.S.",
+  "11143": "",
+  "11249": "~",
+  "11108": "SIGN) D4-3B(L) - LHS",
+  "11110": "D4-3B(R)",
+  "11139": "DETAILS REFER",
+  "11150": "N° 9548-106)",
+  "11169": "WIDTH MARKER D4-3B(R) - SHOWN",
+  "11171": "1:20",
+  "11251": "NOM.",
+  "10919": "~",
+  "10923": "~",
+  "10915": "~",
+  "11020": "~",
+  "11039": "~",
+  "11245": "~",
+  "11247": "~",
+  "11010": "~",
+  "10958": "",
+  "10973": "",
+  "10967": "",
+  "10968": "",
+  "10917": "ABUTMENT N° 2",
+  "10914": "ABUTMENT N° 1",
+  "11006": "PT5",
+  "10918": "4:1 SLOPE",
+  "10922": "(TYP)",
+  "10928": "(TYP)",
+  "10932": "TR5",
+  "10934": "2-TR5",
+  "10938": "PT5   PT7",
+  "10940": "PT5",
+  "10954": "PT5",
+  "10948": "PT5",
+  "10949": "T5",
+  "10950": "PT5",
+  "10951": "PT5",
+  "10952": "PT5",
+  "10953": "PT5",
+  "10959": "JOINT",
+  "10961": "TB1",
+  "10969": "WB5",
+  "10965": "TO NOTE 2",
+  "10983": "B5",
+  "10984": "3-WB3",
+  "10987": "500",
+  "10989": "BEAM  RAD.",
+  "10990": "WB2",
+  "10997": "T1  PT1",
+  "10994": "PT7",
+  "10995": "PT5",
+  "11001": "PT5  PT7",
+  "11002": "PT5",
+  "11003": "PT5",
+  "11004": "PT5",
+  "11005": "PT5",
+  "11007": "PT5",
+  "11009": "1000",
+  "11014": "TR1",
+  "11016": "TR5",
+  "11017": "TR4",
+  "11018": "2-TR5",
+  "11021": "1000",
+  "11023": "POSTS @",
+  "11026": "POSTS",
+  "11027": "000 CRS",
+  "11028": "UDE",
+  "11032": "1000 CRS",
+  "11246": "6000",
+  "11248": "500",
+  "11250": "900",
+  "11252": "550",
+  "10906": "T8",
+  "11068": "~",
+  "11106": "ELEVATION  A",
+  "11254": "",
+  "11045": "'W' BEAM STIFFENER PLATE, REFER",
+  "11047": "ABUTMENT N° 2",
+  "11051": "COMPONENTS",
+  "11052": "TRANSITION",
+  "11053": "TRANSITION",
+  "11059": "BEAM' TB1",
+  "11061": "'THRIEBEAM'",
+  "11064": "'W' BEAM",
+  "11065": "'W' BEAM",
+  "11069": "TR5",
+  "11070": "TR4",
+  "11072": "TR4",
+  "11073": "TR3",
+  "11074": "1",
+  "11075": "TR8",
+  "11076": "PT5",
+  "11078": "PT1",
+  "11079": "PT1",
+  "11080": "PT1   PT",
+  "11082": "PT5",
+  "11083": "PT5",
+  "11085": "PT5",
+  "11089": "PT5",
+  "11086": "PT5   PT8",
+  "11081": "PT3 PT5",
+  "11090": "PT7 PT5",
+  "11091": "PT5",
+  "11092": "PT5",
+  "11096": "(TYP)",
+  "11102": "'THRIEBEAM' STIFFENER PLATE, REFER",
+  "11191": "",
+  "11119": "",
+  "11120": "CONNECTOR",
+  "11121": "",
+  "11242": "X",
+  "11243": "X",
+  "11244": "X",
+  "11148": "X",
+  "11175": "X",
+  "11187": "X",
+  "11199": "X",
+  "11161": "TR4",
+  "11163": "PT5",
+  "11164": "WB5",
+  "11165": "TB5",
+  "11166": "TR5",
+  "11167": "TC5",
+  "11176": "TC6",
+  "11180": "ENER",
+  "11197": "T9",
+  "11204": "INSTALLED.",
+  "11141": "'W' BEAM",
+  "11113": "'W' BEAM",
+  "11194": "'W' BEAM",
+  "11201": "THRIEBEAM & TRANSITION",
+  "11189": "1.",
+  "11190": "FOR GENERAL NOTES REFER TO DRAWING N° XX30-XXXX.",
+  "11195": "2.  EXTRUDER TYPE END TERMINALS SHALL MEET WITH THE REQUIREMENTS",
+  "11202": "OF NCHRP-350 TEST LEVEL 3. END TERMINAL TYPES TO BE SUBMITTED",
+  "11206": "FOR SUPERINTENDENT'S APPROVAL.",
+  "11207": "",
+  "11211": "",
+  "11177": "~",
+  "11196": "PN30-4108.  IF TABLE OF QUANTITIES IS NOT",
+  "11208": "THEN THE NOTE '8 POST END TERMINALS etc'",
+  "11209": "",
+  "11212": "",
+  "11210": "",
+  "11214": "NEEDS TO BE INCLUDED IN THESE NOTES.",
+  "11215": "",
+  "11216": "",
+  "11219": "THIS DRAWING SHALL BE READ IN CONJUNCTION WITH DRG N° XX30-XXXX",
+  "11220": "",
+  "11221": "AND STANDARD DRAWING N°'s 0430-0772 TO 0430-0777.",
+  "11222": "",
+  "11223": "REFER TO APPROPRIATE DRAWINGS FROM STANDARD DRAWING MANUAL",
+  "11224": "",
+  "11227": "ENGINEER'S NOTE :",
+  "11230": "THIS PRACTICE NOTE IS AN EXAMPLE OF A 'LOW PERFORMANCE LEVEL BARRIER'.",
+  "11231": "",
+  "11232": "BRIDGE TRAFFIC BARRIERS SHALL BE EXTENDED BEYOND THE BRIDGE ABUTMENTS TO DISTANCES AS",
+  "11233": "",
+  "11236": "REQUIRED, SPECIFIC TO EACH SITE, TO ADEQUATELY PROTECT ERRANT VEHICLES FROM ALL BRIDGE",
+  "11237": "",
+  "11239": "RELATED HAZARDS AND STEEP EMBANKMENTS. ALSO REFER TO STANDARD DRAWINGS 0330-1646,",
+  "11240": "0530-0686 AND 0430-0768 TO 0430-0777.",
+  "11226": "",
+  "11228": "",
+  "11229": "",
+  "11234": "",
+  "11235": "",
+  "11238": ""
+ },
+ "add": [
+  {
+   "s": "THRIEBEAM EXPANSION JOINT",
+   "like": 10961,
+   "at": [
+    40.6,
+    23.75
+   ]
+  },
+  {
+   "s": "BRIDGE",
+   "like": 10961,
+   "at": [
+    53.0,
+    25.0
+   ]
+  },
+  {
+   "s": "TB2",
+   "like": 10961,
+   "at": [
+    36.2,
+    24.25
+   ]
+  },
+  {
+   "s": "TB3",
+   "like": 10961,
+   "at": [
+    39.2,
+    24.25
+   ]
+  },
+  {
+   "s": "THRIEBEAM",
+   "like": 11198,
+   "at": [
+    17.9,
+    74.85
+   ]
+  },
+  {
+   "s": "TOPRAIL",
+   "like": 11117,
+   "at": [
+    29.6,
+    62.9
+   ]
+  }
+ ],
+ "drop": []
+}

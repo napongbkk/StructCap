@@ -1,0 +1,20 @@
+{
+ "sheet": "PN30-3106",
+ "title": "PIER - STRINGER & CORBEL REPLACEMENT DETAIL - TYPE 2",
+ "cat": "Stringers",
+ "details": [
+  {"name": "NOTE – GAP BETWEEN STRINGER AND DECK", "rects": [[45, 29.3, 60.6, 43.2]]},
+  {"name": "NOTE – STRINGER & CORBEL SIZE WILL VARY", "rects": [[48.4, 60.3, 62.2, 70.2]]},
+  {"name": "SECTIONAL ELEVATION A", "rects": [[58.5, 14, 97.5, 71]]},
+  {"name": "ELEVATION – PIER - STRINGER & CORBEL REPLACEMENT DETAIL - TYPE 2", "rects": [[5, 12.5, 58.5, 69.6], [8.5, 69.6, 50.5, 81]]}
+ ],
+ "exclude": [[83, 82, 98.5, 88.5], [4.5, 54, 5.1, 54.7], [55.8, 99.2, 56.3, 99.8], [49.7, 54, 50.3, 54.7], [94.7, 54, 95.3, 54.7]],
+ "erase": [[84.6, 27.5, 96.5, 28.7], [12.7, 76.9, 16.4, 78.5]],
+ "text": {"1909": "NOTE:", "1955": "O ENGINEERING REQUIREMENTS", "1898": "OF NUT. (TYP)", "1919": "410 UB 54 STRINGER",
+  "1904": "", "1963": "", "1966": "SPAN N° X - PIER N° X - STRINGER N° X", "1967": "", "1968": "", "1905": "", "1924": "TYP", "1927": "310 UB 46 CORBEL x", "1974": "50",
+  "1889": "WITH Ø10x200 LONG SPIKE", "1921": "(TYP)", "1902": "DECK", "1903": "", "1972": "~", "1973": "~",
+  "1961": "PIER - STRINGER & CORBEL REPLACEMENT", "1962": "", "1944": "Ø20 THREADED ROD WITH", "1954": "TIMBER FACE (TYP)",
+  "1965": "DRG NUMBER - REFER TO"},
+ "add": [{"s": "THREADED ROD EVERY", "like": 1908, "at": [84.75, 29.19]}, {"s": "DETAIL - TYPE 2", "like": 1963, "at": [9.31, 76.19]}],
+ "drop": []
+}

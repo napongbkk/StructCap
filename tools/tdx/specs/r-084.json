@@ -1,0 +1,164 @@
+{
+ "sheet": "PN30-3105",
+ "title": "PIER - STRINGER & CORBEL REPLACEMENT DETAIL - TYPE 1",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "NOTE – GAP BETWEEN STRINGER AND DECK",
+   "rects": [
+    [
+     64.2,
+     43.3,
+     80,
+     50.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – STRINGER & CORBEL SIZE WILL VARY",
+   "rects": [
+    [
+     67.2,
+     77.5,
+     76.7,
+     84.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION A",
+   "rects": [
+    [
+     72.3,
+     44,
+     98,
+     82
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     2,
+     45,
+     34.5,
+     82
+    ],
+    [
+     34.5,
+     57,
+     37,
+     64.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER - STRINGER & CORBEL REPLACEMENT DETAIL - TYPE 1",
+   "rects": [
+    [
+     34.5,
+     45,
+     72.3,
+     80
+    ],
+    [
+     42.5,
+     80,
+     68.8,
+     90.8
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   86,
+   90,
+   97.5,
+   95.5
+  ],
+  [
+   8.5,
+   0,
+   14,
+   1.6
+  ],
+  [
+   0.3,
+   1.5,
+   0.9,
+   2.3
+  ],
+  [
+   32.7,
+   0.4,
+   33.3,
+   1.1
+  ],
+  [
+   55.9,
+   10.4,
+   56.5,
+   11
+  ],
+  [
+   85.3,
+   29.1,
+   85.9,
+   29.7
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "2381": "NOTE:",
+  "2395": "TO STEEL STRINGER PACKING DETAIL",
+  "2469": "NOTE: STRING",
+  "2481": "310 UB 97 CORBEL DRAWN",
+  "2480": "",
+  "2430": "~",
+  "2447": "~",
+  "2431": "~",
+  "2394": "Ø20x130 LONG COACH",
+  "2470": "SECTIONAL ELEVATION  A",
+  "2491": "",
+  "2440": "",
+  "2438": "",
+  "2387": "Ø20 THREADED ROD",
+  "2468": "SECTION  B",
+  "2467": "",
+  "2449": "TYP",
+  "2462": "TYP",
+  "2429": "",
+  "2437": "(TYP)",
+  "2458": "Ø20 THREADED ROD WITH",
+  "2434": ""
+ },
+ "add": [
+  {
+   "s": "120",
+   "like": 2429,
+   "at": [
+    58.05,
+    64.17
+   ]
+  },
+  {
+   "s": "310 UC 97 CORBEL",
+   "like": 2434,
+   "at": [
+    87.97,
+    65.04
+   ]
+  },
+  {
+   "s": "1000 LONG",
+   "like": 2434,
+   "at": [
+    87.97,
+    66.42
+   ]
+  }
+ ],
+ "drop": []
+}

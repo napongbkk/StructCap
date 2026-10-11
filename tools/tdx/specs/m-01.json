@@ -1,0 +1,332 @@
+{
+ "sheet": "1330-0001",
+ "title": "GENERAL NOTES",
+ "cat": "General",
+ "details": [
+  {
+   "name": "TABLE 1 - BAR LAP LENGTHS",
+   "rects": [
+    [
+     57.8,
+     5.5,
+     81.0,
+     17.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     5.2,
+     3.6,
+     57.6,
+     93.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   82.9,
+   0,
+   100,
+   100
+  ],
+  [
+   72.0,
+   48.0,
+   80.5,
+   53.5
+  ],
+  [
+   0,
+   0,
+   100,
+   3.5
+  ],
+  [
+   0,
+   95.5,
+   100,
+   100
+  ],
+  [
+   0,
+   0,
+   5.2,
+   100
+  ]
+ ],
+ "erase": [
+  [
+   59.6,
+   12.0,
+   61.0,
+   13.3
+  ],
+  [
+   62.5,
+   7.1,
+   62.9,
+   7.8
+  ],
+  [
+   36.0,
+   28.9,
+   36.8,
+   31.8
+  ],
+  [
+   47.9,
+   28.7,
+   48.8,
+   29.8
+  ],
+  [
+   17.95,
+   45.6,
+   18.95,
+   48.4
+  ],
+  [
+   17.45,
+   44.4,
+   18.0,
+   44.95
+  ],
+  [
+   5.2,
+   15.5,
+   6.9,
+   16.45
+  ],
+  [
+   5.2,
+   31.2,
+   6.9,
+   32.15
+  ],
+  [
+   5.2,
+   77.1,
+   6.9,
+   78.05
+  ],
+  [
+   5.2,
+   84.4,
+   6.9,
+   85.35
+  ],
+  [
+   31.0,
+   25.5,
+   32.8,
+   26.45
+  ],
+  [
+   31.0,
+   44.7,
+   32.8,
+   45.65
+  ],
+  [
+   6.8,
+   57.6,
+   8.55,
+   58.55
+  ],
+  [
+   34.45,
+   21.35,
+   35.1,
+   22.25
+  ],
+  [
+   40.9,
+   36.6,
+   42.0,
+   37.45
+  ]
+ ],
+ "text": {
+  "1321": "",
+  "1322": "",
+  "1323": "",
+  "1335": "",
+  "1301": "MINIMUM LAP LENGTH FOR",
+  "1302": "",
+  "1308": "HORIZONTAL BARS WITH > 300mm",
+  "1309": "",
+  "1314": "OF CONCRETE CAST BELOW",
+  "1315": "",
+  "1324": "60D",
+  "1330": "50D",
+  "1340": "TABLE 1 - BAR LAP LENGTHS",
+  "1297": "1.",
+  "1299": "7.",
+  "1442": "4.",
+  "1306": "7.1",
+  "1331": "1.4",
+  "1338": "7.3",
+  "1346": "7.4",
+  "1352": "7.5",
+  "1381": "8.3",
+  "1446": "4.1",
+  "1452": "4.2",
+  "1475": "9.4",
+  "1486": "9.5",
+  "1516": "9.8",
+  "1520": "4.9",
+  "1317": "NO CHANGES TO DESIGN DETAILS SHALL BE ADOPTED DURING CONSTRUCTION WITHOUT",
+  "1318": "SHALL ADVISE THE SUPERINTENDENT'S REPRESENTATIVE IMMEDIATELY. ANY SUBSEQUENT",
+  "1339": "ALL HOLES WITHOUT BOLTS IN EXISTING TIMBER ELEMENTS WITHIN 1.5m OF GROUND LINE",
+  "1358": "850.35 OF THE SPECIFICATION. WHEN FASTENERS HAVE \"FUSED\" ONTO THE THREAD AND",
+  "1374": "UN°",
+  "1376": "DEVIATION FROM VERTICAL IN A 3M TEMPLATE ± 15mm.",
+  "1377": "",
+  "1378": "DEVIATION FROM PLAN POSITION 50mm IN ANY DIRECTION.",
+  "1379": "MAXIMUM VARIATION FROM SPECIFIED CUT OFF LEVEL ± 5mm.",
+  "1382": "WHERE PILES ARE DRIVEN WITH A DIESEL HAMMER - THE DRIVING HELMET INTERNAL",
+  "1385": "DIAMETER SHALL NOT EXCEED THE PILE SIZE BY MORE THAN 20mm.",
+  "1386": "",
+  "1387": "",
+  "1388": "",
+  "1392": "PILES MUST BE DRIVEN IN THE REQUIRED SET TO BE DETERMINED ON SITE USING THE \"HILEY\"",
+  "1400": "ALL CUTTING AND BENDING OF FABRIC AND REINFORCEMENT TO BE IN ACCORDANCE WITH",
+  "1401": "GROUP OF SIMILAR PILES (i.e. PILES OF SIMILAR SIZE) AT FINAL SET.",
+  "1402": "",
+  "1417": "APPROXIMATE ANTICIPATED MINIMUM SET REQUIREMENTS OF A PILE DRIVING UNIT (WITH A",
+  "1425": "REINFORCEMENT SHALL CONFORM TO:-",
+  "1428": "500 MPa",
+  "1433": "500 MPa",
+  "1437": "250 MPa",
+  "1435": "(UNFACTORED). AS DEFINED ON THE DESIGN DRAWINGS.",
+  "1440": "",
+  "1441": "",
+  "1455": "BACKFILL MATERIAL IN THE \"ZONE OF SPECIAL COMPACTION\" IS TO BE COMPACTED USING",
+  "1487": "REFER TO MANUFACTURER'S SPECIFICATION FOR DETAILED DIMENSIONS AND",
+  "1494": "SIMILAR APPROVED PROCESS IN ACCORDANCE WITH THE SPECIFICATION, EXCEPT TO AREAS",
+  "1498": "",
+  "1495": "",
+  "1505": "BITAC PRIMER AND SEALED WITH 150 WIDE BITAC (OR SIMILAR APPROVED) PRIOR TO",
+  "1537": "ALL EXPOSED THREADS AND NUTS SHALL BE COATED WITH DENSOPASTE FOLLOWING",
+  "1554": "THE FILL SHALL BE PLACED AND COMPACTED IN LAYERS AND FINAL BATTERS TRIMMED TO"
+ },
+ "add": [
+  {
+   "s": "D ≤ 24mm",
+   "like": 1325,
+   "at": [
+    59.9,
+    11.4
+   ]
+  },
+  {
+   "s": "D > 24mm",
+   "like": 1325,
+   "at": [
+    59.9,
+    13.0
+   ]
+  },
+  {
+   "s": "a.)",
+   "like": 1376,
+   "at": [
+    36.3,
+    29.6
+   ]
+  },
+  {
+   "s": "b.)",
+   "like": 1378,
+   "at": [
+    36.3,
+    30.6
+   ]
+  },
+  {
+   "s": "c.)",
+   "like": 1379,
+   "at": [
+    36.3,
+    31.6
+   ]
+  },
+  {
+   "s": "&",
+   "like": 1358,
+   "at": [
+    34.6,
+    22.1
+   ]
+  },
+  {
+   "s": "2.",
+   "like": 1297,
+   "at": [
+    5.5,
+    16.3
+   ]
+  },
+  {
+   "s": "3.",
+   "like": 1297,
+   "at": [
+    5.5,
+    32.0
+   ]
+  },
+  {
+   "s": "5.",
+   "like": 1297,
+   "at": [
+    5.5,
+    77.9
+   ]
+  },
+  {
+   "s": "6.",
+   "like": 1297,
+   "at": [
+    5.5,
+    85.2
+   ]
+  },
+  {
+   "s": "8.",
+   "like": 1299,
+   "at": [
+    31.4,
+    26.3
+   ]
+  },
+  {
+   "s": "9.",
+   "like": 1299,
+   "at": [
+    31.4,
+    45.5
+   ]
+  },
+  {
+   "s": "4.4",
+   "like": 1465,
+   "at": [
+    7.1,
+    58.4
+   ]
+  },
+  {
+   "s": "LOCATION, THE CONTRACTOR SHALL LIAISE WITH THE SUPERINTENDENT'S",
+   "like": 1440,
+   "at": [
+    34.668,
+    49.658
+   ]
+  }
+ ],
+ "drop": []
+}

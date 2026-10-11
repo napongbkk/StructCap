@@ -1,0 +1,164 @@
+{
+ "sheet": "1330-0006",
+ "title": "WING WALL PILE REPAIR DETAIL – TYPE WW2",
+ "cat": "Wing walls",
+ "details": [
+  {
+   "name": "SECTION  B",
+   "rects": [
+    [
+     9,
+     2.6,
+     34,
+     25
+    ]
+   ]
+  },
+  {
+   "name": "PLAN – ANCHOR STRAP DETAIL",
+   "rects": [
+    [
+     36,
+     2.6,
+     60,
+     25
+    ]
+   ]
+  },
+  {
+   "name": "SECTION  A",
+   "rects": [
+    [
+     6,
+     25,
+     36,
+     51
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ANCHOR STRAP DETAIL",
+   "rects": [
+    [
+     36,
+     25,
+     60,
+     48
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – WING WALL PILE REPAIR DETAIL – TYPE WW2",
+   "rects": [
+    [
+     4.8,
+     51,
+     50,
+     96
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     55,
+     85,
+     82.4,
+     96
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   4.8,
+   100
+  ],
+  [
+   0,
+   0,
+   100,
+   3.2
+  ],
+  [
+   4.8,
+   96,
+   84,
+   100
+  ],
+  [
+   82.4,
+   0,
+   100,
+   100
+  ],
+  [
+   61,
+   31.5,
+   62.5,
+   33.3
+  ],
+  [
+   53.3,
+   43.5,
+   54.6,
+   45
+  ]
+ ],
+ "erase": [
+  [30.3, 69.3, 30.85, 71.6],
+  [
+   16.25,
+   80.8,
+   17.1,
+   81.5
+  ],
+  [
+   16.6,
+   81.6,
+   16.95,
+   82.5
+  ]
+ ],
+ "text": {
+  "3533": "SECTION  B",
+  "3530": "SL81 FABRIC",
+  "3637": "75 COVER",
+  "3638": "40",
+  "3641": "TO SUIT",
+  "3642": "50",
+  "3635": "650",
+  "3555": "~",
+  "3562": "SECTION  A",
+  "3558": "Ø20 THREADED ROD",
+  "3539": "(TYP.)",
+  "3548": "Ø24 HOLE",
+  "3639": "~",
+  "3598": "~",
+  "3634": "500",
+  "3636": "~",
+  "3640": "",
+  "3580": "~",
+  "3581": "~",
+  "3612": "WING WALL PILE REPAIR DETAIL – TYPE WW2",
+  "3616": "",
+  "3613": "",
+  "3617": "",
+  "3614": "",
+  "3618": "",
+  "3589": "LEVEL OR HIGH TIDE LEVEL",
+  "3590": "",
+  "3604": "75 COVER",
+  "3605": "(TYP.)",
+  "3622": "1. FOR GENERAL NOTES REFER DRAWING No. 1330-0001.",
+  "3623": "2. EXTENT OF DETERIORATED TIMBER PILE SHALL BE DETERMINED ON SITE BY DRILLING.",
+  "3627": "3. IF MINIMUM 100 SOLID TIMBER ANNULUS NOT ACHIEVABLE WITHIN 1500 FROM TOP OF PILE,"
+ },
+ "add": [
+  {"s": "'H' (1500 MAX.)", "like": 3640, "at": [30.83, 71.4]}
+ ],
+ "drop": []
+}

@@ -1,0 +1,163 @@
+{
+ "sheet": "1330-0025",
+ "title": "STRINGER POST CONNECTION DETAIL - TYPE A",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "STRINGER POST CONNECTION DETAIL - TYPE A",
+   "rects": [
+    [
+     8.5,
+     6.5,
+     31.5,
+     31.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION  E",
+   "rects": [
+    [
+     33.5,
+     7,
+     50,
+     31.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STEEL STRINGER SPLICE JOINT DETAIL",
+   "rects": [
+    [
+     10.5,
+     37.5,
+     31,
+     63
+    ]
+   ]
+  },
+  {
+   "name": "SPLICE PLATE DETAIL",
+   "rects": [
+    [
+     34.3,
+     34.5,
+     47.2,
+     58.5
+    ]
+   ]
+  },
+  {
+   "name": "STEEL STRINGER PACKING DETAIL",
+   "rects": [
+    [
+     48.3,
+     38.5,
+     66.8,
+     60.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     67.5,
+     59.5,
+     83.3,
+     96.9
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   83.3,
+   0,
+   100,
+   100
+  ],
+  [
+   0,
+   0,
+   100,
+   3.3
+  ],
+  [
+   0,
+   0,
+   4.7,
+   100
+  ],
+  [
+   0,
+   96.9,
+   83.3,
+   100
+  ],
+  [
+   82.9,
+   35,
+   100,
+   100
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "2594": "EXISTING TIMBER",
+  "2599": "Ø22 HOLE (SITE DRILL)",
+  "2606": "(TYP.)",
+  "2608": "(TYP.)",
+  "2614": "REFER NOTES 9 & 10",
+  "2615": "",
+  "2600": "150x75x18 PFC.",
+  "2601": "",
+  "2592": "Ø22 HOLE TO SUIT",
+  "2595": "EXISTING Ø20 HOLE",
+  "2597": "TO Ø22 IF REQUIRED",
+  "2613": "SECTION  E",
+  "2611": "",
+  "2741": "200",
+  "2625": "~",
+  "2635": "~",
+  "2621": "1200 MAX.",
+  "2622": "SP (TYP)",
+  "2671": "REFER NOTES 2, 3, 4 & 8",
+  "2640": "UB 54 STRINGER",
+  "2742": "160",
+  "2743": "160",
+  "2744": "135",
+  "2745": "135",
+  "2746": "55",
+  "2630": "~",
+  "2658": "(ALL DECK PLANKS REQUIRE BEARING ON",
+  "2660": "STRINGER AS SHOWN)",
+  "2697": "LARGER THAN 20mm BUT LESS THAN 40mm, PACK",
+  "2700": "GAPS WITH \"EMACO S88C\" GROUT IN ACCORDANCE",
+  "2701": "WITH MANUFACTURER'S INSTRUCTIONS (MASTER",
+  "2692": "SMALLER THAN 20mm, PACK GAPS WITH STEEL SHIMS",
+  "2689": "",
+  "2693": "",
+  "2738": "",
+  "2591": ""
+ },
+ "add": [
+  {
+   "s": "REPLACEMENT.",
+   "like": 2735,
+   "at": [
+    74.75,
+    96.45
+   ]
+  },
+  {
+   "s": "50",
+   "like": 2590,
+   "at": [
+    42.2,
+    13.3
+   ]
+  }
+ ],
+ "drop": []
+}

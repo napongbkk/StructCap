@@ -1,0 +1,249 @@
+{
+ "sheet": "PN30-2319A",
+ "title": "ABUTMENT FULLCAP STRENGTHENING DETAIL",
+ "cat": "Abutments",
+ "details": [
+  {
+   "name": "NOTE – IF HALFCAP CHANNEL",
+   "rects": [
+    [
+     6.4,
+     45.2,
+     24.0,
+     51.0
+    ],
+    [
+     6.4,
+     31.8,
+     19.8,
+     45.2
+    ],
+    [
+     6.4,
+     51.0,
+     22.4,
+     57.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – ENGINEER TO DETERMINE IF",
+   "rects": [
+    [
+     5.3,
+     57.6,
+     20.8,
+     65.4
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – RELOCATE EXISTING PILE",
+   "rects": [
+    [
+     49.6,
+     60.8,
+     67.1,
+     64.8
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PROP STRINGERS PRIOR TO INSTALLING",
+   "rects": [
+    [
+     49.8,
+     85.3,
+     78.2,
+     90.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FULLCAP STRENGTHENING CHANNELS WILL VARY",
+   "rects": [
+    [
+     20.4,
+     89.6,
+     48.8,
+     96.9
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – 380 PFC",
+   "rects": [
+    [
+     19.8,
+     16.8,
+     63.5,
+     41.0
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – 300 PFC",
+   "rects": [
+    [
+     19.8,
+     41.0,
+     61.2,
+     60.0
+    ],
+    [
+     34.3,
+     60.0,
+     43.3,
+     64.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     2.3,
+     64.6,
+     36.8,
+     89.6
+    ],
+    [
+     36.8,
+     64.6,
+     39.6,
+     69.0
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT FULLCAP STRENGTHENING DETAIL",
+   "rects": [
+    [
+     36.8,
+     64.6,
+     98.2,
+     85.3
+    ],
+    [
+     78.2,
+     85.3,
+     98.2,
+     91.6
+    ],
+    [
+     48.8,
+     90.6,
+     98.2,
+     97.3
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   100,
+   16
+  ],
+  [
+   82.0,
+   96.4,
+   97.0,
+   99.2
+  ],
+  [
+   95.5,
+   85.7,
+   97.1,
+   87.3
+  ],
+  [
+   78.6,
+   45.0,
+   80.3,
+   46.5
+  ]
+ ],
+ "erase": [
+  [
+   15.0,
+   48.6,
+   15.7,
+   49.4
+  ]
+ ],
+ "text": {
+  "3514": "~",
+  "3509": "BANDS AS REQUIRED TO SUIT",
+  "3585": "",
+  "3584": "NOTE: FULLCAP STRENGTHENING CHANNELS WILL VARY",
+  "3598": "~",
+  "3439": "Ø20 THREADED RODS",
+  "3441": "100",
+  "3442": "6  50-300",
+  "3444": "  50-300",
+  "3447": "Ø22 HOLES IN PFC)",
+  "3458": "70 MINIMUM BEARING",
+  "3459": "",
+  "3460": "IF BEARING IS <70 THEN REFER",
+  "3467": "1:10",
+  "3603": "~",
+  "3604": "230",
+  "3469": "Ø20 THREADED RODS",
+  "3472": "50-300",
+  "3473": "100",
+  "3475": "6  50-300",
+  "3479": "Ø22 HOLES IN PFC)",
+  "3495": "70 MINIMUM BEARING",
+  "3496": "IF BEARING IS <70 THEN REFER",
+  "3497": "",
+  "3506": "1:10",
+  "3602": "~",
+  "3601": "~",
+  "3538": "55",
+  "3541": "55 – 300 PFC",
+  "3540": "~",
+  "3545": "60 – 380 PFC",
+  "3546": "",
+  "3605": "~",
+  "3542": "~",
+  "3572": "~",
+  "3589": "",
+  "3524": "Ø20 THREADED RODS",
+  "3526": "(A MINIMUM OF 1 – Ø20",
+  "3533": "~",
+  "3534": "~",
+  "3532": "~",
+  "3554": "PROPOSED 300 PFC",
+  "3555": "(SITE DRILL Ø22 HOLE IN PFC)",
+  "3562": "TYP)",
+  "3567": "BEARING < 70",
+  "3581": "DRG NUMBER – REFER TO",
+  "3592": "ABUTMENT N° X – PILE N° X TO PILE N° X",
+  "3593": "",
+  "3595": "ABUTMENT N° X – PILE N° X TO PILE N° X",
+  "3596": "",
+  "3483": "BOXED NOTE & PILE BEARING",
+  "3484": ""
+ },
+ "add": [
+  {
+   "s": "FULLCAP STRENGTHENING DETAIL",
+   "like": 3589,
+   "at": [
+    58.49,
+    93.34
+   ]
+  },
+  {
+   "s": "XX30-XXXX",
+   "like": 3592,
+   "at": [
+    81.35,
+    93.34
+   ]
+  }
+ ],
+ "drop": []
+}

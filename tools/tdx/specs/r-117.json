@@ -1,0 +1,9 @@
+{"sheet": "PN30-3212", "title": "SECTION B", "cat": "Deck & overlay",
+ "details": [
+  {"name": "SECTION B – FOR CONCRETE OVERLAY DRG", "rects": [[10, 7, 93, 50.5]]},
+  {"name": "SECTION B – FOR REINFORCED OVERLAY DRG, SINGLE DECK FABRIC", "rects": [[8, 50.5, 46.5, 90]]},
+  {"name": "SECTION B – FOR REINFORCED OVERLAY DRG, TWO DECK FABRIC LAYERS", "rects": [[46.5, 50.5, 95, 90]]}
+ ],
+ "exclude": [[76, 0, 100, 1.6], [70, 90.5, 90.5, 94.5]],
+ "erase": [[23.4, 53.3, 24.0, 54.0], [41.37, 58.95, 41.87, 59.4], [70.8, 52.2, 71.4, 52.7]], "text": {"2775": "~", "2788": "SECTION  B", "2787": "", "2821": "675", "2790": "FOR CONCRETE", "2791": "VERLAY DRG", "2820": "75", "2823": "75",
+  "2802": "~", "2796": "~", "2804": "~", "2822": "~", "2811": "SECTION  B", "2810": "", "2812": "SECTION  B", "2809": "", "2818": "VERLAY DRG", "2817": "VERLAY DRG"}, "add": [{"s": "X", "like": 2796, "at": [23.4, 54.05]}, {"s": "X", "like": 2796, "at": [41.2, 59.6]}, {"s": "X", "like": 2796, "at": [70.75, 52.95]}], "drop": []}

@@ -1,0 +1,140 @@
+{
+ "sheet": "PN30-3107",
+ "title": "PIER - STRINGER & CORBEL REPLACEMENT DETAIL - TYPE 2",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "NOTE – GAP BETWEEN STRINGER AND DECK",
+   "rects": [
+    [
+     45,
+     26.2,
+     61.6,
+     40.3
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – STRINGER & CORBEL SIZE WILL VARY",
+   "rects": [
+    [
+     50.8,
+     60.6,
+     64.8,
+     70.4
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION A",
+   "rects": [
+    [
+     61.6,
+     15,
+     97.5,
+     66.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER - STRINGER & CORBEL REPLACEMENT DETAIL - TYPE 2",
+   "rects": [
+    [
+     4.5,
+     15,
+     61.6,
+     65
+    ],
+    [
+     9.5,
+     65,
+     51,
+     77.8
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   80,
+   79,
+   96,
+   85.5
+  ],
+  [
+   43.7,
+   3.1,
+   44.3,
+   3.7
+  ],
+  [
+   33.9,
+   78.4,
+   34.5,
+   79
+  ],
+  [
+   57.9,
+   53.8,
+   58.5,
+   54.4
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "2095": "",
+  "2107": "310 UB 46 CORBEL DRAWN",
+  "2106": "",
+  "2041": "Ø20x130 LONG COACH",
+  "2066": "TYP",
+  "2070": "310 UB 46 CORBEL",
+  "2099": "SECTIONAL ELEVATION  A",
+  "2098": "",
+  "2076": "(TYP)",
+  "2087": "",
+  "2086": "Ø20",
+  "2059": "50",
+  "2057": "50",
+  "2063": "(TYP)",
+  "2064": "(TYP)",
+  "2105": "PIER - STRINGER & CORBEL REPLACEMENT",
+  "2108": "DETAIL - TYPE 2",
+  "2062": "",
+  "2088": ""
+ },
+ "add": [
+  {
+   "s": "NOTE:",
+   "like": 2096,
+   "at": [
+    51.9,
+    62.7
+   ]
+  },
+  {
+   "s": "THREADED",
+   "like": 2086,
+   "at": [
+    8.72,
+    57.14
+   ]
+  },
+  {
+   "s": "410 UB 54 STRINGER",
+   "like": 2062,
+   "at": [
+    83.2,
+    36.7
+   ]
+  },
+  {
+   "s": "ROD WITH",
+   "like": 2088,
+   "at": [
+    14.23,
+    57.14
+   ]
+  }
+ ],
+ "drop": []
+}

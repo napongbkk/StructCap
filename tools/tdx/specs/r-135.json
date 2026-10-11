@@ -1,0 +1,9 @@
+{"sheet": "PN30-4206", "title": "PART PLAN", "cat": "Deck & overlay",
+ "details": [
+  {"name": "PART PLAN", "rects": [[6.5, 27.5, 94.5, 63.7]]},
+  {"name": "SECTION A", "rects": [[14.5, 64.3, 77.0, 92.0]]}
+ ],
+ "exclude": [[72, 93, 95, 97.5], [51, 21, 53, 22.3], [2.5, 96, 4.5, 97.5], [50.5, 98.2, 52.5, 99.5]],
+ "erase": [[63.0, 52.4, 64.0, 53.6]],
+ "text": {"996": "Ø900 SEMICIRCLE", "997": "DIMENSION  X  SHALL BE", "1038": "~", "1009": "F", "1013": "XXXX", "1014": "DECK",
+          "1017": "~", "1021": "* (INSITU OPTION)", "1030": "* APPROVED INSITU CONSTRUCTION OF"}, "add": [], "drop": []}

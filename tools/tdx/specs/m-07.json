@@ -1,0 +1,368 @@
+{
+ "sheet": "1330-0007",
+ "title": "WING WALL PILE REPAIR DETAIL – TYPE WW3",
+ "cat": "Wing walls",
+ "details": [
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     14.9,
+     3.5,
+     31.8,
+     18.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B – WHERE EXISTING TIMBER SHEETING ABUTS",
+   "rects": [
+    [
+     36.4,
+     3.5,
+     60.3,
+     20.6
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1",
+   "rects": [
+    [
+     60.6,
+     3.5,
+     76.5,
+     22.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     4.75,
+     22.5,
+     30.4,
+     44.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A – WHERE EXISTING TIMBER SHEETING ABUTS",
+   "rects": [
+    [
+     32.7,
+     22.3,
+     55.5,
+     46.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION D",
+   "rects": [
+    [
+     70.5,
+     30.0,
+     82.5,
+     41.5
+    ],
+    [
+     73.2,
+     22.3,
+     82.5,
+     30.0
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2",
+   "rects": [
+    [
+     55.5,
+     22.3,
+     73.2,
+     43.5
+    ]
+   ]
+  },
+  {
+   "name": "PLAN – 150x150x10 EA",
+   "rects": [
+    [
+     37.2,
+     47.5,
+     54.3,
+     64.0
+    ]
+   ]
+  },
+  {
+   "name": "PLAN – SL81 FABRIC",
+   "rects": [
+    [
+     60.3,
+     47.0,
+     79.6,
+     64.0
+    ]
+   ]
+  },
+  {
+   "name": "SIDE ELEVATION – WING WALL PILE REPAIR DETAIL – TYPE WW3",
+   "rects": [
+    [
+     4.75,
+     52.5,
+     38.4,
+     74.0
+    ],
+    [
+     4.75,
+     74.0,
+     34.5,
+     96.3
+    ]
+   ]
+  },
+  {
+   "name": "VIEW C",
+   "rects": [
+    [
+     34.5,
+     68.0,
+     54.2,
+     88.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     58.0,
+     88.5,
+     64.0,
+     90.4
+    ],
+    [
+     58.0,
+     90.4,
+     83.0,
+     96.3
+    ]
+   ]
+  },
+  {
+   "name": "VIEW C – WHERE EXISTING TIMBER SHEETING ABUTS",
+   "rects": [
+    [
+     55.4,
+     64.8,
+     83.5,
+     88.5
+    ],
+    [
+     64.0,
+     88.5,
+     83.5,
+     90.4
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   82.6,
+   0,
+   100,
+   100
+  ],
+  [
+   0,
+   0,
+   4.75,
+   100
+  ],
+  [
+   0,
+   0,
+   100,
+   3.2
+  ],
+  [
+   0,
+   96.3,
+   100,
+   100
+  ]
+ ],
+ "erase": [
+  [
+   27.4,
+   59.5,
+   27.85,
+   62.5
+  ],
+  [
+   28.1,
+   66.5,
+   28.6,
+   69.4
+  ],
+  [
+   28.1,
+   59.4,
+   28.6,
+   61.8
+  ],
+  [
+   22.85,
+   78.6,
+   23.3,
+   79.6
+  ],
+  [
+   8.45,
+   88.5,
+   9.3,
+   89.5
+  ],
+  [
+   27.35,
+   68.0,
+   27.88,
+   69.8
+  ]
+ ],
+ "text": {
+  "5822": "Ø40 HOLE SITE DRILLED THROUGH",
+  "5823": "Ø40 HOLE SITE DRILLED THROUGH",
+  "5826": "WEB OF PILES (TYP.)",
+  "5842": "SECTION  B",
+  "5840": "",
+  "5843": "SECTION  B",
+  "5841": "",
+  "5824": "CAPPING",
+  "5832": "SPIKING RAIL.",
+  "5848": "DETAIL  1",
+  "6103": "50",
+  "6106": "15°",
+  "6085": "95",
+  "6087": "40",
+  "5854": "Ø20 THREADED 'U'",
+  "5869": "IN THIS AREA (TYP.)",
+  "6090": "100",
+  "5905": "PROVIDE Ø22 HOLES",
+  "5908": "CONCRETE AS SHOWN (SECTION",
+  "5909": "FOR THREADED 'U' ROD.",
+  "5913": "A ONLY) (TYP.)",
+  "5914": "(TYP.)",
+  "5857": "Ø20 THREADED ROD",
+  "5862": "(TYP.)",
+  "5870": "IN THIS AREA (TYP.)",
+  "5907": "WELDED TO PFC. PROVIDE Ø22",
+  "5911": "HOLES FOR THREADED RODS.",
+  "5874": "~",
+  "6096": "95",
+  "6097": "40",
+  "6098": "300",
+  "5879": "Ø12 HOLE TO SUIT",
+  "5887": "x100 LONG GALV.",
+  "5890": "(TYP.)",
+  "6101": "55",
+  "6102": "55",
+  "6105": "40",
+  "5894": "SECTION  D",
+  "5891": "",
+  "5866": "(TYP.)",
+  "5872": "150x150x10 EA",
+  "5877": "Ø14 HOLE TO SUIT",
+  "6108": "~",
+  "5903": "1:10",
+  "5938": "~",
+  "5941": "~",
+  "5937": "~",
+  "5950": "~",
+  "6104": "~",
+  "5960": "SL81 FABRIC",
+  "5961": "",
+  "5968": "(TYP.)",
+  "5969": "REPAIR (TYP.)",
+  "5975": "Ø20 THREADED ROD",
+  "5955": "~",
+  "6099": "40",
+  "6100": "MIN.",
+  "6078": "100",
+  "6079": "500",
+  "6080": "150",
+  "6081": "45",
+  "6082": "200",
+  "6083": "MIN.",
+  "6084": "NOM.",
+  "6086": "100",
+  "6088": "200",
+  "6089": "~",
+  "6091": "250",
+  "6092": "MIN.",
+  "6093": "",
+  "6094": "",
+  "6095": "",
+  "5949": "Ø22 HOLES TO SUIT Ø20",
+  "5953": "UB PILE TO SUIT.",
+  "6067": "WING WALL PILE REPAIR DETAIL – TYPE WW3",
+  "6001": "LEVEL OR HIGH TIDE LEVEL",
+  "6002": "",
+  "6019": "Ø40 HOLE",
+  "6020": "N16, 500 LAP",
+  "6023": "(TYP.)",
+  "6024": "TOP & BOTTOM",
+  "6025": "",
+  "6041": "FORMWORK",
+  "6049": "75x75x10 EA (TYP.) LENGTH TO",
+  "6050": "THREADED 'U' ROD OR 2 N° THREADED",
+  "6055": "RODS SEE SECTION A (TYP.)",
+  "6057": "AS SHOWN IN SECTION A",
+  "6058": "",
+  "6016": "~",
+  "6048": "VIEW  C",
+  "6047": "",
+  "6028": "50",
+  "6031": "MIN.",
+  "6060": "NOTES:",
+  "6063": "FOR GENERAL NOTES REFER DRAWING No. 1330-0001.",
+  "6065": "WHERE SINGLE PFC PILE IS PROPOSED, PILE SHALL BE PLACED ON THE HIGHER SIDE OF",
+  "6072": "PROPOSED PILE IS IN POSITION AND CONCRETE HAS BEEN PLACED A MINIMUM OF 3 DAYS.",
+  "6022": "WITH Ø12 HOLES AT 75",
+  "6032": "COACH SCREWS (TYP)",
+  "6107": "150",
+  "6005": "~"
+ },
+ "add": [
+  {
+   "s": "HEIGHT TO SUIT UNDERSIDE OF",
+   "like": 6093,
+   "at": [
+    27.85,
+    69.6
+   ]
+  },
+  {
+   "s": "TIMBER WING WALL CAPPING",
+   "like": 6093,
+   "at": [
+    28.5,
+    69.3
+   ]
+  },
+  {
+   "s": "▲",
+   "like": 6067,
+   "at": [
+    10.55,
+    94.27
+   ]
+  }
+ ],
+ "drop": []
+}

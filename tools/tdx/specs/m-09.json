@@ -1,0 +1,216 @@
+{
+ "sheet": "1330-0009",
+ "title": "ABUTMENT/WING WALL TIMBER SHEETING REPAIR DETAILS",
+ "cat": "Sheeting",
+ "details": [
+  {
+   "name": "TYPE 1 – PLAN",
+   "rects": [
+    [
+     6.0,
+     11.5,
+     31.0,
+     30.5
+    ]
+   ]
+  },
+  {
+   "name": "TYPE 1A – PLAN",
+   "rects": [
+    [
+     37.0,
+     6.0,
+     63.5,
+     28.8
+    ]
+   ]
+  },
+  {
+   "name": "PGI SHEETING REPAIR DETAIL",
+   "rects": [
+    [
+     70.5,
+     5.5,
+     92.5,
+     29.5
+    ]
+   ]
+  },
+  {
+   "name": "TYPE 1 – ELEVATION – ABUTMENT/WING WALL TIMBER SHEETING REPAIR DETAILS",
+   "rects": [
+    [
+     7.0,
+     41.5,
+     35.0,
+     78.5
+    ],
+    [
+     19.5,
+     82.0,
+     43.5,
+     85.5
+    ]
+   ]
+  },
+  {
+   "name": "TYPE 1A – DEVELOPED ELEVATION",
+   "rects": [
+    [
+     38.0,
+     42.5,
+     64.0,
+     78.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     64.5,
+     88.8,
+     83.3,
+     96.95
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   82.6,
+   36,
+   100,
+   100
+  ],
+  [
+   95.8,
+   0,
+   100,
+   100
+  ],
+  [
+   0,
+   0,
+   4.7,
+   100
+  ],
+  [
+   0,
+   0,
+   100,
+   3.2
+  ],
+  [
+   0,
+   96.95,
+   100,
+   100
+  ]
+ ],
+ "erase": [
+  [
+   74.6,
+   95.2,
+   75.2,
+   96.1
+  ],
+  [
+   65.1,
+   96.0,
+   69.25,
+   96.95
+  ],
+  [
+   26.4,
+   61.5,
+   28.4,
+   62.5
+  ],
+  [
+   24.1,
+   62.5,
+   27.3,
+   63.4
+  ],
+  [
+   23.25,
+   67.5,
+   25.05,
+   68.6
+  ],
+  [
+   60.4,
+   53.6,
+   63.0,
+   54.5
+  ]
+ ],
+ "text": {
+  "3917": "~",
+  "4026": "40",
+  "4027": "MIN.",
+  "3928": "TIMBER SHEETING (TYP.)",
+  "3914": "(TYP.)",
+  "3920": "EXISTING SOUND",
+  "3921": "",
+  "3901": "NAILS @ 200 MAX. CRS.",
+  "3907": "20 (TYP.)",
+  "3912": "~",
+  "3930": "PILE (TYP.)",
+  "3915": "",
+  "4030": "~",
+  "3950": "M12x75 LONG COACH SCREW FIXED CENTRALLY",
+  "3951": "IN PROPOSED TIMBER SHEET (1 – PER SHEET",
+  "3992": "TYPE 1",
+  "4002": "ABUTMENT/WING WALL TIMBER SHEETING REPAIR DETAILS",
+  "4003": "",
+  "3973": "150x90x8 UA (GALV.)",
+  "3977": "LENGTH TO SUIT",
+  "3981": "",
+  "3974": "~",
+  "3959": "90x8 FL (GALV.)",
+  "3968": "(TYP.)",
+  "3986": "(TYP.)",
+  "4029": "60",
+  "4028": "60",
+  "3978": "~",
+  "4021": "BE 100 WIDE FOR GAPS ≤ 20mm AND 150 WIDE FOR GAPS >20mm.",
+  "4022": "",
+  "4024": "",
+  "4013": ""
+ },
+ "add": [
+  {
+   "s": "M12x75 LONG COACH SCREW INSTALLED AT",
+   "like": 3983,
+   "dx": 0,
+   "dy": -1.6
+  },
+  {
+   "s": "PGI REPAIRS NOT APPROPRIATE FOR GAPS EXCEEDING 70mm.",
+   "like": 4021,
+   "dx": 0,
+   "dy": 1.6
+  },
+  {
+   "s": "2.",
+   "like": 4010,
+   "at": [
+    65.33,
+    91.99
+   ]
+  },
+  {
+   "s": "LOCATIONS AND EXTENT OF REPAIRS SHALL BE CONFIRMED ON SITE",
+   "like": 4011,
+   "at": [
+    66.13,
+    91.99
+   ]
+  }
+ ],
+ "drop": [
+  3538
+ ]
+}

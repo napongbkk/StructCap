@@ -1,0 +1,214 @@
+{
+ "sheet": "PN30-2106",
+ "title": "PIER PILE REPAIR DETAIL - TYPE 2A",
+ "cat": "Piles",
+ "details": [
+  {
+   "name": "NOTE – HALFCAPS SHALL BE PROPPED",
+   "rects": [
+    [
+     31,
+     51,
+     54,
+     57.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – EXISTING GENERAL GL OR",
+   "rects": [
+    [
+     50.6,
+     60.6,
+     68,
+     65.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THIS PAGE SHALL BE READ IN CONJUNCTION",
+   "rects": [
+    [
+     53.5,
+     85.5,
+     81.8,
+     91
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – ENGINEER SHALL DECIDE WHICH",
+   "rects": [
+    [
+     11.5,
+     90.6,
+     32,
+     95
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     3.5,
+     37.5,
+     53.5,
+     57.5
+    ]
+   ]
+  },
+  {
+   "name": "BEARING ARRANGEMENT FOR PILES < Ø350",
+   "rects": [
+    [
+     53.5,
+     29.5,
+     97.5,
+     57.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER PILE REPAIR DETAIL - TYPE 2A",
+   "rects": [
+    [
+     3,
+     57.5,
+     50.5,
+     90.6
+    ],
+    [
+     44.5,
+     80.3,
+     61.5,
+     84.3
+    ]
+   ]
+  },
+  {
+   "name": "VIEW B",
+   "rects": [
+    [
+     50.5,
+     57.5,
+     97.5,
+     85.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   100,
+   2.5
+  ],
+  [
+   97,
+   9,
+   100,
+   12
+  ],
+  [
+   63.5,
+   19.5,
+   66.5,
+   22
+  ],
+  [
+   44,
+   13.5,
+   47,
+   15
+  ],
+  [
+   44,
+   36,
+   47,
+   37.5
+  ],
+  [
+   44,
+   58.5,
+   46,
+   60
+  ],
+  [
+   79,
+   94.5,
+   95,
+   98.5
+  ]
+ ],
+ "erase": [
+  [
+   59.3,
+   65.8,
+   59.9,
+   66.9
+  ]
+ ],
+ "text": {
+  "2853": "",
+  "2870": "EXISTING GENERAL G.L. OR",
+  "2871": "",
+  "2878": "HIGHER.",
+  "2854": "SECTION  A",
+  "2828": "~",
+  "2837": "(FOR PILE > Ø350)",
+  "2838": "FOR PILE > Ø350 OR BETWEEN UC AND",
+  "2840": "FOR PILE < Ø350 TO ENSURE A",
+  "2848": "Ø900 CONCRETE",
+  "2839": "~",
+  "2856": "PILES < Ø350",
+  "2829": "Ø10x100 LONG",
+  "2858": "PIER N° X - PILE N° X",
+  "2859": "",
+  "2934": "750",
+  "2935": "20",
+  "2936": "~",
+  "2937": "MIN",
+  "2938": "60",
+  "2939": "~",
+  "2915": "~",
+  "2923": "",
+  "2875": "EXISTING GENERAL G.L.",
+  "2896": "WITH 1-Ø12 HOLE FOR",
+  "2916": "250 MIN BELOW EXISTING G.L.",
+  "2888": "~",
+  "2940": "~",
+  "2881": "4-M20 BOLTS",
+  "2895": "Ø10x100 LONG",
+  "2900": "IF PILE < Ø350 THEN",
+  "2908": "(FOR PILE > Ø35"
+ },
+ "add": [
+  {
+   "s": "NOTE: HALFCAPS SHALL BE PROPPED",
+   "like": 2853,
+   "at": [
+    32.3,
+    52.652
+   ]
+  },
+  {
+   "s": "PIER PILE REPAIR DETAIL - TYPE 2A",
+   "like": 2923,
+   "at": [
+    7.76,
+    86.255
+   ]
+  },
+  {
+   "s": "XX30-XXXX",
+   "like": 2924,
+   "at": [
+    36.9,
+    86.13
+   ]
+  }
+ ],
+ "drop": []
+}

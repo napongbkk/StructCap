@@ -1,0 +1,27 @@
+{
+ "sheet": "PN30-2121",
+ "title": "STEEL ABUTMENT PILE/TIMBER FULLCAP BEARING DETAIL",
+ "cat": "Abutments",
+ "details": [
+  {"name": "NOTE – FULLCAPS SHALL BE PROPPED – OPTION 1", "rects": [[39.5, 51.0, 56.8, 55.2]]},
+  {"name": "STEEL ABUTMENT PILE/TIMBER FULLCAP BEARING DETAIL – OPTION 1", "rects": [[10.5, 33.0, 45.7, 55.3], [20.5, 55.3, 53.0, 64.0]]},
+  {"name": "DETAIL 1", "rects": [[45.7, 35.5, 71.5, 51.0]]},
+  {"name": "SECTION A – OPTION 1", "rects": [[72.3, 33.5, 98.5, 57.5]]},
+  {"name": "NOTE – FOR PILE POT DETAILS", "rects": [[66.5, 57.8, 97.0, 64.4]]},
+  {"name": "NOTE – FULLCAPS SHALL BE PROPPED – OPTION 2", "rects": [[39.8, 66.3, 57.2, 70.4]]},
+  {"name": "NOTE – ENGINEER TO CHOOSE OPTION TO SUIT", "rects": [[36.3, 92.6, 53.5, 96.2]]},
+  {"name": "SECTION A – OPTION 2", "rects": [[51.5, 64.4, 80.5, 87.5]]},
+  {"name": "STEEL ABUTMENT PILE/TIMBER FULLCAP BEARING DETAIL – OPTION 2", "rects": [[10.5, 64.0, 51.5, 85.3], [20.5, 85.3, 53.5, 96.5]]}
+ ],
+ "exclude": [[82.0, 95.0, 97.0, 99.0], [55.5, 0.5, 57.5, 2.0], [97.0, 10.0, 99.0, 12.0], [4.5, 68.5, 6.5, 70.5], [45.5, 9.0, 47.0, 10.5], [79.0, 28.5, 81.0, 30.0]],
+ "erase": [[26.8, 58.8, 27.85, 59.6], [28.1, 88.4, 30.1, 89.25], [32.1, 88.4, 33.2, 89.25], [37.3, 94.5, 40.35, 95.6], [37.35, 93.0, 37.8, 94.3], [45.3, 93.2, 52.2, 94.3]],
+ "text": {
+  "3108": "RAIL (REPLACE IF REQUIRE", "3136": "FULLCAP BEARING DETAIL", "3137": "ABUTMENT N° X - PILE N° X", "3138": "", "3176": "ABUTMENT N° X - PILE N° X", "3177": "", "3178": "", "3148": "OPTION 1", "3146": "",
+  "3122": "DETAIL  1", "3114": "TYP", "3189": "~", "3133": "SECTION  A", "3132": "", "3192": "~",
+  "3117": "Ø20 THREADED ROD", "3191": "100", "3156": "THEIR ORIGINAL POSITION",
+  "3184": "", "3185": "~", "3186": "OPTION TO SUIT", "3190": "~", "3188": "100",
+  "3172": "SECTION  A", "3165": "Ø20 THREADED ROD", "3175": "FULLCAP BEARING DETAIL", "3150": "75"
+ },
+ "add": [{"s": "ENGINEER TO CHOOSE", "like": 3186, "at": [37.34, 94.2]}, {"s": "XX30-XXXX", "like": 3137, "at": [40.9, 58.31]}, {"s": "XX30-XXXX", "like": 3137, "at": [40.45, 87.89]}],
+ "drop": []
+}

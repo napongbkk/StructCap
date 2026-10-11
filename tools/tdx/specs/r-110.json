@@ -1,0 +1,72 @@
+{
+ "sheet": "PN30-3206",
+ "title": "SCUPPER PLATE DETAIL",
+ "cat": "Deck & overlay",
+ "details": [
+  {
+   "name": "SCUPPER PLATE DETAIL",
+   "rects": [
+    [
+     7,
+     4,
+     90,
+     82
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – INSTALL SCUPPER PLATES",
+   "rects": [
+    [
+     25,
+     82,
+     73,
+     93
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   2.8,
+   100
+  ],
+  [
+   56,
+   94,
+   88,
+   99
+  ],
+  [
+   96,
+   0,
+   100,
+   1.2
+  ],
+  [
+   97,
+   93,
+   100,
+   97
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "1648": "TO DOWNTURN FLAP AND",
+  "1670": "",
+  "1654": "EXISTING"
+ },
+ "add": [
+  {
+   "s": "100",
+   "like": 1670,
+   "at": [
+    33.78,
+    71.906
+   ]
+  }
+ ],
+ "drop": []
+}

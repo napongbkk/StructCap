@@ -1,0 +1,171 @@
+{
+ "sheet": "PN30-2316",
+ "title": "STEEL PIER PILE/PIER HALFCAPS REPLACEMENT DETAIL - TYPE 3",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "NOTE – SUBJECT TO CORBEL CONDITION",
+   "rects": [
+    [
+     73,
+     63.8,
+     92.5,
+     67
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – HALFCAP CHANNELS",
+   "rects": [
+    [
+     29.8,
+     90.5,
+     47.8,
+     96.8
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     18.5,
+     26,
+     47,
+     41.3
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STRINGER/CORBEL BRACKET DETAILS",
+   "rects": [
+    [
+     19.5,
+     41.5,
+     47,
+     64.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – HALFCAP CONNECTION CHANNEL",
+   "rects": [
+    [
+     56.5,
+     28.5,
+     80.5,
+     46
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     57,
+     46,
+     86,
+     65.5
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A",
+   "rects": [
+    [
+     2.8,
+     65.5,
+     51,
+     90.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STEEL PIER PILE/PIER HALFCAPS REPLACEMENT DETAIL - TYPE 3",
+   "rects": [
+    [
+     51,
+     67,
+     98,
+     88
+    ],
+    [
+     48.5,
+     88,
+     89,
+     96.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   73,
+   96.5,
+   100,
+   100
+  ],
+  [
+   0,
+   98,
+   100,
+   100
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "3044": "NOTE: HALFCAP CHANNELS",
+  "3055": "100",
+  "3056": "50",
+  "2957": "Ø22 HOLE (TYP)",
+  "3061": "75",
+  "2960": "Ø22 x 50 LONG",
+  "2971": "0 x 20",
+  "2992": "1 - AS DRAWN",
+  "2958": "40",
+  "3064": "~",
+  "2963": "Ø22x40 LONG",
+  "3065": "75",
+  "3066": "75",
+  "2995": "SECTION  B",
+  "2993": "",
+  "3057": "~",
+  "3058": "~",
+  "3059": "~",
+  "3060": "~",
+  "3062": "~",
+  "3009": "TO CORBELS WITH Ø20 THREADED",
+  "3018": "SITE DRILLED Ø22 HOLES (TYP)",
+  "3019": "TYP",
+  "3020": "TYP",
+  "3031": "~",
+  "3063": "~",
+  "3068": "~",
+  "3043": "",
+  "3067": "~",
+  "3023": "PROPOSED 300 PFC",
+  "3036": "PROPPING STRINGERS &",
+  "3048": "~",
+  "3045": "PIER N° X - PILE N° X",
+  "3046": ""
+ },
+ "add": [
+  {
+   "s": "XX30-XXXX",
+   "like": 3045,
+   "at": [
+    74.7,
+    91.1
+   ]
+  },
+  {
+   "s": "REPLACEMENT DETAIL - TYPE 3",
+   "like": 3043,
+   "at": [
+    49.68,
+    91.38
+   ]
+  }
+ ],
+ "drop": []
+}

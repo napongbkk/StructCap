@@ -1,0 +1,27 @@
+{"sheet": "PN30-2127", "title": "WINGWALL PILE REPAIR DETAIL - TYPE 2", "cat": "Wing walls",
+ "details": [
+  {"name": "SECTION A", "rects": [[8, 15, 50, 40.5]]},
+  {"name": "SECTION B", "rects": [[55, 15, 98, 40.5]]},
+  {"name": "PLAN – ANCHOR STRAP DETAIL", "rects": [[63.5, 41, 98, 56.8]]},
+  {"name": "ELEVATION – ANCHOR STRAP DETAIL", "rects": [[63.5, 56.8, 98, 71]]},
+  {"name": "ELEVATION – WINGWALL PILE REPAIR DETAIL - TYPE 2", "rects": [[1, 40.5, 63.5, 86], [63.5, 72, 86, 82]]}
+ ],
+ "exclude": [[73, 84, 93, 89], [40, 0, 80, 7], [70, 10, 80, 15], [40, 92, 55, 100]],
+ "erase": [[54.0, 49.3, 55.1, 64.2], [55.6, 49.3, 60.2, 64.2], [11.6, 65.0, 13.1, 69.0], [13.9, 65.8, 15.4, 71.8],
+           [65.0, 45.1, 66.4, 46.8], [66.85, 45.5, 68.2, 50.2], [11.0, 33.6, 13.9, 34.7], [33.4, 42.6, 34.6, 44.0], [56.0, 80.5, 58.95, 81.8]],
+ "text": {"2567": "", "2515": "SECTION OF", "2514": "", "2516": "TIMBER SHEETING", "2521": "MIN. 100 ANNULAR", "2522": "",
+  "2594": "~", "2534": "~", "2563": "~", "2541": "SECTION  B", "2540": "SECTION  A", "2599": "40",
+  "2597": "TO SUIT PILE", "2598": "50 (TYP)", "2565": "Ø24 HOLE", "2566": "(TYP)", "2600": "100",
+  "2591": "", "2575": "", "2592": "500 MIN", "2593": "100", "2595": "", "2596": "",
+  "2585": "WINGWALL PILE REPAIR DETAIL - TYPE 2", "2586": "", "2537": "", "2546": "", "2587": ""},
+ "add": [
+  {"s": "'H' (1500 MAX) - IF 'H' EXCEEDS", "like": 2595, "at": [54.93, 63.72]},
+  {"s": "1500 THEN WINGWALL PILE REPAIR", "like": 2595, "at": [56.98, 63.72]},
+  {"s": "DETAIL - TYPE 1, TO BE USED", "like": 2595, "at": [58.52, 62.66]},
+  {"s": "WITH THE ENGINEERS APPROVAL", "like": 2595, "at": [60.12, 63.34]},
+  {"s": "MIN. 100 ANNULAR", "like": 2591, "at": [12.8, 72.45]}, {"s": "75 CLEAR", "like": 2575, "at": [20.78, 71.94]}, {"s": "SOLID TIMBER", "like": 2591, "at": [15.13, 71.54]},
+  {"s": "DIAMETER", "like": 2597, "at": [67.98, 49.80]},
+  {"s": "Ø20 THREADED ROD", "like": 2537, "dx": -2.67, "dy": 0},
+  {"s": "℄ PILE", "like": 2546, "dx": -1.46, "dy": 0},
+  {"s": "XX30-XXXX", "like": 2587, "dx": -2.66, "dy": 0}
+ ], "drop": []}

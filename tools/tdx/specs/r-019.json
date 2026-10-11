@@ -1,0 +1,26 @@
+{
+ "sheet": "PN30-2119",
+ "title": "HALFCAP CONNECTION DETAILS",
+ "cat": "Halfcaps",
+ "details": [
+  {"name": "NOTE – OPTION 1 (HALFCAPS > 150 APART) PREFERRED OPTION", "rects": [[26.0, 37.2, 65.0, 42.3], [46.5, 35.3, 65.0, 37.2]]},
+  {"name": "VIEW B – OPTION 1", "rects": [[5.5, 1.5, 41.0, 37.2]]},
+  {"name": "HALFCAP CONNECTION CHANNEL", "rects": [[41.0, 2.5, 62.5, 35.3]]},
+  {"name": "VIEW B – OPTION 2", "rects": [[2.0, 41.5, 36.2, 79.5], [36.2, 41.5, 40.5, 54.0]]},
+  {"name": "HALFCAP CONNECTION ANGLE", "rects": [[36.0, 45.5, 63.0, 81.5]]},
+  {"name": "ANGLE CLEAT", "rects": [[63.0, 45.5, 91.5, 81.5]]},
+  {"name": "NOTE – OPTION 2 (HALFCAPS 130-160 APART)", "rects": [[27.5, 81.8, 50.5, 85.3]]},
+  {"name": "NOTE – ENGINEER SHALL CHOOSE OPTION TO SUIT", "rects": [[19.0, 85.8, 52.0, 93.0]]}
+ ],
+ "exclude": [[98.3, 60.0, 100.0, 100.0], [75.0, 92.0, 90.5, 97.5], [4.0, 54.0, 5.0, 56.0], [94.0, 54.0, 96.0, 56.0]],
+ "erase": [[32.9, 82.0, 34.0, 83.9]],
+ "text": {
+  "2217": "", "2218": "(HALFCAPS > 150 APART)", "2213": "VIEW  B", "2199": "40", "2205": "40",
+  "2206": "Ø22x40 LONG", "2273": "75", "2274": "75", "2269": "~", "2259": "VIEW  B", "2258": "",
+  "2234": "75", "2270": "70", "2242": "Ø22 HOLE FOR", "2271": "60", "2272": "60", "2233": "75",
+  "2244": "Ø22 HOLE FOR", "2245": "Ø22x40 LONG", "2275": "75", "2276": "75",
+  "2265": ""
+ },
+ "add": [{"s": "OPTION 1", "like": 2217, "at": [26.6, 38.73]}, {"s": "OPTION 2", "like": 2217, "at": [28.9, 84.3]}, {"s": "(HALFCAPS 130-160 APART)", "like": 2218, "at": [36.86, 84.63]}],
+ "drop": []
+}

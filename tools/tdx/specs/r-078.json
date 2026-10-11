@@ -1,0 +1,27 @@
+{
+ "sheet": "PN30-2328",
+ "title": "TIMBER PILE > OR = Ø340 HALFCAP OR FULLCAP TO PILE BEARING DETAILS",
+ "cat": "Halfcaps",
+ "details": [
+  {"name": "SECTION A", "rects": [[8, 14.5, 28, 40.5]]},
+  {"name": "SECTION B", "rects": [[32.5, 14.5, 53, 40.3]]},
+  {"name": "SECTION C", "rects": [[55, 14.5, 76, 40.3]]},
+  {"name": "NOTES", "rects": [[76.5, 16.5, 96.5, 34.7]]},
+  {"name": "NOTE – RELOCATE EXISTING PILE BANDS", "rects": [[79.5, 35.5, 94.5, 42.5]]},
+  {"name": "SECTIONAL ELEVATION TYPE 1", "rects": [[3.5, 42, 28, 85.5]]},
+  {"name": "SECTIONAL ELEVATION TYPE 2 – TIMBER PILE > OR = Ø340 HALFCAP OR FULLCAP TO PILE BEARING DETAILS", "rects": [[28, 40.3, 53.5, 85.5], [36, 86, 65, 94]]},
+  {"name": "SECTIONAL ELEVATION TYPE 3", "rects": [[53.5, 40.3, 79, 85.5]]},
+  {"name": "VIEW D", "rects": [[79, 44, 98, 85]]}
+ ],
+ "exclude": [[83, 92.5, 97, 98.5]],
+ "erase": [],
+ "text": {"2484": "~", "2398": "ECT","2485": "300", "2388": "~", "2400": "SECTION  B", "2397": "",
+  "2401": "SECTION  C", "2396": "", "2386": "BEARING", "2487": "300", "2375": "NOTE:", "2486": "100", "2411": "FACE OF PILE",
+  "2426": "2 - M20 BOLTS", "2453": "FOR DETAILS (TYP)", "2473": "TO BE USED WHERE DIMENSION 'A' (FACE OF PILE",
+  "2474": "TO BE USED WHERE DIMENSION 'A' (FACE OF PILE", "2475": "TO BE USED WHERE DIMENSION 'A' (FACE OF PILE",
+  "2462": "~", "2412": "FACE OF PILE", "2427": "OR 2 - M20 BOLTS", "2480": "TIMBER PILE > OR = Ø340",
+  "2481": "HALFCAP OR FULLCAP TO PILE BEARING DETAILS", "2464": "SECTIONAL ELEVATION", "2467": "", "2459": "BEARING REQUIRED", "2457": "",
+  "2450": "~", "2436": "0-35", "2438": "~", "2472": "VIEW  D", "2471": "", "2488": "260", "2489": "50", "2490": "50"},
+ "add": [],
+ "drop": []
+}

@@ -1,0 +1,170 @@
+{
+ "sheet": "PN30-3116",
+ "title": "ABUTMENT - STRINGER REPLACEMENT DETAIL - TYPE 2",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "NOTE – PFC CHANNEL FULLCAP STRENGTHENER",
+   "rects": [
+    [
+     39.5,
+     6,
+     61.6,
+     14.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – STEEL STRINGER SHALL BE FABRICATED",
+   "rects": [
+    [
+     35.4,
+     14.8,
+     56.4,
+     25
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – GAP BETWEEN STRINGER AND DECK",
+   "rects": [
+    [
+     65.3,
+     9.4,
+     85.6,
+     18.7
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – REFER TO VARIOUS FULLCAP STRENGTHENING DETAILS",
+   "rects": [
+    [
+     23.5,
+     65,
+     48.8,
+     73.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THIS DETAIL SHALL BE USED ONLY",
+   "rects": [
+    [
+     22.7,
+     74.8,
+     41,
+     87
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PROPOSED STRINGER REPLACEMENT AND PFC FULLCAP",
+   "rects": [
+    [
+     76.3,
+     58.4,
+     97.8,
+     71.2
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION A",
+   "rects": [
+    [
+     2.8,
+     15,
+     46.05,
+     67.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT - STRINGER REPLACEMENT DETAIL - TYPE 2",
+   "rects": [
+    [
+     46.05,
+     16,
+     86.5,
+     58.5
+    ],
+    [
+     48.5,
+     58.5,
+     83,
+     81.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   97.8,
+   100,
+   100
+  ],
+  [
+   85,
+   87.5,
+   98.5,
+   92.5
+  ]
+ ],
+ "erase": [
+  [
+   52.85,
+   41.6,
+   53.7,
+   42.9
+  ],
+  [
+   21.3,
+   43.0,
+   23.0,
+   44.6
+  ]
+ ],
+ "text": {
+  "2216": "PFC CHANNEL FULLCAP STRENGTHENER",
+  "2217": "",
+  "2225": "NOTE:",
+  "2220": "NOTE:",
+  "2226": "TO STEEL STRINGER PACKING DETAIL",
+  "2227": "",
+  "2295": "",
+  "2296": "",
+  "2297": "",
+  "2304": "WAS USED FOR THIS EXAMPLE)",
+  "2303": "~",
+  "2266": "~",
+  "2229": "Ø20x130 LONG COACH SCREW",
+  "2248": "WITH Ø3.2 CLOUT",
+  "2246": "SHIMS FIXED TO SHEETING",
+  "2319": "~",
+  "2290": "SECTIONAL ELEVATION  A",
+  "2289": "",
+  "2260": "Ø20 THREADED ROD WITH",
+  "2265": "HALFCAP",
+  "2268": "* PROPOSED 300 PFC",
+  "2269": "Ø20 'U' THREADED ROD",
+  "2280": "IF BEARING < 70",
+  "2249": "~"
+ },
+ "add": [
+  {
+   "s": "NOTE: REFER TO VARIOUS FULLCAP STRENGTHENING",
+   "like": 2299,
+   "dx": 0,
+   "dy": -1.6
+  },
+  {
+   "s": "100",
+   "like": 2267,
+   "dx": -6.85,
+   "dy": 0
+  }
+ ],
+ "drop": []
+}

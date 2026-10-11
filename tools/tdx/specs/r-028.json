@@ -1,0 +1,399 @@
+{
+ "sheet": "PN30-2128",
+ "title": "WINGWALL PILE REPAIR DETAIL - TYPE 3",
+ "cat": "Wing walls",
+ "details": [
+  {
+   "name": "SECTION C – TOP SECTION OF TIMBER PILE IS REMOVED",
+   "rects": [
+    [
+     65,
+     11,
+     99,
+     20.5
+    ],
+    [
+     70.5,
+     20.5,
+     99,
+     32
+    ]
+   ]
+  },
+  {
+   "name": "SECTION C – SHEETING BUTTS, TOP SECTION REMAINS",
+   "rects": [
+    [
+     42,
+     15,
+     70.5,
+     31.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B – SHEETING BUTTS",
+   "rects": [
+    [
+     42,
+     31.8,
+     70,
+     44
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A – SHEETING BUTTS",
+   "rects": [
+    [
+     42,
+     44,
+     73,
+     61.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – ENSURE WINGWALL SHEETING",
+   "rects": [
+    [
+     2,
+     57.5,
+     17.5,
+     63.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION C – SHEET DOES NOT BUTT",
+   "rects": [
+    [
+     8.5,
+     17,
+     41.5,
+     33.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B – SHEET DOES NOT BUTT",
+   "rects": [
+    [
+     8.5,
+     33.5,
+     41.5,
+     45
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A – SHEET DOES NOT BUTT",
+   "rects": [
+    [
+     8.5,
+     45,
+     42,
+     62
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PFC PILE SIZE WILL VARY",
+   "rects": [
+    [
+     42.5,
+     61.6,
+     62.5,
+     66.2
+    ]
+   ]
+  },
+  {
+   "name": "MAXIMUM HEIGTH OF PFC WINGWALL PILE REPAIR",
+   "rects": [
+    [
+     43,
+     66.2,
+     62,
+     74.5
+    ]
+   ]
+  },
+  {
+   "name": "VIEW D – TOP SECTION OF TIMBER PILE IS REMOVED",
+   "rects": [
+    [
+     65,
+     59.5,
+     95,
+     76
+    ]
+   ]
+  },
+  {
+   "name": "VIEW D – EXISTING PILE ABOVE ROTTEN SECTION TO REMAIN",
+   "rects": [
+    [
+     40,
+     74.5,
+     65.5,
+     91.5
+    ]
+   ]
+  },
+  {
+   "name": "VIEW D – TOP SECTION OF TIMBER PILE REMAINS",
+   "rects": [
+    [
+     65.5,
+     76,
+     95,
+     93
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – WINGWALL PILE REPAIR DETAIL - TYPE 3",
+   "rects": [
+    [
+     7,
+     62,
+     42.5,
+     97
+    ],
+    [
+     42.5,
+     91.5,
+     54,
+     97
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   76,
+   92.5,
+   91,
+   96.5
+  ],
+  [
+   6,
+   12,
+   9,
+   14
+  ]
+ ],
+ "erase": [
+  [
+   44.6,
+   67.75,
+   54.0,
+   68.4
+  ],
+  [
+   44.6,
+   69.5,
+   54.0,
+   70.2
+  ],
+  [
+   44.6,
+   71.33,
+   54.0,
+   71.98
+  ],
+  [
+   56.15,
+   67.75,
+   56.95,
+   69.35
+  ],
+  [
+   56.15,
+   70.4,
+   56.95,
+   72.05
+  ],
+  [
+   56.15,
+   66.75,
+   56.95,
+   67.4
+  ],
+  [
+   56.15,
+   69.5,
+   56.95,
+   70.2
+  ],
+  [
+   79.25,
+   72.6,
+   80.85,
+   73.2
+  ]
+ ],
+ "text": {
+  "5104": "TO MATCH PFC's. CONCRETE TO POURED A",
+  "5105": "MINIMUM OF 1 DAY AFTER POT REEPAIR.",
+  "5116": "Ø20 THREADED ROD",
+  "5143": "WHERE EXISTING TIMBER SHEETING BUTTS",
+  "5145": "AT THE TIMBER PILE REPAIR & TOP SECTION",
+  "5122": "~",
+  "5117": "Ø20 THREADED ROD",
+  "5141": "WHERE EXISTING TIMBER SHEETING BUTTS",
+  "5142": "",
+  "5144": "AT THE TIMBER PILE REPAIR & TOP SECTION",
+  "5172": "WHERE EXISTING TIMBER SHEETING BUTTS",
+  "5382": "300",
+  "5383": "300",
+  "5245": "SECTION  A",
+  "5242": "",
+  "5385": "40",
+  "5181": "650",
+  "5221": "PROVIDE Ø22 HOLES",
+  "5188": "~",
+  "5384": "~",
+  "5253": "AT THE TIMBER PILE REPAIR.",
+  "5238": "ENSURE WINGWALL SHEETING IS",
+  "5239": "",
+  "5260": "POSITION AND CONCRETE HAS BEEN",
+  "5257": "",
+  "5140": "~",
+  "5148": "SECTION  C",
+  "5123": "Ø20 THREADED ROD",
+  "5170": "~",
+  "5173": "SECTION  B",
+  "5372": "150",
+  "5374": "40",
+  "5244": "SECTION  A",
+  "5240": "",
+  "5179": "Ø20 THREADED 'U' ROD",
+  "5216": "WELDED TO PFC.",
+  "5208": "",
+  "5222": "PROVIDE Ø22 HOLES",
+  "5220": "",
+  "5203": "ENSURE CONCRETE",
+  "5201": "",
+  "5219": "IF TIMBER SHEETING OCCURS",
+  "5217": "",
+  "5232": "AND KEY-IN TIMBER INTO",
+  "5230": "",
+  "5237": "APPLIES SECTION A ONLY.",
+  "5241": "(TYP)",
+  "5284": "",
+  "5285": "",
+  "5288": "2 - 300 PFC",
+  "5290": "",
+  "5291": "",
+  "5293": "1 - 300 PFC",
+  "5296": "",
+  "5299": "",
+  "5297": "",
+  "5280": "",
+  "5292": "",
+  "5286": "",
+  "5289": "",
+  "5294": "",
+  "5298": "",
+  "5386": "~",
+  "5254": "WITH Ø12 HOLES AT 75",
+  "5281": "EXISTING TIMBER",
+  "5301": "WHERE EXISTING TIMBER SHEETING BUTTS",
+  "5302": "",
+  "5304": "AT THE TIMBER PILE REPAIR & TOP SECTION",
+  "5381": "~",
+  "5334": "~",
+  "5310": "WITH Ø12 HOLES AT 75",
+  "5349": "WHERE EXISTING TIMBER PILE ABOVE",
+  "5387": "25",
+  "5326": "~",
+  "5315": "WITH Ø12 HOLES AT 75",
+  "5354": "WHERE EXISTING TIMBER SHEETING BUTTS",
+  "5357": "AT THE TIMBER PILE REPAIR & TOP SECTION",
+  "5368": "MIN.",
+  "5369": "'h' MAXIMUM",
+  "5379": "~",
+  "5370": "100",
+  "5371": "MIN",
+  "5373": "50",
+  "5278": "~",
+  "5375": "100",
+  "5376": "500",
+  "5377": "150",
+  "5378": "100",
+  "5380": "MIN",
+  "5277": "15°",
+  "5295": "300 PFC",
+  "5330": "SL81 FABRIC",
+  "5336": "TOP & BOTTOM",
+  "5353": "2-THREADED 'U' RODS",
+  "5363": "ABUTMENT N° X - PILE N° X",
+  "5364": "DRG NUMBER - REFER TO",
+  "5360": ""
+ },
+ "add": [
+  {
+   "s": "1 - 300 PFC",
+   "like": 5288,
+   "dx": 0,
+   "dy": -1.84
+  },
+  {
+   "s": "2 - 300 PFC",
+   "like": 5293,
+   "dx": -0.1,
+   "dy": 1.84
+  },
+  {
+   "s": "WITH 20 kPa SURCHARGE",
+   "like": 5282,
+   "dx": -0.93,
+   "dy": 5.94
+  },
+  {
+   "s": "'h' MAX",
+   "like": 5280,
+   "dx": -1.77,
+   "dy": 0
+  },
+  {
+   "s": "'h' MAX",
+   "like": 5292,
+   "dx": -1.77,
+   "dy": 0
+  },
+  {
+   "s": "≤ 3000",
+   "like": 5286,
+   "dx": -1.3,
+   "dy": 0
+  },
+  {
+   "s": "≤ 4000",
+   "like": 5289,
+   "dx": -1.3,
+   "dy": 0
+  },
+  {
+   "s": "≤ 2500",
+   "like": 5294,
+   "dx": -1.3,
+   "dy": 0
+  },
+  {
+   "s": "≤ 3500",
+   "like": 5298,
+   "dx": -1.3,
+   "dy": 0
+  },
+  {
+   "s": "WINGWALL PILE REPAIR DETAIL - TYPE 3",
+   "like": 5360,
+   "dx": 1.8,
+   "dy": 0
+  }
+ ],
+ "drop": []
+}

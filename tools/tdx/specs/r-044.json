@@ -1,0 +1,222 @@
+{
+ "sheet": "PN30-2302",
+ "title": "PIER HALFCAP REPLACEMENT DETAIL",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "NOTE – ENGINEER TO DETERMINE",
+   "rects": [
+    [
+     10,
+     64.5,
+     24.8,
+     70.2
+    ],
+    [
+     10.3,
+     43.5,
+     12.2,
+     64.5
+    ],
+    [
+     12.2,
+     43.5,
+     27.3,
+     45.3
+    ],
+    [
+     12.2,
+     60.8,
+     29.5,
+     62.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – IF HALFCAP CHANNEL",
+   "rects": [
+    [
+     12,
+     53.3,
+     29,
+     59.2
+    ],
+    [
+     19.5,
+     46.5,
+     24.3,
+     53.3
+    ],
+    [
+     19.5,
+     59.2,
+     26.3,
+     64.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – HALFCAP CHANNEL",
+   "rects": [
+    [
+     41.3,
+     87.3,
+     56.8,
+     92.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – SUBJECT TO CORBEL CONDITION",
+   "rects": [
+    [
+     40,
+     93,
+     56.3,
+     96
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – 380 PFC",
+   "rects": [
+    [
+     24.2,
+     34.2,
+     67.8,
+     52.8
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – 300 PFC",
+   "rects": [
+    [
+     24.2,
+     52.8,
+     70,
+     70.6
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     70.3,
+     34.3,
+     96.5,
+     48.2
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STRINGER/CORBEL BRACKET DETAILS",
+   "rects": [
+    [
+     70.3,
+     48.2,
+     96.5,
+     69
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER HALFCAP REPLACEMENT DETAIL",
+   "rects": [
+    [
+     51,
+     69.5,
+     97,
+     89.6
+    ],
+    [
+     56.8,
+     89.6,
+     93.5,
+     96.5
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A",
+   "rects": [
+    [
+     2.5,
+     69.5,
+     51,
+     96.2
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   100,
+   33.5
+  ],
+  [
+   0,
+   0,
+   2.6,
+   100
+  ],
+  [
+   84,
+   95.8,
+   100,
+   100
+  ],
+  [
+   0,
+   98,
+   100,
+   100
+  ]
+ ],
+ "erase": [
+  [
+   60.9,
+   92.3,
+   61.9,
+   94.0
+  ]
+ ],
+ "text": {
+  "3040": "~",
+  "3043": "~",
+  "2985": "~",
+  "3004": "~",
+  "2976": "~",
+  "3078": "~",
+  "3001": "NOTE: IF HALFCAP CHANNEL",
+  "3014": "DETAILS PN30-2328 &/OR 2329",
+  "2992": "DETAIL  1",
+  "2980": "70 MINIMUM BEARING",
+  "3025": "IF BEARING IS <70 THEN REFER",
+  "3026": "",
+  "2971": "Ø22 HOLE (TYP)",
+  "2981": "Ø22 x 50 LONG",
+  "3115": "100",
+  "3116": "50",
+  "3117": "75",
+  "2997": "20 x 20",
+  "2998": "",
+  "3037": "1 - AS DRAWN",
+  "3058": "A",
+  "3101": "XX30-XXXX",
+  "3104": "",
+  "3073": "300 PFC",
+  "3074": "SHIM PLATES",
+  "3079": "HALFCAP",
+  "3090": "70",
+  "3102": "VIEW  A",
+  "3069": "TO CORBELS WITH Ø20 THREADED",
+  "3075": "Ø20 THREADED ROD",
+  "3088": "SITE DRILLED Ø22 HOLES (TYP)"
+ },
+ "add": [],
+ "drop": []
+}

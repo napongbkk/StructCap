@@ -1,0 +1,20 @@
+{
+ "sheet": "PN30-3108",
+ "title": "PIER - STRINGER & CORBEL REPLACEMENT DETAIL - TYPE 3",
+ "cat": "Stringers",
+ "details": [
+  {"name": "DETAIL 1", "rects": [[15.5, 1.5, 40, 33]]},
+  {"name": "SECTION A", "rects": [[40, 1.5, 81.5, 37]]},
+  {"name": "NOTE – STRINGER & CORBEL SIZE WILL VARY", "rects": [[35.4, 49.4, 46, 56.9]]},
+  {"name": "NOTE – GAP BETWEEN STRINGER AND DECK", "rects": [[36.4, 65.4, 49, 76.6]]},
+  {"name": "SECTIONAL ELEVATION B", "rects": [[15.2, 33, 49, 81.5]]},
+  {"name": "ELEVATION – PIER - STRINGER & CORBEL REPLACEMENT DETAIL - TYPE 3", "rects": [[49, 37, 86, 81.5], [50, 82.5, 82.6, 92.2]]}
+ ],
+ "exclude": [[0, 0, 1.2, 9], [0, 97.3, 100, 100], [73, 92.2, 85.5, 96.8], [20.7, 53.2, 21.3, 53.8], [88.2, 53.7, 88.8, 54.3]],
+ "erase": [[61.05, 84.88, 61.19, 85.0], [55.52, 87.42, 55.64, 87.52], [54.76, 89.04, 54.86, 89.14], [55.6, 89.23, 55.7, 89.33]],
+ "text": {"3583": "DETAIL - TYPE 3", "3584": "", "3587": "SPAN N° X - PIER N° X - STRINGER N° X", "3588": "", "3495": "DETAIL  1", "3494": "", "3592": "75", "3487": "DRILL Ø18 HOLE IN", "3473": "Ø20 THREADED ROD", "3482": "~",
+  "3500": "SECTION  A", "3595": "", "3550": "", "3593": "50", "3594": "~", "3579": "SECTIONAL ELEVATION  B", "3578": "",
+  "3539": "410 UB 54 STRINGER", "3544": "310 UB 46 CORBEL x", "3554": "~", "3537": "", "3568": "Ø20 THREADED ROD WITH"},
+ "add": [{"s": "1000 LONG", "like": 3544, "dx": 0.3, "dy": 1.6}, {"s": "50", "like": 3538, "at": [61.6, 57.9]}],
+ "drop": []
+}

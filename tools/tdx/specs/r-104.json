@@ -1,0 +1,149 @@
+{
+ "sheet": "PN30-3123",
+ "title": "STEEL STRINGER SPLICE JOINT DETAIL",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "NOTE – STRINGER SIZE, SPLICE PLATE CONNECTION",
+   "rects": [
+    [
+     17.3,
+     75.8,
+     38.4,
+     87
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     62.2,
+     65.3,
+     97.6,
+     88.6
+    ]
+   ]
+  },
+  {
+   "name": "SPLICE PLATE DETAIL",
+   "rects": [
+    [
+     68,
+     2.6,
+     97.6,
+     54.4
+    ],
+    [
+     72,
+     56.6,
+     93.2,
+     64
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STEEL STRINGER SPLICE JOINT DETAIL",
+   "rects": [
+    [
+     4.3,
+     3.8,
+     66,
+     64.6
+    ],
+    [
+     12.8,
+     67.3,
+     60.8,
+     84.6
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   1.2,
+   25
+  ],
+  [
+   0,
+   97.5,
+   100,
+   100
+  ],
+  [
+   79,
+   92,
+   96.6,
+   96.8
+  ]
+ ],
+ "erase": [
+  [
+   20.7,
+   72.6,
+   21.7,
+   73.6
+  ],
+  [
+   31.7,
+   72.6,
+   32.9,
+   73.6
+  ],
+  [
+   30.0,
+   55.2,
+   36.5,
+   57.2
+  ],
+  [
+   90.9,
+   75.1,
+   92.5,
+   76.8
+  ],
+  [
+   13.3,
+   68.6,
+   47.9,
+   70.95
+  ]
+ ],
+ "text": {
+  "2023": "~",
+  "2001": "NOTE:",
+  "1981": "110",
+  "1982": "Ø26 HOLE",
+  "1998": "P",
+  "2025": "~",
+  "2026": "55",
+  "1986": "TYP",
+  "2005": "SPAN N° X - STRINGER N° X - ABUT N° END OR PIER N° END",
+  "2006": "",
+  "2007": "",
+  "2009": "CONTACT FACES OF SPLICE PLATES TO BE",
+  "2010": ""
+ },
+ "add": [
+  {
+   "s": "M24 8.8TF",
+   "like": 1997,
+   "at": [
+    30.2,
+    56.9
+   ]
+  },
+  {
+   "s": "STEEL STRINGER SPLICE JOINT DETAIL",
+   "like": 1974,
+   "at": [
+    13.77,
+    70.8
+   ]
+  }
+ ],
+ "drop": []
+}

@@ -1,0 +1,212 @@
+{
+ "sheet": "PN30-3115",
+ "title": "ABUTMENT - STRINGER REPLACEMENT DETAIL - TYPE 2 XX30-XXXX",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "NOTE – STEEL STRINGER SHALL BE FABRICATED",
+   "rects": [
+    [
+     25,
+     4.4,
+     49.6,
+     13.2
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – GAP BETWEEN STRINGER AND DECK",
+   "rects": [
+    [
+     55.8,
+     4.4,
+     75.2,
+     14.3
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PFC CHANNEL FULLCAP STRENGTHENER",
+   "rects": [
+    [
+     31.5,
+     14.3,
+     53.4,
+     23.1
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – REFER TO VARIOUS FULLCAP STRENGTHENING DETAILS",
+   "rects": [
+    [
+     22.5,
+     65,
+     48,
+     73.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THIS DETAIL SHALL BE USED ONLY",
+   "rects": [
+    [
+     21.8,
+     74.3,
+     40.2,
+     86.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PROPOSED STRINGER REPLACEMENT AND PFC FULLCAP",
+   "rects": [
+    [
+     75.5,
+     58.4,
+     97,
+     71.2
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION A",
+   "rects": [
+    [
+     3,
+     12.4,
+     46.05,
+     66.8
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT - STRINGER REPLACEMENT DETAIL - TYPE 2 XX30-XXXX",
+   "rects": [
+    [
+     46.05,
+     15.3,
+     86.5,
+     61
+    ],
+    [
+     48.3,
+     61,
+     82.5,
+     81.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   2,
+   16.5
+  ],
+  [
+   0,
+   97.4,
+   100,
+   100
+  ],
+  [
+   83,
+   86.5,
+   97,
+   92
+  ],
+  [
+   18.5,
+   1.5,
+   21,
+   3.5
+  ]
+ ],
+ "erase": [
+  [
+   31.9,
+   27.4,
+   42.6,
+   29.2
+  ],
+  [
+   54.6,
+   73.4,
+   55.8,
+   74.9
+  ]
+ ],
+ "text": {
+  "2388": "NOTE:",
+  "2395": "SHEETING TO FACILITATE INSTALLATION.",
+  "2394": "",
+  "2409": "ACCOMMODATE NEW UB STEEL STRINGER.",
+  "2410": "",
+  "2475": "",
+  "2476": "",
+  "2485": "WAS USED FOR THIS EXAMPLE)",
+  "2483": "",
+  "2482": "~",
+  "2445": "",
+  "2503": "50",
+  "2426": "WITH Ø3.2 CLOUT",
+  "2430": "410 UB 54 STRINGER REPLACEMENT",
+  "2431": "",
+  "2423": "",
+  "2422": "",
+  "2424": "",
+  "2504": "~",
+  "2468": "SECTIONAL ELEVATION  A",
+  "2469": "",
+  "2502": "~",
+  "2407": "WITH Ø10x200 LONG SPIKE",
+  "2506": "~",
+  "2447": "* PROPOSED 300 PFC",
+  "2449": "FULLCAP STRENGTHENER",
+  "2486": "DETAIL - TYPE 2",
+  "2484": "",
+  "2454": "Ø20 'U' THREADED ROD",
+  "2459": "IF BEARING < 70",
+  "2460": "",
+  "2488": "ABUTMENT N° X - STRINGER N° X",
+  "2489": "",
+  "2505": "~",
+  "2457": "70 MINIMUM",
+  "2458": ""
+ },
+ "add": [
+  {
+   "s": "100",
+   "like": 2412,
+   "at": [
+    21.94,
+    44.39
+   ]
+  },
+  {
+   "s": "100",
+   "like": 2412,
+   "at": [
+    26.59,
+    44.39
+   ]
+  },
+  {
+   "s": "ALTERNATING SIDES OF",
+   "like": 2427,
+   "dx": 0,
+   "dy": -1.6
+  },
+  {
+   "s": "NOTE: REFER TO VARIOUS FULLCAP STRENGTHENING",
+   "like": 2478,
+   "at": [
+    23.8,
+    67.12
+   ]
+  }
+ ],
+ "drop": []
+}

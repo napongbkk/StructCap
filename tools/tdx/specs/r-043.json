@@ -1,0 +1,235 @@
+{
+ "sheet": "PN30-2301",
+ "title": "PIER HALFCAPS REPLACEMENT DETAIL",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "NOTE – ENGINEER TO DETERMINE",
+   "rects": [
+    [
+     2.5,
+     65.5,
+     18.2,
+     71.6
+    ],
+    [
+     2.8,
+     42,
+     5.2,
+     65.5
+    ],
+    [
+     5.2,
+     42,
+     21,
+     44
+    ],
+    [
+     5.2,
+     60,
+     22.5,
+     62
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – IF HALFCAP CHANNEL",
+   "rects": [
+    [
+     4.8,
+     52.3,
+     22.6,
+     58.3
+    ],
+    [
+     12.5,
+     45,
+     18,
+     52.3
+    ],
+    [
+     12.5,
+     58.3,
+     20,
+     64.2
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – HALFCAP CHANNELS",
+   "rects": [
+    [
+     40.4,
+     83.8,
+     56.3,
+     89.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – SUBJECT TO CORBEL CONDITION",
+   "rects": [
+    [
+     39.5,
+     90.6,
+     56.6,
+     93.8
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – 380 PFC",
+   "rects": [
+    [
+     17,
+     32.4,
+     62.2,
+     51.9
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – 300 PFC",
+   "rects": [
+    [
+     17,
+     51.9,
+     62.2,
+     68.2
+    ],
+    [
+     34.5,
+     68.2,
+     43,
+     71.6
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     69.8,
+     32.8,
+     96,
+     47.2
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STRINGER/CORBEL BRACKET DETAILS",
+   "rects": [
+    [
+     70,
+     47.2,
+     96,
+     68
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER HALFCAPS REPLACEMENT DETAIL",
+   "rects": [
+    [
+     52,
+     68.2,
+     99.5,
+     89.6
+    ],
+    [
+     56.6,
+     89.6,
+     97,
+     95.8
+    ],
+    [
+     47.5,
+     81.5,
+     56.6,
+     84.2
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A",
+   "rects": [
+    [
+     2.5,
+     68.2,
+     56.6,
+     95.8
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   100,
+   31.5
+  ],
+  [
+   0,
+   0,
+   2.3,
+   100
+  ],
+  [
+   85,
+   95.8,
+   100,
+   100
+  ],
+  [
+   0,
+   98,
+   100,
+   100
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "3288": "",
+  "3168": "70 MINIMUM BEARING",
+  "3171": "",
+  "3169": "",
+  "3174": "IF BEARING IS <70 THEN REFER",
+  "3176": "TO \"HALFCAP OR FULLCAP TO",
+  "3185": "1:10",
+  "3213": "IF BEARING IS <70 THEN REFER",
+  "3227": "(AT PILE)",
+  "3295": "0",
+  "3161": "Ø22 HOLE (TYP)",
+  "3172": "Ø22 x 50 LONG",
+  "3294": "100",
+  "3296": "75",
+  "3188": "",
+  "3187": "",
+  "3222": "1 - AS DRAWN",
+  "3268": "HALFCAPS WITH",
+  "3271": "BEARING < 70",
+  "3283": "XX30-XXXX",
+  "3290": "DRG NUMBER - REFER TO",
+  "3293": "~",
+  "3253": "",
+  "3252": "",
+  "3237": "~",
+  "3239": "~",
+  "3280": "VIEW  A",
+  "3230": "EXISTING TIMBER",
+  "3233": "STRINGER",
+  "3255": "TO CORBELS WITH Ø20 THREADED",
+  "3267": "SITE DRILLED Ø22 HOLES (TYP)",
+  "3261": "300 PFC HALFCAP"
+ },
+ "add": [{"s": "STRINGER/CORBEL BRACKET FIXED", "like": 3252, "at": [11.2, 79.87]},
+  {
+   "s": "20 x 20",
+   "like": 3189,
+   "dx": 0,
+   "dy": -1.6
+  }
+ ],
+ "drop": []
+}

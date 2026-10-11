@@ -1,0 +1,16 @@
+{"sheet": "PN30-3211", "title": "KERB CONTRACTION JOINT DETAIL", "cat": "Deck & overlay",
+ "details": [
+  {"name": "NOTE – PIER CONTRACTION JOINTS MAY BE RELOCATED", "rects": [[24.8, 39, 38.8, 48]]},
+  {"name": "DETAIL 1", "rects": [[60.8, 9, 93, 40]]},
+  {"name": "SECTION A – DECK DEPTH 130-200", "rects": [[2.5, 13, 30.8, 47]]},
+  {"name": "SECTION A – DECK DEPTH 200+", "rects": [[30.8, 9, 67, 47]]},
+  {"name": "CONTRACTION JOINT AT TERMINATION OF BOTTOM DECK REINFORCEMENT DETAIL", "rects": [[2.5, 49.5, 28.6, 79.5]]},
+  {"name": "KERB CONTRACTION JOINT DETAIL", "rects": [[28.6, 49.5, 62.9, 79.5]]},
+  {"name": "KERB CONTRACTION JOINT DETAIL – PERMANENT FORMWORK OPTION", "rects": [[62.9, 47.5, 98, 81.5]]}
+ ],
+ "exclude": [[87.5, 82, 98.5, 86.5], [0, 97, 100, 100]],
+ "erase": [], "text": {"3961": "Ø10 POLYETHYLENE", "3977": "DETAIL  1", "4038": "", "4035": "10", "3960": "TYPE X", "3951": "TYPE X", "3964": "TYPE X",
+  "3978": "SECTION  A", "4039": "", "3976": "SECTION  A", "4037": "", "3967": "Ø32 PVC PIPE TO FULL WIDTH", "3988": "130-200", "3950": "100",
+  "3966": "Ø50 PVC PIPE TO FULL WIDTH", "3965": "~", "4031": "~", "4033": "~", "4032": "~", "4036": "~", "3995": "Ø50 PVC PIPE WITH", "4016": "40",
+  "4017": "Ø32 PVC PIPE WITH", "4003": "Ø50 PVC PIPE", "4009": "'X'>200 OR Ø32 PVC", "4012": "PIPE WHERE 'X'<200", "4019": "Ø50 PVC PIPE", "4020": "40",
+  "4034": "200", "4005": "Ø50 PVC PIPE WHERE", "4011": "200 OR Ø32 PVC", "4013": "PIPE WHERE 'X'<200", "4022": "40", "4021": "Ø50 PVC PIPE"}, "add": [], "drop": []}

@@ -1,0 +1,18 @@
+{
+ "sheet": "PN30-2306",
+ "title": "PIER HALFCAP STRENGTHENING DETAIL",
+ "cat": "Halfcaps",
+ "details": [
+  {"name": "NOTE – HALFCAP STRENGTHENING CHANNELS", "rects": [[21.5, 21, 47.5, 38]]},
+  {"name": "NOTE – PROP STRINGERS & CORBELS", "rects": [[31, 70.5, 53.8, 85.3]]},
+  {"name": "SECTION A", "rects": [[2.8, 42.5, 37.5, 81]]},
+  {"name": "ELEVATION – PIER HALFCAP STRENGTHENING DETAIL", "rects": [[37.5, 27, 99, 85.3], [52, 85.3, 96.5, 94]]}
+ ],
+ "exclude": [[0, 0, 100, 20], [84, 94, 100, 100], [0, 96, 100, 100], [99, 0, 100, 100]],
+ "erase": [],
+ "text": {"2522": "NOTE: HALFCAP STRENGTHENING CHANNELS", "2523": "WILL VARY ACCORDING TO ENGINEERING", "2599": "~", "2597": "~", "2598": "~",
+  "2543": "MIN",   "2534": "Ø20 THREADED RODS", "2593": "PIER HALFCAP STRENGTHENING DETAIL", "2563": "PROPOSED 300 PFC", "2583": "DRG NUMBER - REFER TO",
+  "2560": "~", "2600": "50"},
+ "add": [{"s": "XX30-XXXX", "like": 2594, "at": [80.8, 88.1]}],
+ "drop": []
+}

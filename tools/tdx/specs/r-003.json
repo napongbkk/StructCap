@@ -1,0 +1,18 @@
+{ "sheet": "PN30-2103", "title": "PIER PILE REPAIR DETAIL - TYPE 1", "cat": "Piles",
+  "details": [
+    {"name": "NOTE – HALFCAPS SHALL BE PROPPED", "rects": [[6.5, 21.5, 33.2, 29.5]]},
+    {"name": "NOTE – THIS PAGE SHALL BE READ IN CONJUNCTION", "rects": [[57, 18.3, 89, 25.8]]},
+    {"name": "NOTE – THIS REPAIR IS GENERALLY FOR", "rects": [[64, 26.8, 89.5, 34]]},
+    {"name": "NOTE – EXISTING GENERAL GL OR", "rects": [[75.8, 56.3, 98, 63.5]]},
+    {"name": "NOTE – ENGINEER SHALL DECIDE WHICH", "rects": [[32.8, 93.4, 56.5, 98]]},
+    {"name": "SECTION A", "rects": [[29, 11.5, 71.5, 24]]},
+    {"name": "SECTION B", "rects": [[6.5, 24, 76, 47.3]]},
+    {"name": "ELEVATION – PIER PILE REPAIR DETAIL - TYPE 1", "rects": [[9, 47.3, 75.5, 85], [24, 81, 90.5, 93.4]]}
+  ],
+  "exclude": [[0, 0, 1.5, 28], [70, 0, 100, 1.3], [74, 95, 94, 100]],
+  "erase": [[57.5, 59.6, 68, 60.72], [55.8, 58.4, 56.38, 59.5], [56.52, 58.4, 57.1, 59.5], [56.38, 59.0, 56.52, 59.5]],"text": {"2974": "", "2940": "NOTE:", "2939": "WITH:", "2984": "~", "2931": "Ø20 THREADED ROD TO", "2949": "Ø10x250 LONG",
+    "2956": "TYP", "2965": "WITH 2-Ø12 HOLES FOR SPIKES.", "2969": "00 LONG", "2971": "SPIKE (TYP)",
+    "3026": "1050", "3027": "MIN", "3028": "750", "3029": "500", "3030": "300", "3031": "100", "3032": "50",
+    "2989": "~","2990": "", "3033": "20", "3034": "MIN", "2988": "~", "3012": "~",
+    "2987": "U2", "3018": "PIER PILE REPAIR DETAIL - TYPE 1", "2993": "~", "2996": "~",
+    "3003": "BASE PLATE", "3005": "Ø10x250 LONG"}, "add": [{"s": "EXISTING GENERAL G.L.", "like": 2990, "at": [58.7, 60.8]}, {"s": "A", "like": 2974, "at": [56.02, 59.29]}, {"s": "SECTION", "like": 2974, "at": [38.93, 45.27]}, {"s": "XX30-XXXX", "like": 3019, "at": [60.55, 87.72]}], "drop": [] }

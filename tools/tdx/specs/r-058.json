@@ -1,0 +1,190 @@
+{
+ "sheet": "PN30-2315",
+ "title": "STEEL PIER PILE/PIER HALFCAPS REPLACEMENT DETAIL - TYPE 2",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "NOTE – SUBJECT TO CORBEL CONDITION",
+   "rects": [
+    [
+     71,
+     45.8,
+     91.5,
+     49.8
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – HALFCAP CHANNELS",
+   "rects": [
+    [
+     35,
+     80,
+     53.5,
+     86
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THESE DETAILS ARE ONLY APPLICABLE",
+   "rects": [
+    [
+     7.5,
+     87.5,
+     54.5,
+     96
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – NOT A PREFERRED OPTION",
+   "rects": [
+    [
+     59.5,
+     88.5,
+     87.5,
+     96
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     8,
+     19,
+     39.5,
+     35
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STRINGER/CORBEL BRACKET DETAILS",
+   "rects": [
+    [
+     8,
+     35,
+     40,
+     58.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     43,
+     40,
+     71,
+     59.5
+    ],
+    [
+     66,
+     52,
+     78,
+     56
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A",
+   "rects": [
+    [
+     3.8,
+     59.5,
+     49,
+     84
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STEEL PIER PILE/PIER HALFCAPS REPLACEMENT DETAIL - TYPE 2",
+   "rects": [
+    [
+     49,
+     60,
+     98,
+     88.5
+    ],
+    [
+     53.5,
+     79,
+     98,
+     88.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   1.5,
+   42
+  ],
+  [
+   96,
+   0,
+   100,
+   1
+  ],
+  [
+   80,
+   96,
+   100,
+   100
+  ]
+ ],
+ "erase": [
+  [
+   80.8,
+   84.4,
+   81.65,
+   85.35
+  ],
+  [
+   86.9,
+   84.4,
+   87.8,
+   85.35
+  ],
+  [
+   9.8,
+   88.6,
+   10.5,
+   89.2
+  ]
+ ],
+ "text": {
+  "2897": "100",
+  "2898": "50",
+  "2805": "Ø22 HOLE (TYP)",
+  "2901": "75",
+  "2807": "Ø22 x 50 LONG",
+  "2806": "~",
+  "2832": "1 - AS DRAWN",
+  "2834": "SECTION  B",
+  "2833": "",
+  "2818": "REPLACEMENT",
+  "2899": "~",
+  "2900": "~",
+  "2842": "(TYP)",
+  "2851": "TO CORBELS WITH Ø20 THREADED",
+  "2858": "x400 LONG",
+  "2867": "SITE DRILLED Ø22 HOLES (TYP)",
+  "2846": "~",
+  "2902": "75",
+  "2871": "~",
+  "2843": "140",
+  "2856": "PROPOSED 300 PFC",
+  "2854": "",
+  "2857": "",
+  "2883": "XX30-XXXX",
+  "2903": "~",
+  "2831": "CORBEL CONNECTION :-",
+  "2886": "\"NOTE THESE DETAILS ARE ONLY APPLICABLE WHERE",
+  "2895": "PROPOSED STEEL PILE\""
+ },
+ "add": [],
+ "drop": []
+}

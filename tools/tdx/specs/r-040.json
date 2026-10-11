@@ -1,0 +1,160 @@
+{
+ "sheet": "PN30-2205",
+ "title": "WINGWALL EXTENSION DETAIL - TYPE 2",
+ "cat": "Wing walls",
+ "details": [
+  {
+   "name": "NOTE – IF SCOURING OF WINGWALL IS NOT EVIDENT",
+   "rects": [
+    [
+     23.5,
+     85,
+     45,
+     95.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – TYPE 2 - WHERE THERE IS NO POSSIBILITY OF SCOURING",
+   "rects": [
+    [
+     51,
+     90,
+     71.5,
+     95.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     1,
+     50,
+     18.6,
+     82.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     18.6,
+     45,
+     38,
+     78
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1",
+   "rects": [
+    [
+     74.5,
+     43,
+     99,
+     66
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – WINGWALL EXTENSION DETAIL - TYPE 2",
+   "rects": [
+    [
+     37.5,
+     42,
+     74.5,
+     90
+    ],
+    [
+     74.5,
+     80.5,
+     78,
+     84.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   88,
+   95,
+   99,
+   99.5
+  ],
+  [
+   85,
+   9.8,
+   86,
+   10.6
+  ]
+ ],
+ "erase": [
+  [
+   42.0,
+   53.3,
+   42.8,
+   54.5
+  ],
+  [
+   66.7,
+   85.6,
+   67.6,
+   87.05
+  ]
+ ],
+ "text": {
+  "2779": "NOTE :- IF SCOURING OF WINGWALL IS NOT",
+  "2780": "",
+  "2786": "",
+  "2787": "",
+  "2791": "00",
+  "2792": "500",
+  "2793": "MIN",
+  "2794": "600",
+  "2759": "~",
+  "2716": "350",
+  "2771": "SECTION  A",
+  "2770": "",
+  "2722": "75 COVER",
+  "2719": "",
+  "2760": "300",
+  "2761": "G1 STARTER",
+  "2795": "600",
+  "2796": "MIN",
+  "2797": "MIN",
+  "2798": "0 MIN",
+  "2799": "600 MAX",
+  "2705": "U2",
+  "2765": "SECTION  B",
+  "2713": "~",
+  "2744": "DETAIL  1",
+  "2734": "EXISTING TIMBER SHEETING",
+  "2737": "EXISTING TIMBER",
+  "2743": "~",
+  "2777": "XX30-XXXX",
+  "2778": "",
+  "2686": "900 PERPENDICULAR",
+  "2688": "",
+  "2714": "A & B",
+  "2715": "",
+  "2800": "600",
+  "2801": "00",
+  "2802": "IN",
+  "2776": "WINGWALL EXTENSION DETAIL - TYPE 2",
+  "2781": "ABUTMENT N° X - XHS ONLY",
+  "2803": "MIN"
+ },
+ "add": [
+  {
+   "s": "TYPE 2 - WHERE THERE IS NO POSSIBLITY",
+   "like": 2789,
+   "at": [
+    52.2,
+    92.6
+   ]
+  }
+ ],
+ "drop": []
+}

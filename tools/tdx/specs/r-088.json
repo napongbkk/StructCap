@@ -1,0 +1,208 @@
+{
+ "sheet": "PN30-3109",
+ "title": "PIER - STRINGER & CORBEL REPLACEMENT DETAIL - TYPE 3A",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     9.5,
+     3,
+     49.3,
+     35.5
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1",
+   "rects": [
+    [
+     49.3,
+     3,
+     74,
+     34.3
+    ]
+   ]
+  },
+  {
+   "name": "MODIFIED FLANGE DETAIL - STRINGER REPLACEMENT ON PROPOSED UC CORBEL",
+   "rects": [
+    [
+     74,
+     3,
+     98.5,
+     31.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – DIMENSION DENOTED THUS",
+   "rects": [
+    [
+     6.8,
+     68.8,
+     21,
+     78.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – STRINGER & CORBEL SIZE WILL VARY",
+   "rects": [
+    [
+     49.4,
+     77.4,
+     59.6,
+     84.3
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – GAP BETWEEN STRINGER AND DECK",
+   "rects": [
+    [
+     82.4,
+     55.4,
+     94.7,
+     66.2
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION B",
+   "rects": [
+    [
+     53.5,
+     33,
+     82,
+     81
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER - STRINGER & CORBEL REPLACEMENT DETAIL - TYPE 3A",
+   "rects": [
+    [
+     5,
+     35.5,
+     53.5,
+     81.5
+    ],
+    [
+     21.5,
+     81.5,
+     53.5,
+     89.8
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   97.3,
+   100,
+   100
+  ],
+  [
+   84,
+   90.3,
+   96.5,
+   95.3
+  ],
+  [
+   96.6,
+   53.4,
+   97.3,
+   54.2
+  ],
+  [
+   95.1,
+   62.3,
+   95.7,
+   62.9
+  ]
+ ],
+ "erase": [
+  [
+   29.8,
+   56.0,
+   31.0,
+   57.4
+  ]
+ ],
+ "text": {
+  "3728": "Ø20 THREADED ROD",
+  "3764": "SECTION  A",
+  "3879": "",
+  "3758": "1000 CTS (TYP)",
+  "3748": "ANCHOR BOLT",
+  "3730": "DECK FABRIC",
+  "3763": "DETAIL  1",
+  "3762": "",
+  "3747": "DRILL Ø18 HOLE IN",
+  "3750": "~",
+  "3754": "~",
+  "3875": "75",
+  "3756": "",
+  "3751": "",
+  "3757": "",
+  "3752": "",
+  "3761": "1:10",
+  "3765": "1:5",
+  "3877": "55",
+  "3878": "10",
+  "3803": "NOTE:",
+  "3853": "SECTIONAL ELEVATION  B",
+  "3850": "",
+  "3805": "410 UB 54 STRINGER",
+  "3806": "",
+  "3818": "310 UB 46 CORBEL x",
+  "3824": "1000 LONG",
+  "3876": "50",
+  "3809": "",
+  "3873": "50",
+  "3874": "MIN",
+  "3804": "(TYP)",
+  "3832": "STEEL PACKERS WITH Ø24 HOLES",
+  "3848": "Ø20 THREADED ROD WITH",
+  "3808": "NOTE:",
+  "3745": ""
+ },
+ "add": [
+  {
+   "s": "(TYP)",
+   "like": 3800,
+   "at": [
+    29.6,
+    59.2
+   ]
+  },
+  {
+   "s": "MODIFIED FLANGE DETAIL - STRINGER",
+   "like": 3745,
+   "at": [
+    76.44,
+    26.66
+   ]
+  },
+  {
+   "s": "REPLACEMENT ON PROPOSED UC CORBEL",
+   "like": 3745,
+   "at": [
+    76.44,
+    28.6
+   ]
+  },
+  {
+   "s": "50",
+   "like": 3814,
+   "at": [
+    29.9,
+    57.2
+   ]
+  }
+ ],
+ "drop": []
+}

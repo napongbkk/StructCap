@@ -1,0 +1,261 @@
+{
+ "sheet": "PN30-3119",
+ "title": "ABUTMENT - WIDENING & ADDITIONAL STRINGER DETAIL XX30-XXXX",
+ "cat": "Abutments",
+ "details": [
+  {
+   "name": "NOTE – FOR STRINGER DETAILS REFER TO SUPERSTRUCTURE SECTION",
+   "rects": [
+    [
+     37.8,
+     81.5,
+     50.8,
+     88
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THESE DETAILS ARE NOT NEEDED",
+   "rects": [
+    [
+     52,
+     83,
+     68.2,
+     91.6
+    ],
+    [
+     68.2,
+     82.5,
+     70.6,
+     88
+    ]
+   ]
+  },
+  {
+   "name": "PLAN – ABUTMENT - WIDENING & ADDITIONAL STRINGER DETAIL XX30-XXXX",
+   "rects": [
+    [
+     8.5,
+     2.5,
+     47.5,
+     42
+    ],
+    [
+     15.5,
+     42,
+     41,
+     50.8
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1",
+   "rects": [
+    [
+     47.5,
+     8,
+     74,
+     47
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2",
+   "rects": [
+    [
+     70.3,
+     32,
+     93,
+     56.5
+    ]
+   ]
+  },
+  {
+   "name": "VIEW C",
+   "rects": [
+    [
+     70.3,
+     56.5,
+     93,
+     90
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION A",
+   "rects": [
+    [
+     8.5,
+     50.8,
+     44.3,
+     87
+    ]
+   ]
+  },
+  {
+   "name": "VIEW B",
+   "rects": [
+    [
+     44.3,
+     47,
+     70.3,
+     81.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   1.2,
+   33
+  ],
+  [
+   0,
+   0,
+   100,
+   2.5
+  ],
+  [
+   98.5,
+   0,
+   100,
+   100
+  ],
+  [
+   0,
+   97.5,
+   100,
+   100
+  ],
+  [
+   83,
+   92,
+   94.5,
+   96.5
+  ]
+ ],
+ "erase": [
+  [
+   59.2,
+   88.3,
+   59.7,
+   89.2
+  ],
+  [
+   28.2,
+   43.4,
+   29.2,
+   44.55
+  ],
+  [
+   14.55,
+   60.95,
+   15.4,
+   62.3
+  ]
+ ],
+ "text": {
+  "4189": "",
+  "4201": "SECTION, DRG N° PN30-3119",
+  "4199": "",
+  "4202": "",
+  "4203": "ALTER SECTION &",
+  "4085": "1000 (NOM.)",
+  "4111": "",
+  "4207": "~",
+  "4103": "~",
+  "4130": "",
+  "4208": "45",
+  "4106": "1mm BONDEK",
+  "4209": "~",
+  "4124": "R.C. OVERLAY",
+  "4093": "WITH 30 O.D. x 3 THICK WASHER",
+  "4094": "1mm BONDEK",
+  "4119": "",
+  "4122": "STRINGER",
+  "4128": "DETAIL  1",
+  "4211": "",
+  "4118": "DRILL Ø18 HOLE IN STRINGER",
+  "4129": "1:5",
+  "4145": "~",
+  "4116": "90",
+  "4150": "DETAIL  2",
+  "4212": "",
+  "4135": "95",
+  "4163": "~",
+  "4195": "VIEW  C",
+  "4193": "",
+  "4185": "PROPOSED 300 PFC",
+  "4210": "~",
+  "4162": "~",
+  "4157": "~",
+  "4166": "~",
+  "4182": "VIEW  B",
+  "4213": "",
+  "4092": "ANCHOR BOLT - M16x150 LONG BOLT",
+  "4127": ""
+ },
+ "add": [
+  {
+   "s": "NOTE",
+   "like": 4196,
+   "dx": 0,
+   "dy": -1.6
+  },
+  {
+   "s": "PROPOSED",
+   "like": 4113,
+   "dx": 0,
+   "dy": -1.6
+  },
+  {
+   "s": "PROPOSED",
+   "like": 4122,
+   "dx": 0,
+   "dy": -1.6
+  },
+  {
+   "s": "ABUTMENT - WIDENING & ADDITIONAL",
+   "like": 4127,
+   "at": [
+    16.26,
+    44.46
+   ]
+  },
+  {
+   "s": "STRINGER DETAIL",
+   "like": 4127,
+   "at": [
+    16.26,
+    46.59
+   ]
+  },
+  {
+   "s": "XX30-XXXX",
+   "like": 4198,
+   "at": [
+    26.2,
+    46.59
+   ]
+  },
+  {
+   "s": "B",
+   "like": 4128,
+   "at": [
+    14.65,
+    62.2
+   ]
+  },
+  {
+   "s": "STRENGTHENING AND WIDENING DETAILS",
+   "like": 4198,
+   "at": [
+    52.77,
+    87.75
+   ]
+  }
+ ],
+ "drop": []
+}

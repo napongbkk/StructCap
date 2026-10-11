@@ -1,0 +1,377 @@
+{
+ "sheet": "1330-0022",
+ "title": "HALF-CAP TO PILE BEARING DETAILS",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "SECTIONAL PLAN  A",
+   "rects": [
+    [
+     6.5,
+     3.5,
+     18.5,
+     22
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL PLAN  B",
+   "rects": [
+    [
+     21,
+     3.5,
+     36,
+     22
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL PLAN  C",
+   "rects": [
+    [
+     40,
+     3.5,
+     54.5,
+     22
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL PLAN  D – REFER NOTE 4",
+   "rects": [
+    [
+     70,
+     5,
+     74.5,
+     8.5
+    ],
+    [
+     74.5,
+     3.5,
+     93,
+     22.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL PLAN  D – REFER NOTE 3",
+   "rects": [
+    [
+     54.5,
+     3.5,
+     74.5,
+     22.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION TYPE 1",
+   "rects": [
+    [
+     5,
+     22.5,
+     21.5,
+     51.2
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION TYPE 2 – HALF-CAP TO PILE BEARING DETAILS",
+   "rects": [
+    [
+     21.5,
+     22.5,
+     36,
+     51.5
+    ],
+    [
+     27,
+     51.5,
+     41.5,
+     55
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION TYPE 3",
+   "rects": [
+    [
+     36,
+     22.5,
+     57.5,
+     53.2
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION TYPE 4",
+   "rects": [
+    [
+     57.5,
+     22.5,
+     77,
+     52
+    ]
+   ]
+  },
+  {
+   "name": "SECTION  E",
+   "rects": [
+    [
+     77,
+     22.5,
+     93.8,
+     44.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL PLAN  F",
+   "rects": [
+    [
+     6.5,
+     51.2,
+     22,
+     71.6
+    ]
+   ]
+  },
+  {
+   "name": "PFC BEARING PLATE DETAIL",
+   "rects": [
+    [
+     34,
+     56.5,
+     47,
+     62
+    ],
+    [
+     35.5,
+     62,
+     47,
+     76
+    ]
+   ]
+  },
+  {
+   "name": "VIEW  G",
+   "rects": [
+    [
+     17.5,
+     55,
+     35.5,
+     78
+    ]
+   ]
+  },
+  {
+   "name": "BEARING PLATE DETAIL",
+   "rects": [
+    [
+     69.5,
+     55.5,
+     83,
+     76
+    ],
+    [
+     66,
+     67,
+     69.5,
+     70
+    ]
+   ]
+  },
+  {
+   "name": "VIEW  H",
+   "rects": [
+    [
+     47,
+     52,
+     69.5,
+     80.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION TYPE 5",
+   "rects": [
+    [
+     5,
+     71.6,
+     21.2,
+     96.8
+    ]
+   ]
+  },
+  {
+   "name": "PILE BEARING TABLE",
+   "rects": [
+    [
+     21.2,
+     77.5,
+     41.5,
+     96.8
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     64,
+     87.2,
+     83,
+     96.8
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   83,
+   46.5,
+   100,
+   100
+  ],
+  [
+   73,
+   48.5,
+   80.5,
+   52.5
+  ],
+  [
+   0,
+   0,
+   100,
+   3.3
+  ],
+  [
+   0,
+   0,
+   4.7,
+   100
+  ],
+  [
+   0,
+   96.9,
+   100,
+   100
+  ],
+  [
+   95.8,
+   0,
+   100,
+   46.5
+  ]
+ ],
+ "erase": [
+  [
+   8.2,
+   94.6,
+   11.0,
+   95.8
+  ]
+ ],
+ "text": {
+  "5415": "TYP.",
+  "5708": "~",
+  "5416": "TYP",
+  "5448": "SECTIONAL PLAN  A",
+  "5443": "",
+  "5449": "SECTIONAL PLAN  B",
+  "5444": "",
+  "5450": "SECTIONAL PLAN  C",
+  "5445": "",
+  "5709": "300",
+  "5427": "~",
+  "5715": "300",
+  "5413": "SEATING  PLATE",
+  "5419": "Ø20 THREADED",
+  "5717": "600",
+  "5718": "600",
+  "5451": "SECTIONAL PLAN  D",
+  "5446": "",
+  "5452": "SECTIONAL PLAN  D",
+  "5453": "",
+  "5447": "",
+  "5460": "1:10",
+  "5412": "SEATING  PLATE (TYP.)",
+  "5423": "BEARING  PLATE (TYP.)",
+  "5539": "~",
+  "5554": "Ø20x130 LONG COACH",
+  "5498": "130x20FLx300 LONG",
+  "5558": "HALF-CAP TO PILE BEARING DETAILS",
+  "5513": "\"A\"",
+  "5517": "(REFER TABLE)",
+  "5536": "EXISTING TIMBER PILE",
+  "5537": "",
+  "5530": "~",
+  "5714": "~",
+  "5480": "(REFER TABLE)",
+  "5492": "\"A\" (REFER TABLE)",
+  "5529": "EXISTING/PROPOSED",
+  "5538": "NOTE 2.",
+  "5542": "EXISTING TIMBER PILE",
+  "5710": "100",
+  "5493": "(REFER TABLE)",
+  "5494": "",
+  "5476": "\"A\"",
+  "5490": "\"A\" (REFER TABLE)",
+  "5552": "TYPE 4",
+  "5531": "(REFER TABLE)",
+  "5533": "",
+  "5484": "(TYP.)",
+  "5520": "SECTION  E",
+  "5518": "",
+  "5489": "~",
+  "5720": "20",
+  "5721": "200",
+  "5706": "50",
+  "5707": "600",
+  "5609": "SECTIONAL PLAN  F",
+  "5608": "",
+  "5560": "Ø22 HOLE",
+  "5570": "180x20FLx600 LONG",
+  "5579": "Ø22 HOLE TO SUIT",
+  "5585": "Ø20 THREADED ROD",
+  "5591": "(TYP.)",
+  "5711": "50",
+  "5712": "50",
+  "5713": "260",
+  "5584": "~",
+  "5636": "VIEW  G",
+  "5582": "Ø22 HOLE TO SUIT",
+  "5590": "Ø20 THREADED ROD",
+  "5592": "(TYP.)",
+  "5594": "TYP.",
+  "5571": "~",
+  "5645": "VIEW  H",
+  "5641": "",
+  "5614": "PRE-DRILLED Ø22 HOLE",
+  "5625": "Ø20x130 LONG COACH",
+  "5630": "SCREW (GALV.)",
+  "5716": "260",
+  "5597": "~",
+  "5602": "~",
+  "5662": "~",
+  "5653": "EXISTING/PROPOSED PILE",
+  "5682": "EXISTING TIMBER PILE",
+  "5648": "\"A\" (mm)",
+  "5657": "70-90",
+  "5660": "70",
+  "5677": "NOTES:",
+  "5686": "FOR GENERAL NOTES REFER DRAWING No. 1330-0001.",
+  "5691": "HALF-CAP REPAIRS. NEW PILE BANDS AS PER DRG N° 9530-0072."
+ },
+ "add": [
+  {
+   "s": "TYPE 5",
+   "like": 5552,
+   "at": [
+    8.4,
+    95.75
+   ]
+  }
+ ],
+ "drop": [4750]
+}

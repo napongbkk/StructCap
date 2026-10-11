@@ -1,0 +1,29 @@
+{
+ "sheet": "1330-0014",
+ "title": "ABUTMENT TOP CONNECTION DETAIL - TYPE A",
+ "cat": "Abutments",
+ "details": [
+  {"name": "ELEVATION – ABUTMENT TOP CONNECTION DETAIL – TYPE A ('X' ≥ 50mm)", "rects": [[5.8, 6.5, 34.0, 43.0]]},
+  {"name": "VIEW A", "rects": [[34.0, 5.0, 56.0, 39.0]]},
+  {"name": "ELEVATION – ABUTMENT TOP CONNECTION DETAIL – TYPE A ('X' < 50mm)", "rects": [[5.8, 43.0, 34.0, 78.5]]},
+  {"name": "VIEW C", "rects": [[34.0, 43.0, 56.0, 74.0]]},
+  {"name": "SECTION B", "rects": [[57.5, 6.5, 75.5, 30.0]]},
+  {"name": "EXISTING/PROPOSED PFC CONNECTION", "rects": [[75.5, 7.0, 94.0, 30.0]]},
+  {"name": "SECTION D", "rects": [[54.3, 47.0, 75.5, 66.0]]},
+  {"name": "DETAIL 1", "rects": [[57.5, 72.0, 74.5, 87.5]]},
+  {"name": "NOTES", "rects": [[67.5, 89.5, 83.3, 96.95]]}
+ ],
+ "exclude": [[82.6, 45, 100, 100], [83.3, 39, 100, 100], [82.0, 39.5, 90, 44.5], [96.0, 0, 100, 100], [0, 0, 4.7, 100], [0, 0, 100, 3.3], [0, 96.95, 100, 100]],
+ "erase": [[24.75, 38.4, 25.15, 39.15], [24.15, 55.1, 25.1, 55.9], [61.5, 26.8, 62.0, 27.8]],
+ "text": {
+  "3958": "~", "4122": "20", "3995": "PROPOSED WEB", "4004": "ABUTMENT TOP CONNECTION DETAIL - TYPE A",
+  "4002": "(REPAIR TO BE USED WHERE DIMENSION 'X' ≥ 50mm)", "4003": "",
+  "3981": "Ø20 THREADED ROD WITH 65x5FLx65", "3991": "HOLES TO SUIT (TYP.)", "4124": "100", "4121": "20", "4123": "~",
+  "4092": "ABUTMENT TOP CONNECTION DETAIL - TYPE A", "4028": "EXISTING TIMBER HALF-CAP", "4079": "(TYP.)",
+  "4087": "(REPAIR TO BE USED WHERE DIMENSION 'X' < 50mm)", "4081": "VIEW  C", "4080": "",
+  "4057": "Ø20 THREADED ROD WITH 65x5FLx65", "4059": "", "3957": "(TYP.)", "3984": "SECTION  B", "3982": "",
+  "4125": "VARIES", "4126": "", "3960": "REFER SECTION L ON DRG", "4023": "~", "4061": "SECTION  D",
+  "4102": "DETAIL  1", "4086": "PROVIDE 2 N° 10 PL", "4127": "~", "4108": "NOTES:", "4117": "3."
+ },
+ "add": [], "drop": []
+}

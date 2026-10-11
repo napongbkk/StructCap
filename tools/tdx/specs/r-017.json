@@ -1,0 +1,324 @@
+{
+ "sheet": "PN30-2117",
+ "title": "STEEL PIER PILE/TIMBER HALFCAP BEARING DETAIL",
+ "cat": "Piles",
+ "details": [
+  {
+   "name": "NOTE – PREFERRED OPTION",
+   "rects": [
+    [
+     15.3,
+     23.8,
+     32.0,
+     26.8
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A – TYPE 1",
+   "rects": [
+    [
+     44.4,
+     5.8,
+     81.0,
+     10.0
+    ],
+    [
+     51.0,
+     10.0,
+     81.0,
+     18.8
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – TIMBER HALFCAPS SHALL BE – TYPE 1",
+   "rects": [
+    [
+     58.0,
+     18.8,
+     78.5,
+     24.0
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STEEL PIER PILE/TIMBER HALFCAP BEARING DETAIL - TYPE 1",
+   "rects": [
+    [
+     10.5,
+     2.0,
+     53.0,
+     24.5
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A – TYPE 2",
+   "rects": [
+    [
+     41.0,
+     33.0,
+     78.5,
+     38.6
+    ],
+    [
+     48.6,
+     38.6,
+     78.5,
+     45.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – TIMBER HALFCAPS SHALL BE – TYPE 2",
+   "rects": [
+    [
+     55.0,
+     46.2,
+     75.5,
+     51.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – NON PREFERRED",
+   "rects": [
+    [
+     13.0,
+     50.7,
+     36.0,
+     58.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PROPOSED PILE SIZE WILL VARY",
+   "rects": [
+    [
+     40.0,
+     50.8,
+     70.0,
+     59.8
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STEEL PIER PILE/TIMBER HALFCAP BEARING DETAIL - TYPE 2",
+   "rects": [
+    [
+     10.5,
+     29.0,
+     56.0,
+     51.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – TIMBER HALFCAPS SHALL BE – TYPE 3",
+   "rects": [
+    [
+     65.0,
+     86.0,
+     86.0,
+     91.5
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A – TYPE 3",
+   "rects": [
+    [
+     51.5,
+     64.0,
+     91.0,
+     85.9
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STEEL PIER PILE/TIMBER HALFCAP BEARING DETAIL - TYPE 3",
+   "rects": [
+    [
+     3.0,
+     61.0,
+     51.0,
+     93.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   2.2,
+   100
+  ],
+  [
+   94,
+   0,
+   100,
+   2
+  ],
+  [
+   70,
+   92,
+   88,
+   97.5
+  ],
+  [
+   62,
+   94,
+   66,
+   96.5
+  ]
+ ],
+ "erase": [
+  [
+   18.0,
+   51.5,
+   30.2,
+   52.8
+  ],
+  [
+   14.6,
+   54.4,
+   15.3,
+   55.5
+  ],
+  [
+   16.4,
+   24.9,
+   17.2,
+   25.75
+  ],
+  [
+   11.8,
+   11.4,
+   12.22,
+   12.2
+  ],
+  [
+   41.75,
+   36.0,
+   42.85,
+   36.8
+  ],
+  [
+   59.5,
+   40.1,
+   59.9,
+   40.95
+  ],
+  [
+   4.35,
+   72.3,
+   4.75,
+   73.35
+  ]
+ ],
+ "text": {
+  "3202": "~",
+  "3206": "~",
+  "3203": "Ø20 THREADED ROD WITH",
+  "3209": "TYP",
+  "3213": "TYP",
+  "3336": "~",
+  "3339": "75",
+  "3225": "TIMBER HALFCAPS SHALL BE",
+  "3226": "",
+  "3227": "",
+  "3233": "TO THEIR ORIGINAL POSITIONS",
+  "3237": "",
+  "3234": "",
+  "3200": "B",
+  "3210": "(TYP)",
+  "3211": "CONNECTION DETAILS",
+  "3212": "",
+  "3223": "BEARING DETAIL – TYPE 1",
+  "3217": "(PN30-2119)",
+  "3218": "",
+  "3224": "XX30-XXXX",
+  "3228": "PIER N° X – PILE N° X",
+  "3230": "PIER N° X – PILE N° X",
+  "3231": "DRG NUMBER – REFER TO",
+  "3232": "~",
+  "3247": "~",
+  "3242": "Ø20 THREADED ROD WITH",
+  "3245": "(TYP)",
+  "3256": "(TYP)",
+  "3335": "200",
+  "3338": "75",
+  "3268": "TIMBER HALFCAPS SHALL BE",
+  "3269": "",
+  "3278": "~",
+  "3282": "",
+  "3283": "",
+  "3259": "~",
+  "3271": "DRG NUMBER – REFER TO",
+  "3272": "",
+  "3273": "",
+  "3265": "BEARING DETAIL – TYPE 2",
+  "3249": "CONNECTION DETAILS",
+  "3250": "",
+  "3266": "XX30-XXXX",
+  "3267": "PIER N° X – PILE N° X",
+  "3270": "PIER N° X – PILE N° X",
+  "3326": "TO THEIR ORIGINAL POSITIONS",
+  "3328": "",
+  "3337": "~",
+  "3340": "~",
+  "3342": "~",
+  "3341": "75",
+  "3300": "Ø20 THREADED ROD WITH",
+  "3333": "~",
+  "3334": "~",
+  "3310": "~",
+  "3321": "DETAIL – TYPE 3",
+  "3292": "B",
+  "3299": "(PN30-2119)",
+  "3296": "CONNECTION DETAILS",
+  "3297": "",
+  "3325": "PIER N° X – PILE N° X",
+  "3327": "PIER N° X – PILE N° X",
+  "3330": "DRG NUMBER – REFER TO",
+  "3285": "",
+  "3238": ""
+ },
+ "add": [
+  {
+   "s": "NON PREFERRED",
+   "like": 3285,
+   "at": [
+    18.2,
+    52.6
+   ]
+  },
+  {
+   "s": "ENGINEER SHALL CHOOSE",
+   "like": 3285,
+   "at": [
+    14.73,
+    55.37
+   ]
+  },
+  {
+   "s": "OPTION TO SUIT",
+   "like": 3285,
+   "at": [
+    14.73,
+    56.78
+   ]
+  },
+  {
+   "s": "PREFERRED OPTION",
+   "like": 3238,
+   "at": [
+    16.58,
+    25.62
+   ]
+  }
+ ],
+ "drop": []
+}

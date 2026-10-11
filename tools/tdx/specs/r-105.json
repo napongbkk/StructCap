@@ -1,0 +1,268 @@
+{
+ "sheet": "PN30-3201",
+ "title": "",
+ "cat": "Deck & overlay",
+ "details": [
+  {
+   "name": "NOTE – DIMENSION XXX SHALL BE",
+   "rects": [
+    [
+     43,
+     40.5,
+     53.2,
+     46
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     4.9,
+     4.2,
+     67,
+     46.3
+    ]
+   ]
+  },
+  {
+   "name": "SECTION D",
+   "rects": [
+    [
+     67.3,
+     7.2,
+     91.7,
+     21
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1",
+   "rects": [
+    [
+     82.8,
+     28,
+     91.7,
+     42.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     67.3,
+     21,
+     91.7,
+     42.8
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – EXISTING TIMBER DECK SHALL BE COVERED",
+   "rects": [
+    [
+     11.2,
+     65.6,
+     22.6,
+     71.2
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FOR CONCRETE OVERLAYS WITH ROAD SEAL",
+   "rects": [
+    [
+     39.8,
+     65.4,
+     53.2,
+     72.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     6.5,
+     46.3,
+     46.5,
+     73
+    ]
+   ]
+  },
+  {
+   "name": "SECTION C – BRIDGE WITHOUT APPROACH SLAB",
+   "rects": [
+    [
+     68.6,
+     46.3,
+     79,
+     64.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION C – BRIDGE WITH APPROACH SLAB",
+   "rects": [
+    [
+     46.5,
+     46.3,
+     68.6,
+     64.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION E",
+   "rects": [
+    [
+     55.4,
+     67.4,
+     74.6,
+     86.3
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THIS DRAWING SHALL BE READ IN CONJUNCTION",
+   "rects": [
+    [
+     53,
+     91.2,
+     80.6,
+     93.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     64,
+     87.3,
+     80.6,
+     91.2
+    ]
+   ]
+  },
+  {
+   "name": "INSERT TYPICAL KERB AND DOWNPIPE DETAILS",
+   "rects": [
+    [
+     6.5,
+     73,
+     46.5,
+     91.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   100,
+   4.2
+  ],
+  [
+   0,
+   0,
+   5.6,
+   100
+  ],
+  [
+   95,
+   0,
+   100,
+   100
+  ],
+  [
+   91.9,
+   2,
+   94.6,
+   92
+  ],
+  [
+   0,
+   92.6,
+   100,
+   100
+  ],
+  [
+   79.4,
+   54,
+   92,
+   92.6
+  ]
+ ],
+ "erase": [[66.58, 91.95, 66.68, 92.05], [65.4, 88.4, 67.8, 89.33], [35.5, 55.9, 36.8, 57.4], [31.9, 55.8, 34.05, 57.45]],
+ "text": {"7181": "THIS DRAWING SHALL BE READ IN CONJUNCTION WITH DRG N° XX30-XXXX", "7182": "", "7183": "",
+  "7022": "BRIDGE WITH APPROACH",
+  "7023": "BRIDGE WITHOUT APPROACH",
+  "7067": "~",
+  "7049": "~",
+  "7032": "PIER N° 1",
+  "7033": "PIER N° 2",
+  "7034": "",
+  "7035": "℄ PIER N° 3",
+  "7075": "SAWN CONTRACTION JOINTS",
+  "7076": "",
+  "7077": "",
+  "7044": "XXX",
+  "7053": "~",
+  "7061": "~",
+  "7065": "(TYP.)",
+  "7071": "(GRADE 1:200 MAX) BETWEEN",
+  "7088": "DIMENSION X SHALL",
+  "7085": "",
+  "7089": "XXX",
+  "7090": "NOM.",
+  "7091": "500 MIN (TYP)",
+  "7094": "XXXX",
+  "7097": "XXXXX NOM.",
+  "7098": "(TYP)",
+  "7109": "(300 DEEP x Ø900 SEMI CIRCLE)",
+  "7186": "~",
+  "7047": "SECTION  D",
+  "7191": "",
+  "7048": "1:10",
+  "7188": "~",
+  "7100": "DETAIL  1",
+  "7193": "",
+  "7068": "~",
+  "7062": "℄ CONTRACTION JOINT",
+  "7099": "SECTION  B",
+  "7192": "",
+  "7086": "~",
+  "7103": "1:10",
+  "7129": "",
+  "7131": "W.R. GRACE OR", "7130": "~", "7132": "~",
+  "7158": "SECTION  A",
+  "7195": "",
+  "7120": "XXXX PROPOSED WIDTH",
+  "7122": "",
+  "7123": "EXISTING BRIDGE",
+  "7124": "",
+  "7127": "XXXX EXISTING WIDTH BETWEEN",
+  "7136": "130",
+  "7160": "1:25",
+  "7139": "~",
+  "7125": "~",
+  "7142": "SECTION  C",
+  "7194": "",
+  "7187": "~",
+  "7141": "SECTION  C",
+  "7140": "",
+  "7185": "~",
+  "7173": "~",
+  "7153": "125 *",
+  "7154": "SITU OPTION)",
+  "7167": "PPROVED) OR",
+  "7171": "* APPROVED INSITU CONSTRUCTION OF",
+  "7178": "KERB AND DOWNPIPE",
+  "7179": "1:10"
+ },
+ "add": [{"s": "NOTES:", "like": 7183, "at": [65.52, 89.3]}, {"s": "500 WIDE BITUTHENE XXXX BY", "like": 7129, "at": [29.41, 56.5]}],
+ "drop": []
+}

@@ -1,0 +1,244 @@
+{
+ "sheet": "PN30-2323",
+ "title": "ABUTMENT FULLCAP STRENGTHENING & WIDENING DETAIL",
+ "cat": "Abutments",
+ "details": [
+  {
+   "name": "NOTE – IF FULLCAP CHANNEL",
+   "rects": [
+    [
+     50.8,
+     30.8,
+     61.6,
+     37.6
+    ],
+    [
+     49.8,
+     17.6,
+     57.0,
+     48.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – ENGINEER TO DETERMINE IF",
+   "rects": [
+    [
+     49.6,
+     48.6,
+     59.2,
+     55.8
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FOR STRINGER DETAILS",
+   "rects": [
+    [
+     34.8,
+     47.8,
+     45.4,
+     52.8
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – RELOCATE EXISTING PILE",
+   "rects": [
+    [
+     76.0,
+     51.4,
+     87.6,
+     56.8
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PROP STRINGERS PRIOR TO INSTALLING",
+   "rects": [
+    [
+     41.2,
+     79.2,
+     59.2,
+     86.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FULLCAP STRENGTHENING CHANNELS WILL VARY",
+   "rects": [
+    [
+     21.2,
+     85.6,
+     39.2,
+     94.2
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2 – 380 PFC",
+   "rects": [
+    [
+     57.0,
+     2.4,
+     87.6,
+     28.4
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2 – 300 PFC",
+   "rects": [
+    [
+     57.0,
+     28.4,
+     85.0,
+     54.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION C",
+   "rects": [
+    [
+     2.2,
+     32.0,
+     20.8,
+     51.6
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1",
+   "rects": [
+    [
+     21.6,
+     32.8,
+     39.6,
+     53.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     2.2,
+     53.4,
+     26.0,
+     85.8
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A",
+   "rects": [
+    [
+     24.8,
+     55.6,
+     39.8,
+     78.0
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT FULLCAP STRENGTHENING & WIDENING DETAIL",
+   "rects": [
+    [
+     39.8,
+     55.6,
+     88.0,
+     79.2
+    ],
+    [
+     59.2,
+     79.2,
+     88.0,
+     86.6
+    ],
+    [
+     51.0,
+     86.0,
+     88.0,
+     95.4
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   78.0,
+   95.4,
+   88.5,
+   99.0
+  ],
+  [
+   16.0,
+   26.0,
+   17.0,
+   27.0
+  ],
+  [
+   99,
+   83,
+   100,
+   85
+  ],
+  [
+   43.8,
+   56.8,
+   44.8,
+   57.6
+  ]
+ ],
+ "erase": [
+  [
+   78.7,
+   88.95,
+   80.8,
+   89.95
+  ]
+ ],
+ "text": {
+  "4208": "~",
+  "4041": "6  50-300",
+  "4059": "1:10",
+  "4093": "IF BEARING IS <70 THEN REFER",
+  "4066": "Ø40 HOLE TO PFC",
+  "4085": "Ø26 HOLE (TYP)",
+  "4090": "Ø20 THREADED",
+  "4100": "~",
+  "4075": "90",
+  "4095": "200x12FLx320 LONG",
+  "4116": "1:10",
+  "4131": "(TYP)",
+  "4147": "55 – 300 PFC",
+  "4148": "",
+  "4150": "60 – 380 PFC",
+  "4151": "",
+  "4153": "",
+  "4162": "75x10FL STIFFENER",
+  "4163": "A",
+  "4225": "~",
+  "4141": "Ø20 THREADED RODS",
+  "4214": "WIDENING DETAIL",
+  "4173": "100x50x5.0 RHS STEEL",
+  "4175": "PROPOSED 300 PFC",
+  "4176": "",
+  "4190": "BEARING < 70",
+  "4220": "DRG NUMBER – REFER TO",
+  "4226": "80",
+  "4227": "(TYP)"
+ },
+ "add": [
+  {
+   "s": "XX30-XXXX",
+   "like": 4220,
+   "at": [
+    77.05,
+    89.8
+   ]
+  }
+ ],
+ "drop": []
+}

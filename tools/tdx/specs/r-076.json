@@ -1,0 +1,169 @@
+{
+ "sheet": "PN30-2326",
+ "title": "STEEL ABUTMENT PILE/ABUTMENT FULLCAP REPLACEMENT DETAIL - TYPE 1",
+ "cat": "Abutments",
+ "details": [
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     55,
+     20.5,
+     97,
+     38.3
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION",
+   "rects": [
+    [
+     55,
+     38.3,
+     97,
+     54
+    ]
+   ]
+  },
+  {
+   "name": "STRINGER/CORBEL BRACKET DETAILS",
+   "rects": [
+    [
+     58,
+     54,
+     87,
+     63.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FOR PILE RESTRAINTS",
+   "rects": [
+    [
+     19.5,
+     44.5,
+     42.5,
+     58.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     3,
+     64,
+     50.5,
+     92.5
+    ]
+   ]
+  },
+  {
+   "name": "STEEL ABUTMENT PILE/ABUTMENT FULLCAP REPLACEMENT DETAIL – TYPE 1",
+   "rects": [
+    [
+     50.5,
+     64,
+     98,
+     87.8
+    ],
+    [
+     51,
+     87.8,
+     96,
+     96.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   1.6,
+   18.5
+  ],
+  [
+   81,
+   96,
+   99,
+   99.6
+  ],
+  [
+   33,
+   3.7,
+   34.3,
+   4.7
+  ],
+  [
+   45.5,
+   18.2,
+   46.5,
+   19.2
+  ],
+  [
+   45.5,
+   20.9,
+   46.5,
+   21.7
+  ],
+  [
+   4.3,
+   33.4,
+   5.1,
+   34.2
+  ],
+  [
+   45.5,
+   40.8,
+   46.5,
+   41.8
+  ],
+  [
+   45.5,
+   63.4,
+   46.5,
+   64.4
+  ],
+  [
+   45.5,
+   85.9,
+   46.5,
+   86.9
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "2360": "Ø22 HOLE (TYP)",
+  "2362": "Ø22 x 50 LONG",
+  "2437": "100",
+  "2439": "50",
+  "2440": "25",
+  "2442": "75",
+  "2361": "~",
+  "2389": "1 - AS DRAWN",
+  "2436": "~",
+  "2426": "SECTION  A",
+  "2443": "",
+  "2405": "TO CORBELS WITH Ø20 THREADED",
+  "2417": "SITE DRILLED Ø22 HOLES (TYP)",
+  "2402": "~",
+  "2441": "75",
+  "2438": "~",
+  "2410": "PROPOSED 300 PFC",
+  "2411": "",
+  "2431": "~",
+  "2427": "REPLACEMENT DETAIL - TYPE 1"
+ },
+ "add": [
+  {
+   "s": "XX30-XXXX",
+   "like": 2429,
+   "at": [
+    80.1,
+    90.7
+   ]
+  }
+ ],
+ "drop": []
+}

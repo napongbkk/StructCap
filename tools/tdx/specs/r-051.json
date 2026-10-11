@@ -1,0 +1,26 @@
+{
+ "sheet": "PN30-2308",
+ "title": "PIER HALFCAP STRENGTHENING DETAIL",
+ "cat": "Halfcaps",
+ "details": [
+  {"name": "NOTE – ENGINEER TO DETERMINE", "rects": [[19, 55.3, 34.6, 61], [19.8, 31.3, 21.2, 55.3], [21.2, 31.3, 36.7, 33], [21.2, 51, 37.5, 52.6]]},
+  {"name": "NOTE – IF HALFCAP CHANNEL", "rects": [[21, 42.3, 38.2, 48.2], [29, 34, 33.6, 42.3], [29, 48.2, 35.7, 55]]},
+  {"name": "NOTE – RELOCATE EXISTING PILE BANDS", "rects": [[66.5, 59, 85, 63.5]]},
+  {"name": "NOTE – HALFCAP STRENGTHENING CHANNELS", "rects": [[20.5, 61, 45.3, 69.3]]},
+  {"name": "NOTE – PROP STRINGERS & CORBELS", "rects": [[25.8, 85.5, 48.8, 93.6]]},
+  {"name": "DETAIL 1 – 380 PFC", "rects": [[33.3, 19.5, 77.5, 40]]},
+  {"name": "DETAIL 1 – 300 PFC", "rects": [[35.7, 40, 77.5, 62]]},
+  {"name": "SECTION A", "rects": [[2.5, 69.3, 37.5, 92.5]]},
+  {"name": "ELEVATION – PIER HALFCAP STRENGTHENING DETAIL", "rects": [[37.5, 63.5, 98, 89.5], [48.8, 89.5, 98, 96]]}
+ ],
+ "exclude": [[0, 0, 100, 19], [84, 96, 100, 100], [0, 98, 100, 100]],
+ "erase": [[39.15, 51.52, 40.3, 52.17], [40.55, 51.3, 48.9, 52.28]],
+ "text": {"2693": "~", "2672": "NOTE: IF HALFCAP CHANNEL", "2679": "DETAILS PN30-2328", "2701": "NOTE:", "2705": "NOTE: HALFCAP STRENGTHENING CHANNELS", "2706": "",
+  "2649": "~", "2646": "6 50-300", "2666": "DETAIL  1", "2665": "", "2655": "70 MINIMUM BEARING", "2657": "IF BEARING IS <70 THEN REFER", "2658": "",
+  "2664": "~", "2667": "1:10", "2671": "6 50-300", "2686": "~", "2689": "TO \"HALFCAP OR FULLCAP TO", "2740": "~",
+  "2772": "SECTION  A", "2737": "55 - 300 PFC", "2738": "", "2739": "", "2743": "60 - 380 PFC", "2742": "", "2747": "'U'-THREADED",
+  "2787": "~", "2719": "Ø20 THREADED RODS", "2723": "(A MINIMUM OF 1 - Ø20", "2728": "65x5FLx65 WASHER TO", "2745": "~",
+  "2752": "PROPOSED 300 PFC", "2758": "TYP", "2763": "BEARING < 70", "2785": "PLAN DRAWING", "2784": ""},
+ "add": [{"s": "70 MINIMUM BEARING", "like": 2686, "at": [39.25, 52.15]}],
+ "drop": []
+}

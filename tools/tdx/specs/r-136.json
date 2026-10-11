@@ -1,0 +1,372 @@
+{
+ "sheet": "PN30-4207",
+ "title": "PLAN",
+ "cat": "Deck & overlay",
+ "details": [
+  {
+   "name": "NOTE – FOR STANDARD FABRIC DETAILS",
+   "rects": [
+    [
+     37.0,
+     28.5,
+     46.5,
+     33.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FOR DETAILS OF EXPANSION ANGLES",
+   "rects": [
+    [
+     49.8,
+     22.3,
+     60.0,
+     26.2
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THE DESIGN ENGINEER SHOULD CONSIDER",
+   "rects": [
+    [
+     80.0,
+     55.0,
+     92.5,
+     89.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THIS DRAWING SHALL BE READ IN CONJUNCTION",
+   "rects": [
+    [
+     48.0,
+     91.0,
+     81.5,
+     93.5
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     7.5,
+     2.65,
+     46.6,
+     34.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     49.5,
+     4.0,
+     92.5,
+     26.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     6.5,
+     35.0,
+     49.0,
+     52.2
+    ]
+   ]
+  },
+  {
+   "name": "SECTION C",
+   "rects": [
+    [
+     50.0,
+     26.6,
+     92.5,
+     56.6
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1",
+   "rects": [
+    [
+     4.6,
+     52.3,
+     23.8,
+     69.8
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2 – REINFORCEMENT",
+   "rects": [
+    [
+     23.8,
+     54.0,
+     41.3,
+     72.6
+    ],
+    [
+     38.0,
+     54.0,
+     43.5,
+     58.3
+    ]
+   ]
+  },
+  {
+   "name": "SECTION D",
+   "rects": [
+    [
+     41.3,
+     56.6,
+     80.0,
+     74.6
+    ]
+   ]
+  },
+  {
+   "name": "TYPICAL DECK FABRIC LAP",
+   "rects": [
+    [
+     4.6,
+     69.8,
+     25.8,
+     93.5
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2 – CONCRETE",
+   "rects": [
+    [
+     25.8,
+     72.6,
+     47.0,
+     93.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     59.0,
+     74.6,
+     81.0,
+     91.0
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   100,
+   2.65
+  ],
+  [
+   0,
+   0,
+   4.6,
+   100
+  ],
+  [
+   92.6,
+   2.65,
+   100,
+   100
+  ],
+  [
+   0,
+   93.6,
+   100,
+   100
+  ]
+ ],
+ "erase": [
+  [
+   66.3,
+   27.7,
+   67.8,
+   28.95
+  ],
+  [
+   77.2,
+   23.4,
+   78.3,
+   24.4
+  ],
+  [
+   68.4,
+   84.6,
+   70.4,
+   85.2
+  ],
+  [
+   70.3,
+   88.2,
+   71.6,
+   89.3
+  ],
+  [
+   40.2,
+   74.7,
+   43.3,
+   75.6
+  ],
+  [
+   70.5,
+   88.5,
+   72.1,
+   89.2
+  ]
+ ],
+ "text": {
+  "10844": "NOTE:",
+  "10832": "REFER TO DRAWING N° XX30-XXXX",
+  "10829": "",
+  "10830": "",
+  "10941": "recommended",
+  "11003": "THIS DRAWING SHALL BE READ IN CONJUNCTION WITH DRG N°'s XX30-XXXX AND XX30-XXXX",
+  "11004": "",
+  "10787": "NOTE: THIS DIMENSION TO",
+  "10790": "ABUTMENT N° 2",
+  "10812": "~",
+  "10798": "(TYP)",
+  "10802": "2 - TYPE ARX",
+  "10803": "TYPE 4 (T & B)",
+  "10806": "XXX",
+  "10831": "~",
+  "10810": "~",
+  "10811": "TYPE X (TYP)",
+  "10814": "~",
+  "10816": "~",
+  "10824": "SL81 DROP PANEL FABRIC",
+  "10841": "~",
+  "10792": "XXXX WIDTH BETWEEN KERBS",
+  "10826": "SECTION",
+  "11007": "~",
+  "10822": "",
+  "10889": "",
+  "10880": "",
+  "10881": "",
+  "10888": "TYPE X",
+  "10890": "X",
+  "10870": "FINISH)",
+  "10897": "(TYP.)",
+  "10839": "",
+  "10898": "~",
+  "10846": "",
+  "10847": "",
+  "10862": "~",
+  "10864": "X THICK ASPHALT",
+  "10876": "~",
+  "10848": "~",
+  "10866": "~",
+  "10867": "~",
+  "10869": "~",
+  "10878": "XX",
+  "10902": "PROPOSED",
+  "11013": "~",
+  "11014": "~",
+  "11012": "~",
+  "11015": "~",
+  "11016": "~",
+  "11011": "~",
+  "11008": "~",
+  "11017": "1000",
+  "10948": "DETAIL",
+  "10909": "BRIDGE &",
+  "10928": "TYPE X (TYP)",
+  "10938": "F81 LAP FABRIC",
+  "10951": "1:10",
+  "10926": "SL81 DECK FABRIC",
+  "10929": "75",
+  "10931": "200",
+  "10932": "TYPE X",
+  "10936": "TYPE X",
+  "11009": "75",
+  "11010": "100 (MIN)",
+  "10967": "~",
+  "10975": "TYPE X",
+  "10982": "TYPE X (TYP)",
+  "11006": "450",
+  "10964": "",
+  "10962": "",
+  "10963": "U2",
+  "10984": "PVC-",
+  "10965": "1.",
+  "10966": "FOR GENERAL NOTES REFER TO DRG N° XX30-XXXX.",
+  "10977": "EPOXY RESIN 'EPIREZ 133' OR SIMILAR APPROVED.",
+  "10979": "COMPRESSION SEAL SHALL BE XXX XXXXX (OR SIMILAR APPROVED)",
+  "10987": "",
+  "10988": "",
+  "10995": "",
+  "10996": "",
+  "10818": ""
+ },
+ "add": [
+  {
+   "s": "(FOSROC EPANDAFOAM SHEET",
+   "like": 10822,
+   "at": [
+    77.4,
+    24.2
+   ]
+  },
+  {
+   "s": "SL81 DECK FABRIC",
+   "like": 10880,
+   "dx": 0,
+   "dy": 0
+  },
+  {
+   "s": "REFER TO NOTE 3 & 4",
+   "like": 10839,
+   "dx": 0,
+   "dy": 0
+  },
+  {
+   "s": "APPROACH SLAB",
+   "like": 10846,
+   "dx": 0,
+   "dy": 0
+  },
+  {
+   "s": "SURFACE 'Y' = ('X'+100)",
+   "like": 10964,
+   "at": [
+    39.03,
+    75.45
+   ]
+  },
+  {
+   "s": "EXPANSION JOINT GAP SHALL BE XXmm AT 25°C AMBIENT TEMPERATURE",
+   "like": 10987,
+   "dx": 0,
+   "dy": 0
+  },
+  {
+   "s": "FILL MATERIAL IN THE PROPORTION OF 100kg TYPE GP CEMENT TO 1 CUBIC",
+   "like": 10995,
+   "dx": 0,
+   "dy": 0
+  },
+  {
+   "s": "XX",
+   "like": 10818,
+   "at": [
+    77.41,
+    23.22
+   ]
+  }
+ ],
+ "drop": []
+}

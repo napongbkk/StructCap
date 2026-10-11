@@ -1,0 +1,28 @@
+{
+ "sheet": "PN30-2329",
+ "title": "TIMBER PILE < Ø340 HALFCAP OR FULLCAP TO PILE BEARING DETAILS",
+ "cat": "Halfcaps",
+ "details": [
+  {"name": "SECTION A", "rects": [[8.5, 11.5, 29, 37.7]]},
+  {"name": "SECTION B", "rects": [[31, 11.5, 55, 37.7]]},
+  {"name": "SECTION C", "rects": [[55, 11.5, 79.5, 37.7]]},
+  {"name": "NOTE – RELOCATE EXISTING PILE BANDS", "rects": [[80.3, 33, 95.8, 39.7]]},
+  {"name": "VIEW D", "rects": [[79.6, 43, 98.5, 81]]},
+  {"name": "SECTIONAL ELEVATION TYPE 1", "rects": [[4.5, 37.7, 30, 80.5]]},
+  {"name": "SECTIONAL ELEVATION TYPE 2 – TIMBER PILE < Ø340 HALFCAP OR FULLCAP TO PILE BEARING DETAILS", "rects": [[30, 37.7, 55, 80.5], [38.5, 85.5, 67, 93.5]]},
+  {"name": "SECTIONAL ELEVATION TYPE 3", "rects": [[55, 37.7, 79.6, 85]]},
+  {"name": "NOTES", "rects": [[13.5, 80.5, 38.5, 93.8]]}
+ ],
+ "exclude": [[83.5, 94, 97, 99.3], [82.9, 16.1, 83.6, 16.9]],
+ "erase": [],
+ "text": {"2226": "SECTION  A", "2328": "", "2319": "300", "2318": "~", "2215": "75x10FL STIFFENER", "2227": "SECTION  B", "2224": "",
+  "2321": "300", "2228": "ECTION  C", "2225": "", "2323": "~", "2299": "VIEW  D", "2329": "", "2325": "440", "2326": "50", "2327": "50",
+  "2320": "100", "2253": "2 - M20 BOLTS &", "2297": "TO BE USED WHERE DIMENSION 'A' (FACE OF PILE",
+  "2300": "TO WEB OF CHANNEL) IS BETWEEN 70-90mm.", "2258": "~", "2239": "FACE OF PILE", "2237": "", "2268": "~",
+  "2250": "75x10FL STIFFENER", "2254": "OR 2 - M20 BOLTS", "2311": "TIMBER PILE < Ø340",
+  "2313": "HALFCAP OR FULLCAP TO PILE BEARING DETAILS", "2314": "", "2322": "~",
+  "2298": "TO BE USED WHERE DIMENSION 'A' (FACE OF PILE", "2235": "LINE OF FACE", "2324": "~",
+  "2304": "TO BE USED WHERE DIMENSION 'A' (FACE OF PILE", "2305": "NOTE: HALFCAP/FULLCAP CHANNELS WILL VARY", "2306": ""},
+ "add": [],
+ "drop": []
+}

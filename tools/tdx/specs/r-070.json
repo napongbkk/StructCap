@@ -1,0 +1,213 @@
+{
+ "sheet": "PN30-2322",
+ "title": "STEEL ABUTMENT PILES/ABUTMENT FULLCAP STRENGTHENING & WIDENING DETAIL",
+ "cat": "Abutments",
+ "details": [
+  {
+   "name": "NOTE – FOR STRINGER DETAILS",
+   "rects": [
+    [
+     85.6,
+     36.2,
+     97.6,
+     42.6
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1",
+   "rects": [
+    [
+     50.5,
+     22.5,
+     69.4,
+     43.4
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2",
+   "rects": [
+    [
+     70.8,
+     19.6,
+     91.0,
+     42.4
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FOR PILE RESTRAINTS",
+   "rects": [
+    [
+     18.6,
+     74.2,
+     31.8,
+     89.4
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FULLCAP STRENGTHENING CHANNELS WILL VARY",
+   "rects": [
+    [
+     36.4,
+     82.6,
+     57.0,
+     92.4
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PROP STRINGERS PRIOR TO INSTALLING",
+   "rects": [
+    [
+     46.0,
+     74.0,
+     66.2,
+     81.4
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     2.0,
+     42.0,
+     26.7,
+     78.4
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A",
+   "rects": [
+    [
+     26.7,
+     44.0,
+     43.4,
+     69.4
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STEEL ABUTMENT PILES/ABUTMENT FULLCAP STRENGTHENING & WIDENING DETAIL",
+   "rects": [
+    [
+     43.4,
+     44.4,
+     98.0,
+     81.8
+    ],
+    [
+     60.4,
+     81.8,
+     94.0,
+     94.2
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   84.0,
+   94.2,
+   94.5,
+   98.6
+  ],
+  [
+   17.0,
+   32.8,
+   18.2,
+   34.0
+  ],
+  [
+   99,
+   83,
+   100,
+   85
+  ],
+  [
+   94.3,
+   95.8,
+   95.4,
+   96.8
+  ]
+ ],
+ "erase": [
+  [
+   47.8,
+   58.85,
+   48.8,
+   60.1
+  ]
+ ],
+ "text": {
+  "2863": "SECTION, DRG N° PN30-3119",
+  "2862": "",
+  "2851": "~",
+  "2855": "TYP",
+  "2997": "~",
+  "2849": "90",
+  "2856": "~",
+  "2973": "",
+  "2974": "",
+  "2975": "",
+  "2990": "",
+  "2989": "",
+  "2948": "STRINGERS PRIOR TO INSTALLING FULLCAP",
+  "2966": "SUPPORT TO THE EXISTING TIMBER FULLCAP.",
+  "2963": "",
+  "2964": "",
+  "2967": "",
+  "2965": "",
+  "2968": "",
+  "2995": "~",
+  "2924": "~",
+  "2901": "55 – 300 PFC",
+  "2902": "",
+  "2905": "60 – 380 PFC",
+  "2906": "",
+  "2908": "75x10FL STIFFENER",
+  "2915": "TYP",
+  "2907": "~",
+  "2897": "~",
+  "2872": "Ø20 THREADED RODS",
+  "2899": "TYP",
+  "2922": "PROPOSED 300 PFC",
+  "2923": "",
+  "2998": "~",
+  "2939": "75x10FL",
+  "2992": "DRG NUMBER – REFER TO",
+  "2999": "20",
+  "2996": "(TYP)"
+ },
+ "add": [
+  {
+   "s": "A",
+   "like": 2858,
+   "at": [
+    47.88,
+    60.02
+   ]
+  },
+  {
+   "s": "NOTE: FULLCAP STRENGTHENING CHANNELS WILL VARY",
+   "like": 2976,
+   "at": [
+    37.52,
+    84.82
+   ]
+  },
+  {
+   "s": "EXISTING TIMBER FULLCAP (ENGINEER TO DETERMINE)",
+   "like": 2976,
+   "at": [
+    37.52,
+    91.15
+   ]
+  }
+ ],
+ "drop": []
+}

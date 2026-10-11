@@ -1,0 +1,258 @@
+{
+ "sheet": "PN30-2323A",
+ "title": "ABUTMENT FULLCAP STRENGTHENING & WIDENING DETAIL",
+ "cat": "Abutments",
+ "details": [
+  {
+   "name": "NOTE – IF FULLCAP CHANNEL",
+   "rects": [
+    [
+     47.8,
+     35.6,
+     57.2,
+     42.0
+    ],
+    [
+     47.2,
+     20.0,
+     54.0,
+     53.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – ENGINEER TO DETERMINE IF",
+   "rects": [
+    [
+     46.8,
+     52.4,
+     55.6,
+     59.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FOR STRINGER DETAILS",
+   "rects": [
+    [
+     32.0,
+     51.6,
+     41.6,
+     56.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – RELOCATE EXISTING PILE",
+   "rects": [
+    [
+     70.4,
+     56.6,
+     80.6,
+     61.2
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PROP STRINGERS PRIOR TO INSTALLING",
+   "rects": [
+    [
+     31.8,
+     79.8,
+     48.6,
+     86.4
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FULLCAP STRENGTHENING CHANNELS WILL VARY",
+   "rects": [
+    [
+     19.2,
+     86.4,
+     36.2,
+     94.2
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2 – 380 PFC",
+   "rects": [
+    [
+     54.0,
+     2.4,
+     80.6,
+     30.8
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2 – 300 PFC",
+   "rects": [
+    [
+     54.0,
+     30.8,
+     80.0,
+     57.8
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1",
+   "rects": [
+    [
+     19.6,
+     36.6,
+     41.6,
+     56.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     1.8,
+     56.6,
+     23.0,
+     86.4
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A",
+   "rects": [
+    [
+     23.0,
+     57.6,
+     36.2,
+     79.8
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT FULLCAP STRENGTHENING & WIDENING DETAIL",
+   "rects": [
+    [
+     36.2,
+     57.6,
+     81.0,
+     79.8
+    ],
+    [
+     48.6,
+     79.8,
+     81.0,
+     95.6
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   71.0,
+   95.6,
+   81.0,
+   98.8
+  ],
+  [
+   20.6,
+   2.4,
+   21.6,
+   3.4
+  ],
+  [
+   94.4,
+   35.0,
+   95.4,
+   36.0
+  ],
+  [
+   13.0,
+   95.8,
+   14.2,
+   96.8
+  ],
+  [
+   43.8,
+   56.6,
+   44.8,
+   57.6
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "4045": "2 PILES THEN DRG REQUIRES",
+  "4089": "~",
+  "4098": "PROPOSED FULLCAP REPAIRS",
+  "4102": "",
+  "4177": "SUPPORT TO THE EXISTING TIMBER FULLCAP.",
+  "4180": "",
+  "4178": "",
+  "4183": "NOTE: FULLCAP STRENGTHENING CHANNELS WILL VARY",
+  "4184": "",
+  "4195": "",
+  "4194": "",
+  "4004": "Ø20 THREADED RODS",
+  "4006": "100",
+  "4009": "6  50-300",
+  "4011": "2 – M20 BOLTS (SITE DRILL",
+  "4012": "Ø22 HOLES IN PFC)",
+  "4031": "1:10",
+  "4202": "~",
+  "4033": "Ø20 THREADED RODS",
+  "4035": "  50-300",
+  "4036": "100",
+  "4040": "2 – M20 BOLTS (SITE DRILL",
+  "4042": "Ø22 HOLES IN PFC)",
+  "4063": "   70 MINIMUM BEARING",
+  "4064": "IF BEARING IS <70 THEN REFER",
+  "4080": "1:10",
+  "4201": "(TYP)",
+  "4061": "~",
+  "4051": "90",
+  "4111": "~",
+  "4175": "SECTION",
+  "4115": "55 – 300 PFC",
+  "4116": "",
+  "4118": "60 – 380 PFC",
+  "4126": "RHS STEEL PACKER",
+  "4134": "~",
+  "4132": "75x10FL STIFFENER",
+  "4158": "1:10",
+  "4133": "~",
+  "4108": "Ø20 THREADED RODS",
+  "4188": "ABUTMENT FULLCAP STRENGTHENING",
+  "4189": "WIDENING DETAIL",
+  "4112": "WITH 65x5FLx65 WASHER",
+  "4119": "COLUMN (LENGTH",
+  "4200": "~",
+  "4145": "1 – M20 x 250 LG COACH SCREW",
+  "4148": "PROPOSED 300 PFC",
+  "4150": "(SITE DRILL Ø22 HOLE IN PFC)",
+  "4157": "(TYP)",
+  "4162": "75x10FL STIFFENER",
+  "4163": "BEARING < 70",
+  "4181": "PROVIDE NEW 65x5FLx65 WASHER",
+  "4197": "DRG NUMBER – REFER TO"
+ },
+ "add": [
+  {
+   "s": "XX30-XXXX",
+   "like": 4197,
+   "at": [
+    70.9,
+    90.4
+   ]
+  },
+  {
+   "s": "EXISTING TIMBER FULLCAP (ENGINEER TO DETERMINE)",
+   "like": 4186,
+   "at": [
+    19.99,
+    93.29
+   ]
+  }
+ ],
+ "drop": []
+}

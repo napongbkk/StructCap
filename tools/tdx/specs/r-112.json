@@ -1,0 +1,136 @@
+{
+ "sheet": "PN30-3208",
+ "title": "KERB CONTRACTION JOINT DETAIL",
+ "cat": "Deck & overlay",
+ "details": [
+  {
+   "name": "NOTE – PIER CONTRACTION JOINTS MAY BE RELOCATED",
+   "rects": [
+    [
+     34,
+     4,
+     90,
+     15.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – KERB CONTRACTION JOINT DETAIL",
+   "rects": [
+    [
+     34,
+     16,
+     93,
+     53
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     6,
+     60,
+     36,
+     89
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – KERB FABRIC SPLICE DETAIL",
+   "rects": [
+    [
+     36,
+     54,
+     94,
+     93.4
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   64,
+   93.4,
+   95,
+   99.5
+  ],
+  [
+   85,
+   0,
+   100,
+   1.3
+  ],
+  [
+   0,
+   1.5,
+   1.5,
+   4.5
+  ]
+ ],
+ "erase": [
+  [
+   77.3,
+   40.8,
+   86.6,
+   42.8
+  ],
+  [
+   81.6,
+   39.2,
+   83.2,
+   40.8
+  ],
+  [
+   53.7,
+   39.4,
+   55.2,
+   41.0
+  ],
+  [
+   62.0,
+   9.6,
+   63.7,
+   12.0
+  ],
+  [
+   39.5,
+   47.4,
+   91,
+   49.6
+  ]
+ ],
+ "text": {
+  "1920": "LEFT OR RIGHT OF PIER ℄ BY UPTO 200 mm TO",
+  "1941": "~",
+  "1936": "ON",
+  "1925": "TYPE 4 (TYP)"
+ },
+ "add": [
+  {
+   "s": "B",
+   "like": 1925,
+   "at": [
+    81.8,
+    40.55
+   ]
+  },
+  {
+   "s": "M",
+   "like": 1924,
+   "at": [
+    53.75,
+    40.85
+   ]
+  },
+  {
+   "s": "KERB CONTRACTION JOINT DETAIL",
+   "like": 1937,
+   "at": [
+    39.85,
+    49.42
+   ]
+  }
+ ],
+ "drop": []
+}

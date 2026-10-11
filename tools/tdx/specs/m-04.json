@@ -1,0 +1,316 @@
+{
+ "sheet": "1330-0004",
+ "title": "ABUTMENT PILE REPAIR FOUNDATION DETAIL – TYPE 1A",
+ "cat": "Piles",
+ "details": [
+  {
+   "name": "SECTION C",
+   "rects": [
+    [
+     5,
+     3.4,
+     31.5,
+     17.2
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL PLAN B",
+   "rects": [
+    [
+     5,
+     17.2,
+     31.5,
+     38.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     5,
+     38.8,
+     36,
+     63.4
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT PILE REPAIR FOUNDATION DETAIL – TYPE 1A",
+   "rects": [
+    [
+     5,
+     63.4,
+     37.5,
+     97.1
+    ]
+   ]
+  },
+  {
+   "name": "PILE MODIFICATION DETAIL",
+   "rects": [
+    [
+     31.5,
+     5,
+     56,
+     35
+    ]
+   ]
+  },
+  {
+   "name": "SECTION D",
+   "rects": [
+    [
+     56,
+     5,
+     74,
+     30
+    ]
+   ]
+  },
+  {
+   "name": "SECTION E",
+   "rects": [
+    [
+     74,
+     5,
+     95.5,
+     30
+    ]
+   ]
+  },
+  {
+   "name": "PLAN – TIMBER PILES < Ø400",
+   "rects": [
+    [
+     36.5,
+     35,
+     58.3,
+     62.5
+    ]
+   ]
+  },
+  {
+   "name": "PLAN – TIMBER PILES ≥ Ø400",
+   "rects": [
+    [
+     58.3,
+     35,
+     82,
+     62.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PILE BEARING ARRANGEMENT FOR TIMBER PILES < Ø400",
+   "rects": [
+    [
+     37.5,
+     62.5,
+     56,
+     88.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     56,
+     86.5,
+     83.5,
+     97.1
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PILE BEARING ARRANGEMENT FOR TIMBER PILES ≥ Ø400",
+   "rects": [
+    [
+     58.3,
+     62.5,
+     83,
+     86.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   100,
+   3.3
+  ],
+  [
+   0,
+   0,
+   5,
+   100
+  ],
+  [
+   0,
+   97.1,
+   100,
+   100
+  ],
+  [
+   83.5,
+   30,
+   100,
+   100
+  ],
+  [
+   95.5,
+   0,
+   100,
+   30
+  ],
+  [
+   82,
+   40.5,
+   90,
+   46.5
+  ]
+ ],
+ "erase": [
+  [
+   65.6,
+   94.0,
+   67.3,
+   94.8
+  ],
+  [
+   53.7,
+   56.0,
+   55.0,
+   56.8
+  ],
+  [
+   69.3,
+   85.0,
+   69.9,
+   86.0
+  ]
+ ],
+ "text": {
+  "5698": "M12 x 75 LONG COACH SCREWS",
+  "5699": "",
+  "5700": "",
+  "5713": "AT CORNER PILE).",
+  "5735": "SECTION  C",
+  "5734": "",
+  "5729": "EXISTING TIMBER SHEETING. REFER NOTE 5.",
+  "5759": "~",
+  "5749": "SL81 FABRIC (GALV.)",
+  "5769": "SECTIONAL PLAN  B",
+  "5768": "",
+  "5757": "TIMBER SHEETING.",
+  "5760": "AT CORNER PILE).",
+  "5764": "60 MIN.",
+  "5945": "900",
+  "5745": "~",
+  "5942": "40",
+  "5811": "~",
+  "5944": "900",
+  "5778": "PROPOSED CONCRETE LOCATION,",
+  "5851": "SECTION  A",
+  "5850": "",
+  "5784": "FRONT FACE OF EXISTING",
+  "5789": "",
+  "5809": "~",
+  "5845": "4-N20",
+  "5940": "750",
+  "5941": "200",
+  "5943": "75",
+  "5946": "250",
+  "5947": "MIN.",
+  "5948": "0 MIN.",
+  "5932": "ABUTMENT PILE REPAIR FOUNDATION DETAIL – TYPE 1A",
+  "5870": "EXISTING G.L.,",
+  "5876": "25 COVER",
+  "5896": "(500 LAP)",
+  "5918": "4-N20",
+  "5919": "YP.)",
+  "5884": "~",
+  "5903": "~",
+  "5716": "SITE DRILL Ø40 HOLE AT 200 CRS",
+  "5949": "200",
+  "5740": "~",
+  "5714": "Ø40 HOLE",
+  "5752": "SECTION  D",
+  "5750": "",
+  "5747": "4-N20 VERTICAL BARS",
+  "5718": "ADDITIONAL N12x650 LONG",
+  "5719": "Ø40 HOLE",
+  "5724": "BAR THROUGH Ø40 HOLE",
+  "5753": "SECTION  E",
+  "5751": "",
+  "5744": "~",
+  "5955": "~",
+  "5773": "",
+  "5775": "SPIKE (TYP.)",
+  "5786": "(TYP.)",
+  "5794": "SOLID TIMBER (TYP.)",
+  "5803": "SITE DRILLED Ø22 HOLE",
+  "5804": "IN UC PILE TO SUIT,",
+  "5808": "OF SHIMS (TYP.)",
+  "5824": "150x100x10 UA",
+  "5829": "",
+  "5951": "70 70",
+  "5954": "70 70",
+  "5770": "150x10FLx150",
+  "5782": "(TYP.)",
+  "5791": "Ø10 x 100 LONG",
+  "5810": "SITE DRILLED Ø22 HOLE IN UC PILE",
+  "5816": "(TYP.)",
+  "5950": "150",
+  "5952": "90",
+  "5953": "90",
+  "5869": "~",
+  "5904": "FOR TIMBER PILES < Ø400",
+  "5862": "(TYP.)",
+  "5878": "(TYP.)",
+  "5888": "~",
+  "5912": "NOTES:",
+  "5916": "1.",
+  "5920": "2.",
+  "5923": "3.",
+  "5926": "4.",
+  "5917": "FOR GENERAL NOTES REFER DRAWING No. 1330-0001.",
+  "5921": "REFER PILE REPAIR REQUIREMENTS TABLE ON BRIDGE SPECIFIC DRAWINGS FOR PILE TOP CONNECTION.",
+  "5924": "CUT BASE OF PROPOSED STEEL PILE TO SUIT ON SITE.",
+  "5927": "FULL-CAPS/HALF-CAPS SHALL BE PROPPED DURING CONSTRUCTION TO THEIR INTENDED DESIGN",
+  "5929": "POSITIONS AND ABUTMENT SHEETING SHALL BE SAFELY PROPPED. PROPPING IS TO BE REMOVED",
+  "5931": "ONLY AFTER CONCRETE HAS BEEN PLACED A MINIMUM OF SEVEN DAYS OR DEMONSTRATES A MIN.",
+  "5935": "COMPRESSIVE STRENGTH OF 30MPa.",
+  "5937": "STEEL SHIM WIDTH TO SUIT PILE, HEIGHT AND THICKNESS TO SUIT AREA TO BE SHIMMED. SHIMS TO BE",
+  "5938": "TACK WELDED TOGETHER AND TO STEEL PILE FLANGE.",
+  "5905": "FOR TIMBER PILES ≥ Ø400",
+  "5906": "",
+  "5857": "STEEL SHIM",
+  "5879": "SPIKE (TYP.)",
+  "5892": "EXISTING TIMBER PILE",
+  "5891": ""
+ },
+ "add": [
+  {
+   "s": "Ø10 x 100 LONG",
+   "like": 5773,
+   "at": [
+    49.82,
+    39.62
+   ]
+  },
+  {
+   "s": "PLACED BETWEEN UC PILE AND UAs",
+   "like": 5829,
+   "at": [
+    46.33,
+    56.58
+   ]
+  }
+ ],
+ "drop": []
+}

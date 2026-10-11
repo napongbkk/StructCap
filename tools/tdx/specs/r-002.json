@@ -1,0 +1,200 @@
+{
+ "sheet": "PN30-2102",
+ "title": "PILE BANDING DETAIL - TYPE 3",
+ "cat": "Piles",
+ "details": [
+  {
+   "name": "NOTE – REMOVE ANY FOREIGN MATTER",
+   "rects": [
+    [
+     9.5,
+     2.5,
+     78.5,
+     24
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THIS IS THE NON-PREFERRED BANDING METHOD",
+   "rects": [
+    [
+     11,
+     79.5,
+     75,
+     92.5
+    ]
+   ]
+  },
+  {
+   "name": "PLAN – PILE BANDING DETAIL - TYPE 3",
+   "rects": [
+    [
+     7,
+     24,
+     79,
+     79.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   1.6,
+   100
+  ],
+  [
+   89,
+   0,
+   100,
+   1.3
+  ],
+  [
+   44,
+   93.5,
+   77,
+   98.5
+  ],
+  [
+   94,
+   40,
+   97,
+   42.5
+  ]
+ ],
+ "erase": [
+  [
+   12.5,
+   3.6,
+   76.5,
+   22.5
+  ],
+  [
+   13.3,
+   81.7,
+   72.8,
+   90.7
+  ]
+ ],
+ "text": {
+  "3001": "",
+  "3013": "BAND",
+  "3002": "",
+  "3003": "",
+  "3004": "",
+  "3005": "",
+  "3006": "",
+  "3007": "",
+  "3008": "",
+  "3009": "",
+  "3010": "",
+  "3011": "",
+  "3012": "",
+  "3015": "",
+  "3016": "",
+  "3018": "",
+  "3017": "",
+  "3019": "",
+  "3020": ""
+ },
+ "add": [
+  {
+   "s": "NOTE:",
+   "like": 3005,
+   "at": [
+    13.5,
+    5.48
+   ]
+  },
+  {
+   "s": "REMOVE ANY FOREIGN MATTER FROM TIMBER PILE",
+   "like": 3005,
+   "at": [
+    13.5,
+    7.9
+   ]
+  },
+  {
+   "s": "GAPS.",
+   "like": 3005,
+   "at": [
+    13.5,
+    10.0
+   ]
+  },
+  {
+   "s": "PRECOMPRESS PILE RADIALLY TO CLOSE ALL",
+   "like": 3005,
+   "at": [
+    13.5,
+    12.43
+   ]
+  },
+  {
+   "s": "GAPS USING CHAIN AND RATCHET.",
+   "like": 3005,
+   "at": [
+    13.5,
+    14.8
+   ]
+  },
+  {
+   "s": "INSTALL STEEL BAND THEN FILLET WELD CLOSE",
+   "like": 3005,
+   "at": [
+    13.5,
+    17.1
+   ]
+  },
+  {
+   "s": "WHILE APPLYING TENSION FROM A SECOND CHAIN",
+   "like": 3005,
+   "at": [
+    13.5,
+    19.4
+   ]
+  },
+  {
+   "s": "AND RATCHET WHICH IS TACK WELDED TO BAND.",
+   "like": 3005,
+   "at": [
+    13.5,
+    21.7
+   ]
+  },
+  {
+   "s": "NOTE:",
+   "like": 3019,
+   "at": [
+    14.3,
+    83.3
+   ]
+  },
+  {
+   "s": "THIS IS THE NON-PREFERRED BANDING METHOD.",
+   "like": 3019,
+   "at": [
+    14.3,
+    85.6
+   ]
+  },
+  {
+   "s": "FOR THE PREFERRED BANDING METHOD REFER",
+   "like": 3019,
+   "at": [
+    14.3,
+    87.9
+   ]
+  },
+  {
+   "s": "TO STANDARD DRAWING N° 9530-0072.",
+   "like": 3019,
+   "at": [
+    14.3,
+    90.1
+   ]
+  }
+ ],
+ "drop": []
+}

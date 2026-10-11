@@ -1,0 +1,163 @@
+{
+ "sheet": "PN30-4108",
+ "title": "GUARDRAIL BEAM LAPPING DETAIL",
+ "cat": "Barrier",
+ "details": [
+  {
+   "name": "GUARDRAIL BEAM LAPPING DETAIL",
+   "rects": [
+    [
+     8.5,
+     12.5,
+     65.0,
+     36.5
+    ],
+    [
+     17.5,
+     38.5,
+     56.0,
+     45.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – END TERMINAL",
+   "rects": [
+    [
+     71.0,
+     13.0,
+     93.0,
+     31.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – BRIDGE RAIL",
+   "rects": [
+    [
+     71.0,
+     33.0,
+     90.0,
+     40.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     13.5,
+     57.0,
+     74.0,
+     86.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   97.5,
+   100,
+   100
+  ],
+  [
+   77,
+   88.5,
+   94,
+   93.5
+  ],
+  [
+   0,
+   51,
+   100,
+   55
+  ],
+  [
+   24,
+   2,
+   26,
+   3.5
+  ],
+  [
+   93,
+   42.5,
+   95,
+   44
+  ]
+ ],
+ "erase": [
+  [
+   80.2,
+   36.1,
+   81.2,
+   37.6
+  ],
+  [
+   45.4,
+   62.8,
+   61.2,
+   65.0
+  ],
+  [
+   50.9,
+   78.0,
+   61.0,
+   80.4
+  ],
+  [
+   34.4,
+   83.4,
+   37.5,
+   85.7
+  ]
+ ],
+ "text": {
+  "1229": "LAP 'W' BEAMS OVER LENGTH OF",
+  "1231": "AN 'END IMPACT'.",
+  "1237": "TERMINAL'S MANUFACTURER.",
+  "1242": "",
+  "1243": "",
+  "1247": "",
+  "1253": "",
+  "1254": "",
+  "1256": "",
+  "1257": "",
+  "1232": ""
+ },
+ "add": [
+  {
+   "s": "LAP 'W' BEAMS & 'THRIEBEAMS'",
+   "like": 1242,
+   "dx": 0,
+   "dy": 0
+  },
+  {
+   "s": "FOR GENERAL NOTES REFER TO DRAWING N°XX30-XXXX.",
+   "like": 1247,
+   "dx": 0,
+   "dy": 0
+  },
+  {
+   "s": "8 POST END TERMINALS  OF APPROX LENGTH 15.2 - 15.8m  ARE SHOWN  IF",
+   "like": 1253,
+   "dx": 0,
+   "dy": 0
+  },
+  {
+   "s": "ADDITIONAL 'W' BEAM & GUARDRAIL POSTS ARE REQUIRED.",
+   "like": 1256,
+   "dx": 0,
+   "dy": 0
+  },
+  {
+   "s": "TRAFFIC",
+   "like": 1235,
+   "at": [
+    10.56,
+    24.13
+   ]
+  }
+ ],
+ "drop": []
+}

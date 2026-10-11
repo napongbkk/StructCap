@@ -1,0 +1,211 @@
+{
+ "sheet": "PN30-2325",
+ "title": "ABUTMENT FULLCAP REPLACEMENT DETAIL",
+ "cat": "Abutments",
+ "details": [
+  {
+   "name": "NOTE – IF FULLCAP CHANNEL",
+   "rects": [
+    [
+     6.5,
+     33.2,
+     25.4,
+     39.4
+    ],
+    [
+     5.5,
+     22.8,
+     20.0,
+     49.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – ENGINEER TO DETERMINE IF",
+   "rects": [
+    [
+     4.4,
+     49.0,
+     20.8,
+     55.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – RELOCATE EXISTING PILE",
+   "rects": [
+    [
+     42.8,
+     55.4,
+     61.0,
+     59.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FULLCAP REPLACEMENT CHANNEL",
+   "rects": [
+    [
+     27.8,
+     78.2,
+     50.6,
+     83.0
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – 380 PFC",
+   "rects": [
+    [
+     19.6,
+     11.8,
+     67.0,
+     33.0
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – 300 PFC",
+   "rects": [
+    [
+     19.6,
+     33.0,
+     67.0,
+     54.4
+    ]
+   ]
+  },
+  {
+   "name": "STRINGER/CORBEL BRACKET DETAILS",
+   "rects": [
+    [
+     67.0,
+     16.8,
+     95.5,
+     55.0
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     4.0,
+     57.6,
+     40.0,
+     82.0
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT FULLCAP REPLACEMENT DETAIL",
+   "rects": [
+    [
+     40.0,
+     55.0,
+     97.5,
+     77.0
+    ],
+    [
+     50.6,
+     77.0,
+     97.0,
+     85.4
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   83.0,
+   85.4,
+   97.0,
+   88.2
+  ],
+  [
+   6.6,
+   81.0,
+   7.6,
+   82.0
+  ],
+  [
+   57.5,
+   88.2,
+   58.5,
+   89.0
+  ],
+  [
+   34.6,
+   0.4,
+   35.6,
+   1.4
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "3234": "",
+  "3244": "DETAILS PN30-2328 &/OR 2329",
+  "3245": "",
+  "3285": "~",
+  "3210": "~",
+  "3341": "~",
+  "3221": "",
+  "3258": "70 MINIMUM BEARING",
+  "3211": "Ø22 HOLE (TYP)",
+  "3229": "Ø22 x 50 LONG",
+  "3343": "100",
+  "3344": "50",
+  "3345": "25",
+  "3348": "75",
+  "3276": "2 – BRACKETS REQUIRED PER STRINGER/",
+  "3282": "1 – AS DRAWN",
+  "3284": "1 – OPPOSITE HAND",
+  "3339": "~",
+  "3340": "~",
+  "3302": "~",
+  "3297": "~",
+  "3304": "TO CORBELS WITH Ø20 THREADED",
+  "3305": "U' THREADED",
+  "3318": "SITE DRILLED Ø22 HOLES (TYP)",
+  "3342": "~",
+  "3300": "~",
+  "3346": "~",
+  "3347": "~",
+  "3330": "",
+  "3298": "PROPOSED 300 PFC",
+  "3313": "(TYP)",
+  "3314": "BEARING PLATES FOR",
+  "3321": "BEARING < 70",
+  "3319": "",
+  "3337": "DRG NUMBER – REFER TO",
+  "3219": "MINIMUM BEARING",
+  "3217": ""
+ },
+ "add": [
+  {
+   "s": "IF BEARING IS <70 THEN REFER",
+   "like": 3222,
+   "at": [
+    21.7,
+    24.86
+   ]
+  },
+  {
+   "s": "ABUTMENT FULLCAP REPLACEMENT DETAIL",
+   "like": 3330,
+   "at": [
+    52.33,
+    80.8
+   ]
+  },
+  {
+   "s": "XX30-XXXX",
+   "like": 3226,
+   "at": [
+    83.8,
+    80.8
+   ]
+  }
+ ],
+ "drop": []
+}

@@ -1,0 +1,188 @@
+{
+ "sheet": "PN30-2120",
+ "title": "STEEL ABUTMENT PILE/TIMBER FULLCAP BEARING DETAIL",
+ "cat": "Abutments",
+ "details": [
+  {
+   "name": "NOTE – FULLCAPS SHALL BE PROPPED – OPTION 1",
+   "rects": [
+    [
+     36.5,
+     37.8,
+     57.8,
+     43.5
+    ]
+   ]
+  },
+  {
+   "name": "STEEL ABUTMENT PILE/TIMBER FULLCAP BEARING DETAIL – OPTION 1",
+   "rects": [
+    [
+     30.5,
+     15.0,
+     35.5,
+     20.2
+    ],
+    [
+     4.5,
+     20.0,
+     46.5,
+     43.5
+    ],
+    [
+     15.0,
+     43.5,
+     53.8,
+     54.5
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1",
+   "rects": [
+    [
+     30.5,
+     4.0,
+     80.0,
+     23.0
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A – OPTION 1",
+   "rects": [
+    [
+     64.0,
+     23.0,
+     94.0,
+     46.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FOR PILE POT DETAILS",
+   "rects": [
+    [
+     56.3,
+     47.3,
+     92.8,
+     57.4
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FULLCAPS SHALL BE PROPPED – OPTION 2",
+   "rects": [
+    [
+     49.5,
+     58.3,
+     70.2,
+     62.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A – OPTION 2",
+   "rects": [
+    [
+     53.0,
+     57.4,
+     95.8,
+     80.5
+    ]
+   ]
+  },
+  {
+   "name": "STEEL ABUTMENT PILE/TIMBER FULLCAP BEARING DETAIL – OPTION 2",
+   "rects": [
+    [
+     4.5,
+     54.5,
+     53.0,
+     80.0
+    ],
+    [
+     15.0,
+     78.0,
+     54.0,
+     90.3
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – ENGINEER TO CHOOSE OPTION TO SUIT",
+   "rects": [
+    [
+     33.3,
+     88.3,
+     56.5,
+     94.2
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   76.0,
+   92.0,
+   95.5,
+   97.0
+  ]
+ ],
+ "erase": [
+  [
+   22.3,
+   47.9,
+   24.6,
+   50.3
+  ]
+ ],
+ "text": {
+  "2826": "20",
+  "2779": "~",
+  "2743": "TYP",
+  "2746": "DETAIL  1",
+  "2769": "SECTION  A",
+  "2768": "",
+  "2756": "Ø20 THREADED ROD",
+  "2793": "FULLCAPS SHALL BE PROPPED",
+  "2794": "",
+  "2812": "SECTION  A",
+  "2829": "100",
+  "2804": "Ø20 THREADED ROD",
+  "2799": "~",
+  "2825": "20",
+  "2827": "~",
+  "2828": "~",
+  "2806": "TYP",
+  "2807": "400 LONG",
+  "2785": "OPTION",
+  "2773": "ABUTMENT N° X - PILE N° X",
+  "2777": "ABUTMENT N° X - PILE N° X",
+  "2772": "FULLCAP BEARING DETAIL",
+  "2815": "FULLCAP BEARING DETAIL",
+  "2819": "DRG NUMBER - REFER TO",
+  "2774": "",
+  "2775": "",
+  "2778": ""
+ },
+ "add": [
+  {
+   "s": "XX30-XXXX",
+   "like": 2784,
+   "at": [
+    40.2,
+    47.22
+   ]
+  },
+  {
+   "s": "XX30-XXXX",
+   "like": 2820,
+   "at": [
+    40.08,
+    81.52
+   ]
+  }
+ ],
+ "drop": []
+}

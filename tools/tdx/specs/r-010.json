@@ -1,0 +1,12 @@
+{ "sheet": "PN30-2110", "title": "TABLE OF TYPES OF PIER PILE REPAIRS - TYPE 4", "cat": "Piles",
+  "details": [
+    {"name": "TABLE OF TYPES OF PIER PILE REPAIRS - TYPE 4", "rects": [[2.2, 1.5, 84, 87.5]]}
+  ],
+  "exclude": [[0, 0, 1.3, 14], [68, 88, 85, 94]],
+  "erase": [], "text": {"6605": "SIMILAR TO '4A' BUT MORE SIGNIFICANT", "6606": "SIMILAR TO '4B'. EVEN GREATER LOSS",
+    "6659": "THE CONDITION '4D'.", "6603": "PILE TIMBER IN GOOD CONDITION.", "6604": "",
+    "6615": "LOCATIONS Ø50 HOLES AND CENTRAL", "6682": "TABLE OF TYPES OF PIER PILE REPAIRS - TYPE 4 (INFORMATION FOR DETERMINING",
+    "6626": "70%", "6661": "HIGH PRESSURE WATER JET PREPARATION.", "6662": "", "6668": "UT AWAY DETERIORATION ZONE AND",
+    "6681": "WITH EPIGEN 1614 OR SIMILAR APPROVED.", "6680": ""},
+  "add": [{"s": "HIGH PRESSURE WATER JET PREPARATION", "like": 6666, "at": [30.1, 65.6]},
+          {"s": "HIGH PRESSURE WATER JET CLEAN,", "like": 6666, "at": [47.8, 65.6]}], "drop": [] }

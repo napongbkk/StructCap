@@ -1,0 +1,197 @@
+{
+ "sheet": "1330-0027",
+ "title": "HALFCAP REPLACEMENT DETAIL",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "ABUTMENT PLAN",
+   "rects": [
+    [
+     6,
+     38.5,
+     22.5,
+     53.5
+    ]
+   ]
+  },
+  {
+   "name": "PIER PLAN",
+   "rects": [
+    [
+     25,
+     39.5,
+     42.5,
+     53.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – HALFCAP REPLACEMENT DETAIL",
+   "rects": [
+    [
+     3.3,
+     3.5,
+     65,
+     38.8
+    ],
+    [
+     18,
+     53.6,
+     32,
+     56.8
+    ]
+   ]
+  },
+  {
+   "name": "HALFCAP TO PILE CONNECTION DETAIL - TYPE 1",
+   "rects": [
+    [
+     5,
+     57,
+     24.8,
+     80
+    ],
+    [
+     5,
+     80,
+     22.5,
+     89.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     24.8,
+     58.5,
+     42.5,
+     89.8
+    ],
+    [
+     22.5,
+     80,
+     24.8,
+     86
+    ]
+   ]
+  },
+  {
+   "name": "HALFCAP TO PILE CONNECTION DETAIL - TYPE 2",
+   "rects": [
+    [
+     40.5,
+     50.5,
+     42.5,
+     58.5
+    ],
+    [
+     42.5,
+     50.5,
+     64.5,
+     85
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     64.5,
+     55,
+     81.5,
+     85
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     68,
+     85.2,
+     84,
+     98.2
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   83.7,
+   0,
+   100,
+   100
+  ],
+  [
+   0,
+   0,
+   100,
+   1.9
+  ],
+  [
+   0,
+   98.2,
+   100,
+   100
+  ],
+  [
+   0,
+   0,
+   3.2,
+   100
+  ]
+ ],
+ "erase": [
+  [
+   45.9,
+   11.1,
+   48.6,
+   12.05
+  ]
+ ],
+ "text": {
+  "5940": "Ø20 THREADED",
+  "5945": "ROD",
+  "5951": "~",
+  "5889": "REFER TO HALFCAP TO",
+  "5890": "REFER TO HALFCAP TO",
+  "5902": "~",
+  "5899": "REFER TO HALFCAP TO",
+  "5901": "CONNECTION TYPE 4",
+  "5904": "",
+  "5911": "~",
+  "5933": "PILE (TYP.)",
+  "6094": "100",
+  "5995": "Ø20 THREADED ROD",
+  "5996": "OR Ø20",
+  "5997": "ROD",
+  "6011": "PROPOSED STEEL",
+  "6012": "",
+  "6044": "TO SUIT PROPOSED PFC.",
+  "5970": "PFC TO PILE CONNECTION",
+  "5976": "TO SUIT EXISTING",
+  "6095": "NOTE 4.",
+  "6096": "50",
+  "6097": "MIN.",
+  "5985": "~",
+  "6004": "4",
+  "6002": "(TYP.)",
+  "6088": "PROPOSED PFC TO BE DRILLED ON SITE AND NEW"
+ },
+ "add": [
+  {
+   "s": "ON DRG N° 1330-0029",
+   "like": 5904,
+   "at": [
+    46.0,
+    11.9
+   ]
+  }
+ ],
+ "drop": [
+  4811,
+  4812,
+  4827
+ ]
+}

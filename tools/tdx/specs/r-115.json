@@ -1,0 +1,8 @@
+{"sheet": "PN30-3210A", "title": "DECK CONSTRUCTION JOINT DETAIL", "cat": "Deck & overlay",
+ "details": [
+  {"name": "DETAIL 1", "rects": [[12, 2.5, 95, 39.4]]},
+  {"name": "NOTE – BRIDGE WITH NO ROAD SEAL", "rects": [[42, 39.4, 76, 51], [42, 51, 46.5, 57]]},
+  {"name": "DECK CONSTRUCTION JOINT DETAIL", "rects": [[12, 51, 95, 90]]}
+ ],
+ "exclude": [[66, 95, 95, 99.8]],
+ "erase": [[70.3, 14.2, 74.5, 15.9]], "text": {"1117": "SILICON (e.g.", "1120": "Ø10 POLYETHYLENE", "1133": "10", "1134": "25", "1122": "~", "1129": "EXISTING TIMBER"}, "add": [], "drop": []}

@@ -1,0 +1,165 @@
+{
+ "sheet": "PN30-2105",
+ "title": "PIER PILE REPAIR DETAIL - TYPE 2",
+ "cat": "Piles",
+ "details": [
+  {
+   "name": "NOTE – HALFCAPS SHALL BE PROPPED",
+   "rects": [
+    [
+     43.5,
+     35,
+     75,
+     43.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – EXISTING GENERAL GL OR",
+   "rects": [
+    [
+     68.6,
+     47,
+     94.5,
+     54.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THIS PAGE SHALL BE READ IN CONJUNCTION",
+   "rects": [
+    [
+     55,
+     82.8,
+     91.5,
+     90
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – ENGINEER SHALL DECIDE WHICH",
+   "rects": [
+    [
+     19,
+     90.6,
+     46,
+     96.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     8.5,
+     11,
+     76,
+     43.4
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER PILE REPAIR DETAIL - TYPE 2",
+   "rects": [
+    [
+     7,
+     43.5,
+     94,
+     79.5
+    ],
+    [
+     9,
+     79.5,
+     62,
+     86
+    ],
+    [
+     52,
+     74.5,
+     85,
+     83
+    ],
+    [
+     19,
+     86,
+     46,
+     90.6
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   100,
+   3
+  ],
+  [
+   97,
+   9,
+   100,
+   15
+  ],
+  [
+   75,
+   95.5,
+   95,
+   99.5
+  ]
+ ],
+ "erase": [
+  [
+   45.75,
+   18.95,
+   47.4,
+   20.1
+  ]
+ ],
+ "text": {
+  "1694": "NOTE: HALFCAPS SHALL BE PROPPED",
+  "1695": "",
+  "1696": "",
+  "1709": "~",
+  "1674": "TYP",
+  "1675": "",
+  "1677": "",
+  "1676": "Ø10x100 LONG",
+  "1682": "WITH 2-Ø12 HOLES FOR SPIKES.",
+  "1746": "1250 MIN",
+  "1747": "750",
+  "1748": "20",
+  "1749": "MIN",
+  "1711": "U2",
+  "1712": "EXISTING GENERAL G.L.",
+  "1713": "",
+  "1717": "~",
+  "1718": "~",
+  "1726": "~",
+  "1735": "PIER PILE REPAIR DETAIL - TYPE 2",
+  "1722": "250 MIN BELOW EXISTING G.L.",
+  "1743": "WELDED OPTION",
+  "1727": "500",
+  "1729": "Ø10x250 LONG SPIKE (TYP)",
+  "1736": "XX30-XXXX"
+ },
+ "add": [
+  {
+   "s": "Ø10x250 LONG",
+   "like": 1676,
+   "at": [
+    12.34,
+    18.85
+   ]
+  },
+  {
+   "s": "SPIKE (TYP)",
+   "like": 1676,
+   "at": [
+    12.45,
+    20.2
+   ]
+  }
+ ],
+ "drop": []
+}

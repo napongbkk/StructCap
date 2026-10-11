@@ -1,0 +1,121 @@
+{
+ "sheet": "PN30-4204",
+ "title": "PREVENTATIVE MAINTENANCE WORK TABLE",
+ "cat": "General",
+ "details": [
+  {
+   "name": "PREVENTATIVE MAINTENANCE WORK TABLE",
+   "rects": [
+    [
+     20.0,
+     3.3,
+     81.2,
+     94.6
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   2.5,
+   40
+  ],
+  [
+   64,
+   95,
+   83,
+   98.5
+  ],
+  [
+   10.5,
+   86,
+   12,
+   87.3
+  ]
+ ],
+ "erase": [
+  [
+   28.9,
+   61.4,
+   29.9,
+   62.5
+  ],
+  [
+   28.0,
+   74.3,
+   29.0,
+   75.5
+  ],
+  [
+   39.9,
+   57.2,
+   40.5,
+   58.3
+  ],
+  [
+   72.9,
+   52.2,
+   73.8,
+   53.3
+  ],
+  [
+   50.1,
+   84.8,
+   51.0,
+   85.9
+  ],
+  [
+   46.0,
+   84.8,
+   46.6,
+   85.9
+  ],
+  [
+   42.4,
+   87.3,
+   43.2,
+   88.4
+  ],
+  [
+   34.7,
+   50.4,
+   35.6,
+   51.6
+  ]
+ ],
+ "text": {
+  "339": "OUTSIDE TIMBER STRINGERS)",
+  "340": "850.93.03",
+  "344": "(OF TIMBER STRINGERS)",
+  "345": "850.93.04",
+  "361": "",
+  "370": "CLEARING",
+  "386": "MAINTENANCE)",
+  "388": "'TIMBER BRIDGE PREVENTATIVE MAINTENANCE STANDARDS' DOCUMENT",
+  "389": "No. 6706/02/2226 WHICH IS AVAILABLE \"FOR INFORMATION ONLY\".",
+  "390": ""
+ },
+ "add": [
+  {
+   "s": "HALFCAPS)",
+   "like": 361,
+   "at": [
+    29.1,
+    62.4
+   ]
+  },
+  {
+   "s": "a",
+   "like": 347,
+   "at": [
+    73.0,
+    53.1
+   ]
+  }
+ ],
+ "drop": [
+  265
+ ]
+}

@@ -1,0 +1,28 @@
+{"sheet": "PN30-2131", "title": "PILE DRIVING NOTES", "cat": "Piles",
+ "details": [
+  {"name": "PILE DRIVING NOTES", "rects": [[5, 42, 95, 91.5]]}
+ ],
+ "exclude": [[68, 91.5, 96, 96.5], [44, 8, 48, 10], [44, 31, 48, 33], [56, 0, 59, 2], [78, 44, 81, 46], [51, 92, 54, 94], [44, 98, 48, 100]],
+ "erase": [[6.5, 50.5, 9.3, 79], [16.5, 51.2, 18.6, 56.6], [73.0, 54.9, 79.2, 56.4], [60.0, 57.6, 60.9, 58.5],
+           [40.9, 67.8, 45.7, 69.4], [76.6, 76.4, 90.0, 77.9], [62.2, 78.3, 65.3, 79.8], [65.9, 78.3, 68.1, 79.8],
+           [44.0, 80.2, 45.7, 81.7], [46.3, 80.4, 47.3, 81.5], [11.0, 88.6, 14.0, 90.0]],
+ "text": {"491": "1.", "493": "2.",
+  "495": "DEVIATION FROM VERTICAL IN A 3 METRE TEMPLATE ±15mm.",
+  "497": "MAXIMUM VARIATION FROM SPECIFIED CUT OFF LEVEL ±5mm.",
+  "498": "WHERE PILES ARE DRIVEN WITH A DIESEL HAMMER - THE DRIVING HELMET", "499": "",
+  "502": "USING THE 'HILEY' FORMULA AND BY CONSIDERING THE TEMPORARY COMPRESSION.",
+  "504": "EACH GROUP OF SIMILAR PILES (i.e. PILES OF SIMILAR SIZE) AT FINAL SET.", "505": "",
+  "509": "ANTICIPATED MINIMUM SET REQUIREMENTS ARE", "512": "APPROXIMATELY", "510": "~", "511": "",
+  "513": "OF A PILE DRIVING UNIT (HAMMER RATED ENERGY OF", "514": "kJ PER", "515": "BLOW) DEPENDING",
+  "516": "ON THE RESULTS REQUIRED FOR 3 & 4 - TO BE CONFIRMED ONCE TEMPORARY", "517": "", "518": "", "519": ""},
+ "add": [
+  {"s": "3.", "like": 491, "at": [7.08, 58.87]},
+  {"s": "4.", "like": 491, "at": [7.08, 63.17]},
+  {"s": "5.", "like": 491, "at": [7.08, 67.48]},
+  {"s": "6.", "like": 491, "at": [7.08, 71.78]},
+  {"s": "7.", "like": 491, "at": [7.08, 77.98]},
+  {"s": "a)", "like": 495, "at": [17.04, 52.57]},
+  {"s": "b)", "like": 495, "at": [17.04, 54.46]},
+  {"s": "c)", "like": 495, "at": [17.04, 56.24]},
+  {"s": "XX", "like": 522, "at": [11.3, 89.9]}, {"s": "BLOWS/250mm", "like": 509, "at": [78.1, 77.88]}, {"s": "XX", "like": 509, "at": [62.2, 79.72]}
+ ], "drop": []}

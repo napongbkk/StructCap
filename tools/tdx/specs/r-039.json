@@ -1,0 +1,14 @@
+{"sheet": "PN30-2204", "title": "WINGWALL EXTENSION DETAIL - TYPE 1", "cat": "Wing walls",
+ "details": [
+  {"name": "NOTE – DENOTES DIMENSIONS SHALL BE CHECKED BY ENGINEER", "rects": [[14, 72.5, 24.5, 77]]},
+  {"name": "NOTE – IF SCOURING OF WINGWALL IS NOT EVIDENT", "rects": [[24, 78.5, 45.5, 89.5]]},
+  {"name": "NOTE – TYPE 1- WHERE SCOURING OF WINGWALL HAS OCCURRED", "rects": [[51.5, 84, 72, 89.5]]},
+  {"name": "SECTION A", "rects": [[1.5, 47.5, 19, 81.5]]},
+  {"name": "SECTION B", "rects": [[19.5, 40, 38, 71.5]]},
+  {"name": "DETAIL 1", "rects": [[75.5, 35.5, 100, 58.5]]},
+  {"name": "ELEVATION – WINGWALL EXTENSION DETAIL - TYPE 1", "rects": [[37.5, 35.5, 75.5, 84], [75.5, 74, 78.5, 79.5]]}
+ ],
+ "exclude": [[89, 90, 100, 94.5], [0, 97.5, 100, 100]],
+ "erase": [[68.6, 80.2, 75, 81.3]],
+ "text": {"3301": "NOTE : IF SCOURING OF WINGWALL IS NOT", "3302": "", "3308": "TYPE 1 - WHERE SCOURING OF WINGWALL", "3312": "500", "3262": "~", "3313": "MIN", "3314": "1200 MIN", "3255": "~", "3242": "75 COVER", "3247": "", "3297": "SECTION  A", "3290": "1200", "3315": "600", "3316": "MIN", "3317": "MIN", "3224": "350", "3318": "150 MIN", "3231": "U2", "3319": "600 MAX", "3283": "SECTION  B", "3269": "150", "3245": "~", "3264": "DETAIL  1", "3252": "EXISTING TIMBER SHEETING", "3236": "~", "3299": "", "3300": "~", "3213": "900 PERPENDICULAR", "3237": "A & B", "3320": "200 MIN", "3321": "300", "3322": "MIN", "3243": "~", "3323": "MIN"},
+ "add": [{"s": "WINGWALL EXTENSION DETAIL - TYPE 1", "like": 3299, "at": [52.21, 81.12]}, {"s": "XX30-XXXX", "like": 3303, "at": [68.84, 81.07]}], "drop": []}

@@ -1,0 +1,286 @@
+{
+ "sheet": "1330-0018",
+ "title": "PIER HALF-CAP STRENGTHENING DETAIL",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "ELEVATION – PIER HALF-CAP STRENGTHENING DETAIL – PACKER OPTION",
+   "rects": [
+    [
+     5.0,
+     3.6,
+     50.0,
+     37.6
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER HALF-CAP STRENGTHENING DETAIL – NO PACKER OPTION",
+   "rects": [
+    [
+     50.3,
+     3.6,
+     96.0,
+     37.6
+    ],
+    [
+     66.0,
+     37.0,
+     70.0,
+     38.6
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     5.6,
+     41.3,
+     26.6,
+     59.5
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – RHS PACKING OPTION",
+   "rects": [
+    [
+     37.8,
+     37.0,
+     57.8,
+     59.8
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – TIMBER PACKING OPTION",
+   "rects": [
+    [
+     57.8,
+     37.0,
+     77.6,
+     59.8
+    ],
+    [
+     54.5,
+     59.8,
+     61.0,
+     61.9
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2",
+   "rects": [
+    [
+     47.9,
+     61.9,
+     68.3,
+     78.3
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 3",
+   "rects": [
+    [
+     47.9,
+     78.3,
+     68.3,
+     95.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     68.4,
+     77.6,
+     83.0,
+     95.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – HALF-CAP TO PILE CONNECTION DETAIL - TYPE 1",
+   "rects": [
+    [
+     7.9,
+     63.5,
+     25.4,
+     93.0
+    ],
+    [
+     20.5,
+     93.0,
+     40.0,
+     96.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     26.3,
+     61.9,
+     47.9,
+     93.0
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   82.9,
+   47.3,
+   100,
+   100
+  ],
+  [
+   96,
+   0,
+   100,
+   47.3
+  ],
+  [
+   82.2,
+   39.5,
+   90.5,
+   44.5
+  ],
+  [
+   0,
+   0,
+   100,
+   3.2
+  ],
+  [
+   0,
+   0,
+   4.9,
+   100
+  ],
+  [
+   0,
+   96.8,
+   83,
+   100
+  ]
+ ],
+ "erase": [
+  [44.2, 42.9, 46.2, 43.75],
+  [44.2, 44.0, 46.2, 44.8],
+  [
+   21.6,
+   36.9,
+   23.0,
+   37.6
+  ]
+ ],
+ "text": {
+  "5764": "Ø20 THREADED RODS WITH",
+  "5768": "65x5FLx65 WASHER TO TIMBER FACES",
+  "5773": "STRINGER (TYP.)",
+  "5798": "~",
+  "5776": "Ø20 THREADED RODS",
+  "5781": "CORBEL (TYP.)",
+  "6037": "~",
+  "5785": "THROUGH Ø22 HOLE IN",
+  "5831": "~",
+  "5833": "~",
+  "5805": "PFC HALF-CAP",
+  "5813": "Ø22 HOLE (TYP.)",
+  "5812": "(TYP.)",
+  "5817": "MIN. - 300 MAX.",
+  "5824": "(TYP.)",
+  "5826": "CONNECTION - TYPE 1",
+  "5827": "CONNECTION - TYPE 2",
+  "5834": "ON DRG N° 1330-0019",
+  "5837": "PILE (TYP.)",
+  "6038": "~",
+  "5766": "Ø20 THREADED RODS WITH",
+  "5777": "Ø20",
+  "5786": "THROUGH Ø22 HOLE IN",
+  "5799": "(TYP.)",
+  "5835": "~",
+  "5806": "PFC HALF-CAP",
+  "5811": "Ø22 HOLE (TYP.)",
+  "5815": "(TYP.)",
+  "5816": "PILE BAND (TYP.)",
+  "5821": "100 MIN. - 300 MAX.",
+  "5825": "(TYP.)",
+  "5828": "CONNECTION - TYPE 1",
+  "5830": "CONNECTION - TYPE 2",
+  "5839": "(TYP.)",
+  "5800": "~",
+  "6039": "~",
+  "6040": "~",
+  "5864": "Ø20 THREADED \"U\" ROD",
+  "5876": "℄ PIER",
+  "5904": "PFC HALF-CAP",
+  "5854": "100x50x5.0 RHS",
+  "5865": "",
+  "5870": "",
+  "5877": "130x(6,8,10 OR 12FL)x300 LONG",
+  "5849": "1:20",
+  "5853": "(TYP.)",
+  "5925": "DETAIL  1",
+  "5863": "JARRAH TIMBER PACKER, 1 N°",
+  "5868": "Ø20 THREADED ROD REQUIRED",
+  "5890": "PILES WITH DIA.",
+  "5929": "COBEL TO HALFCAP",
+  "6029": "DETAIL  3",
+  "6027": "",
+  "6007": "TRIM BOLT TO SUIT IF",
+  "6010": "REQUIRED. 65x5FLx65",
+  "5973": "",
+  "5972": "",
+  "5975": "2.",
+  "5978": "SUIT PROPOSED HALF-CAP REPAIRS. RE-USE",
+  "5985": "SATISFACTION OF THE SUPERINTENDENT'S",
+  "5988": "3.",
+  "6031": "HALF-CAP TO PILE CONNECTION DETAIL - TYPE 1",
+  "5993": "SHIM PLATE",
+  "6019": "SECTION  A",
+  "6017": "",
+  "5935": "(TYP.)",
+  "5937": "Ø20 THREADED ROD",
+  "5940": "WITH 65x5FLx65",
+  "5941": "",
+  "5960": "Ø20 THREADED",
+  "5963": "\"U\" ROD",
+  "6003": "~"
+ },
+ "add": [
+  {"s": "50-300", "like": 5869, "at": [44.37, 43.67]},
+  {"s": "50-300", "like": 5869, "at": [44.37, 44.67]},
+  {
+   "s": "1:20",
+   "like": 5849,
+   "at": [
+    21.77,
+    37.33
+   ]
+  },
+  {
+   "s": "NOTES:",
+   "like": 5974,
+   "at": [
+    68.69,
+    79.32
+   ]
+  },
+  {
+   "s": "1.",
+   "like": 5974,
+   "at": [
+    68.71,
+    80.28
+   ]
+  }
+ ],
+ "drop": []
+}

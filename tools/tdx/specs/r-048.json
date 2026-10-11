@@ -1,0 +1,129 @@
+{
+ "sheet": "PN30-2305",
+ "title": "PIER HALFCAPS STRENGTHENING DETAIL",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "NOTE – HALFCAP STRENGTHENING CHANNELS",
+   "rects": [
+    [
+     22.4,
+     23.2,
+     46,
+     39.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PROP STRINGERS & CORBELS",
+   "rects": [
+    [
+     31.6,
+     71.6,
+     53.4,
+     85.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     4.5,
+     41,
+     37.8,
+     81.8
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER HALFCAPS STRENGTHENING DETAIL",
+   "rects": [
+    [
+     37.8,
+     30,
+     97,
+     85.6
+    ],
+    [
+     52,
+     85.6,
+     95,
+     95
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   100,
+   21
+  ],
+  [
+   83,
+   93.5,
+   100,
+   100
+  ],
+  [
+   0,
+   97,
+   100,
+   100
+  ],
+  [
+   97,
+   0,
+   100,
+   100
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "2168": "NOTE: HALFCAP STRENGTHENING CHANNELS.",
+  "2179": "HALFCAP. (ENGINEER TO DETERMINE)",
+  "2252": "~",
+  "2201": "~",
+  "2191": "MIN",
+  "2200": "",
+  "2232": "SECTION  A",
+  "2217": "~",
+  "2209": "OF EXISTING UC PILE",
+  "2218": "TYP",
+  "2225": "TYP",
+  "2203": "~",
+  "2208": "~",
+  "2238": "DRG NUMBER - REFER TO",
+  "2239": "",
+  "2240": "",
+  "2181": "Ø20 THREADED RODS",
+  "2199": "~",
+  "2253": "",
+  "2205": "~",
+  "2248": "XX30-XXXX",
+  "2211": "~",
+  "2254": "~",
+  "2204": ""
+ },
+ "add": [
+  {
+   "s": "55 - 300 PFC",
+   "like": 2204,
+   "at": [
+    27.3,
+    53.85
+   ]
+  },
+  {
+   "s": "60 - 380 PFC",
+   "like": 2204,
+   "at": [
+    27.35,
+    55.56
+   ]
+  }
+ ],
+ "drop": []
+}

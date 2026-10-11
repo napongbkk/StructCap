@@ -1,0 +1,305 @@
+{
+ "sheet": "1330-0005",
+ "title": "WING WALL PILE REPAIR DETAIL – TYPE WW1",
+ "cat": "Wing walls",
+ "details": [
+  {
+   "name": "SECTION  B",
+   "rects": [
+    [
+     4.8,
+     2.6,
+     32.5,
+     19.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION  A",
+   "rects": [
+    [
+     4.8,
+     19.6,
+     32.5,
+     45
+    ]
+   ]
+  },
+  {
+   "name": "SECTION  B – WHERE EXISTING TIMBER SHEETING ABUTS",
+   "rects": [
+    [
+     36.5,
+     2.6,
+     61.5,
+     23
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL  1",
+   "rects": [
+    [
+     61.5,
+     2.6,
+     80,
+     23
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL  2",
+   "rects": [
+    [
+     58.5,
+     23,
+     73.8,
+     45
+    ]
+   ]
+  },
+  {
+   "name": "SECTION  D",
+   "rects": [
+    [
+     73.8,
+     23,
+     87.5,
+     45
+    ]
+   ]
+  },
+  {
+   "name": "SECTION  A – WHERE EXISTING TIMBER SHEETING ABUTS",
+   "rects": [
+    [
+     33,
+     23,
+     58.5,
+     47
+    ]
+   ]
+  },
+  {
+   "name": "SIDE ELEVATION – WING WALL PILE REPAIR DETAIL – TYPE WW1",
+   "rects": [
+    [
+     4.8,
+     51,
+     38.5,
+     96.4
+    ]
+   ]
+  },
+  {
+   "name": "PLAN – VIEW  C",
+   "rects": [
+    [
+     38.5,
+     46.5,
+     57.6,
+     65.5
+    ]
+   ]
+  },
+  {
+   "name": "PLAN – VIEW  C WHERE EXISTING TIMBER SHEETING ABUTS",
+   "rects": [
+    [
+     57.6,
+     46.5,
+     83.5,
+     64
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     58,
+     89.3,
+     63,
+     90.6
+    ],
+    [
+     58,
+     90.6,
+     83.5,
+     96.4
+    ]
+   ]
+  },
+  {
+   "name": "VIEW  C",
+   "rects": [
+    [
+     34.5,
+     65.5,
+     55.6,
+     92
+    ]
+   ]
+  },
+  {
+   "name": "VIEW  C – WHERE EXISTING TIMBER SHEETING ABUTS",
+   "rects": [
+    [
+     55.6,
+     64,
+     83.5,
+     92
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   4.8,
+   100
+  ],
+  [
+   0,
+   0,
+   100,
+   2.6
+  ],
+  [
+   4.8,
+   96.4,
+   84,
+   100
+  ],
+  [
+   83.5,
+   47,
+   100,
+   100
+  ],
+  [
+   91,
+   0,
+   100,
+   47
+  ],
+  [
+   83,
+   38.5,
+   90.5,
+   44
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "6129": "Ø40 HOLE SITE DRILLED THROUGH",
+  "6396": "~",
+  "6232": "SECTION  A",
+  "6231": "",
+  "6397": "100",
+  "6398": "150",
+  "6185": "Ø20 THREADED 'U'",
+  "6188": "WITH WEB OF UB.",
+  "6196": "FLANGES (TYP.)",
+  "6212": "EA WELDED TO UB.",
+  "6220": "PROVIDE Ø22 HOLES",
+  "6226": "FOR THREADED 'U' ROD.",
+  "6233": "(TYP.)",
+  "6130": "Ø40 HOLE SITE DRILLED THROUGH",
+  "6134": "WEB OF PILES (TYP.)",
+  "6151": "SECTION  B",
+  "6149": "",
+  "6146": "(TYP.)",
+  "6138": "SPIKING RAIL.",
+  "6156": "DETAIL  1",
+  "6409": "~",
+  "6412": "50",
+  "6213": "DETAIL  2",
+  "6215": "",
+  "6192": "Ø12 HOLE TO SUIT",
+  "6200": "x100 LONG GALV.",
+  "6205": "(TYP.)",
+  "6408": "~",
+  "6410": "55",
+  "6216": "SECTION  D",
+  "6214": "",
+  "6180": "Ø14 HOLE TO SUIT",
+  "6413": "40",
+  "6179": "~",
+  "6164": "Ø20 THREADED ROD",
+  "6168": "COVER",
+  "6178": "IN THIS AREA (TYP.)",
+  "6197": "WITH WEB OF UB. (TYP.)",
+  "6203": "SL81",
+  "6221": "EA WELDED TO UB. PROVIDE Ø22",
+  "6227": "HOLES FOR THREADED RODS.",
+  "6230": "TO SECTION A ONLY) (TYP.)",
+  "6235": "(TYP.)",
+  "6404": "95",
+  "6405": "40",
+  "6383": "100",
+  "6384": "500",
+  "6385": "150",
+  "6386": "MIN.",
+  "6387": "45",
+  "6388": "100",
+  "6389": "200",
+  "6390": "MIN.",
+  "6391": "NOM.",
+  "6393": "100",
+  "6395": "200",
+  "6399": "100",
+  "6400": "MIN.",
+  "6401": "",
+  "6402": "SUIT",
+  "6403": "WING",
+  "6332": "~",
+  "6256": "Ø22 HOLES TO SUIT Ø20",
+  "6258": "UB PILE TO SUIT.",
+  "6259": "THREADED ROD (TYP.)",
+  "6374": "WING WALL PILE REPAIR DETAIL – TYPE WW1",
+  "6298": "~",
+  "6305": "LEVEL OR HIGH TIDE LEVEL",
+  "6324": "Ø40 HOLE",
+  "6329": "(TYP.)",
+  "6346": "150",
+  "6347": "(TYP.)",
+  "6361": "RODS SEE SECTION A (TYP.)",
+  "6364": "AS SHOWN IN SECTION A",
+  "6304": "~",
+  "6269": "(TYP.)",
+  "6281": "PILE (TYP.)",
+  "6260": "Ø22 HOLES TO SUIT",
+  "6264": "Ø20 THREADED RODS",
+  "6407": "~",
+  "6411": "~",
+  "6253": "~",
+  "6367": "NOTES:",
+  "6371": "FOR GENERAL NOTES REFER DRAWING No. 1330-0001.",
+  "6373": "WHERE SINGLE PILE IS PROPOSED, PILE SHALL BE PLACED ON THE HIGHER SIDE OF",
+  "6375": "EXISTING TIMBER WING WALL PILE UNLESS OTHERWISE SHOWN ON PROJECT DRAWINGS.",
+  "6379": "ENSURE WING WALL SHEETING IS SAFELY PROPPED. DO NOT REMOVE PROPS UNTIL",
+  "6380": "PROPOSED PILE IS IN POSITION AND CONCRETE HAS BEEN PLACED A MINIMUM OF 7 DAYS.",
+  "6357": "VIEW  C",
+  "6352": "",
+  "6302": "DETAILS REFER DETAIL 2",
+  "6310": "MIN.",
+  "6358": "VIEW  C",
+  "6353": "",
+  "6335": "WITH Ø12 HOLES AT 75",
+  "6406": "25",
+  "6414": "90"
+ },
+ "add": [
+  {
+   "s": "1500 MIN.",
+   "like": 6401,
+   "at": [
+    28.13,
+    77.8
+   ]
+  }
+ ],
+ "drop": []
+}

@@ -1,0 +1,186 @@
+{
+ "sheet": "PN30-2309",
+ "title": "PIER HALFCAPS STRENGTHENING DETAIL",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "TYPICAL STEEL PACKER TO PFC WELDING DETAIL – 300 PFC",
+   "rects": [
+    [
+     40.5,
+     5.5,
+     64.5,
+     32
+    ]
+   ]
+  },
+  {
+   "name": "TYPICAL STEEL PACKER TO PFC WELDING DETAIL – 380 PFC",
+   "rects": [
+    [
+     69.8,
+     1.5,
+     94.8,
+     32
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – HALFCAP STRENGTHENING CHANNELS",
+   "rects": [
+    [
+     19.8,
+     25.8,
+     45,
+     43
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PROP STRINGERS & CORBELS",
+   "rects": [
+    [
+     27.7,
+     75.8,
+     50.2,
+     90.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     1.8,
+     46.5,
+     37.5,
+     90.8
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER HALFCAPS STRENGTHENING DETAIL",
+   "rects": [
+    [
+     37.5,
+     32.5,
+     97.8,
+     94
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   84,
+   94,
+   100,
+   100
+  ],
+  [
+   0,
+   97,
+   100,
+   100
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "3294": "",
+  "3296": "",
+  "3288": "",
+  "3289": "",
+  "3297": "~",
+  "3291": "~",
+  "3394": "~",
+  "3395": "~",
+  "3393": "~",
+  "3306": "380 PFC",
+  "3304": "NOTE: HALFCAP STRENGTHENING CHANNELS",
+  "3372": "NOTE: PROP STRINGERS & CORBELS PRIOR",
+  "3373": "",
+  "3377": "JACKING AGAINST TIMBER HALFCAP TO",
+  "3390": "~",
+  "3328": "MIN",
+  "3363": "~",
+  "3334": "TO TIMBER FACE. (TYP)",
+  "3335": "",
+  "3341": "~",
+  "3381": "SECTION  A",
+  "3319": "Ø20 THREADED RODS",
+  "3322": "(A MINIMUM OF 1 - Ø20",
+  "3337": "~",
+  "3357": "PROPOSED 300 PFC",
+  "3358": "",
+  "3386": "XX30-XXXX",
+  "3391": "50",
+  "3392": "~"
+ },
+ "add": [
+  {
+   "s": "6",
+   "like": 3288,
+   "at": [
+    88.44,
+    4.05
+   ]
+  },
+  {
+   "s": "50-300",
+   "like": 3288,
+   "at": [
+    90.5,
+    4.05
+   ]
+  },
+  {
+   "s": "6",
+   "like": 3288,
+   "at": [
+    88.44,
+    6.11
+   ]
+  },
+  {
+   "s": "50-300",
+   "like": 3288,
+   "at": [
+    90.5,
+    6.11
+   ]
+  },
+  {
+   "s": "6",
+   "like": 3294,
+   "at": [
+    58.13,
+    10.18
+   ]
+  },
+  {
+   "s": "50-300",
+   "like": 3294,
+   "at": [
+    60.18,
+    10.18
+   ]
+  },
+  {
+   "s": "6",
+   "like": 3294,
+   "at": [
+    58.13,
+    12.22
+   ]
+  },
+  {
+   "s": "50-300",
+   "like": 3294,
+   "at": [
+    60.18,
+    12.22
+   ]
+  }
+ ],
+ "drop": []
+}

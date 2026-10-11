@@ -1,0 +1,227 @@
+{
+ "sheet": "PN30-2304",
+ "title": "PIER HALFCAP STRENGTHENING DETAIL",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "NOTE – ENGINEER TO DETERMINE",
+   "rects": [
+    [
+     17.8,
+     53.3,
+     32.4,
+     59
+    ],
+    [
+     18.3,
+     29.5,
+     20,
+     53.3
+    ],
+    [
+     20,
+     29.5,
+     34.8,
+     31.5
+    ],
+    [
+     20,
+     47.8,
+     33.8,
+     49.2
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – IF HALFCAP CHANNEL",
+   "rects": [
+    [
+     20,
+     39.3,
+     36.4,
+     45
+    ],
+    [
+     27.3,
+     32.5,
+     31.4,
+     39.3
+    ],
+    [
+     27.3,
+     45,
+     33.8,
+     51.8
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – RELOCATE EXISTING PILE BANDS",
+   "rects": [
+    [
+     63.8,
+     53.6,
+     81.6,
+     58.3
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – HALFCAP STRENGTHENING CHANNELS",
+   "rects": [
+    [
+     25.3,
+     78.7,
+     48.2,
+     86.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PROP STRINGERS & CORBELS",
+   "rects": [
+    [
+     49.2,
+     81.4,
+     70.8,
+     88.4
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – 380 PFC",
+   "rects": [
+    [
+     31.4,
+     20,
+     74.6,
+     38.3
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – 300 PFC",
+   "rects": [
+    [
+     31.4,
+     38.3,
+     74.6,
+     53.6
+    ],
+    [
+     45,
+     53.6,
+     58,
+     58.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     4.5,
+     58.6,
+     36,
+     86.6
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER HALFCAP STRENGTHENING DETAIL",
+   "rects": [
+    [
+     36,
+     58.3,
+     97,
+     81.4
+    ],
+    [
+     70.8,
+     81.4,
+     97,
+     89
+    ],
+    [
+     48.2,
+     88.4,
+     97.5,
+     96
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   100,
+   19.5
+  ],
+  [
+   0,
+   0,
+   3.5,
+   100
+  ],
+  [
+   82,
+   96,
+   100,
+   100
+  ],
+  [
+   0,
+   98,
+   100,
+   100
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "2548": "LOADINGS",
+  "2550": "",
+  "2514": "",
+  "2515": "NOTE: IF HALFCAP CHANNEL",
+  "2522": "DETAILS PN30-2328 &/OR 2329",
+  "2596": "",
+  "2597": "",
+  "2619": "HALFCAP (ENGINEER TO DETERMINE)",
+  "2503": "70 MINIMUM BEARING",
+  "2512": "1:10",
+  "2542": "1:10",
+  "2546": "300 PFC",
+  "2549": "",
+  "2529": "70",
+  "2531": "IF BEARING IS <70 THEN REFER",
+  "2532": "",
+  "2534": "TO \"HALFCAP OR FULLCAP TO",
+  "2630": "~",
+  "2606": "SECTION  A",
+  "2578": "THREADE",
+  "2631": "~",
+  "2632": "",
+  "2581": "PROPOSED 00 PFC",
+  "2555": "Ø20 THREADED RODS",
+  "2573": "~",
+  "2586": "BEARING PLATES FOR",
+  "2588": "TYP)",
+  "2593": "BEARING <",
+  "2605": "PROPOSED HALFCAP STRENGTHENING.",
+  "2604": "",
+  "2610": "PROVIDE NEW 65x5FLx65 WASHER",
+  "2609": "",
+  "2577": "~"
+ },
+ "add": [
+  {
+   "s": "NOTE: HALFCAP STRENGTHENING CHANNELS",
+   "like": 2597,
+   "at": [
+    26.0,
+    79.9
+   ]
+  }
+ ],
+ "drop": []
+}

@@ -1,0 +1,26 @@
+{
+ "sheet": "PN30-2320",
+ "title": "STEEL ABUTMENT PILES/ABUTMENT FULLCAP STRENGTHENING DETAIL",
+ "cat": "Abutments",
+ "details": [
+  {"name": "DETAIL 1", "rects": [[2.0, 3.5, 31.2, 30.6]]},
+  {"name": "TYPICAL STEEL PACKER TO PFC WELDING DETAIL – 300 PFC", "rects": [[35.4, 5.6, 56.6, 28.6]]},
+  {"name": "TYPICAL STEEL PACKER TO PFC WELDING DETAIL – 380 PFC", "rects": [[61.4, 1.8, 83.6, 28.6]]},
+  {"name": "NOTE – FOR PILE RESTRAINTS", "rects": [[5.6, 75.0, 22.2, 94.4]]},
+  {"name": "NOTE – FULLCAP STRENGTHENING CHANNELS WILL VARY", "rects": [[23.0, 79.2, 45.2, 94.0]]},
+  {"name": "NOTE – PROP STRINGERS PRIOR TO INSTALLING", "rects": [[36.6, 68.8, 62.0, 78.4]]},
+  {"name": "SECTION A", "rects": [[2.6, 31.0, 34.6, 73.0]]},
+  {"name": "ELEVATION – STEEL ABUTMENT PILES/ABUTMENT FULLCAP STRENGTHENING DETAIL", "rects": [[34.6, 31.0, 87.0, 68.8], [62.0, 68.8, 87.0, 79.2], [45.2, 78.4, 87.0, 94.0]]}
+ ],
+ "exclude": [[73.0, 94.4, 87.0, 99.0], [98.6, 12.0, 100, 13.0], [96.0, 91.2, 97.5, 92.4], [12.8, 95.6, 14.4, 96.8]],
+ "erase": [],
+ "text": {"3179": "~", "3078": "TYP", "3181": "~", "3085": "1:10", "3180": "~", "3183": "~", "3067": "6  50-300",
+  "3186": "~", "3187": "~", "3148": "SUPPORT TO THE EXISTING TIMBER FULLCAP.", "3150": "", "3178": "~",
+  "3108": "55 – 300 PFC", "3109": "", "3110": "", "3111": "60 – 380", "3112": "", "3114": "RHS STEEL PACKER", "3115": "",
+  "3087": "Ø20 THREADED RODS AT 900 CRS", "3092": "MAXIMUM (A MINIMUM OF 1 – Ø20", "3101": "140", "3103": "(TYP)",
+  "3124": "PROPOSED 300 PFC", "3142": "F11 SEASONED JARRAH", "3184": "75", "3185": "TYP)",
+  "3167": "ABUTMENT N° X – PILE N° X", "3169": "ABUTMENT N° X – PILE N° X", "3172": "DRG NUMBER – REFER TO",
+  "3121": "", "3182": "~", "3119": "~"},
+ "add": [],
+ "drop": []
+}

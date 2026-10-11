@@ -1,0 +1,267 @@
+{
+ "sheet": "1330-0024",
+ "title": "TOP FLANGE CONNECTION DETAIL - TYPE A",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "TOP FLANGE CONNECTION DETAIL - TYPE A",
+   "rects": [
+    [
+     5.6,
+     4.5,
+     28.2,
+     29.5
+    ],
+    [
+     28.2,
+     19,
+     30,
+     23
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION  A",
+   "rects": [
+    [
+     28.2,
+     5,
+     46.8,
+     29.5
+    ]
+   ]
+  },
+  {
+   "name": "TOP FLANGE CONNECTION DETAIL - TYPE B",
+   "rects": [
+    [
+     46.8,
+     4,
+     72.5,
+     29.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION  B",
+   "rects": [
+    [
+     72.5,
+     5,
+     95.5,
+     29.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – TOP FLANGE CONNECTION DETAIL - TYPE C1",
+   "rects": [
+    [
+     28.3,
+     54.8,
+     37,
+     59
+    ],
+    [
+     5,
+     55.6,
+     37,
+     70
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     5,
+     33.5,
+     35.3,
+     55.6
+    ]
+   ]
+  },
+  {
+   "name": "TOP FLANGE CONNECTION DETAIL - TYPE C2",
+   "rects": [
+    [
+     35.3,
+     33.5,
+     66,
+     62
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION  C",
+   "rects": [
+    [
+     66,
+     31.5,
+     91,
+     61
+    ]
+   ]
+  },
+  {
+   "name": "TOP FLANGE CONNECTION DETAIL - TYPE D",
+   "rects": [
+    [
+     5.6,
+     70.3,
+     37.5,
+     94.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION  D",
+   "rects": [
+    [
+     38.5,
+     68,
+     60.8,
+     94.5
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL  1",
+   "rects": [
+    [
+     60.8,
+     62.5,
+     82,
+     86.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     61.4,
+     86.6,
+     83.3,
+     96.75
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   82.9,
+   46,
+   100,
+   100
+  ],
+  [
+   85,
+   31.5,
+   94,
+   35.5
+  ],
+  [
+   0,
+   0,
+   100,
+   3.3
+  ],
+  [
+   0,
+   0,
+   4.7,
+   100
+  ],
+  [
+   0,
+   96.75,
+   83.3,
+   100
+  ],
+  [
+   95.5,
+   0,
+   100,
+   46
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "5555": "(TYP.)",
+  "5595": "TOP FLANGE CONNECTION DETAIL - TYPE A",
+  "5571": "PROPOSED STEEL",
+  "5576": "Ø22 HOLE TO SUIT",
+  "5596": "SECTIONAL ELEVATION  A",
+  "5594": "",
+  "5586": "Ø22 HOLE (TYP.)",
+  "5546": "400 CRS. MAX.",
+  "5547": "(TYP.)",
+  "5548": "Ø22 HOLE TO SUIT",
+  "5597": "TOP FLANGE CONNECTION DETAIL - TYPE B",
+  "5591": "FORMWORK / CONCRETE",
+  "5580": "FORMWORK / CONCRETE",
+  "5568": "~",
+  "5806": "~",
+  "5566": "REFER NOTE 5.",
+  "5579": "TRUBOLT OR SIMILAR APPROVED.",
+  "5589": "Ø22 HOLE (TYP.)",
+  "5592": "APPROVED.",
+  "5569": "~",
+  "5612": "(TYP.)",
+  "5639": "PRE-DRILLED Ø12 HOLES",
+  "5642": "Ø18 HOLES AT 400 CRS MAX.",
+  "5654": "O.D. x 3 THICK WASHER AND",
+  "5660": "NUT (TYP.)",
+  "5665": "Ø22 HOLES TO SUIT",
+  "5670": "Ø20 THREADED ROD",
+  "5687": "PLANK (TYP.)",
+  "5721": "TOP FLANGE CONNECTION DETAIL - TYPE C1",
+  "5696": "WITH Ø10x200 LONG SPIKE",
+  "5610": "400 CRS MAX.",
+  "5615": "(TYP.)",
+  "5619": "2 N°. 12mm BUILDEX WAFER",
+  "5701": "TOP FLANGE CONNECTION DETAIL - TYPE C2",
+  "5640": "PRE-DRILLED Ø12 HOLES",
+  "5643": "",
+  "5655": "O.D. x 3 THICK WASHER AND",
+  "5656": "",
+  "5661": "NUT (TYP.)",
+  "5666": "Ø22 HOLES TO SUIT",
+  "5671": "Ø20 THREADED ROD",
+  "5629": "NUT. (TYP.)",
+  "5689": "STRINGER (TYP.)",
+  "5692": "Ø22 HOLE",
+  "5808": "~",
+  "5805": "~",
+  "5757": "~",
+  "5792": "TOP FLANGE CONNECTION DETAIL - TYPE D",
+  "5732": "(TYP.)",
+  "5737": "Ø22 HOLES AT 400 CRS MAX. TO",
+  "5746": "(TYP.)",
+  "5766": "Ø22 HOLES TO SUIT",
+  "5767": "Ø20 x 130 LONG",
+  "5771": "COACH SCREW (TYP.)",
+  "5793": "SECTIONAL ELEVATION  D",
+  "5729": "80 MIN. REFER NOTE 5.",
+  "5768": "Ø20 x 130 LONG",
+  "5773": "TRUBOLT OR SIMILAR APPROVED.",
+  "5785": "Ø22 HOLE",
+  "5770": "DETAIL  1",
+  "5719": "ANCHOR BOLT - M16x150 LONG BOLT",
+  "5720": "1mm BONDEK",
+  "5722": "WITH 30 O.D. x 3 THICK WASHER",
+  "5754": "PROPOSED STRINGER",
+  "5755": "DRILL Ø18 HOLE IN STRINGER",
+  "5774": "1:5",
+  "5807": "110",
+  "5782": "NOTES:",
+  "5787": "FOR GENERAL NOTES REFER DRAWING No. 1330-0001.",
+  "5794": "STRINGER PACKING DETAIL DRG N° 1330-0025.",
+  "5801": "RE-ENTRANT RIBS."
+ },
+ "add": [
+  {"s": "Ø18 HOLES AT 400 CRS MAX.", "like": 5647, "at": [58.96, 42.31]}
+ ],
+ "drop": []
+}

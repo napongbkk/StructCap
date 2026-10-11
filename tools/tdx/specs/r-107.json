@@ -1,0 +1,181 @@
+{
+ "sheet": "PN30-3203",
+ "title": "DOWNPIPE",
+ "cat": "Deck & overlay",
+ "details": [
+  {
+   "name": "DOWNPIPE",
+   "rects": [
+    [
+     8,
+     15,
+     92,
+     59
+    ]
+   ]
+  },
+  {
+   "name": "SCUPPERS (EXISTING)",
+   "rects": [
+    [
+     8,
+     60,
+     92,
+     77
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   2.8,
+   100
+  ],
+  [
+   88,
+   0,
+   100,
+   1.4
+  ],
+  [
+   68.5,
+   77.5,
+   96,
+   83
+  ]
+ ],
+ "erase": [
+  [
+   25.0,
+   17.0,
+   30.8,
+   20.0
+  ],
+  [
+   56.8,
+   70.4,
+   59.3,
+   73.6
+  ],
+  [
+   10,
+   23,
+   95,
+   59
+  ]
+ ],
+ "text": {
+  "2496": "DOWNPIPE",
+  "2498": "ONE DOWNPIPE ON EACH SIDE IN APPROXIMATELY",
+  "2499": "",
+  "2500": "",
+  "2501": "",
+  "2502": "",
+  "2503": "",
+  "2497": "",
+  "2504": "",
+  "2505": "SCUPPER REPAIR",
+  "2506": "PRACTICE"
+ },
+ "add": [
+  {
+   "s": "1.",
+   "like": 2497,
+   "at": [
+    10.6,
+    25.85
+   ]
+  },
+  {
+   "s": "BRIDGE WITH TWO WAY CROSSFALL :-",
+   "like": 2497,
+   "at": [
+    15.4,
+    25.85
+   ]
+  },
+  {
+   "s": "1.1.",
+   "like": 2497,
+   "at": [
+    15.67,
+    30.97
+   ]
+  },
+  {
+   "s": "THE CENTRE OF EACH SPAN.",
+   "like": 2497,
+   "at": [
+    23.56,
+    33.4
+   ]
+  },
+  {
+   "s": "2.",
+   "like": 2497,
+   "at": [
+    10.6,
+    40.0
+   ]
+  },
+  {
+   "s": "BRIDGE WITH SUPER ELEVATION :-",
+   "like": 2497,
+   "at": [
+    15.4,
+    40.0
+   ]
+  },
+  {
+   "s": "2.1.",
+   "like": 2497,
+   "at": [
+    15.67,
+    45.12
+   ]
+  },
+  {
+   "s": "ONE DOWNPIPE ON LOW SIDE IN APPROXIMATELY",
+   "like": 2497,
+   "at": [
+    23.5,
+    45.12
+   ]
+  },
+  {
+   "s": "THE CENTRE OF EACH SPAN.",
+   "like": 2497,
+   "at": [
+    23.5,
+    47.62
+   ]
+  },
+  {
+   "s": "3.",
+   "like": 2497,
+   "at": [
+    10.6,
+    55.06
+   ]
+  },
+  {
+   "s": "REFER KERB CONCRETE & DOWNPIPE DETAILS - PRACTICE",
+   "like": 2497,
+   "at": [
+    15.2,
+    55.06
+   ]
+  },
+  {
+   "s": "NOTES PN30-3204 & PN30-3205.",
+   "like": 2497,
+   "at": [
+    15.2,
+    57.5
+   ]
+  }
+ ],
+ "drop": []
+}

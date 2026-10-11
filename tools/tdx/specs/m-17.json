@@ -1,0 +1,224 @@
+{
+ "sheet": "1330-0017",
+ "title": "ABUTMENT PILE REPAIR - TOP DETAILS",
+ "cat": "Abutments",
+ "details": [
+  {
+   "name": "NOTE – FOR PILE REPAIR TYPE F",
+   "rects": [
+    [
+     29.4,
+     36.6,
+     42.0,
+     43.0
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT TOP CONNECTION DETAIL - TYPE F",
+   "rects": [
+    [
+     7.3,
+     3.4,
+     31.7,
+     43.5
+    ]
+   ]
+  },
+  {
+   "name": "VIEW P",
+   "rects": [
+    [
+     32.3,
+     6.0,
+     58.0,
+     41.0
+    ]
+   ]
+  },
+  {
+   "name": "SECTION Q",
+   "rects": [
+    [
+     58.9,
+     14.0,
+     74.4,
+     34.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – HALF-CAP/FULL-CAP CONNECTION CHANNEL - TYPE 2",
+   "rects": [
+    [
+     76.2,
+     11.8,
+     94.5,
+     33.0
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT TOP CONNECTION DETAIL - TYPE G",
+   "rects": [
+    [
+     5.3,
+     50.3,
+     30.7,
+     87.2
+    ]
+   ]
+  },
+  {
+   "name": "VIEW R",
+   "rects": [
+    [
+     34.0,
+     50.0,
+     55.2,
+     84.0
+    ]
+   ]
+  },
+  {
+   "name": "SECTION S",
+   "rects": [
+    [
+     57.9,
+     54.2,
+     77.6,
+     75.0
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     68.3,
+     89.3,
+     83.1,
+     97.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   82.9,
+   47.3,
+   100,
+   100
+  ],
+  [
+   96,
+   0,
+   100,
+   47.3
+  ],
+  [
+   82.5,
+   39.5,
+   90.5,
+   44.5
+  ],
+  [
+   0,
+   0,
+   100,
+   3.3
+  ],
+  [
+   0,
+   0,
+   4.85,
+   100
+  ],
+  [
+   0,
+   96.2,
+   68,
+   100
+  ]
+ ],
+ "erase": [
+  [
+   45.55,
+   51.7,
+   46.45,
+   53.0
+  ]
+ ],
+ "text": {
+  "3752": "NOTE:",
+  "3763": "",
+  "3866": "~",
+  "3685": "~",
+  "3683": "EXISTING SPIKING RAIL",
+  "3867": "~",
+  "3686": "15°",
+  "3692": "PROPOSED PFC PACKER",
+  "3700": "PROVIDE GALV.",
+  "3719": "HALF-CAP (TYP.)",
+  "3731": "(TYP.)",
+  "3750": "TO SUIT PROPOSED UC PILE",
+  "3756": "VIEW  P",
+  "3754": "",
+  "3723": "Ø22 HOLE SITE DRILLED TO SUIT",
+  "3726": "Ø20 THREADED ROD",
+  "3730": "(TYP.)",
+  "3737": "TO TIMBER FACE (TYP.)",
+  "3744": "SECTION  Q",
+  "3742": "",
+  "3690": "35 (125 PFC)",
+  "3711": "Ø22 HOLE",
+  "3713": "(TYP.)",
+  "3871": "75",
+  "3865": "~",
+  "3864": "~",
+  "3788": "15°",
+  "3804": "\"X\" ON ABUTMENT TOP",
+  "3820": "SHEETING",
+  "3839": "VIEW  R",
+  "3868": "75",
+  "3822": "2 N°. Ø22 HOLES",
+  "3819": "SECTION  S",
+  "3818": "",
+  "3778": "20 CHAMFER TO",
+  "3785": "UC PILE RADIUS (TYP.)",
+  "3784": "(TYP.)",
+  "3797": "\"X\" ON ABUTMENT TOP",
+  "3800": "CONNECTION DETAIL TYPE - A",
+  "3869": "",
+  "3870": "~",
+  "3849": "FOR GENERAL NOTES REFER DRAWING No. 1330-0001.",
+  "3851": ""
+ },
+ "add": [
+  {
+   "s": "℄",
+   "like": 3769,
+   "at": [
+    45.85,
+    52.63
+   ]
+  },
+  {
+   "s": "PACKING OPTION ON DRG N° 1330-0015",
+   "like": 3763,
+   "at": [
+    30.196,
+    42.714
+   ]
+  },
+  {
+   "s": "VARIES",
+   "like": 3869,
+   "at": [
+    59.683,
+    65.385
+   ]
+  }
+ ],
+ "drop": []
+}

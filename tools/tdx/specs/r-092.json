@@ -1,0 +1,197 @@
+{
+ "sheet": "PN30-3113",
+ "title": "ABUTMENT - STRINGER REPLACEMENT DETAIL - TYPE 1",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "NOTE – STEEL STRINGER SHALL BE FABRICATED",
+   "rects": [
+    [
+     25.8,
+     16.8,
+     48.3,
+     25
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – 300 MIN CAN BE REDUCED",
+   "rects": [
+    [
+     27.3,
+     46.8,
+     37.5,
+     52.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – GAP BETWEEN STRINGER AND DECK",
+   "rects": [
+    [
+     26.5,
+     52.8,
+     39.3,
+     63.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – DIMENSIONS DENOTED THUS",
+   "rects": [
+    [
+     71.8,
+     51.3,
+     86,
+     60.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – STRINGER SIZE WILL VARY",
+   "rects": [
+    [
+     64.8,
+     60.5,
+     76.5,
+     66.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION A",
+   "rects": [
+    [
+     3,
+     17.5,
+     37,
+     57
+    ]
+   ]
+  },
+  {
+   "name": "MODIFIED FLANGE DETAILS",
+   "rects": [
+    [
+     72.8,
+     20.3,
+     99,
+     50
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT - STRINGER REPLACEMENT DETAIL - TYPE 1",
+   "rects": [
+    [
+     34,
+     20,
+     72.5,
+     64.5
+    ],
+    [
+     36.8,
+     64.5,
+     67.8,
+     74.6
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   1.2,
+   21
+  ],
+  [
+   0,
+   97.3,
+   100,
+   100
+  ],
+  [
+   84,
+   75.5,
+   96.5,
+   79.5
+  ]
+ ],
+ "erase": [
+  [
+   28.0,
+   50.7,
+   28.5,
+   51.8
+  ],
+  [
+   54.5,
+   27.3,
+   61.6,
+   28.8
+  ]
+ ],
+ "text": {
+  "2384": "NOTE:",
+  "2439": "NOTE:",
+  "2447": "",
+  "2451": "NOTE:",
+  "2468": "NOTE:  STRINGER SIZE WILL",
+  "2474": "410 UB 54 STRINGER DRAWN",
+  "2473": "",
+  "2483": "50",
+  "2415": "410 UB 54",
+  "2448": "SECTIONAL ELEVATION  A",
+  "2449": "",
+  "2428": "WITH Ø3.2 CLOUT",
+  "2484": "~",
+  "2485": "300",
+  "2486": "MIN",
+  "2489": "200",
+  "2490": "300",
+  "2395": "BOLTED PLANKS WITH Ø10x200 LONG",
+  "2403": "",
+  "2476": "",
+  "2460": "Ø20 THREADED ROD WITH",
+  "2487": "50",
+  "2488": "MIN",
+  "2479": "",
+  "2480": ""
+ },
+ "add": [
+  {
+   "s": "ASSESSMENT & VERIFICATION",
+   "like": 2445,
+   "dx": 0,
+   "dy": 1.6
+  },
+  {
+   "s": "65x5FLx65 STEEL",
+   "like": 2398,
+   "at": [
+    54.7,
+    28.6
+   ]
+  },
+  {
+   "s": "DETAIL - TYPE 1",
+   "like": 2476,
+   "at": [
+    37.74,
+    69.51
+   ]
+  },
+  {
+   "s": "DRG NUMBER - REFER TO",
+   "like": 2480,
+   "at": [
+    56.1,
+    71.76
+   ]
+  }
+ ],
+ "drop": [
+  2239
+ ]
+}

@@ -1,0 +1,72 @@
+{
+ "sheet": "PN30-4102",
+ "title": "TABLE OF QUANTITIES",
+ "cat": "Barrier",
+ "details": [
+  {
+   "name": "NOTE – THESE QUANTITIES DO NOT INCLUDE EXTRUDER TYPE END TERMINAL",
+   "rects": [
+    [
+     64,
+     57,
+     96,
+     72
+    ]
+   ]
+  },
+  {
+   "name": "TABLE OF QUANTITIES",
+   "rects": [
+    [
+     7,
+     14,
+     96,
+     80
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   1.5,
+   14
+  ],
+  [
+   75,
+   79.5,
+   95,
+   85
+  ]
+ ],
+ "erase": [
+  [
+   69.3,
+   59.4,
+   70.5,
+   60.1
+  ]
+ ],
+ "text": {
+  "2461": "N°",
+  "2463": "N°",
+  "2465": "N°",
+  "2501": "STIFFENER PLATE",
+  "2502": "N° OFF",
+  "2480": "'W' BEAM",
+  "2493": "",
+  "2503": "NOTE :-"
+ },
+ "add": [
+  {
+   "s": "TRANSITION",
+   "like": 2493,
+   "at": [
+    51.54,
+    50.0
+   ]
+  }
+ ],
+ "drop": []
+}

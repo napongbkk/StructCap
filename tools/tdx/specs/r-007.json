@@ -1,0 +1,17 @@
+{ "sheet": "PN30-2107", "title": "PIER PILE REPAIR DETAIL - TYPE 3", "cat": "Piles",
+  "details": [
+    {"name": "NOTE – HALFCAPS SHALL BE PROPPED", "rects": [[62, 11.5, 91, 20]]},
+    {"name": "NOTE – FIXING OF STEEL PILE TO EXISTING", "rects": [[58, 32.5, 94.5, 39.8]]},
+    {"name": "NOTE – EXISTING GENERAL GL OR", "rects": [[4.5, 42, 27, 50.7]]},
+    {"name": "NOTE – THIS PAGE SHALL BE READ IN CONJUNCTION", "rects": [[50.5, 81.8, 85.5, 89.4]]},
+    {"name": "NOTE – ENGINEER SHALL DECIDE WHICH", "rects": [[23, 88.3, 48, 92.8]]},
+    {"name": "SECTION A", "rects": [[22, 11.5, 91, 38.2]]},
+    {"name": "ELEVATION – PIER PILE REPAIR DETAIL - TYPE 3", "rects": [[4.5, 40, 80.5, 75.5], [25, 73, 89, 83.8], [24, 83.8, 47, 88.3]]}
+  ],
+  "exclude": [[70, 92, 92, 97], [44, 98, 48, 100], [44, 8, 47, 9.5]],
+  "erase": [], "text": {"1979": "HIGHER.", "2009": "THIS PAGE SHALL BE READ IN CONJUNCTION", "2010": "",
+    "2013": "PIER HALFCAP REPAIRS (WITH STEEL PILE)", "1932": "300", "1937": "TYP", "1945": "Ø900 CONCRETE",
+    "1961": "SECTION  A", "1948": "PLATE WITH 2-Ø12 HOLES.", "1950": "Ø10x100 LONG", "1954": "10x250 LONG",
+    "2018": "~", "2003": "", "2005": "", "2004": "", "1980": "", "2019": "MIN.", "2020": "MIN.",
+    "1995": "Ø10x250 LONG"},
+  "add": [{"s": "PIER PILE REPAIR DETAIL - TYPE 3", "like": 2004, "at": [30.95, 80.49]}, {"s": "LAP", "like": 1980, "at": [76.86, 48.68]}, {"s": "ELEVATION", "like": 2007, "at": [42.8, 77.9]}], "drop": [] }

@@ -1,0 +1,28 @@
+{
+ "sheet": "PN30-2125",
+ "title": "ABUTMENT/WINGWALL PILE REPAIR DETAIL - TYPE 1",
+ "cat": "Abutments",
+ "details": [
+  {"name": "NOTE – IF LESS THAN 60, THEN RELOCATE SL81", "rects": [[33.0, 4.3, 55.5, 12.4], [56.5, 2.0, 80.0, 12.4]]},
+  {"name": "NOTE – FULLCAPS SHALL BE PROPPED", "rects": [[37.8, 23.5, 59.2, 32.2]]},
+  {"name": "SECTION C", "rects": [[53.0, 12.4, 87.5, 30.0]]},
+  {"name": "SECTION B", "rects": [[4.5, 7.5, 37.8, 30.5], [37.8, 12.4, 53.0, 23.5]]},
+  {"name": "SECTION A", "rects": [[2.0, 31.5, 54.0, 57.5]]},
+  {"name": "NOTE – THIS DETAIL SHALL BE READ", "rects": [[54.0, 75.4, 86.3, 84.2]]},
+  {"name": "NOTE – WELDED OPTION", "rects": [[12.8, 90.0, 31.5, 96.3]]},
+  {"name": "ELEVATION – ABUTMENT/WINGWALL PILE REPAIR DETAIL - TYPE 1", "rects": [[2.5, 58.0, 70.5, 96.3]]}
+ ],
+ "exclude": [[73.0, 95.5, 89.0, 99.0], [98.5, 17.0, 100.0, 19.0], [3.2, 86.4, 5.2, 88.2]],
+ "erase": [[13.5, 88.1, 14.2, 89.1], [71.2, 26.8, 72.1, 28.2], [44.1, 86.5, 44.5, 88.0]],
+ "text": {
+  "2968": "Ø60 HOLES AT 200 CRS", "2971": "TOP N16 PERIMETER BAR TO INSIDE OF", "2974": "PROVIDE Ø60 HOLES AT 200 CRS",
+  "3010": "SECTION", "3011": "~", "2982": "Ø10x100 LONG", "2991": "WITH 2-Ø12 HOLES FOR SPIKES.",
+  "3013": "SECTION  B", "3012": "", "3091": "40", "3093": "900", "3043": "SECTION  A", "3042": "",
+  "3094": "~", "3035": "~", "3037": "~", "3088": "750", "3089": "100", "3090": "MIN", "3092": "20",
+  "3095": "0 MIN.", "3078": "", "3051": "U2",
+  "3061": "75 CLEAR COVER", "3063": "", "3062": "", "3072": "EXISTING TIMBER PILE, CUTBACK", "3070": "",
+  "3073": "TO SOUND TIMBER -", "3076": "BELOW EXISTING G.L."
+ },
+ "add": [{"s": "C", "like": 3010, "at": [71.49, 27.94]}, {"s": "ABUTMENT/WINGWALL PILE REPAIR DETAIL - TYPE 1", "like": 3078, "at": [6.3, 87.71]}, {"s": "XX30-XXXX", "like": 3079, "at": [46.37, 87.6]}],
+ "drop": []
+}

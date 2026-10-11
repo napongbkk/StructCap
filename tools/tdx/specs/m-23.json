@@ -1,0 +1,259 @@
+{
+ "sheet": "1330-0023",
+ "title": "ABUTMENT BOTTOM FLANGE CONNECTION DETAIL - TYPE 3",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "ELEVATION – ABUTMENT BOTTOM FLANGE CONNECTION DETAIL - TYPE 3",
+   "rects": [
+    [
+     5.7,
+     7.8,
+     30,
+     31.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION  A",
+   "rects": [
+    [
+     30,
+     7.8,
+     45,
+     31.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION  B",
+   "rects": [
+    [
+     48.5,
+     8,
+     59.4,
+     21.2
+    ],
+    [
+     48.5,
+     23.8,
+     59.6,
+     27.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER BOTTOM FLANGE CONNECTION DETAIL - TYPE 2A",
+   "rects": [
+    [
+     48.5,
+     7.8,
+     82.5,
+     32
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT BOTTOM FLANGE CONNECTION DETAIL - TYPE 1",
+   "rects": [
+    [
+     5.7,
+     38.8,
+     32,
+     64
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION  C",
+   "rects": [
+    [
+     32,
+     38.8,
+     47,
+     64
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION  D",
+   "rects": [
+    [
+     70.4,
+     39.5,
+     82.8,
+     64
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER BOTTOM FLANGE CONNECTION DETAIL - TYPE 1",
+   "rects": [
+    [
+     48.5,
+     38.8,
+     70.4,
+     64
+    ]
+   ]
+  },
+  {
+   "name": "ABUTMENT MODIFIED FLANGE DETAIL",
+   "rects": [
+    [
+     5.5,
+     67.5,
+     27,
+     88.7
+    ]
+   ]
+  },
+  {
+   "name": "PIER MODIFIED FLANGE DETAIL – TIMBER CORBEL",
+   "rects": [
+    [
+     27,
+     67.5,
+     55.5,
+     88.7
+    ]
+   ]
+  },
+  {
+   "name": "PIER MODIFIED FLANGE DETAIL – STEEL CORBEL",
+   "rects": [
+    [
+     55.5,
+     67.5,
+     72,
+     88.7
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     60.7,
+     90.3,
+     82.8,
+     96.9
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   83.3,
+   0,
+   100,
+   100
+  ],
+  [
+   0,
+   0,
+   100,
+   3.3
+  ],
+  [
+   0,
+   0,
+   4.7,
+   100
+  ],
+  [
+   0,
+   96.9,
+   83.3,
+   100
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "4381": "250x(6,8,10 OR 12FL)xLENGTH",
+  "4400": "SHEETING.",
+  "4413": "Ø20 THREADED ROD WITH",
+  "4443": "ABUTMENT BOTTOM FLANGE CONNECTION DETAIL - TYPE 3",
+  "4424": "TIMBER FACE (TYP.)",
+  "4434": "EXISTING TIMBER",
+  "4439": "HALF-CAP / FULL-CAP",
+  "4636": "50",
+  "4395": "N° Ø3.2",
+  "4444": "SECTIONAL ELEVATION  A",
+  "4442": "",
+  "4418": "Ø22 HOLE (TYP.)",
+  "4431": "(TYP.)",
+  "4404": "~",
+  "4643": "~",
+  "4642": "50",
+  "4402": "Ø22 HOLE (TYP.)",
+  "4433": "SECTIONAL ELEVATION  B",
+  "4432": "",
+  "4414": "(TYP.)",
+  "4398": "(TYP.)",
+  "4399": "(TYP.)",
+  "4406": "50 MIN.",
+  "4445": "PIER BOTTOM FLANGE CONNECTION DETAIL - TYPE 2A",
+  "4647": "NOTE 5",
+  "4653": "~",
+  "4646": "MIN",
+  "4472": "",
+  "4471": "",
+  "4637": "50",
+  "4638": "MIN.",
+  "4639": "MIN.",
+  "4456": "250x(6,8,10,12 OR 25 FL)xLENGTH",
+  "4550": "ABUTMENT BOTTOM FLANGE CONNECTION DETAIL - TYPE 1",
+  "4468": "50",
+  "4524": "DETAILS.",
+  "4500": "Ø20 THREADED ROD WITH",
+  "4540": "HALF-CAP / FULL-CAP",
+  "4484": "N° Ø3.2 CLOUT HEAD",
+  "4486": "NAILS.",
+  "4499": "Ø22 HOLE",
+  "4507": "(TYP.)",
+  "4510": "(TYP.)",
+  "4525": "(TYP.)",
+  "4645": "~",
+  "4553": "SECTIONAL ELEVATION  D",
+  "4549": "",
+  "4473": "75x8FLx100 LONG",
+  "4479": "Ø22 HOLE TO SUIT",
+  "4532": "Ø20 THREADED",
+  "4453": "BOTH SIDES",
+  "4552": "PIER BOTTOM FLANGE CONNECTION DETAIL - TYPE 1",
+  "4478": "50",
+  "4648": "50",
+  "4649": "MIN.",
+  "4651": "300 MIN.",
+  "4635": "200",
+  "4593": "~",
+  "4599": "30 LONG",
+  "4588": "~",
+  "4640": "300",
+  "4641": "200",
+  "4644": "40",
+  "4579": "(TYP.)",
+  "4594": "~",
+  "4602": "Ø22x40 LONG",
+  "4606": "(TYP.)",
+  "4608": "(TYP.)",
+  "4583": "Ø22 HOLE",
+  "4650": "55",
+  "4652": "200",
+  "4591": "~",
+  "4623": "NOTES:",
+  "4626": "1.",
+  "4632": "3. DIMENSION SHALL BE SITE MEASURED PRIOR TO FABRICATION & CONSTRUCTION",
+  "4633": ""
+ },
+ "add": [
+  {
+   "s": "REFER DETAILS",
+   "like": 4471,
+   "dx": -4.15,
+   "dy": 0
+  }
+ ],
+ "drop": []
+}

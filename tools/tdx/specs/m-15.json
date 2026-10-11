@@ -1,0 +1,254 @@
+{
+ "sheet": "1330-0015",
+ "title": "ABUTMENT TOP CONNECTION DETAIL – TYPE B",
+ "cat": "Abutments",
+ "details": [
+  {
+   "name": "NOTE – FOR PILE REPAIR TYPES B & C",
+   "rects": [
+    [
+     46.0,
+     31.3,
+     59.5,
+     37.3
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT TOP CONNECTION DETAIL – TYPE B",
+   "rects": [
+    [
+     5.8,
+     3.2,
+     30.6,
+     37.0
+    ]
+   ]
+  },
+  {
+   "name": "VIEW E",
+   "rects": [
+    [
+     31.5,
+     5.0,
+     56.0,
+     36.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION F",
+   "rects": [
+    [
+     59.8,
+     8.5,
+     78.5,
+     28.0
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – ABUTMENT TOP CONNECTION DETAIL – TYPE C",
+   "rects": [
+    [
+     5.5,
+     37.0,
+     30.8,
+     73.0
+    ]
+   ]
+  },
+  {
+   "name": "VIEW G",
+   "rects": [
+    [
+     31.5,
+     39.5,
+     56.0,
+     70.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION H",
+   "rects": [
+    [
+     61.3,
+     47.0,
+     79.5,
+     65.5
+    ]
+   ]
+  },
+  {
+   "name": "VIEW J – PILE CONNECTION – TIMBER PACKING OPTION",
+   "rects": [
+    [
+     53.0,
+     70.5,
+     84.0,
+     90.6
+    ],
+    [
+     51.5,
+     70.5,
+     53.0,
+     74.0
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – HALF-CAP/FULL-CAP CONNECTION CHANNEL – TYPE 1",
+   "rects": [
+    [
+     6.0,
+     74.0,
+     25.8,
+     96.5
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2",
+   "rects": [
+    [
+     25.8,
+     74.0,
+     53.0,
+     96.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     67.5,
+     90.6,
+     83.0,
+     96.95
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   82.85,
+   45,
+   100,
+   100
+  ],
+  [
+   83.0,
+   42,
+   100,
+   100
+  ],
+  [
+   82.0,
+   38,
+   90,
+   42
+  ],
+  [
+   96.0,
+   0,
+   100,
+   100
+  ],
+  [
+   0,
+   0,
+   4.7,
+   100
+  ],
+  [
+   0,
+   0,
+   100,
+   3.2
+  ],
+  [
+   0,
+   96.95,
+   100,
+   100
+  ]
+ ],
+ "erase": [
+  [
+   53.0,
+   33.0,
+   53.5,
+   34.0
+  ],
+  [
+   12.7,
+   74.9,
+   13.1,
+   76.0
+  ]
+ ],
+ "text": {
+  "4720": "NOTE:",
+  "4722": "FOR PILE REPAIR TYPES B & C. IF TIMBER PACKER",
+  "4723": "",
+  "4883": "~",
+  "4727": "ABUTMENT TOP CONNECTION DETAIL – TYPE B",
+  "4706": "(TYP.)",
+  "4678": "CONNECTION CHANNEL – TYPE 1",
+  "4725": "VIEW  E",
+  "4724": "",
+  "4697": "Ø20 THREADED ROD WITH 65x5FLx65",
+  "4703": "(TYP.)",
+  "4705": "UC PILE RADIUS (TYP.)",
+  "4712": "12PL STIFFENER",
+  "4715": "(TYP.)",
+  "4679": "125 – 200 PFC SHIMMED TO FIT",
+  "4709": "SECTION  F",
+  "4707": "",
+  "4742": "PROVIDE GALV.",
+  "4803": "ABUTMENT TOP CONNECTION DETAIL – TYPE C",
+  "4761": "HALF-CAP (TYP.)",
+  "4772": "(TYP.)",
+  "4783": "UC PILE SIZE, LENGTH TO SUIT",
+  "4750": "~",
+  "4743": "CONNECTION CHANNEL – TYPE 1",
+  "4801": "VIEW  G",
+  "4799": "",
+  "4768": "Ø20 THREADED ROD WITH 65x5FLx65",
+  "4774": "WASHER TO TIMBER FACE (TYP.)",
+  "4785": "STIFFENER",
+  "4802": "1:10",
+  "4793": "SECTION  H",
+  "4791": "",
+  "4746": "125 – 200 PFC SHIMMED TO FIT GAP",
+  "4770": "EXISTING TIMBER",
+  "4776": "HALF-CAP (TYP.)",
+  "4886": "~",
+  "4885": "VARIES",
+  "4887": "~",
+  "4852": "PILE CONNECTION – TIMBER PACKING OPTION",
+  "4811": "TYPE 1 OR TYPE 2",
+  "4825": "TYP.",
+  "4841": "TYPE B,C,E OR F",
+  "4846": "1:5",
+  "4888": "20",
+  "4879": "20",
+  "4880": "FULL-CAP",
+  "4881": "100",
+  "4882": "80",
+  "4867": "HALF-CAP/FULL-CAP CONNECTION CHANNEL – TYPE 1",
+  "4830": "Ø22 HOLE",
+  "4836": "(TYP.)",
+  "4831": "~",
+  "4884": "~",
+  "4819": "~",
+  "4837": "TYP.",
+  "4848": "TYP.",
+  "4851": "~",
+  "4857": "NOTES:"
+ },
+ "add": [],
+ "drop": []
+}

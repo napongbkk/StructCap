@@ -1,0 +1,23 @@
+{"sheet": "PN30-3205", "title": "KERB & DOWNPIPE DETAILS", "cat": "Deck & overlay",
+ "details": [
+  {"name": "NOTE – PERMANENT FORMWORK SHOWN IS NON-PREFERRED", "rects": [[40, 84.5, 63.5, 93]]},
+  {"name": "KERB & DOWNPIPE DETAILS – INCLINED DOWNPIPE", "rects": [[2, 1, 47, 10], [2, 10, 45.5, 46]]},
+  {"name": "KERB & DOWNPIPE DETAILS – 410 UB 54 STRINGER", "rects": [[45.5, 1, 96, 46]]},
+  {"name": "KERB & DOWNPIPE DETAILS – UPVC ELBOW", "rects": [[2, 46, 53, 84.5], [2, 84.5, 40, 88]]},
+  {"name": "KERB & DOWNPIPE DETAILS – VERTICAL DOWNPIPE", "rects": [[53, 46, 96, 84.5], [63.5, 84.5, 96, 88]]}
+ ],
+ "exclude": [[84, 92, 97, 98.5]],
+ "erase": [],
+ "text": {"3266": "", "3116": "~", "3122": "~", "3118": "~", "3222": "~", "3214": "~", "3221": "~", "3108": "~", "3300": "~", "3294": "~", "3291": "~", "3296": "~",
+  "3130": "DECK", "3210": "OR SIMILAR APPROVED)", "3211": "", "3213": "",
+  "3101": "U2", "3102": "U2", "3204": "U2", "3205": "U2", "3273": "100", "3274": "20", "3120": "2 THICK P.G.I.", "3123": "Ø10 x 200 LONG",
+  "3275": "NOM.", "3276": "MIN.", "3132": "Ø3.2x60 LONG CLOUT HEAD NAIL", "3277": "100", "3278": "10", "3142": "Ø10x200 LONG SPIKE AT",
+  "3148": "Ø100 UPVC DOWNPIPE", "3159": "IF ROOM PERMITS, LOCATE DOWNPIPE", "3163": "ON KERB SIDE OF STRINGER.", "3166": "SHAPE UPVC DOWNPIPE TO SUIT",
+  "3282": "255", "3283": "100", "3085": "Ø3.2x60 LONG CLOUT HEAD NAIL AT", "3088": "400 CRS, ALTERNATE WITH Ø10x200", "3126": "Ø10 x 200 LONG",
+  "3146": "1mm THICK BONDEK", "3157": "Ø100 UPVC", "3289": "20", "3292": "NOM.", "3297": "MIN", "3298": "100", "3280": "100", "3279": "255 MIN",
+  "3281": "MIN", "3284": "20", "3285": "NOM.", "3286": "100", "3287": "MIN", "3198": "Ø10x200 LONG DECK SPIKE", "3260": "KERB & DOWNPIPE DETAILS", "3261": "",
+  "3220": "165 FOR GUARDRAILING CONNECTION", "3229": "100x45° UPVC ELBOW", "3239": "Ø3.2x60 LONG CLOUT HEAD NAIL", "3241": "Ø100 UPVC DOWNPIPE",
+  "3246": "Ø10x200 LONG SPIKE AT 400 CRS.", "3262": "IF ROOM PERMITS, LOCATE DOWNPIPE", "3264": "ON KERB SIDE OF STRINGER.",
+  "3178": "Ø3.2x60 LONG CLOUT HEAD NAIL AT", "3182": "400 CRS, ALTERNATE WITH Ø10x200", "3218": "HESSIAN", "3240": "Ø10 x 200 LONG",
+  "3249": "1mm THICK BONDEK", "3259": "Ø100 UPVC DOWNPIPE", "3288": "100", "3290": "20", "3293": "NOM.", "3295": "MIN", "3299": "255 MIN"},
+ "add": [{"s": "NOTE:", "like": 3268, "dx": 0, "dy": -1.8}], "drop": []}

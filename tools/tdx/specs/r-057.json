@@ -1,0 +1,214 @@
+{
+ "sheet": "PN30-2314",
+ "title": "STEEL PIER PILE/PIER HALFCAPS REPLACEMENT DETAIL - TYPE 1A",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "NOTE – SUBJECT TO CORBEL CONDITION",
+   "rects": [
+    [
+     72,
+     48.5,
+     92.5,
+     52.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – HALFCAP CHANNELS",
+   "rects": [
+    [
+     39,
+     81.5,
+     56.5,
+     87
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THESE DETAILS ARE ONLY APPLICABLE",
+   "rects": [
+    [
+     7.2,
+     87.8,
+     53,
+     96.5
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     13,
+     21.5,
+     42.5,
+     38.1
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STRINGER/CORBEL BRACKET DETAILS",
+   "rects": [
+    [
+     14,
+     38.7,
+     45,
+     61
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     45,
+     42.5,
+     72,
+     62
+    ],
+    [
+     72,
+     55,
+     79,
+     58
+    ]
+   ]
+  },
+  {
+   "name": "VIEW A",
+   "rects": [
+    [
+     5.8,
+     61.5,
+     51.5,
+     85
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STEEL PIER PILE/PIER HALFCAPS REPLACEMENT DETAIL - TYPE 1A",
+   "rects": [
+    [
+     51.5,
+     64,
+     96,
+     86.5
+    ],
+    [
+     57.5,
+     86.5,
+     98,
+     95.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   70,
+   0,
+   100,
+   1.5
+  ],
+  [
+   80,
+   96,
+   100,
+   100
+  ],
+  [
+   4.8,
+   37.5,
+   5.8,
+   100
+  ],
+  [
+   5,
+   38.1,
+   100,
+   38.7
+  ]
+ ],
+ "erase": [[73.4, 49.45, 90, 50.22],
+  [
+   8.45,
+   89.95,
+   9.5,
+   91.15
+  ],
+  [
+   39.6,
+   42.9,
+   40.4,
+   43.75
+  ],
+  [
+   81.55,
+   76.85,
+   82.3,
+   77.8
+  ]
+ ],
+ "text": {"2964": "~",
+  "3044": "~",
+  "3019": "300 PFC HALFCAP DRAWN",
+  "3025": "",
+  "3037": "100",
+  "3038": "50",
+  "3039": "25",
+  "3043": "75",
+  "2947": "Ø22 HOLE (TYP)",
+  "2948": "~",
+  "2949": "Ø22 x 50 LONG",
+  "2954": "",
+  "2974": "1 - AS DRAWN",
+  "2976": "SECTION  B",
+  "2975": "",
+  "3045": "~",
+  "2960": "REPLACEMENT",
+  "3040": "~",
+  "3041": "~",
+  "3042": "~",
+  "2984": "(TYP)",
+  "2990": "(TYP)",
+  "2992": "TO CORBELS WITH Ø20 THREADED",
+  "3007": "SITE DRILLED Ø22 HOLES (TYP)",
+  "2997": "~",
+  "3046": "75",
+  "3032": "",
+  "2994": "",
+  "2995": "",
+  "3047": "~",
+  "3048": "~",
+  "3049": "~",
+  "3029": "~"
+ },
+ "add": [{"s": "SUBJECT TO CORBEL CONDITION", "like": 2964, "at": [73.67, 50.17]},
+  {
+   "s": "BOTH HALFCAPS AND ALL PIER PILES ARE REPLACED",
+   "like": 3027,
+   "at": [
+    8.6,
+    91.0
+   ]
+  },
+  {
+   "s": "CHAMFER",
+   "like": 2953,
+   "at": [
+    35.6,
+    43.6
+   ]
+  },
+  {
+   "s": "PROPOSED 300 PFC",
+   "like": 2999,
+   "at": [
+    81.75,
+    77.7
+   ]
+  }
+ ],
+ "drop": []
+}

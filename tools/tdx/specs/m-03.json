@@ -1,0 +1,575 @@
+{
+ "sheet": "1330-0003",
+ "title": "SLEEVE DETAIL – PIER PILE REPAIR – TYPE '4C'",
+ "cat": "Piles",
+ "details": [
+  {
+   "name": "TABLE OF TYPES OF PIER PILE REPAIRS – TYPE 4",
+   "rects": [
+    [
+     5.5,
+     3.5,
+     36.5,
+     37.5
+    ]
+   ]
+  },
+  {
+   "name": "PIER PILE REPAIR DETAIL – TYPE 4",
+   "rects": [
+    [
+     4.7,
+     37.5,
+     36.5,
+     71.5
+    ]
+   ]
+  },
+  {
+   "name": "PIER PILE REPAIR DETAIL – TYPE 5",
+   "rects": [
+    [
+     4.7,
+     71.5,
+     36.5,
+     96.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     40.5,
+     3.3,
+     62.5,
+     20.5
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 3",
+   "rects": [
+    [
+     62.5,
+     3.3,
+     88,
+     26.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     39.5,
+     20.5,
+     62.5,
+     40.5
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2",
+   "rects": [
+    [
+     62.5,
+     26.5,
+     82,
+     49
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     66,
+     76,
+     84,
+     97.5
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1",
+   "rects": [
+    [
+     62.5,
+     49,
+     82,
+     72.5
+    ]
+   ]
+  },
+  {
+   "name": "SLEEVE DETAIL – PIER PILE REPAIR – TYPE '4C'",
+   "rects": [
+    [
+     41,
+     44,
+     62.5,
+     72.5
+    ],
+    [
+     41,
+     72.5,
+     72,
+     76
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   83.5,
+   26.5,
+   100,
+   100
+  ],
+  [
+   88,
+   0,
+   100,
+   26.5
+  ],
+  [
+   0,
+   0,
+   88,
+   3.2
+  ],
+  [
+   0,
+   0,
+   4.65,
+   100
+  ],
+  [
+   0,
+   96.8,
+   66,
+   100
+  ],
+  [
+   82,
+   38.5,
+   90,
+   44
+  ],
+  [
+   82.6,
+   44,
+   84,
+   75.5
+  ]
+ ],
+ "erase": [
+  [
+   10.9,
+   16.3,
+   18.2,
+   19.3
+  ],
+  [
+   18.8,
+   16.3,
+   26.2,
+   19.3
+  ],
+  [
+   26.8,
+   16.3,
+   34.0,
+   19.3
+  ],
+  [
+   10.9,
+   19.8,
+   18.2,
+   24.9
+  ],
+  [
+   18.8,
+   19.8,
+   26.2,
+   24.9
+  ],
+  [
+   26.8,
+   19.8,
+   34.0,
+   24.9
+  ],
+  [
+   10.9,
+   25.4,
+   18.2,
+   29.2
+  ],
+  [
+   18.8,
+   25.4,
+   26.2,
+   29.2
+  ],
+  [
+   26.8,
+   25.4,
+   34.0,
+   29.2
+  ],
+  [
+   10.9,
+   29.7,
+   18.2,
+   33.4
+  ],
+  [
+   18.8,
+   29.7,
+   26.2,
+   33.4
+  ],
+  [
+   26.8,
+   29.7,
+   34.0,
+   33.4
+  ],
+  [
+   72.7,
+   86.2,
+   77.1,
+   87.2
+  ],
+  [
+   22.0,
+   60.4,
+   22.7,
+   61.3
+  ],
+  [
+   30.0,
+   68.4,
+   32.0,
+   69.8
+  ],
+  [
+   13.0,
+   47.0,
+   13.7,
+   48.1
+  ],
+  [
+   30.95,
+   19.0,
+   31.4,
+   19.55
+  ],
+  [
+   26.55,
+   27.0,
+   26.8,
+   27.5
+  ],
+  [
+   26.55,
+   16.3,
+   26.9,
+   16.8
+  ],
+  [
+   29.7,
+   19.0,
+   30.9,
+   19.5
+  ]
+ ],
+ "text": {
+  "7081": "",
+  "7067": "4C",
+  "7070": "",
+  "7071": "",
+  "7072": "",
+  "7073": "",
+  "7074": "",
+  "7075": "SIMILAR TO '4B' EVEN GREATER LOSS",
+  "7076": "",
+  "7078": "",
+  "7079": "",
+  "7080": "",
+  "7082": "LOSS OF SECTION AT WALER BOLT",
+  "7083": "OF SECTION AT WALER BOLT LOCATIONS.",
+  "7182": "TABLE OF TYPES OF PIER PILE REPAIRS – TYPE 4",
+  "7085": "FACE TYPICALLY 5mm TO 15mm AND",
+  "7086": "",
+  "7087": "",
+  "7088": "LOCATIONS Ø50 HOLES AND CENTRAL",
+  "7089": "SOME INTERCONNECTED LARGER CENTRAL",
+  "7090": "",
+  "7092": "REDUCING QUICKLY WITH DEPTH SPLITS",
+  "7093": "",
+  "7094": "PIPE. SOME SPLITS JOIN WITH PIPE VOID",
+  "7098": "TIMBER ANNULUS <80mm",
+  "7346": "~",
+  "7100": "90% ORIGINAL CROSS SECTIONAL AREA",
+  "7101": "70% ORIGINAL CROSS SECTIONAL AREA",
+  "7102": "",
+  "7106": "OF TIMBER CAPABLE OF CARRYING",
+  "7107": "OF TIMBER CAPABLE OF CARRYING",
+  "7108": "",
+  "7109": "ONLY DURING REPAIR PROCEDURE NEED",
+  "7110": "",
+  "7112": "LOADING",
+  "7114": "FOR STEEL SLEEVE TO SUPPLEMENT",
+  "7118": "TIMBER STRENGTH MINIMUM AREA OF",
+  "7121": "GOOD TIMBER AVAILABLE SHALL BE",
+  "7122": "",
+  "7123": "",
+  "7125": "EQUIVALENT TO 250 x 250mm",
+  "7127": "SYMMETRICALLY LOCATED ABOUT THE",
+  "7128": "",
+  "7136": "CONSIDERATION FOR PILE STABILITY",
+  "7138": "",
+  "7137": "",
+  "7140": "DURING THE WORKS i.e. REMOVAL OF",
+  "7141": "",
+  "7142": "MATERIAL MAY REVEAL",
+  "7144": "THE CONDITION '4D'",
+  "7150": "",
+  "7151": "HIGH PRESSURE WATER JET PREPARATION",
+  "7152": "",
+  "7157": "THEN WRAP WITH 0.8 mm THICK CLEAR",
+  "7158": "",
+  "7159": "",
+  "7162": "AND FILL HOLE WITH EPIGEN 301 MRD",
+  "7163": "",
+  "7164": "",
+  "7165": "CONBEXTRA UW GROUT OR SIMILAR",
+  "7168": "EPOXY OR SIMILAR APPROVED",
+  "7169": "MRD EPOXY OR SIMILAR APPROVED",
+  "7170": "",
+  "7171": "",
+  "7172": "",
+  "7173": "",
+  "7174": "WITH EPIGEN 1614 OR SIMILAR APPROVED",
+  "7225": "~",
+  "7348": "300",
+  "7349": "RANGE",
+  "7265": "TYPE '4A'",
+  "7266": "TYPE '4B'",
+  "7267": "TYPE '4C'",
+  "7205": "0.8 mm THICK CLEAR",
+  "7278": "PIER PILE REPAIR DETAIL – TYPE 4",
+  "7210": "W.L.",
+  "7219": "W.L.",
+  "7350": "750",
+  "7351": "750",
+  "7213": "APPROVED EPOXY.",
+  "7352": "WITH",
+  "7353": "SOUND",
+  "7218": ">10mm WIDTH.",
+  "7233": "EPOXY.",
+  "7241": "CONTAINMENT BY",
+  "7251": "OR SIMILAR APPROVED.",
+  "7258": "",
+  "7199": "~",
+  "7224": "~",
+  "7243": "~",
+  "7281": "FOR PREPARATION OF PILE SURFACE FOR GROUTING REFER NOTES 5 & 6",
+  "7282": "",
+  "7344": "ON",
+  "7345": "300",
+  "7347": "00 MIN.",
+  "7299": "~",
+  "7332": "PIER PILE REPAIR DETAIL – TYPE 5",
+  "7294": "DENSO WRAP \"SEASHIELD SERIES 60 SYSTEM\"",
+  "7298": "OR SIMILAR APPROVED. REFER NOTE",
+  "7057": "",
+  "7048": "5PL SLEEVE (ROLLED STEEL)",
+  "7050": "3-Ø16x200 LONG COACH",
+  "7055": "TO SUPPORT SLEEVE",
+  "7058": "(TYP)",
+  "7059": "(TOP & BOTTOM)",
+  "7095": "SECTION  B",
+  "7091": "",
+  "7049": "",
+  "7051": "TYP",
+  "7061": "(TYP)",
+  "7129": "DETAIL  3",
+  "7104": "TOP, BOTTOM",
+  "7105": "5FL (TYP)",
+  "7148": "",
+  "7119": "5PL SLEEVE (ROLLED STEEL)",
+  "7124": "TYP",
+  "7187": "SECTION  A",
+  "7179": "APPROVED) MIN 40mm THICK,",
+  "7149": "Ø18 HOLE",
+  "7207": "DETAIL  2",
+  "7196": "~",
+  "7361": "10",
+  "7303": "NOTES:",
+  "7309": "1.  FOR GENERAL NOTES REFER DRAWING No. 1330-0001.",
+  "7310": "2.  SITE MEASURE AND FABRICATE SLEEVE WITH DIAMETERS TO",
+  "7311": "SUIT GROUT THICKNESS IN THE RANGE 40 MIN. TO 75 MAX.",
+  "7312": "AROUND PILES.",
+  "7316": "SPECIFICATION.",
+  "7317": "DENSO WRAP \"SEASHIELD SERIES 60 SYSTEM\" OR SIMILAR",
+  "7318": "APPROVED TO BE APPLIED ACCORDING TO MANUFACTURER'S",
+  "7321": "SPECIFICATION, BY MANUFACTURER'S PRE-QUALIFIED",
+  "7322": "",
+  "7325": "MANUFACTURER'S ENDORSEMENT OF THE SUBCONTRACTOR",
+  "7326": "",
+  "7327": "",
+  "7330": "COMMENCEMENT OF WORKS.",
+  "7333": "PRESSURE WATER JETTING.",
+  "7335": "EXPOSED TIMBER SURFACES WITH A 'CORK LIKE' DENSITY",
+  "7340": "DEGREE OF CONTINUITY OF 2-3mm LENGTH, NOT A POWDER.",
+  "7342": "",
+  "7341": "",
+  "7286": "DETAIL  1",
+  "7214": "2-50x50x6 EA BOTH",
+  "7217": "SIDES.",
+  "7222": "M16 8.8 BOLTS WITH",
+  "7239": "50x50x5 EA TOP,",
+  "7277": "(TYP)",
+  "7359": "65",
+  "7360": "5",
+  "7274": "~",
+  "7273": "~",
+  "7234": "~",
+  "7200": "SLEEVE. REFER NOTES 2 &",
+  "7295": "SLEEVE DETAIL – PIER PILE REPAIR – TYPE '4C'",
+  "7221": "M16 8.8 BOLTS",
+  "7283": "(TYP)",
+  "7354": "20",
+  "7355": "250",
+  "7356": "750",
+  "7357": "750",
+  "7358": "LENGTH TO SUIT",
+  "7208": "ACRYLIC & FILL WITH",
+  "7209": ""
+ },
+ "add": [
+  {
+   "s": "(TYP)",
+   "like": 7252,
+   "dx": 0,
+   "dy": 1.6
+  },
+  {
+   "s": "GOOD",
+   "like": 7135,
+   "at": [
+    10.9,
+    25.85
+   ]
+  },
+  {
+   "s": "UNACCEPTABLE",
+   "like": 7142,
+   "at": [
+    26.85,
+    27.25
+   ]
+  },
+  {
+   "s": "SIMILAR TO '4A' BUT MORE SIGNIFICANT",
+   "like": 7082,
+   "at": [
+    18.76,
+    16.74
+   ]
+  },
+  {
+   "s": "PIPE-TIMBER ANNULUS >90mm",
+   "like": 7082,
+   "at": [
+    18.76,
+    18.72
+   ]
+  },
+  {
+   "s": "THEN FIT STEEL SLEEVE AND FILL WITH",
+   "like": 7082,
+   "at": [
+    26.75,
+    30.79
+   ]
+  },
+  {
+   "s": "ACRYLIC BEFORE APPLYING EPIGEN 301",
+   "like": 7082,
+   "at": [
+    18.78,
+    31.43
+   ]
+  },
+  {
+   "s": "APPROVED",
+   "like": 7082,
+   "at": [
+    26.75,
+    32.09
+   ]
+  },
+  {
+   "s": "SEAL INDIVIDUAL SPLITS >10mm WIDTH",
+   "like": 7082,
+   "at": [
+    10.91,
+    32.71
+   ]
+  },
+  {
+   "s": "HIGH PRESSURE WATER JET PREPARATION",
+   "like": 7082,
+   "at": [
+    10.91,
+    30.11
+   ]
+  },
+  {
+   "s": "2",
+   "like": 7058,
+   "at": [
+    57.881,
+    28.002
+   ]
+  },
+  {
+   "s": "3",
+   "like": 7058,
+   "at": [
+    57.848,
+    8.985
+   ]
+  },
+  {
+   "s": "Ø18 HOLE",
+   "like": 7049,
+   "at": [
+    71.54,
+    5.406
+   ]
+  },
+  {
+   "s": "PILE TIMBER IN GOOD CONDITION",
+   "like": 7082,
+   "at": [
+    10.91,
+    16.73
+   ]
+  },
+  {
+   "s": "NUMEROUS SURFACE SPLITS WIDTH AT",
+   "like": 7082,
+   "at": [
+    10.91,
+    17.382
+   ]
+  }
+ ],
+ "drop": []
+}

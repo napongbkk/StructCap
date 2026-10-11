@@ -1,0 +1,292 @@
+{
+ "sheet": "PN30-3202",
+ "title": "",
+ "cat": "Deck & overlay",
+ "details": [
+  {
+   "name": "NOTE – FABRIC TYPE 9 SHALL BE CUT ON SITE",
+   "rects": [
+    [
+     32.2,
+     46.6,
+     40,
+     49.3
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FOR STANDARD FABRIC DETAILS",
+   "rects": [
+    [
+     44.4,
+     46.6,
+     54.3,
+     50.3
+    ]
+   ]
+  },
+  {
+   "name": "TYPICAL DECK FABRIC LAP",
+   "rects": [
+    [
+     72.3,
+     4,
+     89.6,
+     24.8
+    ]
+   ]
+  },
+  {
+   "name": "KERB CONTRACTION JOINT DETAIL",
+   "rects": [
+    [
+     72.3,
+     24.8,
+     89.6,
+     37.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION E – KERB FABRIC SPLICE DETAIL",
+   "rects": [
+    [
+     72.3,
+     37.5,
+     89.6,
+     54.7
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     5.1,
+     3.8,
+     72.6,
+     52.3
+    ]
+   ]
+  },
+  {
+   "name": "SECTION C",
+   "rects": [
+    [
+     58.2,
+     51.3,
+     72,
+     65.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     5.1,
+     52.3,
+     58.2,
+     66
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1",
+   "rects": [
+    [
+     7.5,
+     65.5,
+     19.2,
+     76.5
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 2",
+   "rects": [
+    [
+     19.2,
+     65.5,
+     43.8,
+     78
+    ]
+   ]
+  },
+  {
+   "name": "VIEW D",
+   "rects": [
+    [
+     6.5,
+     78,
+     43.8,
+     92.5
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B – SILL BEAM",
+   "rects": [
+    [
+     44.8,
+     66.5,
+     67.6,
+     88.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B – DROP PANEL",
+   "rects": [
+    [
+     67.6,
+     66.5,
+     78.2,
+     88.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     63.5,
+     88.3,
+     79.6,
+     90.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THIS DRAWING SHALL BE READ IN CONJUNCTION",
+   "rects": [
+    [
+     54,
+     90.6,
+     79.6,
+     92.6
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   100,
+   4.1
+  ],
+  [
+   0,
+   0,
+   5.1,
+   100
+  ],
+  [
+   91.2,
+   0,
+   100,
+   100
+  ],
+  [
+   0,
+   92.6,
+   100,
+   100
+  ],
+  [
+   79,
+   55,
+   91.2,
+   92.6
+  ]
+ ],
+ "erase": [
+  [
+   48.85,
+   5.55,
+   49.25,
+   6.2
+  ]
+ ],
+ "text": {
+  "10202": "DRG N° 9030-0243",
+  "10288": "~",
+  "10185": "KERB CONTRACTION JOINT DETAIL",
+  "10189": "1:10",
+  "10205": "SECTION  E",
+  "10200": "",
+  "10216": "1:10",
+  "10287": "~",
+  "10167": "",
+  "10144": "PIER N° X",
+  "10154": "Xx2 POST ANCHOR RODS",
+  "10149": "BRIDGE WITHOUT",
+  "10177": "~",
+  "10158": "TYPE 4 (T)",
+  "10159": "TYPE X (T)",
+  "10162": "~",
+  "10166": "BRIDGE WITH",
+  "10280": "~",
+  "10172": "SL81 FABRIC",
+  "10283": "~",
+  "10180": "~",
+  "10181": "~",
+  "10182": "SL81 FABRIC",
+  "10275": "~",
+  "10190": "TYPE X",
+  "10192": "~",
+  "10277": "~",
+  "10199": "SL81 FABRIC",
+  "10203": "TYPE 7 (B)",
+  "10204": "",
+  "10212": "~",
+  "10279": "~",
+  "10282": "~",
+  "10284": "~",
+  "10285": "~",
+  "10286": "~",
+  "10213": "CONTRACTION JOINT DETAIL REFER MANUAL",
+  "10223": "CONTRA",
+  "10244": "TYPICAL ALL PIERS",
+  "10278": "~",
+  "10226": "TYPE X",
+  "10227": "TYPE X",
+  "10231": "~",
+  "10233": "TYP",
+  "10237": "RF81 FABRIC",
+  "10245": "SECTION  A",
+  "10242": "",
+  "10229": "~",
+  "10274": "~",
+  "10249": "FABRIC LAP DETAIL REFER MANUAL",
+  "10253": "~",
+  "10254": "1",
+  "10276": "~",
+  "10256": "ETAIL",
+  "10257": "2",
+  "10261": "~",
+  "10267": "VIEW  D",
+  "10294": "",
+  "10281": "~",
+  "10260": "~",
+  "10262": "SECTION  B",
+  "10292": "",
+  "10263": "SECTION  B",
+  "10293": "",
+  "10268": "1. FOR GENERAL NOTES REFER TO DRG N° XXXX-XXXX.",
+  "10271": "THIS DRAWING SHALL BE READ IN CONJUNCTION WITH DRG N° XX30-XXXX",
+  "10164": "(TYP BOTH SIDES)"
+ },
+ "add": [
+  {
+   "s": "(TYP BOTH SIDES)",
+   "like": 10164,
+   "at": [
+    31.13,
+    9.81
+   ]
+  }
+ ],
+ "drop": []
+}

@@ -1,0 +1,192 @@
+{
+ "sheet": "PN30-2327",
+ "title": "STEEL ABUTMENT PILE/ABUTMENT FULLCAP REPLACEMENT DETAIL - TYPE 1",
+ "cat": "Abutments",
+ "details": [
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     56.5,
+     19,
+     89,
+     36.5
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION",
+   "rects": [
+    [
+     57,
+     36.5,
+     89,
+     52.3
+    ]
+   ]
+  },
+  {
+   "name": "STRINGER/CORBEL BRACKET DETAILS",
+   "rects": [
+    [
+     58.5,
+     52.3,
+     86,
+     62
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – FOR PILE RESTRAINTS",
+   "rects": [
+    [
+     19.5,
+     43.5,
+     42.5,
+     57
+    ]
+   ]
+  },
+  {
+   "name": "STEEL ABUTMENT PILE/ABUTMENT FULLCAP REPLACEMENT DETAIL – TYPE 1",
+   "rects": [
+    [
+     46.3,
+     62.8,
+     96.5,
+     84.5
+    ],
+    [
+     51.8,
+     86.5,
+     96,
+     96
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     3.5,
+     63,
+     50.5,
+     91.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   1.6,
+   18.5
+  ],
+  [
+   80,
+   95.5,
+   98,
+   99.6
+  ],
+  [
+   74.5,
+   0,
+   75.5,
+   1.2
+  ],
+  [
+   45.3,
+   9.8,
+   46.6,
+   10.7
+  ],
+  [
+   50.7,
+   27.4,
+   51.4,
+   28.2
+  ],
+  [
+   45.4,
+   32.4,
+   46.6,
+   33.3
+  ],
+  [
+   45.4,
+   55,
+   46.2,
+   55.8
+  ],
+  [
+   44.1,
+   60.4,
+   44.8,
+   61.2
+  ]
+ ],
+ "erase": [
+  [
+   33.3,
+   47.55,
+   34.1,
+   48.4
+  ],
+  [
+   58.4,
+   87.2,
+   59.6,
+   88.3
+  ]
+ ],
+ "text": {
+  "2256": "Ø22 HOLE (TYP)",
+  "2257": "Ø22 x 50 LONG",
+  "2334": "50",
+  "2336": "75",
+  "2280": "STRINGER/CORBEL BRACKET",
+  "2278": "",
+  "2286": "1 - AS DRAWN",
+  "2335": "75",
+  "2298": "140",
+  "2309": "PROPOSED 300 PFC",
+  "2327": "ABUTMENT N° 1 - PILE N° X",
+  "2297": "~",
+  "2324": "SECTION  A",
+  "2337": "",
+  "2295": "(TYP)",
+  "2303": "TO CORBELS WITH Ø20 THREADED",
+  "2308": "x 400 LONG",
+  "2306": "",
+  "2315": "SITE DRILLED Ø22 HOLES (TYP)",
+  "2296": "~",
+  "2325": "",
+  "2269": "PROPOSED FULLCAP & PILE",
+  "2270": ""
+ },
+ "add": [
+  {
+   "s": "REPLACEMENT DETAIL - TYPE 1",
+   "like": 2325,
+   "at": [
+    53.04,
+    89.81
+   ]
+  },
+  {
+   "s": "XX30-XXXX",
+   "like": 2327,
+   "at": [
+    80.9,
+    89.75
+   ]
+  }
+ ],
+ "drop": [
+  2132,
+  927,
+  1208,
+  1290
+ ]
+}

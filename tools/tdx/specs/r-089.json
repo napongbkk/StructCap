@@ -1,0 +1,155 @@
+{
+ "sheet": "PN30-3110",
+ "title": "STRINGER & CORBEL STENGTHENING DETAIL",
+ "cat": "Stringers",
+ "details": [
+  {
+   "name": "NOTE – GAP BETWEEN STRINGER AND DECK",
+   "rects": [
+    [
+     44.4,
+     27.4,
+     60.7,
+     41.7
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – STRINGER & CORBEL SIZE WILL VARY",
+   "rects": [
+    [
+     47.5,
+     52.9,
+     61.5,
+     64.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTIONAL ELEVATION A",
+   "rects": [
+    [
+     57.8,
+     14,
+     98.5,
+     70.3
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – STRINGER & CORBEL STENGTHENING DETAIL",
+   "rects": [
+    [
+     4.5,
+     17.3,
+     57.8,
+     68.7
+    ],
+    [
+     8,
+     68.7,
+     70,
+     78.3
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   1.2,
+   17
+  ],
+  [
+   0,
+   97.6,
+   100,
+   100
+  ],
+  [
+   84.3,
+   80.2,
+   98.5,
+   84.4
+  ],
+  [
+   15.5,
+   1,
+   16.1,
+   1.6
+  ],
+  [
+   22,
+   84,
+   22.6,
+   84.6
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "2258": "",
+  "2255": "",
+  "2276": "",
+  "2295": "310 UB 46 CORBEL DRAWN",
+  "2294": "",
+  "2238": "OF NUT. (TYP)",
+  "2259": "410 UB 54 STRINGER",
+  "2296": "",
+  "2297": "A",
+  "2264": "310 UB 46 CORBEL",
+  "2283": "100",
+  "2307": "50",
+  "2236": "WITH Ø10x200 LONG SPIKE",
+  "2306": "~",
+  "2251": "50",
+  "2244": "10",
+  "2242": "~",
+  "2243": "~",
+  "2284": "Ø20 THREADED RODS WITH",
+  "2300": ""
+ },
+ "add": [
+  {
+   "s": "NOTE:",
+   "like": 2277,
+   "at": [
+    48.9,
+    56.8
+   ]
+  },
+  {
+   "s": "PIER - STRINGER & CORBEL STENGTHENING DETAIL",
+   "like": 2300,
+   "at": [
+    8.97,
+    71.8
+   ]
+  },
+  {
+   "s": "XX30-XXXX",
+   "like": 2258,
+   "at": [
+    46.65,
+    71.8
+   ]
+  },
+  {
+   "s": "SECTIONAL ELEVATION",
+   "like": 2296,
+   "at": [
+    66.36,
+    67.04
+   ]
+  },
+  {
+   "s": "PACKING DETAIL",
+   "like": 2258,
+   "at": [
+    45.94,
+    40.4
+   ]
+  }
+ ],
+ "drop": []
+}

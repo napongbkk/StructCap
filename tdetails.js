@@ -43,7 +43,12 @@
     'S-REO': { c: 1, lt: 'CONTINUOUS', lw: 0.6, n: 'Reinforcement' }, 'S-HATCH': { c: 9, lt: 'CONTINUOUS', lw: 0.13, n: 'Hatching' }, 'S-TEXT': { c: 7, lt: 'CONTINUOUS', lw: 0.25, n: 'Notes and labels' },
     'S-NOTE': { c: 7, lt: 'DASHED', lw: 0.18, n: "Designer's notes (dashed boxes)" },
     'S-DIM': { c: 3, lt: 'CONTINUOUS', lw: 0.18, n: 'Dimensions' }, 'S-CL': { c: 6, lt: 'CENTER', lw: 0.18, n: 'Centre lines' }, 'S-GROUND': { c: 32, lt: 'CONTINUOUS', lw: 0.35, n: 'Ground / water' },
-    'S-TITLE': { c: 7, lt: 'CONTINUOUS', lw: 0.35, n: 'Titles' }, 'S-BORDER': { c: 7, lt: 'CONTINUOUS', lw: 0.7, n: 'Border and title block' }, 'S-BOLT': { c: 5, lt: 'CONTINUOUS', lw: 0.35, n: 'Bolts, rods, anchors' }
+    'S-TITLE': { c: 7, lt: 'CONTINUOUS', lw: 0.35, n: 'Titles' }, 'S-BORDER': { c: 7, lt: 'CONTINUOUS', lw: 0.7, n: 'Border and title block' }, 'S-BOLT': { c: 5, lt: 'CONTINUOUS', lw: 0.35, n: 'Bolts, rods, anchors' },
+    // standard drawings traced from the scans: one layer per pen weight (drawn in black/white like the sheets; DXF colours follow a pen table)
+    'STD-0.13': { c: 7, dxf: 8, lt: 'CONTINUOUS', lw: 0.13, n: 'Standard drawing 0.13 pen' }, 'STD-0.18': { c: 7, dxf: 9, lt: 'CONTINUOUS', lw: 0.18, n: 'Standard drawing 0.18 pen' },
+    'STD-0.25': { c: 7, dxf: 1, lt: 'CONTINUOUS', lw: 0.25, n: 'Standard drawing 0.25 pen' }, 'STD-0.35': { c: 7, dxf: 3, lt: 'CONTINUOUS', lw: 0.35, n: 'Standard drawing 0.35 pen' },
+    'STD-0.50': { c: 7, dxf: 2, lt: 'CONTINUOUS', lw: 0.5, n: 'Standard drawing 0.5 pen' }, 'STD-0.70': { c: 7, dxf: 6, lt: 'CONTINUOUS', lw: 0.7, n: 'Standard drawing 0.7 pen' },
+    'STD-1.00': { c: 7, dxf: 5, lt: 'CONTINUOUS', lw: 1.0, n: 'Standard drawing 1.0 pen' }, 'STD-TEXT': { c: 7, dxf: 7, lt: 'CONTINUOUS', lw: 0.25, n: 'Standard drawing text' }
   };
   const TH = 2.2; // standard paper text height (mm)
   function Builder() { this.E = []; }
@@ -242,7 +247,7 @@
   const P = (k, n, v, o) => Object.assign({ k, n, v }, o || {});
   function generate(id, params) { const d = DEF.find(q => q.id === id); if (!d) return []; const p = {}; d.params.forEach(q => { p[q.k] = params && params[q.k] != null ? params[q.k] : q.v; }); return GEN[id](p); }
   function bbox(E) { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; const add = (x, y) => { if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y; };
-    E.forEach(e => { if (e.t === 'line') { add(...e.a); add(...e.b); } else if (e.t === 'pl' || e.t === 'hatch' || e.t === 'solid') e.p.forEach(q => add(...q)); else if (e.t === 'circle') { add(e.c[0] - e.r, e.c[1] - e.r); add(e.c[0] + e.r, e.c[1] + e.r); } else if (e.t === 'arc') { let a0 = e.a0, a1 = e.a1; while (a1 <= a0) a1 += 360; for (let a = a0; a < a1; a += 5) add(e.c[0] + e.r * Math.cos(a * PI / 180), e.c[1] + e.r * Math.sin(a * PI / 180)); add(e.c[0] + e.r * Math.cos(a1 * PI / 180), e.c[1] + e.r * Math.sin(a1 * PI / 180)); } else if (e.t === 'text') { const w = e.s.length * e.h * 0.7, x = e.al === 'c' ? e.p[0] - w / 2 : e.al === 'r' ? e.p[0] - w : e.p[0]; add(x, e.p[1] - (e.v === 't' ? e.h : e.v === 'm' ? e.h / 2 : 0)); add(x + w, e.p[1] + (e.v === 't' ? 0 : e.v === 'm' ? e.h / 2 : e.h)); } });
+    E.forEach(e => { if (e.t === 'line') { add(...e.a); add(...e.b); } else if (e.t === 'pl' || e.t === 'hatch' || e.t === 'solid') e.p.forEach(q => add(...q)); else if (e.t === 'circle') { add(e.c[0] - e.r, e.c[1] - e.r); add(e.c[0] + e.r, e.c[1] + e.r); } else if (e.t === 'arc') { let a0 = e.a0, a1 = e.a1; while (a1 <= a0) a1 += 360; for (let a = a0; a < a1; a += 5) add(e.c[0] + e.r * Math.cos(a * PI / 180), e.c[1] + e.r * Math.sin(a * PI / 180)); add(e.c[0] + e.r * Math.cos(a1 * PI / 180), e.c[1] + e.r * Math.sin(a1 * PI / 180)); } else if (e.t === 'text') { const w = (G.TFONT ? G.TFONT.width(e.s) * (e.wf || 1) : e.s.length * 0.7) * e.h, x = e.al === 'c' ? e.p[0] - w / 2 : e.al === 'r' ? e.p[0] - w : e.p[0]; add(x, e.p[1] - (e.v === 't' ? e.h : e.v === 'm' ? e.h / 2 : 0)); add(x + w, e.p[1] + (e.v === 't' ? 0 : e.v === 'm' ? e.h / 2 : e.h)); } });
     return x0 > x1 ? { x0: 0, y0: 0, x1: 1, y1: 1 } : { x0, y0, x1, y1 }; }
   // repair families suggested by the timber assessment (ids are filtered to those registered — see TDET.suggest)
   const SUGGEST = {

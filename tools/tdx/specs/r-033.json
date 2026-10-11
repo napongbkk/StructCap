@@ -1,0 +1,13 @@
+{"sheet": "PN30-2133", "title": "ABUTMENT PILE/TIMBER FULLCAP BEARING DETAIL", "cat": "Abutments",
+ "details": [
+  {"name": "DETAIL 1", "rects": [[8, 41.5, 44, 62]]},
+  {"name": "NOTE – DETAIL FOR DRIVEN STEEL PILE", "rects": [[48.5, 48.5, 72.5, 59]]},
+  {"name": "ABUTMENT PILE/TIMBER FULLCAP BEARING DETAIL", "rects": [[3.5, 62.5, 49, 97], [38.5, 83, 59.5, 88], [49, 88, 60, 93]]},
+  {"name": "SECTION A", "rects": [[49, 64, 97, 93]]}
+ ],
+ "exclude": [[0, 0, 1.8, 100], [77, 95, 97, 99.5], [35.5, 6.5, 37, 7.5], [45.5, 7, 47, 8], [45.5, 29.5, 47, 30.5], [45.5, 52, 47, 53], [81.5, 49.5, 83, 50.5], [45, 97, 47, 98.5], [0, 86, 1.5, 88]],
+ "erase": [[4.2, 82.9, 5.4, 84.1]],
+ "text": {"1670": "~", "1636": "DETAIL  1", "1630": "TYP", "1627": "~", "1628": "DETAIL FOR DRIVEN STEEL", "1629": "",
+  "1668": "20", "1669": "NOM.", "1662": "FULLCAP BEARING DETAIL", "1656": "DRG NUMBER - REFER TO", "1657": "",
+  "1659": "PLAN DRAWING", "1658": "", "1639": "~", "1641": "~", "1671": "100", "1644": "Ø20 THREADED ROD", "1654": ""},
+ "add": [{"s": "& FAR FACE OF PROPOSED", "like": 1654, "dx": -1.13, "dy": 0}, {"s": "XX30-XXXX", "like": 1664, "at": [41.95, 90.6]}], "drop": []}

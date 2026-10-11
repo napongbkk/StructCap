@@ -1,0 +1,95 @@
+{
+ "sheet": "PN30-3210",
+ "title": "TYPICAL DECK FABRIC LAP",
+ "cat": "Deck & overlay",
+ "details": [
+  {
+   "name": "DETAIL 1 – DECK DEPTH <200",
+   "rects": [
+    [
+     15,
+     2.5,
+     72,
+     31.8
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – DECK DEPTH >200",
+   "rects": [
+    [
+     15,
+     32,
+     72,
+     63.6
+    ]
+   ]
+  },
+  {
+   "name": "PLAN",
+   "rects": [
+    [
+     20,
+     64,
+     72,
+     82.6
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – TYPICAL DECK FABRIC LAP",
+   "rects": [
+    [
+     20,
+     82.6,
+     72,
+     95.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   48,
+   95.5,
+   70,
+   99.8
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "1382": "40 COVER TO SUIT",
+  "1400": "40 COVER TO SUIT",
+  "1393": "1:10",
+  "1388": "~",
+  "1402": "SL81 LAP FABRIC",
+  "1409": "DETAIL  1",
+  "1422": "",
+  "1407": "ISTING DECKING",
+  "1410": "XXXX-XXXX",
+  "1412": "DECK DEPTH >200",
+  "1413": "SL81 DECK FABRIC",
+  "1417": "SL81 DECK FABRIC",
+  "1392": "DETAIL  1",
+  "1397": ""
+ },
+ "add": [
+  {
+   "s": "XXXX-XXXX",
+   "like": 1410,
+   "at": [
+    51.96,
+    27.04
+   ]
+  },
+  {
+   "s": "BRIDGE WITH NO ROAD SEAL",
+   "like": 1380,
+   "at": [
+    18.95,
+    35.67
+   ]
+  }
+ ],
+ "drop": []
+}

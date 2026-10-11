@@ -1,0 +1,12 @@
+{"sheet": "PN30-2202B", "title": "ABUTMENT/WINGWALL SHEETING REPAIR DETAIL TIMBER & STEEL PILES) - TYPE 3", "cat": "Sheeting",
+ "details": [
+  {"name": "PLAN", "rects": [[1, 2.7, 80, 31]]},
+  {"name": "ELEVATION – ABUTMENT/WINGWALL SHEETING REPAIR DETAIL - TYPE 3", "rects": [[1, 31, 80, 93.5]]}
+ ],
+ "exclude": [[65, 93.5, 77, 98], [0, 97.8, 100, 100], [0, 0, 100, 2.7], [98.8, 0, 100, 100], [0, 0, 0.9, 100], [78, 53.5, 80, 55]],
+ "erase": [[44.7, 89.2, 46.3, 90.3], [35.8, 87.3, 38.2, 88.9]],
+ "text": {"4357": "~", "4351": "150x90x8 UA, Ø12 x 75", "4359": "150x90x8 UA, Ø12 x 75", "4358": "~", "4365": "~", "4366": "~",
+  "4370": "75-225", "4371": "", "4407": "90", "4408": "70", "4409": "225", "4410": "100", "4382": "~", "4381": "~", "4412": "100",
+  "4392": "EXISTING", "4393": "IN Ø14 x 125 DEEP HOLE", "4411": "~", "4413": "100 MIN", "4400": "XX30-XXXX", "4383": "~",
+  "4398": "ABUTMENT/WINGWALL SHEETING REPAIR DETAIL", "4399": "", "4401": ""},
+ "add": [{"s": "TIMBER & STEEL PILES) - TYPE 3", "like": 4401, "at": [33.47, 88.61]}], "drop": []}

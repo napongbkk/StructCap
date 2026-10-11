@@ -1,0 +1,249 @@
+{
+ "sheet": "PN30-2307",
+ "title": "PIER HALFCAPS STRENGTHENING DETAIL",
+ "cat": "Halfcaps",
+ "details": [
+  {
+   "name": "NOTE – ENGINEER TO DETERMINE",
+   "rects": [
+    [
+     20.5,
+     56.5,
+     35,
+     62.2
+    ],
+    [
+     21.2,
+     33.5,
+     22.5,
+     56.5
+    ],
+    [
+     22.5,
+     33.5,
+     37.4,
+     35
+    ],
+    [
+     22.5,
+     52.3,
+     39.3,
+     53.8
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – IF HALFCAP CHANNEL",
+   "rects": [
+    [
+     22.3,
+     43.6,
+     39,
+     49
+    ],
+    [
+     30,
+     35.8,
+     34.4,
+     43.6
+    ],
+    [
+     30,
+     49,
+     36.6,
+     56
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – RELOCATE EXISTING PILE BANDS",
+   "rects": [
+    [
+     66.3,
+     60,
+     84.3,
+     65.2
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – HALFCAP STRENGTHENING CHANNELS",
+   "rects": [
+    [
+     21.8,
+     62.2,
+     45.8,
+     70.2
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – PROP STRINGERS & CORBELS",
+   "rects": [
+    [
+     25.2,
+     86,
+     48,
+     94
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – 380 PFC",
+   "rects": [
+    [
+     34.3,
+     21.5,
+     77.5,
+     41.8
+    ]
+   ]
+  },
+  {
+   "name": "DETAIL 1 – 300 PFC",
+   "rects": [
+    [
+     36.5,
+     41.8,
+     77.5,
+     62.8
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     4.5,
+     70.2,
+     37.5,
+     93
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER HALFCAPS STRENGTHENING DETAIL",
+   "rects": [
+    [
+     37.5,
+     64.5,
+     97.5,
+     90
+    ],
+    [
+     48,
+     90,
+     97.5,
+     96.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   0,
+   100,
+   20.5
+  ],
+  [
+   83,
+   96.2,
+   100,
+   100
+  ],
+  [
+   0,
+   98,
+   100,
+   100
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "2656": "~",
+  "2664": "~",
+  "2633": "",
+  "2634": "NOTE: IF HALFCAP CHANNEL",
+  "2639": "2 PILES THEN DRG REQUIRES",
+  "2637": "",
+  "2642": "DETAILS PN30-2328 &/OR 2329",
+  "2668": "",
+  "2669": "",
+  "2681": "HALFCAP (ENGINEER TO DETERMINE)",
+  "2610": "6 50-300",
+  "2611": "6 50-300",
+  "2631": "6 50-300",
+  "2628": "DETAIL  1",
+  "2619": "70 MINIMUM BEARING",
+  "2621": "",
+  "2622": "",
+  "2629": "1:10",
+  "2649": "70 MINIMUM BEARING",
+  "2650": "IF BEARING IS <70 THEN REFER",
+  "2661": "1:10",
+  "2743": "SECTION  A",
+  "2742": "",
+  "2705": "~",
+  "2707": "55 - 300 PFC",
+  "2708": "",
+  "2710": "60",
+  "2712": "~",
+  "2727": "",
+  "2740": "~",
+  "2749": "",
+  "2682": "Ø20 THREADED RODS",
+  "2686": "(A MINIMUM OF 1 - Ø20",
+  "2693": "~",
+  "2691": "~",
+  "2692": "~",
+  "2695": "~",
+  "2700": "~",
+  "2701": "~",
+  "2720": "PROPOSED 300 PFC",
+  "2733": "BEARING < 70"
+ },
+ "add": [
+  {
+   "s": "NOTE: HALFCAP STRENGTHENING CHANNELS",
+   "like": 2669,
+   "at": [
+    22.7,
+    63.4
+   ]
+  },
+  {
+   "s": "FOR",
+   "like": 2731,
+   "at": [
+    93.6,
+    84.3
+   ]
+  },
+  {
+   "s": "XX30-XXXX",
+   "like": 2751,
+   "at": [
+    77.9,
+    91.9
+   ]
+  },
+  {
+   "s": "PIER HALFCAPS STRENGTHENING DETAIL",
+   "like": 2749,
+   "at": [
+    50.94,
+    92.07
+   ]
+  },
+  {
+   "s": "IF BEARING IS <70 THEN REFER",
+   "like": 2623,
+   "at": [
+    35.75,
+    35.26
+   ]
+  }
+ ],
+ "drop": []
+}

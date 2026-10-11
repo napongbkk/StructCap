@@ -18,7 +18,7 @@
   function transform(e, t) { // returns a transformed copy of an entity
     const f = xf(t), k = t.s || 1, rd = (t.r || 0) * 180 / PI, o = Object.assign({}, e);
     if (e.a) o.a = f(e.a); if (e.b) o.b = f(e.b); if (e.p && Array.isArray(e.p[0])) o.p = e.p.map(f); else if (e.p) o.p = f(e.p);
-    if (e.c) o.c = f(e.c); if (e.r != null && e.t !== 'text') o.r = e.r * k; if (e.h) o.h = e.h * k; if (e.t === 'text') o.ang = (e.ang || 0) + rd; if (e.t === 'arc') { o.a0 = e.a0 + rd; o.a1 = e.a1 + rd; } if (e.sc) o.sc = e.sc * k;
+    if (e.c) o.c = f(e.c); if (e.r != null && e.t !== 'text') o.r = e.r * k; if (e.h) o.h = e.h * k; if (e.t === 'text') o.ang = (e.ang || 0) + rd; if (e.t === 'arc') { o.a0 = e.a0 + rd; o.a1 = e.a1 + rd; } if (e.sc) o.sc = e.sc * k; if (e.ls) o.ls = e.ls * k; if (e.sw) o.sw = e.sw * k;
     return o;
   }
   function itemEnts(it) { if (!it._ents || it._k !== JSON.stringify([it.det, it.params])) { it._ents = it.det === '__import' ? (it.ents || []) : D().generate(it.det, it.params); it._k = JSON.stringify([it.det, it.params]); } return it._ents.map(e => transform(e, it)); }
@@ -46,7 +46,31 @@
     return out;
   }
   // explode an entity into primitive lines/arcs/text for DXF (hatch -> lines)
-  function primitives(e) { if (e.t === 'hatch') return hatchLines(e).map(s => ({ t: 'line', a: s[0], b: s[1], L: e.L })).concat(e.pat === 'solid' ? [] : []); return [e]; }
+  // ear-clipping triangulation (DXF SOLID takes 3 or 4 corners)
+  function triangulate(P) {
+    const pts = P.slice(); let area = 0; for (let i = 0; i < pts.length; i++) { const p = pts[i], q = pts[(i + 1) % pts.length]; area += p[0] * q[1] - q[0] * p[1]; } if (area < 0) pts.reverse();
+    const out = [], idx = pts.map((_, i) => i), cross = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    const inTri = (p, a, b, c) => cross(a, b, p) >= 0 && cross(b, c, p) >= 0 && cross(c, a, p) >= 0;
+    let guard = 0;
+    while (idx.length > 3 && guard++ < 5000) {
+      let cut = false;
+      for (let k = 0; k < idx.length; k++) {
+        const ia = idx[(k + idx.length - 1) % idx.length], ib = idx[k], ic = idx[(k + 1) % idx.length], A = pts[ia], B = pts[ib], C = pts[ic];
+        if (cross(A, B, C) <= 1e-12) continue;
+        if (idx.some(j => j !== ia && j !== ib && j !== ic && inTri(pts[j], A, B, C))) continue;
+        out.push([A, B, C]); idx.splice(k, 1); cut = true; break;
+      }
+      if (!cut) break;
+    }
+    if (idx.length === 3) out.push(idx.map(i => pts[i]));
+    else if (idx.length > 3) for (let k = 1; k + 1 < idx.length; k++) out.push([pts[idx[0]], pts[idx[k]], pts[idx[k + 1]]]);
+    return out;
+  }
+  function primitives(e) {
+    if (e.t === 'hatch') return hatchLines(e).map(s => ({ t: 'line', a: s[0], b: s[1], L: e.L }));
+    if (e.t === 'solid' && e.p.length > 4) return triangulate(e.p).map(tr => Object.assign({}, e, { p: [tr[0], tr[1], tr[2], tr[2]] }));
+    return [e];
+  }
 
   // ------------------------------------------------------------------ title block & border (paper mm)
   function sheetFrame(sh) {
@@ -71,7 +95,7 @@
   // ------------------------------------------------------------------ SVG rendering
   const escX = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   function svgEnt(e, doc, H, extra) {
-    const ld = layerDef(doc, e.L), aci = c => (PAPER_DARK && ACI_DARK[c]) || ACI[c], col = e.col != null ? (aci(e.col) || e.col) : (aci(ld.c) || ld.c || 'currentColor'), dash = DASH[e.lt || ld.lt] || '', lw = max(0.13, e.lw || ld.lw || 0.25), Y = y => H - y, at = extra || '';
+    const ld = layerDef(doc, e.L), aci = c => (PAPER_DARK && ACI_DARK[c]) || ACI[c], col = e.col != null ? (aci(e.col) || e.col) : (aci(ld.c) || ld.c || 'currentColor'), dash = (DASH[e.lt || ld.lt] || '').split(' ').filter(Boolean).map(v => +(v * (e.ls || 1)).toFixed(3)).join(' '), lw = max(0.13, e.lw || ld.lw || 0.25), Y = y => H - y, at = extra || '';
     const st = `stroke="${col}" stroke-width="${lw}" fill="none"${dash ? ` stroke-dasharray="${dash}"` : ''}`;
     switch (e.t) {
       case 'line': return `<line x1="${e.a[0]}" y1="${Y(e.a[1])}" x2="${e.b[0]}" y2="${Y(e.b[1])}" ${st} ${at}/>`;
@@ -80,7 +104,8 @@
       case 'arc': { if (Math.abs(e.a1 - e.a0) >= 359.99) return `<circle cx="${e.c[0]}" cy="${Y(e.c[1])}" r="${e.r}" ${st} ${at}/>`; const a0 = e.a0 * PI / 180, a1 = e.a1 * PI / 180, sweep = ((e.a1 - e.a0) % 360 + 360) % 360, large = sweep > 180 ? 1 : 0, p0 = [e.c[0] + e.r * Math.cos(a0), Y(e.c[1] + e.r * Math.sin(a0))], p1 = [e.c[0] + e.r * Math.cos(a1), Y(e.c[1] + e.r * Math.sin(a1))]; return `<path d="M${p0[0]},${p0[1]} A${e.r},${e.r} 0 ${large} 0 ${p1[0]},${p1[1]}" ${st} ${at}/>`; }
       case 'solid': return `<polygon points="${e.p.map(q => q[0] + ',' + Y(q[1])).join(' ')}" fill="${col}" stroke="none" ${at}/>`;
       case 'hatch': { const L = hatchLines(e); return `<g ${at}><path d="${L.map(s => `M${s[0][0].toFixed(2)},${Y(s[0][1]).toFixed(2)}L${s[1][0].toFixed(2)},${Y(s[1][1]).toFixed(2)}`).join('')}" stroke="${col}" stroke-width="0.13" fill="none"/></g>`; }
-      case 'text': { const anc = e.al === 'c' ? 'middle' : e.al === 'r' ? 'end' : 'start', dy = e.v === 'm' ? e.h * 0.5 : e.v === 't' ? e.h : 0, x = e.p[0], y = Y(e.p[1]); return `<text x="0" y="${dy}" font-size="${(e.h * 1.38).toFixed(2)}" text-anchor="${anc}" fill="${col}" font-family="Arial, 'Liberation Sans', Helvetica, sans-serif" transform="translate(${x} ${y})${e.ang ? ` rotate(${-e.ang})` : ''} scale(0.86 1)" ${at}>${escX(e.s)}</text>`; }
+      case 'text': { const TF = G.TFONT, wf = e.wf || 1, h = e.h; if (!TF) return ''; const tw = TF.width(e.s) * h * wf, dx = e.al === 'c' ? -tw / 2 : e.al === 'r' ? -tw : 0, dy = e.v === 'm' ? h * 0.5 : e.v === 't' ? h : 0, sw = max(0.1, e.sw || h * 0.1);
+        return `<path d="${TF.path(e.s, h, wf)}" transform="translate(${e.p[0]} ${Y(e.p[1])})${e.ang ? ` rotate(${-e.ang})` : ''} translate(${dx.toFixed(2)} ${dy.toFixed(2)})" fill="none" stroke="${col}" stroke-width="${sw.toFixed(3)}" stroke-linecap="round" stroke-linejoin="round" ${at}/>`; }
     }
     return '';
   }
@@ -103,21 +128,24 @@
     w(9, '$LIMMIN'); w(10, '0.0'); w(20, '0.0'); w(9, '$LIMMAX'); w(10, f(W)); w(20, f(H)); w(9, '$LTSCALE'); w(40, '1.0'); w(9, '$TEXTSTYLE'); w(7, 'STANDARD'); w(9, '$MEASUREMENT'); w(70, 1); w(0, 'ENDSEC');
     w(0, 'SECTION'); w(2, 'TABLES');
     const LT = { CONTINUOUS: ['Solid line', []], DASHED: ['Dashed __ __ __', [3, -1.5]], HIDDEN: ['Hidden _ _ _', [1.6, -0.9]], CENTER: ['Center ____ _ ____', [8, -1.5, 1.5, -1.5]], DASHDOT: ['Dash dot __ . __ .', [5, -1.2, 0.6, -1.2]], PHANTOM: ['Phantom ____ _ _ ____', [10, -1.5, 1.5, -1.5, 1.5, -1.5]] };
+    const LSQ = [0.5, 0.75, 1, 1.5, 2, 3], lsq = v => LSQ.reduce((a, b) => (abs(b - v) < abs(a - v) ? b : a), 1), ltName = e => { const lt = e.lt; if (!lt || lt === 'CONTINUOUS' || !e.ls) return lt; const q = lsq(e.ls); return q === 1 ? lt : lt + '_X' + String(q).replace('.', '_'); };
+    E.forEach(e => { const n = ltName(e); if (n && !LT[n]) { const base = LT[e.lt]; if (base) LT[n] = [base[0] + ' (x' + lsq(e.ls) + ')', base[1].map(v => v * lsq(e.ls))]; } });
     w(0, 'TABLE'); w(2, 'LTYPE'); w(70, Object.keys(LT).length); Object.entries(LT).forEach(([n, [d, p]]) => { w(0, 'LTYPE'); w(2, n); w(70, 0); w(3, d); w(72, 65); w(73, p.length); w(40, f(p.reduce((a, v) => a + abs(v), 0))); p.forEach(v => w(49, f(v))); }); w(0, 'ENDTAB');
     w(0, 'TABLE'); w(2, 'LAYER'); w(70, Object.keys(Ls).length + 1); w(0, 'LAYER'); w(2, '0'); w(70, 0); w(62, 7); w(6, 'CONTINUOUS');
-    Object.keys(Ls).filter(k => k !== '0').forEach(k => { const ld = layerDef(doc, k); w(0, 'LAYER'); w(2, k); w(70, 0); w(62, typeof ld.c === 'number' ? ld.c : 7); w(6, ld.lt || 'CONTINUOUS'); }); w(0, 'ENDTAB');
-    w(0, 'TABLE'); w(2, 'STYLE'); w(70, 1); w(0, 'STYLE'); w(2, 'STANDARD'); w(70, 0); w(40, '0.0'); w(41, '0.8'); w(50, '0.0'); w(71, 0); w(42, '2.5'); w(3, 'txt'); w(4, ''); w(0, 'ENDTAB');
+    Object.keys(Ls).filter(k => k !== '0').forEach(k => { const ld = layerDef(doc, k); w(0, 'LAYER'); w(2, k); w(70, 0); w(62, ld.dxf || (typeof ld.c === 'number' ? ld.c : 7)); w(6, ld.lt || 'CONTINUOUS'); }); w(0, 'ENDTAB');
+    w(0, 'TABLE'); w(2, 'STYLE'); w(70, 2); w(0, 'STYLE'); w(2, 'STANDARD'); w(70, 0); w(40, '0.0'); w(41, '0.8'); w(50, '0.0'); w(71, 0); w(42, '2.5'); w(3, 'txt'); w(4, '');
+    w(0, 'STYLE'); w(2, 'ISO'); w(70, 0); w(40, '0.0'); w(41, '1.0'); w(50, '0.0'); w(71, 0); w(42, '2.5'); w(3, 'isocpeur.ttf'); w(4, ''); w(0, 'ENDTAB');
     w(0, 'ENDSEC');
     w(0, 'SECTION'); w(2, 'BLOCKS'); w(0, 'ENDSEC');
     w(0, 'SECTION'); w(2, 'ENTITIES');
-    const common = e => { w(8, e.L || '0'); if (e.lt) w(6, e.lt); if (e.col != null && typeof e.col === 'number') w(62, e.col); };
+    const common = e => { w(8, e.L || '0'); if (e.lt) w(6, ltName(e)); if (e.col != null && typeof e.col === 'number') w(62, e.col); };
     E.forEach(e0 => primitives(e0).forEach(e => {
       if (e.t === 'line') { w(0, 'LINE'); common(e); w(10, f(e.a[0])); w(20, f(e.a[1])); w(30, '0.0'); w(11, f(e.b[0])); w(21, f(e.b[1])); w(31, '0.0'); }
       else if (e.t === 'pl') { w(0, 'POLYLINE'); common(e); w(66, 1); w(10, '0.0'); w(20, '0.0'); w(30, '0.0'); w(70, e.closed ? 1 : 0); e.p.forEach(q => { w(0, 'VERTEX'); w(8, e.L || '0'); w(10, f(q[0])); w(20, f(q[1])); w(30, '0.0'); }); w(0, 'SEQEND'); w(8, e.L || '0'); }
       else if (e.t === 'circle') { w(0, 'CIRCLE'); common(e); w(10, f(e.c[0])); w(20, f(e.c[1])); w(30, '0.0'); w(40, f(e.r)); }
       else if (e.t === 'arc') { w(0, 'ARC'); common(e); w(10, f(e.c[0])); w(20, f(e.c[1])); w(30, '0.0'); w(40, f(e.r)); w(50, f(((e.a0 % 360) + 360) % 360)); w(51, f(((e.a1 % 360) + 360) % 360)); }
       else if (e.t === 'solid') { w(0, 'SOLID'); common(e); const p = e.p; w(10, f(p[0][0])); w(20, f(p[0][1])); w(30, '0.0'); w(11, f(p[1][0])); w(21, f(p[1][1])); w(31, '0.0'); w(12, f(p[2][0])); w(22, f(p[2][1])); w(32, '0.0'); w(13, f((p[3] || p[2])[0])); w(23, f((p[3] || p[2])[1])); w(33, '0.0'); }
-      else if (e.t === 'text') { w(0, 'TEXT'); common(e); w(10, f(e.p[0])); w(20, f(e.p[1])); w(30, '0.0'); w(40, f(e.h)); w(1, String(e.s).replace(/[\r\n]+/g, ' ').replace(/℄/g, 'CL').replace(/[^\x20-\x7e°±φ≥≤]/g, '?').replace(/φ/g, '%%c').replace(/°/g, '%%d').replace(/±/g, '%%p').replace(/≥/g, '>=').replace(/≤/g, '<=')); if (e.ang) w(50, f(e.ang)); w(41, '0.8'); w(7, 'STANDARD');
+      else if (e.t === 'text') { w(0, 'TEXT'); common(e); w(10, f(e.p[0])); w(20, f(e.p[1])); w(30, '0.0'); w(40, f(e.h)); w(1, String(e.s).replace(/[\r\n]+/g, ' ').replace(/℄/g, 'CL').replace(/[^\x20-\x7e°±φ≥≤]/g, '?').replace(/φ/g, '%%c').replace(/°/g, '%%d').replace(/±/g, '%%p').replace(/≥/g, '>=').replace(/≤/g, '<=')); if (e.ang) w(50, f(e.ang)); w(41, f(e.wf || 1)); w(7, 'ISO');
         const h = e.al === 'c' ? 1 : e.al === 'r' ? 2 : 0, v = e.v === 'm' ? 2 : e.v === 't' ? 3 : 0; if (h || v) { w(72, h); w(11, f(e.p[0])); w(21, f(e.p[1])); w(31, '0.0'); if (v) w(73, v); } }
     }));
     w(0, 'ENDSEC'); w(0, 'EOF');
@@ -212,9 +240,24 @@
 
     // ---------------------------------------------------------------- side panels
     const thumbs = {};
+    // standard drawings traced from the scanned sheets (tdx/index.json + one file per sheet, loaded on demand)
+    const STD = G.SC_TDX || (G.SC_TDX = { idx: null, busy: false, err: false, files: {} });
+    const STD_CATS = ['Piles', 'Halfcaps', 'Stringers', 'Deck & overlay', 'Abutments', 'Wing walls', 'Sheeting', 'Barrier', 'Bracing', 'Bearings', 'General'];
+    function stdLoad() { if (STD.idx || STD.busy) return; STD.busy = true; fetch('tdx/index.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(j => { STD.idx = j; }).catch(() => { STD.err = true; }).finally(() => { STD.busy = false; refreshSide(); }); }
+    function stdSheet(f) { if (STD.files[f]) return Promise.resolve(STD.files[f]); return fetch('tdx/' + f).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(j => (STD.files[f] = j)); }
     function libHTML() {
+      const mode = A.libm || 'std';
+      const head = `<div class="td-libm" role="tablist"><button role="tab" data-act="td-libm" data-v="std" aria-selected="${mode === 'std'}">${T('Standard drawings', 'แบบมาตรฐาน')}</button><button role="tab" data-act="td-libm" data-v="par" aria-selected="${mode === 'par'}">${T('Parametric', 'แบบพารามิเตอร์')}</button></div>`;
+      if (mode === 'std') {
+        if (!STD.idx) { stdLoad(); return head + `<p class="muted small td-libmsg">${STD.err ? T('The standard drawing library could not be loaded.', 'โหลดคลังแบบมาตรฐานไม่ได้') : T('Loading the standard drawings…', 'กำลังโหลดแบบมาตรฐาน…')}</p>`; }
+        const cats = STD_CATS.filter(c => STD.idx.some(s => s.cat === c)).concat([...new Set(STD.idx.map(s => s.cat))].filter(c => !STD_CATS.includes(c)));
+        if (!cats.includes(A.slib)) A.slib = cats[0];
+        const sheets = STD.idx.map((s, si) => [s, si]).filter(([s]) => s.cat === A.slib).sort((a, b) => String(a[0].sheet).localeCompare(String(b[0].sheet)));
+        return head + `<div class="td-libh">${cats.map(c => `<button class="td-cat" data-act="td-scat" data-v="${esc(c)}" aria-pressed="${A.slib === c}">${esc(c)}</button>`).join('')}</div>
+          <div class="td-libl">${sheets.map(([s, si]) => `<div class="td-shh"><b>${esc(s.sheet)}</b><span>${esc(s.title)}</span></div>` + s.d.map((d, di) => `<button class="td-li td-std ${A.place && A.place.src === si + ':' + di ? 'on' : ''}" data-act="td-std" data-s="${si}" data-i="${di}" title="${esc(d.n)} · ${esc(s.sheet)}"><span class="td-th"><span class="td-thm" style="${(() => { const n = s.d.length, u = `url('tdx/th/${esc(s.th)}')`, sz = `${n * 100}% 100%`, ps = `${n > 1 ? (di / (n - 1)) * 100 : 0}% 0`; return `-webkit-mask-image:${u};mask-image:${u};-webkit-mask-size:${sz};mask-size:${sz};-webkit-mask-position:${ps};mask-position:${ps}`; })()}"></span></span><b>${esc(d.n)}</b><span class="muted small">${esc(s.sheet)} · ${Math.round(d.w)} × ${Math.round(d.h)} mm</span></button>`).join('')).join('')}</div>`;
+      }
       const cats = [...new Set(D().DEF.map(d => d.cat))];
-      return `<div class="td-libh">${cats.map(c => `<button class="td-cat" data-act="td-cat" data-v="${esc(c)}" aria-pressed="${A.lib === c}">${esc(c)}</button>`).join('')}</div>
+      return head + `<div class="td-libh">${cats.map(c => `<button class="td-cat" data-act="td-cat" data-v="${esc(c)}" aria-pressed="${A.lib === c}">${esc(c)}</button>`).join('')}</div>
         <div class="td-libl">${D().DEF.filter(d => d.cat === A.lib).map(d => { if (!thumbs[d.id]) { try { thumbs[d.id] = svgThumb(D().generate(d.id, {}), 220, 120); } catch (e) { thumbs[d.id] = ''; } } return `<button class="td-li ${A.place && A.place.det === d.id ? 'on' : ''}" data-act="td-pick" data-v="${d.id}" title="${esc(d.info || d.name)}"><span class="td-th">${thumbs[d.id]}</span><b>${esc(d.name)}</b><span class="muted small">${T('after drg', 'อ้างอิงแบบ')} ${esc(d.ref)}</span></button>`; }).join('')}</div>`;
     }
     function propsHTML() {
@@ -222,7 +265,8 @@
       const fld = (key, lbl, val, kind, opts) => { const id = 'tdf-' + key.replace(/[^\w]/g, '_'); return `<label class="cn-f" for="${id}"><span>${lbl}</span>${kind === 'sel' ? `<select id="${id}" data-tp="${esc(key)}">${opts.map(o => `<option value="${esc(o[0])}" ${String(o[0]) === String(val) ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select>` : `<input id="${id}" data-tp="${esc(key)}" ${kind === 'num' ? 'type="number" step="any"' : ''} value="${esc(val == null ? '' : val)}">`}</label>`; };
       const layers = Object.keys(D().LAYERS).map(k => [k, k]);
       let h = '';
-      if (one && one.k === 'i') { const it = sh.items[one.i], d = D().DEF.find(q => q.id === it.det); if (it && d) { h = `<div class="cn-ph"><b>${esc(d.name)}</b><span class="muted small">${T('After drawing', 'อ้างอิงแบบ')} ${esc(d.ref)}</span></div>` + d.params.map(q => fld('p.' + q.k, esc(q.n), it.params[q.k] != null ? it.params[q.k] : q.v, q.opts ? 'sel' : q.num ? 'num' : 'text', q.opts && q.opts.map(o => [o, String(o).replace(/(\d+)(UC|UB|PFC)(\d*)/, '$1 $2 $3').trim()]))).join('') + fld('it.s', T('Size factor', 'ตัวคูณขนาด'), it.s || 1, 'num') + fld('it.rd', T('Rotation (°)', 'มุมหมุน (°)'), Math.round((it.r || 0) * 180 / PI), 'num') + `<p class="cn-note">${esc(d.info || '')} ${T('Each view keeps its drawing scale; the size factor scales the whole detail on the sheet.', 'แต่ละมุมมองคงมาตราส่วนเดิม ตัวคูณขนาดย่อ/ขยายรายละเอียดทั้งหมดบนแผ่น')}</p><div class="cn-btns"><button class="btn btn-ghost xs" data-act="td-rb" data-c="explode">${T('Explode to editable lines', 'แยกเป็นเส้นแก้ไขได้')}</button><button class="btn btn-ghost xs" data-act="td-rb" data-c="del">${T('Delete', 'ลบ')}</button></div>`; } }
+      if (one && one.k === 'i') { const it = sh.items[one.i], d = D().DEF.find(q => q.id === it.det); if (it && d) { h = `<div class="cn-ph"><b>${esc(d.name)}</b><span class="muted small">${T('After drawing', 'อ้างอิงแบบ')} ${esc(d.ref)}</span></div>` + d.params.map(q => fld('p.' + q.k, esc(q.n), it.params[q.k] != null ? it.params[q.k] : q.v, q.opts ? 'sel' : q.num ? 'num' : 'text', q.opts && q.opts.map(o => [o, String(o).replace(/(\d+)(UC|UB|PFC)(\d*)/, '$1 $2 $3').trim()]))).join('') + fld('it.s', T('Size factor', 'ตัวคูณขนาด'), it.s || 1, 'num') + fld('it.rd', T('Rotation (°)', 'มุมหมุน (°)'), Math.round((it.r || 0) * 180 / PI), 'num') + `<p class="cn-note">${esc(d.info || '')} ${T('Each view keeps its drawing scale; the size factor scales the whole detail on the sheet.', 'แต่ละมุมมองคงมาตราส่วนเดิม ตัวคูณขนาดย่อ/ขยายรายละเอียดทั้งหมดบนแผ่น')}</p><div class="cn-btns"><button class="btn btn-ghost xs" data-act="td-rb" data-c="explode">${T('Explode to editable lines', 'แยกเป็นเส้นแก้ไขได้')}</button><button class="btn btn-ghost xs" data-act="td-rb" data-c="del">${T('Delete', 'ลบ')}</button></div>`; }
+        else if (it && it.det === '__import') { h = `<div class="cn-ph"><b>${esc(it.name || T('Imported drawing', 'แบบที่นำเข้า'))}</b><span class="muted small">${it.ref ? T('From standard drawing', 'จากแบบมาตรฐาน') + ' ' + esc(it.ref) : ''}</span></div>` + fld('it.s', T('Size factor', 'ตัวคูณขนาด'), it.s || 1, 'num') + fld('it.rd', T('Rotation (°)', 'มุมหมุน (°)'), Math.round((it.r || 0) * 180 / PI), 'num') + `<p class="cn-note">${it.ref ? T('Traced from the standard drawing at its printed size. Explode it to edit the lines and text.', 'คัดลอกจากแบบมาตรฐานตามขนาดที่พิมพ์ แยกส่วนเพื่อแก้ไขเส้นและข้อความ') : ''}</p><div class="cn-btns"><button class="btn btn-ghost xs" data-act="td-rb" data-c="explode">${T('Explode to editable lines', 'แยกเป็นเส้นแก้ไขได้')}</button><button class="btn btn-ghost xs" data-act="td-rb" data-c="del">${T('Delete', 'ลบ')}</button></div>`; } }
       else if (one && one.k === 'e') { const e = sh.ents[one.i]; if (e) { h = `<div class="cn-ph"><b>${{ line: T('Line', 'เส้น'), pl: T('Polyline', 'เส้นต่อเนื่อง'), circle: T('Circle', 'วงกลม'), arc: T('Arc', 'ส่วนโค้ง'), text: T('Text', 'ข้อความ'), hatch: T('Hatch', 'แรเงา'), solid: T('Solid', 'ทึบ') }[e.t] || e.t}</b></div>` + fld('e.L', T('Layer', 'เลเยอร์'), e.L, 'sel', layers);
         if (e.t === 'text') h += fld('e.s', T('Text', 'ข้อความ'), e.s, 'text') + fld('e.h', T('Height (mm)', 'ความสูง (มม.)'), e.h, 'num') + fld('e.ang', T('Angle (°)', 'มุม (°)'), e.ang || 0, 'num') + fld('e.al', T('Align', 'จัดแนว'), e.al || 'l', 'sel', [['l', T('Left', 'ซ้าย')], ['c', T('Centre', 'กลาง')], ['r', T('Right', 'ขวา')]]);
         if (e.t === 'line') h += fld('e.a0', 'X1', e.a[0].toFixed(2), 'num') + fld('e.a1', 'Y1', e.a[1].toFixed(2), 'num') + fld('e.b0', 'X2', e.b[0].toFixed(2), 'num') + fld('e.b1', 'Y2', e.b[1].toFixed(2), 'num');
@@ -285,7 +329,7 @@
         svg.focus(); const p = toModel(e);
         if (e.button === 1 || e.button === 2) { if (e.button === 2 && (A.tool === 'line' || A.tool === 'pl') && A.draftPts) { finishDraft(); return; } drag = { pan: true, x: e.clientX, y: e.clientY, cx: A.cam.x, cy: A.cam.y }; svg.setPointerCapture(e.pointerId); return; }
         const sp = snapPoint(p, A.draftPts ? A.draftPts[A.draftPts.length - 1] : null), now = Date.now(), dbl = now - lastClick < 380; lastClick = now;
-        if (A.place) { snapH(); const o = A.placeOff || [0, 0], it = Object.assign({}, A.place, { x: sp[0] - o[0], y: sp[1] - o[1] }); delete it._ents; delete it._k; SH().items.push(it); A.sel = [{ k: 'i', i: SH().items.length - 1 }]; A.place = null; persist(); redraw(); refreshSide(); setHint(); toast(T('Detail placed — edit its parameters on the right, or Explode to edit the lines.', 'วางรายละเอียดแล้ว — แก้ค่าได้ทางขวา หรือแยกส่วนเพื่อแก้เส้น'), 'ok'); return; }
+        if (A.place) { snapH(); const o = A.placeOff || [0, 0], it = Object.assign({}, A.place, { x: sp[0] - o[0], y: sp[1] - o[1] }); delete it._ents; delete it._k; SH().items.push(it); A.sel = [{ k: 'i', i: SH().items.length - 1 }]; A.place = null; persist(); redraw(); refreshSide(); setHint(); toast(it.det === '__import' ? T('Detail placed. Explode it to edit the lines and text.', 'วางรายละเอียดแล้ว แยกส่วนเพื่อแก้เส้นและข้อความ') : T('Detail placed — edit its parameters on the right, or Explode to edit the lines.', 'วางรายละเอียดแล้ว — แก้ค่าได้ทางขวา หรือแยกส่วนเพื่อแก้เส้น'), 'ok'); return; }
         if (A.tool === 'select') {
           const hit = pick(p);
           if (dbl && hit) { A.sel = [hit]; refreshSide(); const f = document.querySelector('#tdProps input, #tdProps select'); if (f) f.focus(); redraw(); return; }
@@ -383,6 +427,11 @@
       if (a === 'td-ribtab') { A.rib = b.dataset.t; ribRefresh(); return true; }
       if (a === 'td-cat') { A.lib = b.dataset.v; refreshSide(); return true; }
       if (a === 'td-pick') { insert(b.dataset.v); refreshSide(); setHint(); redraw(); return true; }
+      if (a === 'td-libm') { A.libm = b.dataset.v; refreshSide(); return true; }
+      if (a === 'td-scat') { A.slib = b.dataset.v; refreshSide(); return true; }
+      if (a === 'td-std') { const s = STD.idx && STD.idx[+b.dataset.s], di = +b.dataset.i; if (!s) return true; b.classList.add('busy');
+        stdSheet(s.f).then(j => { const d = j.details[di]; if (!d) return; A.place = { det: '__import', ents: d.ents, name: d.name, ref: j.sheet, src: b.dataset.s + ':' + di, x: 300, y: 300, s: 1, r: 0 }; A.placeOff = [d.w / 2, d.h / 2]; A.tool = 'select'; refreshSide(); setHint(); redraw(); })
+          .catch(() => toast(T('That drawing could not be loaded.', 'โหลดแบบนี้ไม่ได้'), 'bad')); return true; }
       if (a === 'td-sheet') { A.doc.cur = +b.dataset.v; A.sel = []; A.cam = null; persist(); redraw(); refreshSide(); return true; }
       if (a === 'td-curl') { A.curL = b.dataset.v; refreshSide(); return true; }
       return false;

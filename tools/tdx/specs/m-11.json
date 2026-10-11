@@ -1,0 +1,188 @@
+{
+ "sheet": "1330-0011",
+ "title": "SPIKING RAIL RETAINER INSTALLATION DETAILS",
+ "cat": "Sheeting",
+ "details": [
+  {
+   "name": "PLAN – TYPE 1",
+   "rects": [
+    [
+     7.6,
+     4.5,
+     30.6,
+     25.0
+    ]
+   ]
+  },
+  {
+   "name": "PLAN – TYPE 2",
+   "rects": [
+    [
+     31.8,
+     4.5,
+     54.6,
+     24.5
+    ]
+   ]
+  },
+  {
+   "name": "SPIKING RAIL RETAINER – TYPE 1",
+   "rects": [
+    [
+     7.6,
+     26.0,
+     30.3,
+     46.6
+    ]
+   ]
+  },
+  {
+   "name": "SPIKING RAIL RETAINER – TYPE 2",
+   "rects": [
+    [
+     31.8,
+     26.0,
+     55.3,
+     46.6
+    ]
+   ]
+  },
+  {
+   "name": "SECTION C",
+   "rects": [
+    [
+     55.4,
+     28.0,
+     77.5,
+     45.6
+    ]
+   ]
+  },
+  {
+   "name": "PLATE FABRICATION DETAIL – TYPE A",
+   "rects": [
+    [
+     12.3,
+     49.0,
+     28.0,
+     70.0
+    ]
+   ]
+  },
+  {
+   "name": "PLATE FABRICATION DETAIL – TYPE B",
+   "rects": [
+    [
+     31.8,
+     47.0,
+     60.5,
+     71.5
+    ]
+   ]
+  },
+  {
+   "name": "NOTES",
+   "rects": [
+    [
+     64.8,
+     89.0,
+     83.0,
+     96.5
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   83.0,
+   0,
+   100,
+   100
+  ],
+  [
+   0,
+   0,
+   4.7,
+   100
+  ],
+  [
+   0,
+   0,
+   100,
+   3.3
+  ],
+  [
+   0,
+   96.5,
+   100,
+   100
+  ]
+ ],
+ "erase": [
+  [
+   10.15,
+   40.4,
+   10.6,
+   41.1
+  ]
+ ],
+ "text": {
+  "2885": "M8 x 75 LONG GALV.",
+  "2887": "COACH SCREW (TYP.)",
+  "2889": "Ø10 x 20 LONG",
+  "2901": "Ø8 MASONRY ANCHOR (TYP.)",
+  "3041": "~",
+  "3042": "~",
+  "3044": "90",
+  "2886": "M8 x 75 LONG GALV.",
+  "2900": "Ø8 MASONRY ANCHOR (TYP.)",
+  "3045": "~",
+  "2924": "~",
+  "2952": "SPIKING RAIL RETAINER -TYPE 1",
+  "2942": "TYPE A",
+  "2953": "SPIKING RAIL RETAINER -TYPE 2",
+  "2950": "SECTION  C",
+  "2949": "",
+  "2937": "Ø10 x 20 LONG",
+  "2954": "1:10",
+  "2930": "~",
+  "3043": "~",
+  "3008": "",
+  "2961": "Ø10 x 20 LONG",
+  "2969": "(TYP.)",
+  "2975": "Ø10 HOLE",
+  "2978": "(TYP.)",
+  "2996": "50 90",
+  "2982": "~",
+  "3011": "",
+  "2963": "Ø10 x 20 LONG",
+  "2968": "170",
+  "2998": "Ø10 HOLE",
+  "3002": "(TYP.)",
+  "3003": "ANGLE TO SUIT EXISTING GEOMETRY",
+  "3046": "~",
+  "3047": "150",
+  "3027": "NOTES:",
+  "3034": "2. FOR PROPOSED OVERLAYS, CONCRETE TO BE CURED FOR MINIMUM",
+  "3035": "7 DAYS PRIOR TO INSTALLATION OF MECHANICAL FASTENERS."
+ },
+ "add": [
+  {
+   "s": "PLATE FABRICATION DETAIL – TYPE A",
+   "like": 3008,
+   "at": [
+    13.58,
+    68.034
+   ]
+  },
+  {
+   "s": "PLATE FABRICATION DETAIL – TYPE B",
+   "like": 3011,
+   "at": [
+    37.855,
+    69.829
+   ]
+  }
+ ],
+ "drop": []
+}

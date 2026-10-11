@@ -1,0 +1,213 @@
+{
+ "sheet": "PN30-2104",
+ "title": "PIER PILE REPAIR DETAIL - TYPE 1A",
+ "cat": "Piles",
+ "details": [
+  {
+   "name": "NOTE – THIS REPAIR IS GENERALLY FOR",
+   "rects": [
+    [
+     28,
+     11.2,
+     41.5,
+     18.2
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – THIS PAGE SHALL BE READ IN CONJUNCTION",
+   "rects": [
+    [
+     29.8,
+     18.3,
+     47,
+     25.6
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – HALFCAPS SHALL BE PROPPED",
+   "rects": [
+    [
+     32.8,
+     33,
+     47.2,
+     40.9
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – EXISTING GENERAL GL OR",
+   "rects": [
+    [
+     38.8,
+     48,
+     50.2,
+     55.3
+    ]
+   ]
+  },
+  {
+   "name": "NOTE – ENGINEER SHALL DECIDE WHICH",
+   "rects": [
+    [
+     15.5,
+     90.8,
+     28.8,
+     95.3
+    ]
+   ]
+  },
+  {
+   "name": "SECTION A",
+   "rects": [
+    [
+     11,
+     4,
+     37,
+     18.2
+    ]
+   ]
+  },
+  {
+   "name": "SECTION B",
+   "rects": [
+    [
+     10,
+     18.2,
+     44,
+     41
+    ]
+   ]
+  },
+  {
+   "name": "BEARING ARRANGEMENT FOR PILES < Ø350",
+   "rects": [
+    [
+     45,
+     1.5,
+     78,
+     41
+    ]
+   ]
+  },
+  {
+   "name": "VIEW C",
+   "rects": [
+    [
+     41.5,
+     41,
+     74,
+     85
+    ]
+   ]
+  },
+  {
+   "name": "ELEVATION – PIER PILE REPAIR DETAIL - TYPE 1A",
+   "rects": [
+    [
+     3,
+     41,
+     41.5,
+     90.8
+    ],
+    [
+     35,
+     77,
+     46.5,
+     82
+    ]
+   ]
+  }
+ ],
+ "exclude": [
+  [
+   0,
+   97.5,
+   100,
+   100
+  ],
+  [
+   61,
+   94.5,
+   73,
+   98
+  ],
+  [
+   70.5,
+   53,
+   72.5,
+   55
+  ],
+  [
+   93,
+   52.5,
+   95,
+   55
+  ]
+ ],
+ "erase": [],
+ "text": {
+  "4135": "OTHERWISE USE PIER - TYPE 2",
+  "4136": "",
+  "4141": "(PN30-2105 & PN30-2106)",
+  "4138": "",
+  "4139": "",
+  "4164": "NOTE: HALFCAPS SHALL BE PROPPED",
+  "4165": "",
+  "4176": "MINIMUM OF 3 DAYS.",
+  "4179": "",
+  "4177": "",
+  "4192": "TIDE",
+  "4118": "Ø20 THREADED ROD TO",
+  "4124": "Ø10x100 LONG",
+  "4259": "~",
+  "4152": "(FOR PILE > Ø350)",
+  "4154": "FOR PILE > Ø350 OR BETWEEN UC AND",
+  "4157": "UA's FOR PILE < Ø350 TO ENSURE A",
+  "4161": "Ø10x100 LONG",
+  "4163": "Ø900 CONCRETE",
+  "4130": "Ø10x100 LONG SPIKE",
+  "4137": "~",
+  "4169": "PILES < Ø350",
+  "4146": "~",
+  "4212": "Ø10x100 LONG",
+  "4218": "IF PILE < Ø350 THEN",
+  "4228": "(FOR PILE > Ø350)",
+  "4232": "Ø10x250 LONG",
+  "4263": "~",
+  "4252": "~",
+  "4253": "050",
+  "4254": "MIN",
+  "4255": "500",
+  "4256": "00",
+  "4257": "100",
+  "4258": "50",
+  "4260": "20",
+  "4261": "60",
+  "4262": "MIN",
+  "4190": "2-Ø12 HOLES FOR SPIKES.",
+  "4196": "U2",
+  "4197": "EXISTING GENERAL G.L.",
+  "4198": "",
+  "4244": "PIER PILE REPAIR DETAIL - TYPE 1A",
+  "4209": "140",
+  "4213": "WITH 1-Ø12 HOLE FOR",
+  "4231": "75",
+  "4233": "COVER (TYP)",
+  "4235": "",
+  "4245": "PIER N° X - PILE N° X",
+  "4246": ""
+ },
+ "add": [
+  {
+   "s": "XX30-XXXX",
+   "like": 4239,
+   "at": [
+    31.7,
+    84.44
+   ]
+  }
+ ],
+ "drop": []
+}
