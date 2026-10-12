@@ -11,14 +11,13 @@
      tdet_p31b.js PN30-3113 … 3123   abutment stringers, widening, packing, bolting, splicing
      tdet_p32.js  PN30-3201 … 3214   concrete overlay, reinforcement, kerb, drainage, joints, sill beam
      tdet_p4.js   PN30-4101 … 4209   traffic barrier, project notes, legend, drainage, approach slab, expansion angles
-   Drafting conventions follow the source sheets:
-     proposed work ........ S-NEW     continuous, heavy
-     hidden proposed edges  S-HIDDEN  dashed
-     existing structure ... S-EXIST   dash-dot (long dash / short dash), thin
-     centre lines ......... S-CL      chain
-     reinforcement ........ S-REO     continuous, heavy, with cross-wire dots for fabric
-     concrete outline ..... S-CONC    continuous
-     designer's notes ..... S-NOTE    dashed box ("delete or complete" notes on the source sheets)
+   Drafting conventions follow the MRWA CAD standard. Generators draw on material keys, which generate() maps to MRWA layers:
+     proposed work ........ S-NEW  -> L35 (green 0.35)      hidden proposed edges  S-HIDDEN -> HID35 (HIDDEN)
+     existing structure ... S-EXIST -> EXIST (red, DASHDOT) centre lines ......... S-CL -> CL25 (red, CENTER)
+     reinforcement ........ S-REO  -> L50                   hatching ............. S-HATCH -> L18
+     leaders, ground ...... S-TEXT / S-GROUND -> L25        designer's notes ..... S-NOTE -> Dash18 (dashed box)
+     dimensions ........... S-DIM  -> DIMENSION (red lines, green text, MRWA-2.5)
+     text ................. by height: T18 / T25 (2.5 labels) / T35 (3.5 view titles) / T50 (5.0 detail titles) / T70
    Each generator returns entities in PAPER millimetres; each view is drawn at its own scale (1:5, 1:10, 1:20 …).
    Entity types: line, pl (polyline), circle, arc, text, solid (filled 3/4-gon), hatch (boundary + pattern). y is up. */
 (function (G) {
@@ -37,20 +36,32 @@
   const secName = s => String(s).replace(/(\d+)(UC|UB|PFC)(\d*)/, (m, a, b, c) => a + ' ' + b + (c ? ' ' + c : ''));
 
   // ------------------------------------------------------------------ builder
+  // MRWA CAD standard (Main Roads WA): layers named by pen weight, colour = pen (4 cyan 0.18, 1 red 0.25, 3 green 0.35, 7 white 0.50,
+  // 5 blue 0.70, 2 yellow 1.00); text layers T18…T70 with the ISO lettering (isocp2.shx, width factor 1); dimensions MRWA-2.5 / MRWA-3.5.
   const LAYERS = {
-    'S-NEW': { c: 4, lt: 'CONTINUOUS', lw: 0.5, n: 'Proposed steel / timber' }, 'S-HIDDEN': { c: 4, lt: 'HIDDEN', lw: 0.25, n: 'Hidden edges (proposed)' },
-    'S-EXIST': { c: 8, lt: 'DASHDOT', lw: 0.25, n: 'Existing structure' }, 'S-CONC': { c: 2, lt: 'CONTINUOUS', lw: 0.35, n: 'Concrete' },
-    'S-REO': { c: 1, lt: 'CONTINUOUS', lw: 0.6, n: 'Reinforcement' }, 'S-HATCH': { c: 9, lt: 'CONTINUOUS', lw: 0.13, n: 'Hatching' }, 'S-TEXT': { c: 7, lt: 'CONTINUOUS', lw: 0.25, n: 'Notes and labels' },
-    'S-NOTE': { c: 7, lt: 'DASHED', lw: 0.18, n: "Designer's notes (dashed boxes)" },
-    'S-DIM': { c: 3, lt: 'CONTINUOUS', lw: 0.18, n: 'Dimensions' }, 'S-CL': { c: 6, lt: 'CENTER', lw: 0.18, n: 'Centre lines' }, 'S-GROUND': { c: 32, lt: 'CONTINUOUS', lw: 0.35, n: 'Ground / water' },
-    'S-TITLE': { c: 7, lt: 'CONTINUOUS', lw: 0.35, n: 'Titles' }, 'S-BORDER': { c: 7, lt: 'CONTINUOUS', lw: 0.7, n: 'Border and title block' }, 'S-BOLT': { c: 5, lt: 'CONTINUOUS', lw: 0.35, n: 'Bolts, rods, anchors' },
-    // standard drawings traced from the scans: one layer per pen weight (drawn in black/white like the sheets; DXF colours follow a pen table)
-    'STD-0.13': { c: 7, dxf: 8, lt: 'CONTINUOUS', lw: 0.13, n: 'Standard drawing 0.13 pen' }, 'STD-0.18': { c: 7, dxf: 9, lt: 'CONTINUOUS', lw: 0.18, n: 'Standard drawing 0.18 pen' },
-    'STD-0.25': { c: 7, dxf: 1, lt: 'CONTINUOUS', lw: 0.25, n: 'Standard drawing 0.25 pen' }, 'STD-0.35': { c: 7, dxf: 3, lt: 'CONTINUOUS', lw: 0.35, n: 'Standard drawing 0.35 pen' },
-    'STD-0.50': { c: 7, dxf: 2, lt: 'CONTINUOUS', lw: 0.5, n: 'Standard drawing 0.5 pen' }, 'STD-0.70': { c: 7, dxf: 6, lt: 'CONTINUOUS', lw: 0.7, n: 'Standard drawing 0.7 pen' },
-    'STD-1.00': { c: 7, dxf: 5, lt: 'CONTINUOUS', lw: 1.0, n: 'Standard drawing 1.0 pen' }, 'STD-TEXT': { c: 7, dxf: 7, lt: 'CONTINUOUS', lw: 0.25, n: 'Standard drawing text' }
+    'L18': { c: 4, lt: 'CONTINUOUS', lw: 0.18, n: 'Thin lines, hatching (cyan 0.18)' }, 'L25': { c: 1, lt: 'CONTINUOUS', lw: 0.25, n: 'Leaders, break lines, ground (red 0.25)' },
+    'L35': { c: 3, lt: 'CONTINUOUS', lw: 0.35, n: 'Proposed work (green 0.35)' }, 'L50': { c: 7, lt: 'CONTINUOUS', lw: 0.5, n: 'Reinforcement, heavy outlines (white 0.50)' },
+    'L70': { c: 5, lt: 'CONTINUOUS', lw: 0.7, n: 'Section cuts, borders (blue 0.70)' }, 'L10': { c: 2, lt: 'CONTINUOUS', lw: 1.0, n: 'Extra heavy (yellow 1.00)' },
+    'Dash18': { c: 4, lt: 'DASHED', lw: 0.18, n: 'Dashed 0.18 (note boxes)' }, 'Dash25': { c: 1, lt: 'DASHED', lw: 0.25, n: 'Dashed 0.25' }, 'Dash35': { c: 3, lt: 'DASHED', lw: 0.35, n: 'Dashed 0.35' },
+    'HID_LIGHT': { c: 4, lt: 'HIDDEN', lw: 0.18, n: 'Hidden, light' }, 'HID25': { c: 1, lt: 'HIDDEN', lw: 0.25, n: 'Hidden 0.25' }, 'HID35': { c: 3, lt: 'HIDDEN', lw: 0.35, n: 'Hidden proposed work' },
+    'Cent18': { c: 4, lt: 'CENTER2', lw: 0.18, n: 'Centre lines, light' }, 'CL25': { c: 1, lt: 'CENTER', lw: 0.25, n: 'Centre lines' },
+    'EXIST': { c: 1, lt: 'DASHDOT', lw: 0.25, n: 'Existing structure' }, 'DIMENSION': { c: 1, lt: 'CONTINUOUS', lw: 0.25, n: 'Dimensions (red lines, green text)' },
+    'T18': { c: 4, lt: 'CONTINUOUS', lw: 0.18, n: 'Text 1.8' }, 'T25': { c: 1, lt: 'CONTINUOUS', lw: 0.25, n: 'Text 2.5' }, 'T35': { c: 3, lt: 'CONTINUOUS', lw: 0.35, n: 'Text 3.5 (labels, view titles)' },
+    'T50': { c: 7, lt: 'CONTINUOUS', lw: 0.5, n: 'Text 5.0 (detail titles)' }, 'T70': { c: 5, lt: 'CONTINUOUS', lw: 0.7, n: 'Text 7.0' }
   };
-  const TH = 2.2; // standard paper text height (mm)
+  // drawings made before the MRWA layers (and the drafting helpers' material keys) map onto them
+  const LEGACY = { 'S-NEW': 'L35', 'S-HIDDEN': 'HID35', 'S-EXIST': 'EXIST', 'S-CONC': 'L35', 'S-REO': 'L50', 'S-HATCH': 'L18', 'S-TEXT': 'L25', 'S-NOTE': 'Dash18', 'S-DIM': 'DIMENSION',
+    'S-CL': 'CL25', 'S-GROUND': 'L25', 'S-TITLE': 'L35', 'S-BORDER': 'L70', 'S-BOLT': 'L35', 'STD-0.13': 'L18', 'STD-0.18': 'L18', 'STD-0.25': 'L25', 'STD-0.35': 'L35',
+    'STD-0.50': 'L50', 'STD-0.70': 'L70', 'STD-1.00': 'L10', 'STD-TEXT': 'T25' };
+  const textLayer = h => (h < 2.0 ? 'T18' : h < 3.0 ? 'T25' : h < 4.25 ? 'T35' : h < 6 ? 'T50' : 'T70');
+  // put an entity on its MRWA layer: text by height (dimension text stays on DIMENSION, coloured green), everything else by the map above
+  function mrwa(e) {
+    const L = e.L;
+    if (e.t === 'text') { if (L === 'S-DIM' || L === 'DIMENSION') { e.L = 'DIMENSION'; if (e.col == null) e.col = 3; } else if (!LAYERS[L]) e.L = textLayer(e.h); }
+    else if (LEGACY[L]) e.L = LEGACY[L];
+    return e;
+  }
+  const TH = 2.5; // standard paper text height (mm): MRWA T25 / MRWA-2.5
   function Builder() { this.E = []; }
   Builder.prototype.view = function (s, ox, oy) { return new View(this, s, ox || 0, oy || 0); };
   function View(B, s, ox, oy) { this.B = B; this.s = s; this.ox = ox; this.oy = oy; }
@@ -72,17 +83,17 @@
   VP.mtext = function (x, y, s, h, al, L) { h = h || TH; const p = this.P(x, y); String(s).split('\n').forEach((l, i) => this.add({ t: 'text', p: [p[0], p[1] - i * h * 1.55], s: l, h, al: al || 'l', v: 'b', ang: 0, L: L || 'S-TEXT' })); };
   VP.ptext = function (px, py, s, h, al, v, L) { return this.add({ t: 'text', p: [px, py], s: String(s), h: h || TH, al: al || 'l', v: v || 'b', ang: 0, L: L || 'S-TEXT' }); };
   // paper-space arrowhead at point a (paper), pointing along angle ang (radians, direction the arrow points)
-  function arrowP(add, a, ang, L, len, wid) { const al = len || 2.4, aw = (wid || 0.8); add({ t: 'solid', p: [a, [a[0] - al * Math.cos(ang) - aw * Math.sin(ang), a[1] - al * Math.sin(ang) + aw * Math.cos(ang)], [a[0] - al * Math.cos(ang) + aw * Math.sin(ang), a[1] - al * Math.sin(ang) - aw * Math.cos(ang)]], L: L || 'S-TEXT' }); }
+  function arrowP(add, a, ang, L, len, wid) { const al = len || 2.5, aw = (wid || al / 6); add({ t: 'solid', p: [a, [a[0] - al * Math.cos(ang) - aw * Math.sin(ang), a[1] - al * Math.sin(ang) + aw * Math.cos(ang)], [a[0] - al * Math.cos(ang) + aw * Math.sin(ang), a[1] - al * Math.sin(ang) - aw * Math.cos(ang)]], L: L || 'S-TEXT' }); }
   VP.arrow = function (x, y, ang, L) { arrowP(e => this.add(e), this.P(x, y), ang * PI / 180, L || 'S-TEXT'); };
   // leader: arrow at the model point (x,y), shoulder at paper offset (dx,dy), text beside the shoulder (first line on the shoulder).
   // opt: h (text height), dot (dot terminator instead of an arrow — used where the leader ends inside an object), noArrow
   VP.leader = function (x, y, dx, dy, s, opt) {
     opt = opt || {}; const a = this.P(x, y), b = [a[0] + dx, a[1] + dy], right = dx >= 0, lines = String(s).split('\n'), h = opt.h || TH, gap = 1.0, tl = max(...lines.map(l => l.length)) * h * 0.7;
     const c = [b[0] + (right ? 2.5 : -2.5), b[1]];
-    this.add({ t: 'pl', p: [a, b, c], closed: false, L: 'S-TEXT' });
+    this.add({ t: 'pl', p: [a, b, c], closed: false, L: 'L25' });
     const ang = Math.atan2(a[1] - b[1], a[0] - b[0]);
     if (opt.dot) this.add({ t: 'circle', c: a, r: 0.45, L: 'S-TEXT' }), this.add({ t: 'solid', p: [[a[0] - 0.4, a[1] - 0.4], [a[0] + 0.4, a[1] - 0.4], [a[0] + 0.4, a[1] + 0.4], [a[0] - 0.4, a[1] + 0.4]], L: 'S-TEXT' });
-    else if (!opt.noArrow) arrowP(e => this.add(e), a, ang, 'S-TEXT');
+    else if (!opt.noArrow) arrowP(e => this.add(e), a, ang, 'L25');
     lines.forEach((l, i) => this.add({ t: 'text', p: [c[0] + (right ? gap : -gap), c[1] - h / 2 - i * h * 1.55], s: l, h, al: right ? 'l' : 'r', v: 'b', ang: 0, L: opt.L || 'S-TEXT' }));
     return tl;
   };
@@ -94,19 +105,19 @@
   VP.dim = function (x1, y1, x2, y2, off, txt, opt) {
     opt = opt || {}; const a = this.P(x1, y1), b = this.P(x2, y2), dx = b[0] - a[0], dy = b[1] - a[1], L = sq(dx * dx + dy * dy) || 1, ux = dx / L, uy = dy / L, nx = -uy, ny = ux, o = off == null ? 6 : off, sg = o >= 0 ? 1 : -1;
     const a2 = [a[0] + nx * o, a[1] + ny * o], b2 = [b[0] + nx * o, b[1] + ny * o];
-    if (abs(o) > 1.2) { this.add({ t: 'line', a: [a[0] + nx * sg, a[1] + ny * sg], b: [a2[0] + nx * sg * 1.5, a2[1] + ny * sg * 1.5], L: 'S-DIM' }); this.add({ t: 'line', a: [b[0] + nx * sg, b[1] + ny * sg], b: [b2[0] + nx * sg * 1.5, b2[1] + ny * sg * 1.5], L: 'S-DIM' }); }
-    const real = Math.round(sq(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))), s = txt != null ? String(txt) : String(real), h = opt.h || 2.0;
-    const tw = s.length * h * 0.7, inside = L > 6.5;
+    if (abs(o) > 1.2) { this.add({ t: 'line', a: [a[0] + nx * sg, a[1] + ny * sg], b: [a2[0] + nx * sg * 2, a2[1] + ny * sg * 2], L: 'S-DIM' }); this.add({ t: 'line', a: [b[0] + nx * sg, b[1] + ny * sg], b: [b2[0] + nx * sg * 2, b2[1] + ny * sg * 2], L: 'S-DIM' }); }
+    const real = Math.round(sq(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))), s = txt != null ? String(txt) : String(real), h = opt.h || 2.5;
+    const tw = (G.TFONT ? G.TFONT.width(s) : s.length * 0.7) * h, inside = L > 6.5;
     if (opt.tick) { this.add({ t: 'line', a: [a2[0] - ux * 1.5, a2[1] - uy * 1.5], b: [b2[0] + ux * 1.5, b2[1] + uy * 1.5], L: 'S-DIM' }); [a2, b2].forEach(p => this.add({ t: 'line', a: [p[0] - (ux + nx) * 0.9, p[1] - (uy + ny) * 0.9], b: [p[0] + (ux + nx) * 0.9, p[1] + (uy + ny) * 0.9], L: 'S-DIM' })); }
-    else if (inside) { this.add({ t: 'line', a: a2, b: b2, L: 'S-DIM' }); arrowP(e => this.add(e), a2, Math.atan2(-uy, -ux), 'S-DIM', 2.2, 0.7); arrowP(e => this.add(e), b2, Math.atan2(uy, ux), 'S-DIM', 2.2, 0.7); }
-    else { this.add({ t: 'line', a: [a2[0] - ux * 5, a2[1] - uy * 5], b: [b2[0] + ux * 5, b2[1] + uy * 5], L: 'S-DIM' }); arrowP(e => this.add(e), a2, Math.atan2(uy, ux), 'S-DIM', 2.2, 0.7); arrowP(e => this.add(e), b2, Math.atan2(-uy, -ux), 'S-DIM', 2.2, 0.7); }
+    else if (inside) { this.add({ t: 'line', a: a2, b: b2, L: 'S-DIM' }); arrowP(e => this.add(e), a2, Math.atan2(-uy, -ux), 'S-DIM', h); arrowP(e => this.add(e), b2, Math.atan2(uy, ux), 'S-DIM', h); }
+    else { this.add({ t: 'line', a: [a2[0] - ux * 5, a2[1] - uy * 5], b: [b2[0] + ux * 5, b2[1] + uy * 5], L: 'S-DIM' }); arrowP(e => this.add(e), a2, Math.atan2(uy, ux), 'S-DIM', h); arrowP(e => this.add(e), b2, Math.atan2(-uy, -ux), 'S-DIM', h); }
     let ang = Math.atan2(uy, ux) * 180 / PI; if (ang > 90.01 || ang <= -90) ang += 180; ang = Math.round(ang * 100) / 100; if (ang > 180) ang -= 360;
     const ar = ang * PI / 180, px = -Math.sin(ar), py = Math.cos(ar); // "up" for the text
     let m = [(a2[0] + b2[0]) / 2, (a2[1] + b2[1]) / 2];
     if (!inside || tw > L - 1) { // text does not fit: put it beyond the second point
       const k = (tw / 2 + 3); const dir = Math.cos(ar) * ux + Math.sin(ar) * uy >= 0 ? 1 : -1; m = [b2[0] + ux * (k + (inside ? 0 : 5)) * 1, b2[1] + uy * (k + (inside ? 0 : 5))]; if (dir < 0) m = [a2[0] - ux * (k + 5), a2[1] - uy * (k + 5)];
     }
-    this.add({ t: 'text', p: [m[0] + px * 0.7, m[1] + py * 0.7], s, h, al: 'c', v: 'b', ang, L: 'S-DIM' });
+    this.add({ t: 'text', p: [m[0] + px * 1.0, m[1] + py * 1.0], s, h, al: 'c', v: 'b', ang, L: 'S-DIM' });
     if (opt.sub) this.add({ t: 'text', p: [m[0] - px * 0.9, m[1] - py * 0.9], s: opt.sub, h: h * 0.9, al: 'c', v: 't', ang, L: 'S-DIM' });
   };
   // chain of dimensions along a line through model points pts (sorted), same offset; txts optional array ('=' for equal spacing)
@@ -158,26 +169,28 @@
 
   // ------------------------------------------------------------------ titles, notes, tables
   // view title (MRWA): underlined title, letter in a circle for SECTION/VIEW/DETAIL X, scale ('1:10') under, centred at x
+  // text width in paper mm (ISO lettering)
+  const twid = (s, h) => (G.TFONT ? G.TFONT.width(String(s)) : String(s).length * 0.62) * h;
+  // view title (MRWA): 3.5 mm text on T35, underlined, call-out letter in a circle for SECTION/VIEW/DETAIL X, scale ('1:10') 2.5 mm under, centred at x
   Builder.prototype.title = function (x, y, s, scale, sub, opt) {
-    opt = opt || {}; const m = /^((?:TYPICAL |PART )?(?:SECTIONAL ELEVATION|SECTIONAL PLAN|SECTION|VIEW|DETAIL|ELEVATION|PLAN))\s+([A-Z0-9]{1,2})$/.exec(s), h = opt.h || 3.2;
+    opt = opt || {}; const m = /^((?:TYPICAL |PART )?(?:SECTIONAL ELEVATION|SECTIONAL PLAN|SECTION|VIEW|DETAIL|ELEVATION|PLAN))\s+([A-Z0-9]{1,2})$/.exec(s), h = opt.h || 3.5;
     if (opt.main) return this.mainTitle(x, y, s, scale, sub, opt);
-    const word = m ? m[1] : s, tw = word.length * h * 0.7, cw = m ? 8 : 0, x0 = x - (tw + cw) / 2;
-    this.E.push({ t: 'text', p: [x0, y], s: word, h, al: 'l', v: 'b', ang: 0, L: 'S-TITLE' }); this.E.push({ t: 'line', a: [x0, y - 1.1], b: [x0 + tw, y - 1.1], L: 'S-TITLE' });
-    if (m) { this.E.push({ t: 'circle', c: [x0 + tw + 5, y + h / 2], r: 3, L: 'S-TITLE' }); this.E.push({ t: 'text', p: [x0 + tw + 5, y + h / 2], s: m[2], h: 3, al: 'c', v: 'm', ang: 0, L: 'S-TITLE' }); }
-    let yy = y - 4.4; if (sub) String(sub).split('\n').forEach(l => { this.E.push({ t: 'text', p: [x0, yy], s: l, h: TH * 0.95, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); yy -= 3.4; });
-    if (scale) this.E.push({ t: 'text', p: [x0, yy], s: '1:' + scale, h: TH * 0.95, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' });
+    const word = m ? m[1] : s, tw = twid(word, h), cr = h * 1.1, cw = m ? 2 * cr + 2.5 : 0, x0 = x - (tw + cw) / 2;
+    this.E.push({ t: 'text', p: [x0, y], s: word, h, al: 'l', v: 'b', ang: 0, L: 'T35' }); this.E.push({ t: 'line', a: [x0, y - 1.2], b: [x0 + tw, y - 1.2], L: 'L35' });
+    if (m) { const cx = x0 + tw + 2.5 + cr; this.E.push({ t: 'circle', c: [cx, y + h / 2], r: cr, L: 'L35' }); this.E.push({ t: 'text', p: [cx, y + h / 2], s: m[2], h, al: 'c', v: 'm', ang: 0, L: 'T35' }); }
+    let yy = y - 5; if (sub) String(sub).split('\n').forEach(l => { this.E.push({ t: 'text', p: [x0, yy], s: l, h: TH, al: 'l', v: 'b', ang: 0, L: 'T25' }); yy -= TH * 1.6; });
+    if (scale) this.E.push({ t: 'text', p: [x0, yy], s: '1:' + scale, h: TH, al: 'l', v: 'b', ang: 0, L: 'T25' });
   };
-  // detail title (MRWA): solid bullet, underlined title, optional project drawing ref ('XX30-XXXX'), sub-lines and scale below
+  // detail title (MRWA): 5 mm text on T50, underlined, optional project drawing ref ('XX30-XXXX'), sub-lines and scale 3.5 mm below
   Builder.prototype.mainTitle = function (x, y, s, scale, sub, opt) {
-    opt = opt || {}; const h = 3.6, tw = s.length * h * 0.7, x0 = x - tw / 2 + 4;
-    const bc = [x0 - 5, y + h / 2]; for (let i = 0; i < 16; i++) { const a0 = 2 * PI * i / 16, a1 = 2 * PI * (i + 1) / 16; this.E.push({ t: 'solid', p: [bc, [bc[0] + 2 * Math.cos(a0), bc[1] + 2 * Math.sin(a0)], [bc[0] + 2 * Math.cos(a1), bc[1] + 2 * Math.sin(a1)]], L: 'S-TITLE' }); } this.E.push({ t: 'line', a: [bc[0] - 4.5, bc[1]], b: [bc[0] - 2, bc[1]], L: 'S-TITLE' });
-    this.E.push({ t: 'text', p: [x0, y], s, h, al: 'l', v: 'b', ang: 0, L: 'S-TITLE' }); this.E.push({ t: 'line', a: [x0, y - 1.2], b: [x0 + tw, y - 1.2], L: 'S-TITLE' });
-    if (opt.ref) this.E.push({ t: 'text', p: [x0 + tw + 3, y], s: opt.ref, h: TH, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' });
-    let yy = y - 4.6; if (sub) String(sub).split('\n').forEach(l => { this.E.push({ t: 'text', p: [x0, yy], s: l, h: TH, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); yy -= 3.4; });
-    if (scale) this.E.push({ t: 'text', p: [x0, yy], s: '1:' + scale, h: TH, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' });
+    opt = opt || {}; const h = 5, tw = twid(s, h), x0 = x - tw / 2;
+    this.E.push({ t: 'text', p: [x0, y], s, h, al: 'l', v: 'b', ang: 0, L: 'T50' }); this.E.push({ t: 'line', a: [x0, y - 1.5], b: [x0 + tw, y - 1.5], L: 'L50' });
+    if (opt.ref) this.E.push({ t: 'text', p: [x0 + tw + 3, y], s: opt.ref, h: TH, al: 'l', v: 'b', ang: 0, L: 'T25' });
+    let yy = y - 6.5; if (sub) String(sub).split('\n').forEach(l => { this.E.push({ t: 'text', p: [x0, yy], s: l, h: 3.5, al: 'l', v: 'b', ang: 0, L: 'T35' }); yy -= 5.5; });
+    if (scale) this.E.push({ t: 'text', p: [x0, yy], s: '1:' + scale, h: 3.5, al: 'l', v: 'b', ang: 0, L: 'T35' });
   };
   // numbered notes; w = paper width for wrapping; head = heading (default 'NOTES:'); returns the y under the last line
-  Builder.prototype.notes = function (x, y, lines, w, head) { if (head !== '') { this.E.push({ t: 'text', p: [x, y], s: head || 'NOTES:', h: 2.6, al: 'l', v: 'b', ang: 0, L: 'S-TITLE' }); this.E.push({ t: 'line', a: [x, y - 0.9], b: [x + (head || 'NOTES:').length * 2.6 * 0.7, y - 0.9], L: 'S-TITLE' }); } let yy = y - 5; const num = lines.length > 1; lines.forEach((l, i) => { const words = String(l).split(' '), rows = []; let cur = ''; words.forEach(wd => { if ((cur + ' ' + wd).length * TH * 0.7 > (w || 120) - 6 && cur) { rows.push(cur); cur = wd; } else cur = cur ? cur + ' ' + wd : wd; }); rows.push(cur); rows.forEach((r, k) => { if (!k && num) this.E.push({ t: 'text', p: [x, yy], s: (i + 1) + '.', h: TH, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); this.E.push({ t: 'text', p: [x + (num ? 5 : 0), yy], s: r, h: TH, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); yy -= 3.4; }); yy -= 0.6; }); return yy; };
+  Builder.prototype.notes = function (x, y, lines, w, head) { if (head !== '') { this.E.push({ t: 'text', p: [x, y], s: head || 'NOTES:', h: 3.5, al: 'l', v: 'b', ang: 0, L: 'T35' }); this.E.push({ t: 'line', a: [x, y - 1.2], b: [x + twid(head || 'NOTES:', 3.5), y - 1.2], L: 'L35' }); } let yy = y - 6; const num = lines.length > 1; lines.forEach((l, i) => { const words = String(l).split(' '), rows = []; let cur = ''; words.forEach(wd => { if (twid(cur + ' ' + wd, TH) > (w || 120) - 6 && cur) { rows.push(cur); cur = wd; } else cur = cur ? cur + ' ' + wd : wd; }); rows.push(cur); rows.forEach((r, k) => { if (!k && num) this.E.push({ t: 'text', p: [x, yy], s: (i + 1) + '.', h: TH, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); this.E.push({ t: 'text', p: [x + (num ? 5 : 0), yy], s: r, h: TH, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); yy -= TH * 1.6; }); yy -= 0.8; }); return yy; };
   Builder.prototype.table = function (x, y, cols, rows, h) { h = h || TH; let yy = y; const W = cols.reduce((a, c) => a + c.w, 0), all = [cols.map(c => c.n)].concat(rows);
     all.forEach((r, i) => { const nl = Math.max(...r.map(c => String(c).split('\n').length)), rh = nl * h * 1.45 + h * 1.1; let xx = x; r.forEach((cell, j) => { const L = String(cell).split('\n'); L.forEach((l, k) => this.E.push({ t: 'text', p: [xx + cols[j].w / 2, yy - rh / 2 + (L.length - 1) * h * 0.725 - k * h * 1.45], s: l, h: i ? h : h * 0.95, al: 'c', v: 'm', ang: 0, L: i ? 'S-TEXT' : 'S-TITLE' })); xx += cols[j].w; }); this.E.push({ t: 'line', a: [x, yy], b: [x + W, yy], L: 'S-TEXT' }); yy -= rh; });
     this.E.push({ t: 'line', a: [x, yy], b: [x + W, yy], L: 'S-TEXT' }); let xx = x; [0].concat(cols.map(c => c.w)).forEach(w => { xx += w; this.E.push({ t: 'line', a: [xx, y], b: [xx, yy], L: 'S-TEXT' }); }); return yy; };
@@ -236,7 +249,7 @@
     const parts = this.G.map(g => { if (g.brk) return 'BRK'; const E = g.B.E; if (g.t) { const bb = bbox(E), tb = new Builder(); tb.title((bb.x0 + bb.x1) / 2, bb.y0 - 8, g.t[0], g.t[1], g.t[2], g.t[3]); E.push(...tb.E); } return E; });
     if (this.nt) { const nb = new Builder(); nb.notes(0, 0, this.nt[0], this.nt[1], this.nt[2]); parts.push(nb.E); }
     parts.forEach(E => { if (E === 'BRK') { if (x > 0) { y -= rowH + gap; x = 0; rowH = 0; } return; } if (!E.length) return; const bb = bbox(E), w = bb.x1 - bb.x0, h = bb.y1 - bb.y0; if (x > 0 && x + w > this.maxW) { y -= rowH + gap; x = 0; rowH = 0; } E.forEach(e => shiftE(e, x - bb.x0, y - bb.y1)); out.push(...E); x += w + gap; rowH = max(rowH, h); });
-    const ob = bbox(out); let cy = ob.y0 - 12; this.cap.forEach(c => { const tb = new Builder(); const o = c[3] || {}; tb.title((ob.x0 + ob.x1) / 2, cy, c[0], c[1], c[2], o); out.push(...tb.E); cy -= 14 + (c[2] ? String(c[2]).split('\n').length * 3.4 : 0); });
+    const ob = bbox(out); let cy = ob.y0 - 12; this.cap.forEach(c => { const tb = new Builder(); const o = c[3] || {}; tb.title((ob.x0 + ob.x1) / 2, cy, c[0], c[1], c[2], o); out.push(...tb.E); cy -= 16 + (c[2] ? String(c[2]).split('\n').length * 5.5 : 0); });
     return out;
   };
 
@@ -245,7 +258,7 @@
   const DEF = [];
   function def(id, cat, name, ref, params, fn, info) { const i = DEF.findIndex(d => d.id === id); const d = { id, cat, name, ref, params, info: info || '' }; if (i >= 0) DEF[i] = d; else DEF.push(d); GEN[id] = fn; }
   const P = (k, n, v, o) => Object.assign({ k, n, v }, o || {});
-  function generate(id, params) { const d = DEF.find(q => q.id === id); if (!d) return []; const p = {}; d.params.forEach(q => { p[q.k] = params && params[q.k] != null ? params[q.k] : q.v; }); return GEN[id](p); }
+  function generate(id, params) { const d = DEF.find(q => q.id === id); if (!d) return []; const p = {}; d.params.forEach(q => { p[q.k] = params && params[q.k] != null ? params[q.k] : q.v; }); return GEN[id](p).map(mrwa); }
   function bbox(E) { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; const add = (x, y) => { if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y; };
     E.forEach(e => { if (e.t === 'line') { add(...e.a); add(...e.b); } else if (e.t === 'pl' || e.t === 'hatch' || e.t === 'solid') e.p.forEach(q => add(...q)); else if (e.t === 'circle') { add(e.c[0] - e.r, e.c[1] - e.r); add(e.c[0] + e.r, e.c[1] + e.r); } else if (e.t === 'arc') { let a0 = e.a0, a1 = e.a1; while (a1 <= a0) a1 += 360; for (let a = a0; a < a1; a += 5) add(e.c[0] + e.r * Math.cos(a * PI / 180), e.c[1] + e.r * Math.sin(a * PI / 180)); add(e.c[0] + e.r * Math.cos(a1 * PI / 180), e.c[1] + e.r * Math.sin(a1 * PI / 180)); } else if (e.t === 'text') { const w = (G.TFONT ? G.TFONT.width(e.s) * (e.wf || 1) : e.s.length * 0.7) * e.h, x = e.al === 'c' ? e.p[0] - w / 2 : e.al === 'r' ? e.p[0] - w : e.p[0]; add(x, e.p[1] - (e.v === 't' ? e.h : e.v === 'm' ? e.h / 2 : 0)); add(x + w, e.p[1] + (e.v === 't' ? 0 : e.v === 'm' ? e.h / 2 : e.h)); } });
     return x0 > x1 ? { x0: 0, y0: 0, x1: 1, y1: 1 } : { x0, y0, x1, y1 }; }
@@ -260,7 +273,7 @@
     sheeting: ['shc', 'sht1', 'sht2', 'pn2201', 'pn2202', 'scr', 'srb', 'srr', 'pn2206'],
     planks: ['stf', 'ovl', 'pn3202', 'kdp', 'pn3207', 'cj', 'pn3212', 'slb', 'exa', 'pn4207']
   };
-  const api = { PI, sq, abs, max, min, SEC, UCs, UBs, PFCs, secName, LAYERS, TH, Builder, View, Lay, def, P, bbox, shiftE,
+  const api = { PI, sq, abs, max, min, SEC, UCs, UBs, PFCs, secName, LAYERS, TH, mrwa, Builder, View, Lay, def, P, bbox, shiftE,
     iSec, cSec, cSecH, aSec, rhsSec, iElevFlange, iElevWebV, iElevWebH, pfcElevH, pfcElevV, pileElev, rod, boltSym, concBox, ringPts, ellP, circP, timberX, logEnd };
-  G.TDET = { DEF, generate, bbox, LAYERS, SEC, SUGGEST, Builder, api };
+  G.TDET = { DEF, generate, bbox, LAYERS, LEGACY, mrwa, textLayer, SEC, SUGGEST, Builder, api };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -102,26 +102,28 @@
 
   // ================================================================== PN30-2125 ABUTMENT / WINGWALL PILE REPAIR TYPE 1 (WELDED)
   def('pn2125', 'Abutments', 'Abutment / wingwall pile repair – Type 1 (welded)', 'PN30-2125',
-    [P('uc', 'Proposed UC pile', '200UC52', { opts: UCs }), P('D', 'Existing pile dia. (mm)', 400, { num: 1 }), P('H', 'Pot depth (mm)', 1250, { num: 1 })], (p) => {
-      const B = new Builder(), s = SEC[p.uc] || SEC['200UC52'], D = min(max(+p.D || 400, 250), 520), R = D / 2, H = max(+p.H || 1250, 1000), un = secName(p.uc);
+    [P('uc', 'Proposed UC pile', '200UC52', { opts: UCs }), P('D', 'Existing pile dia. (mm)', 400, { num: 1 }), P('H', 'Pot depth (mm)', 1250, { num: 1 }), P('W', 'Pot size (mm, square)', 900, { num: 1 }),
+     P('emb', 'Pile embedment in pot (mm)', 750, { num: 1 }), P('bp', 'Base plate size (mm, square)', 250, { num: 1 }), P('tp', 'Base plate thickness (mm)', 12, { num: 1 })], (p) => {
+      const B = new Builder(), s = SEC[p.uc] || SEC['200UC52'], D = min(max(+p.D || 400, 250), 520), R = D / 2, H = min(max(+p.H || 1250, 1000), 1600), un = secName(p.uc);
+      const h = min(max(+p.W || 900, 800), 1100) / 2, dx = h - 450, emb = min(max(+p.emb || 750, 500), H - 300), bp = min(max(+p.bp || 250, max(200, s.b + 20)), 350), tp = min(max(+p.tp || 12, 8), 32); // h = half pot; dx shifts the dims right of the pot
       const pc = -100; // pile centre from pot centre (pile face against the sheeting face at -300)
       // ---------------- SECTION B (plan at the base plate), origin = pot centre
       let v = V(B, 20, 205, 204);
-      v.rect(-450, -450, 900, 900, 'S-CONC');
-      soil(v, 150, 450, -80, 450, -1); soil(v, -150, -450, 120, -450, -1); soil(v, 450, 35, 450, -280, -1); soil(v, -450, 260, -450, 400, -1);
+      v.rect(-h, -h, 2 * h, 2 * h, 'S-CONC');
+      soil(v, 150, h, -80, h, -1); soil(v, -150, -h, 120, -h, -1); soil(v, h, 35, h, -280, -1); soil(v, -h, 260, -h, 400, -1);
       v.line(-400, -470, -400, 990, 'S-EXIST'); v.line(-300, -470, -300, 990, 'S-EXIST'); tbrk(v, -350, 990, 100, 90);
       v.line(-400, 110, -860, -350, 'S-EXIST'); v.line(-400, -30, -760, -390, 'S-EXIST'); tbrk(v, -820, -380, 141, 225); soil(v, -560, -50, -800, -290, -1);
-      v.pl([[-260, 357], [-360, 357], [-360, -343], [-260, -343]], false, 'S-HIDDEN');
-      v.fabric(-260, 357, 375, 357, 110); v.fabric(375, 357, 375, -375, 110); v.fabric(375, -375, -260, -375, 110); v.fabric(-260, -375, -260, 357, 110);
-      v.line(-45, 370, 145, 370, 'S-REO'); v.line(-45, -388, 145, -388, 'S-REO');
-      v.circ(pc, 0, R, 'S-EXIST'); v.rect(pc - 125, -125, 250, 250, 'S-NEW'); iSec(v, pc, 0, s, 90); v.rect(pc - 32, -32, 65, 65, 'S-NEW');
+      v.pl([[-260, h - 93], [-360, h - 93], [-360, 107 - h], [-260, 107 - h]], false, 'S-HIDDEN');
+      v.fabric(-260, h - 93, h - 75, h - 93, 110); v.fabric(h - 75, h - 93, h - 75, 75 - h, 110); v.fabric(h - 75, 75 - h, -260, 75 - h, 110); v.fabric(-260, 75 - h, -260, h - 93, 110);
+      v.line(-45, h - 80, 145, h - 80, 'S-REO'); v.line(-45, 62 - h, 145, 62 - h, 'S-REO');
+      v.circ(pc, 0, R, 'S-EXIST'); v.rect(pc - bp / 2, -bp / 2, bp, bp, 'S-NEW'); iSec(v, pc, 0, s, 90); v.rect(pc - 32, -32, 65, 65, 'S-NEW');
       v.circ(pc, 85, 12, 'S-BOLT'); v.barEnd(pc, 85, 6); v.circ(pc, -85, 12, 'S-HIDDEN');
-      v.dim(-300, 450, 450, 450, 21.8, '750'); v.dim(-300, 450, pc - s.d / 2, 450, 8.5, '60 MIN *');
+      v.dim(-300, h, h, h, 21.8, null); v.dim(-300, 450, pc - s.d / 2, 450, 8.5, '60 MIN *');
       lab(v, -400, 730, 138, 110.8, 'EXISTING ABUTMENT\nTIMBER SHEETING'); lab(v, -540, -30, 138, 176, 'EXISTING WINGWALL\nTIMBER SHEETING');
       lab(v, -360, -234, 144, 266.8, 'SL81 FABRIC (GALV)\n25 COVER'); lab(v, pc - 10, -30, 161, 296.7, 'SHIM 65x65x THICKNESS\nTO SUIT');
       lab(v, pc + 9, 93, 264, 157.6, 'φ10x100 LONG\nSPIKE (TYP)');
-      lab(v, pc + 125, 55, 264, 182.4, '250x12FLx250 BASE PLATE\nWITH 2-φ12 HOLES FOR SPIKES.\nPROVIDE UNIFORM SEATING\nSQUARE TO AXIS OF PILE.\nSHIM BETWEEN BASE PLATE\nAND TIMBER PILE TO ENSURE\nA TIGHT FIT BETWEEN CUT\nPILE AND HALFCAPS');
-      weldAt(v, pc + 125, -125, 253, 276.3, { size: 6, all: true, site: true });
+      lab(v, pc + bp / 2, 55, 264, 182.4, bp + 'x' + tp + 'FLx' + bp + ' BASE PLATE\nWITH 2-φ12 HOLES FOR SPIKES.\nPROVIDE UNIFORM SEATING\nSQUARE TO AXIS OF PILE.\nSHIM BETWEEN BASE PLATE\nAND TIMBER PILE TO ENSURE\nA TIGHT FIT BETWEEN CUT\nPILE AND HALFCAPS');
+      weldAt(v, pc + bp / 2, -bp / 2, 253, 276.3, { size: 6, all: true, site: true });
       ttl(B, 207, 337, 'SECTION B', 20);
       txt(B, 286, 64.5, '*'); txt(B, 291, 64.5, 'IF LESS THAN 60, THEN RELOCATE SL81\nFABRIC, 4 - N20 VERTICAL BARS AND\nTOP N16 PERIMETER BAR TO INSIDE\nOF FLANGE. TRIM FABRIC TO SUIT.\nPROVIDE φ60 HOLES AT 200 CRS\nVERTICALLY IN WEB FOR N16 AND\nADDITIONAL N12 x 650 LONG BARS.');
       // ---------------- * detail (fabric relocated inside the flange), origin = UC centre
@@ -142,50 +144,50 @@
       nbox(B, 311, 275.5, 'FULLCAPS SHALL BE PROPPED DURING\nCONSTRUCTION TO THEIR ORIGINAL\nPOSITIONS AND ABUTMENT SHEETING\nIS TO BE SAFELY PROPPED.\nDO NOT REMOVE PROPS UNTIL\nPROPOSED PILE IS IN POSITION AND\nCONCRETE HAS BEEN PLACED A\nMINIMUM OF THREE DAYS.', 168, { solid: true });
       // ---------------- SECTION A (plan in the pile zone), origin = pot centre
       v = V(B, 20, 204, 507);
-      v.rect(-450, -450, 900, 900, 'S-CONC'); frect(v, -462, -455, -450, 455);
-      soil(v, 160, 450, -40, 450, -1); soil(v, -40, -450, 160, -450, -1); soil(v, 450, 120, 450, -260, -1);
-      v.line(-400, 410, -400, 680, 'S-EXIST'); v.line(-300, 410, -300, 680, 'S-EXIST'); v.line(-400, 410, -300, 410, 'S-EXIST'); tbrk(v, -350, 680, 100, 90);
-      v.line(-462, 90, -800, -250, 'S-EXIST'); v.line(-462, -50, -700, -290, 'S-EXIST'); tbrk(v, -760, -280, 141, 225); soil(v, -560, -10, -740, -190, -1);
-      v.fabric(-361, 366, 379, 366, 110); v.fabric(379, 366, 379, -366, 110); v.fabric(379, -366, -361, -366, 110); v.fabric(-361, -366, -361, 366, 110);
-      v.line(-50, 378, 297, 378, 'S-REO'); v.line(-50, -378, 297, -378, 'S-REO');
+      v.rect(-h, -h, 2 * h, 2 * h, 'S-CONC'); frect(v, -h - 12, -h - 5, -h, h + 5);
+      soil(v, 160, h, -40, h, -1); soil(v, -40, -h, 160, -h, -1); soil(v, h, 120, h, -260, -1);
+      v.line(-400, h - 40, -400, h + 230, 'S-EXIST'); v.line(-300, h - 40, -300, h + 230, 'S-EXIST'); v.line(-400, h - 40, -300, h - 40, 'S-EXIST'); tbrk(v, -350, h + 230, 100, 90);
+      v.line(-h - 12, 90, -h - 350, -250, 'S-EXIST'); v.line(-h - 12, -50, -h - 250, -290, 'S-EXIST'); tbrk(v, -h - 310, -280, 141, 225); soil(v, -h - 110, -10, -h - 290, -190, -1);
+      v.fabric(89 - h, h - 84, h - 71, h - 84, 110); v.fabric(h - 71, h - 84, h - 71, 84 - h, 110); v.fabric(h - 71, 84 - h, 89 - h, 84 - h, 110); v.fabric(89 - h, 84 - h, 89 - h, h - 84, 110);
+      v.line(-50, h - 72, 297, h - 72, 'S-REO'); v.line(-50, 72 - h, 297, 72 - h, 'S-REO');
       v.circ(pc, 0, R, 'S-EXIST'); v.cl(pc - R - 30, 0, pc + R + 30, 0); v.cl(pc, -R - 30, pc, R + 30); v.barEnd(pc, 0, 8);
       v.spike(pc, R + 130, pc, 85); v.spike(pc, -R - 130, pc, -85); v.spike(pc + R + 130, 0, pc + 10, 0);
       [[-243, 203], [-243, -203], [43, 203], [43, -203]].forEach(q => v.barEnd(q[0], q[1], 16)); v.circ(-243, -203, 20, 'S-REO');
       { const ux = -0.576, uy = -0.817, p1 = [pc + ux * R, uy * R], p2 = [-243 - ux * 10, -203 - uy * 10]; v.dim(p1[0], p1[1], p2[0], p2[1], -16, '40', { sub: 'COVER' }); }
-      v.dim(-450, -450, 450, -450, -30, '900'); v.dim(450, -450, 450, 450, -18.8, '900'); v.dim(-450, 450, -300, 450, 21.8, '150');
-      v.dim(-400, 450, -400, 410, -10.25, '40'); v.dim(-450, 450, -450, 366, -23, '95 CLEAR', { sub: 'COVER' });
-      v.line(-300, 690, -300, 1000, 'S-DIM');
-      lab(v, -300, 990, 142, 382.6, 'EXTERNAL FACE OF\nEXISTING TIMBER\nSHEETING');
-      lab(v, -300, 430, 216, 392.8, 'IF TIMBER SHEETING OCCURS AT\nCONCRETE POT CUT AND KEY-IN\nTIMBER INTO CONCRETE AS SHOWN.\nAPPLIES SECTION (A) ONLY.\n(TYP)');
+      v.dim(-h, -h, h, -h, -30, null); v.dim(h, -h, h, h, -18.8, null); v.dim(-h, h, -300, h, 21.8, null);
+      v.dim(-400, h, -400, h - 40, -10.25, '40'); v.dim(-h, h, -h, h - 84, -23, '95 CLEAR', { sub: 'COVER' });
+      v.line(-300, h + 240, -300, h + 550, 'S-DIM');
+      lab(v, -300, h + 540, 142, 382.6, 'EXTERNAL FACE OF\nEXISTING TIMBER\nSHEETING');
+      lab(v, -300, h - 20, 216, 392.8, 'IF TIMBER SHEETING OCCURS AT\nCONCRETE POT CUT AND KEY-IN\nTIMBER INTO CONCRETE AS SHOWN.\nAPPLIES SECTION (A) ONLY.\n(TYP)');
       lab(v, pc, 0, 123, 489.75, 'EXISTING TIMBER PILE', { dot: true }); lab(v, -243, -203, 126, 507, '4-N20');
-      lab(v, -456, -440, 132, 584.2, 'PERMANENT FORMWORK\nTO STABILISE EXCAVATION');
-      lab(v, 379, 114, 310, 474.1, 'SL81 FABRIC (TYP) MESH\nCAN BE PREFABRICATED\nIN 2400 LENGTHS AND\nCUT TO SUIT ON SITE'); lab(v, pc + R + 130, 0, 264, 576, 'φ10x250 LONG\nSPIKE (TYP)');
+      lab(v, -h - 6, 10 - h, 132, 584.2, 'PERMANENT FORMWORK\nTO STABILISE EXCAVATION');
+      lab(v, h - 71, 114, 310, 474.1, 'SL81 FABRIC (TYP) MESH\nCAN BE PREFABRICATED\nIN 2400 LENGTHS AND\nCUT TO SUIT ON SITE'); lab(v, pc + R + 130, 0, 264, 576, 'φ10x250 LONG\nSPIKE (TYP)');
       ttl(B, 198, 646, 'SECTION A', 20);
       // ---------------- ELEVATION, origin = pot centre line / existing G.L.
       v = V(B, 20, 202.5, 774);
-      const top = 150, bot = top - H, cut = bot + 750, rear = cut + 112, ucx = pc;
-      v.pl([[-300, top + 20], [450, top], [450, bot], [-450, bot], [-450, rear], [-300, rear]], false, 'S-CONC'); frect(v, -462, bot, -450, rear);
-      v.line(-450, rear, -462, rear, 'S-CONC');
+      const top = 150, bot = top - H, cut = bot + emb, rear = cut + 112, ucx = pc;
+      v.pl([[-300, top + 20], [h, top], [h, bot], [-h, bot], [-h, rear], [-300, rear]], false, 'S-CONC'); frect(v, -h - 12, bot, -h, rear);
+      v.line(-h, rear, -h - 12, rear, 'S-CONC');
       v.line(-400, rear, -400, 770, 'S-EXIST'); v.line(-300, rear, -300, 770, 'S-EXIST'); tbrk(v, -350, 770, 100, 90); soil(v, -400, -25, -400, 340, -1);
-      iElevWebV(v, ucx, cut + 12, 860, s); tbrk(v, ucx, 860, s.d, 90);
+      iElevWebV(v, ucx, cut + tp, 860, s); tbrk(v, ucx, 860, s.d, 90);
       v.rect(-300, top + 20, ucx - s.d / 2 + 300, 860 - top - 20, 'S-NEW');
-      v.rect(ucx - 125, cut, 250, 12, 'S-NEW'); v.line(ucx, cut, ucx, cut - 100, 'S-BOLT');
+      v.rect(ucx - bp / 2, cut, bp, tp, 'S-NEW'); v.line(ucx, cut, ucx, cut - 100, 'S-BOLT');
       pileElev(v, pc, -1690 + (1250 - H) * 0, cut, D); v.cl(pc, cut - 20, pc, -1800);
       v.spike(pc + R + 130, cut - 375 - 140, pc - 20, cut - 375 - 140);
-      v.fabric(375, top - 75, 375, bot + 75, 100); v.fabric(-375, cut, -375, bot + 75, 100); v.fabric(-275, top - 25, -275, rear + 20, 100); v.line(-240, cut - 15, -240, bot + 75, 'S-REO');
-      [[375, top - 75], [375, cut - 15], [375, bot + 75], [-375, cut - 15], [-375, bot + 75], [-275, top - 75]].forEach(q => barRing(v, q[0], q[1]));
-      v.ground(450, 1100, 0); soil(v, 120, bot, 360, bot, -1); v.wl(1460, 0, 'EXISTING G.L.');
+      v.fabric(h - 75, top - 75, h - 75, bot + 75, 100); v.fabric(75 - h, cut, 75 - h, bot + 75, 100); v.fabric(-275, top - 25, -275, rear + 20, 100); v.line(-240, cut - 15, -240, bot + 75, 'S-REO');
+      [[h - 75, top - 75], [h - 75, cut - 15], [h - 75, bot + 75], [75 - h, cut - 15], [75 - h, bot + 75], [-275, top - 75]].forEach(q => barRing(v, q[0], q[1]));
+      v.ground(h, 1100 + dx, 0); soil(v, 120, bot, 360, bot, -1); v.wl(1460 + dx, 0, 'EXISTING G.L.');
       finish(v, 290, top + 7, 'U2');
-      v.dim(560, top + 20, 560, top, 0, '20'); v.dim(560, 0, 560, top, -4, '150'); v.dim(1252 - 0, bot, 1252, top, 0, '1250 MIN.');
-      v.dim(-450, cut, -450, rear, 14.5, ''); v.text(-450 - 15.5 * 20, cut - 140, '100 MIN', 2.0, 'c', 'b', 'S-DIM', 90); v.dim(-1024, bot, -1024, cut, 0, '750'); v.dimChain([[-755, bot], [-755, bot + 375], [-755, cut]], 0, ['=', '=']);
-      v.dim(375, bot, 450, bot, -12, '75 CLEAR COVER', { sub: 'U.O.N. (TYP)' });
-      secMk(v, -1435, 537, 'C'); secMk(v, -1435, -323, 'B'); secMk(v, -1435, -812, 'A'); secFlag(v, 1570, 537, 16); secFlag(v, 1550, -323, 16); secFlag(v, 1550, -812, 16);
+      v.dim(560 + dx, top + 20, 560 + dx, top, 0, '20'); v.dim(560 + dx, 0, 560 + dx, top, -4, '150'); v.dim(1252 + dx, bot, 1252 + dx, top, 0, H + ' MIN.');
+      v.dim(-h, cut, -h, rear, 14.5, ''); v.text(-h - 15.5 * 20, cut - 140, '100 MIN', 2.0, 'c', 'b', 'S-DIM', 90); v.dim(-1024 - dx, bot, -1024 - dx, cut, 0, String(emb)); v.dimChain([[-755 - dx, bot], [-755 - dx, bot + emb / 2], [-755 - dx, cut]], 0, ['=', '=']);
+      v.dim(h - 75, bot, h, bot, -12, '75 CLEAR COVER', { sub: 'U.O.N. (TYP)' });
+      secMk(v, -1435 - dx, 537, 'C'); secMk(v, -1435 - dx, -323, 'B'); secMk(v, -1435 - dx, -812, 'A'); secFlag(v, 1570 + dx, 537, 16); secFlag(v, 1550 + dx, -323, 16); secFlag(v, 1550 + dx, -812, 16);
       lab(v, -250, 600, 130, 696, 'SOLID TIMBER\nPACKER', { dot: true }); lab(v, -350, 390, 143, 734.9, 'EXISTING TIMBER\nSHEETING', { dot: true });
       lab(v, -275, -60, 132, 773.4, 'SL81 FABRIC (GALV)\n25 COVER'); lab(v, ucx + s.d / 2, 555, 229.3, 696, 'PROPOSED ' + un + ' PILE');
-      labs(v, [[-275, top - 75], [375, top - 75]], 261.8, 721.2, 'N16 (500 LAP)'); barIcon(B, 311, 726);
-      lab(v, ucx + 125, cut + 6, 261.8, 796, 'BASE PLATE');
-      labs(v, [[375, cut - 15], [375, bot + 75], [-375, cut - 15], [-375, bot + 75]], 270.5, 858, 'N16\n(500 LAP)'); barIcon(B, 282, 875);
-      lab(v, -456, bot + 100, 136, 914, 'PERMANENT\nFORMWORK'); lab(v, -240, bot + 140, 148, 940, '4-N20');
+      labs(v, [[-275, top - 75], [h - 75, top - 75]], 261.8, 721.2, 'N16 (500 LAP)'); barIcon(B, 311, 726);
+      lab(v, ucx + bp / 2, cut + tp / 2, 261.8, 796, 'BASE PLATE');
+      labs(v, [[h - 75, cut - 15], [h - 75, bot + 75], [75 - h, cut - 15], [75 - h, bot + 75]], 270.5, 858, 'N16\n(500 LAP)'); barIcon(B, 282, 875);
+      lab(v, -h - 6, bot + 100, 136, 914, 'PERMANENT\nFORMWORK'); lab(v, -240, bot + 140, 148, 940, '4-N20');
       lab(v, pc + R, -1570, 245.7, 947.3, 'EXISTING TIMBER PILE, CUTBACK\nTO SOUND TIMBER - 250 MIN\nBELOW EXISTING G.L.');
       ttl(B, 190.75, 982, 'ELEVATION');
       nbox(B, 447, 881, 'THIS DETAIL SHALL BE READ IN CONJUNCTION WITH\nTHE STEEL ABUTMENT PILE/TIMBER FULLCAP BEARING\nDETAILS.\n\nPROPOSED PILE & POT SIZE WILL VARY ACCORDING\nTO ENGINEERING REQUIREMENTS INCLUDING HEIGHT OF\nPILE ABOVE GROUND (' + un + ' SHOWN).', 262);
@@ -220,8 +222,9 @@
     const sb = pf && variant === 2 ? 'WHERE EXISTING TIMBER SHEETING BUTTS\nAT THE TIMBER PILE REPAIR & TOP SECTION\nOF TIMBER PILE REMAINS' : sub;
     ttl(B, F(tp ? tp[0] : 1639 + dx), F(tp ? tp[1] : 2716 + dy), pf ? 'VIEW D' : 'VIEW C', 20, sb, { left: true });
   }
+  // T: m (member 'UB' / 'PFC'), rd (rod dia.), ea (cleat angle 'axbxt'), eaL (cleat length) and the label variants
   function wwB1(B, oy, mx, T) {
-      const v = FV(B, 0, oy, mx), m = T.m;
+      const v = FV(B, 0, oy, mx), m = T.m, rd = T.rd || 20, ea = T.ea || '75x75x10', eaL = T.eaL || 500;
       v.line(472.5, 1690, 472.5, 1782.5, 'S-EXIST'); v.line(495, 1690, 495, 1782.5, 'S-EXIST'); tbrk(v, 484, 1690, 23, 90); v.pl([[461, 1772.5], [461, 1782.5], [495, 1782.5]], false, 'S-EXIST');
       v.line(472.5, 1952, 472.5, 1995, 'S-EXIST'); v.line(495, 1952, 495, 1995, 'S-EXIST'); tbrk(v, 484, 1995, 23, 90); v.pl([[461, 1952], [495, 1952]], false, 'S-EXIST');
       v.rect(461, 1772.5, 179, 186.5, 'S-CONC'); soil(v, 461, 1805, 461, 1942, -1); rrect(v, 484, 1792.5, 626.5, 1937.5, 8);
@@ -235,14 +238,14 @@
       dHs(v, 461, 495, 1772.5, 1725, '150', true); dH(v, 495, 640, 1772.5, 1725, '650');
       dV(v, 1772.5, 1792.5, 461, 372.5, '95 COVER'); dVs(v, 1772.5, 1782.5, 461, 425, '40', true);
       dV(v, 1772.5, 1805, 640, 700, '150'); dV(v, 1805, 1892.5, 640, 700, 'VARIES'); dV(v, 1892.5, 1959, 640, 700, '300');
-      dHs(v, 485.5, 495, 1959, 2015, '30', true); dH(v, 495, 595, 1959, 2015, '440'); dHs(v, 595, 604.5, 1959, 2015, '30'); dH(v, 485.5, 604.5, 1959, 2068, '500');
+      dHs(v, 485.5, 495, 1959, 2015, '30', true); dH(v, 495, 595, 1959, 2015, String(eaL - 60)); dHs(v, 595, 604.5, 1959, 2015, '30'); dH(v, 485.5, 604.5, 1959, 2068, String(eaL));
       if (T.fab3) lb(v, 615, 1790, 630, 1660, 'SL81 FABRIC\n75 COVER\n(TYP)'); else { lb(v, 615, 1790, 630, 1660, 'SL81 FABRIC (TYP)'); lb(v, 624, 1792, 700, 1712, '75 COVER'); } lb(v, 588, 1882, 760, 1815, 'ENSURE CONCRETE\nIN THIS AREA (TYP)');
-      lb(v, 589, 1900, 760, 1928, T.rod || "THREADED 'U' ROD"); lb(v, 600, 1926, 712, 2013, '75x75x10 EAx500 LONG\nWELDED TO ' + m + '.\nPROVIDE φ22 HOLES\nFOR THREADED ' + (T.ea || "'U' ROD.\n(TYP)"));
+      lb(v, 589, 1900, 760, 1928, T.rod || "THREADED 'U' ROD"); lb(v, 600, 1926, 712, 2013, ea + ' EAx' + eaL + ' LONG\nWELDED TO ' + m + '.\nPROVIDE φ' + (rd + 2) + ' HOLES\nFOR THREADED ' + (T.eaT || "'U' ROD.\n(TYP)"));
       lb(v, 540, 1880, 415, 1882, 'TRIM EXISTING TIMBER PILE\nTO PROVIDE 75 MIN.\nBEARING FACE WITH WEB\nOF ' + m + '.' + (T.typ ? ' (TYP)' : ''));
       lb(v, 470, 1960, 380, 2010, 'IF TIMBER SHEETING OCCURS\nAT CONCRETE POT CUT\nAND KEY-IN TIMBER INTO\nCONCRETE AS SHOWN.\nAPPLIES SECTION (' + (T.sec || 'B') + ') ONLY.\n(TYP)');
   }
   function wwB2(B, oy, mx, T) {
-      const v = FV(B, 0, oy, mx), m = T.m;
+      const v = FV(B, 0, oy, mx), m = T.m, rd = T.rd || 20, ea = T.ea || '75x75x10', eaL = T.eaL || 500;
       v.line(1327.5, 1640, 1327.5, 1730, 'S-EXIST'); v.line(1347.5, 1640, 1347.5, 1730, 'S-EXIST'); tbrk(v, 1337.5, 1640, 20, 90); v.pl([[1317.5, 1720], [1317.5, 1730], [1347.5, 1730]], false, 'S-EXIST');
       v.line(1327.5, 1932.5, 1327.5, 1975, 'S-EXIST'); v.line(1350, 1932.5, 1350, 1975, 'S-EXIST'); tbrk(v, 1338.5, 1975, 22, 90); v.line(1317.5, 1932.5, 1350, 1932.5, 'S-EXIST');
       v.rect(1317.5, 1720, 177.5, 220, 'S-CONC'); soil(v, 1315, 1750, 1315, 1900, -1); rrect(v, 1337.5, 1741, 1477.5, 1907.5, 8);
@@ -254,21 +257,25 @@
       dHs(v, 1317.5, 1347.5, 1720, 1675, '150', true); dH(v, 1347.5, 1495, 1720, 1675, '650');
       dV(v, 1720, 1741, 1317.5, 1213, '95 COVER'); dVs(v, 1720, 1730, 1317.5, 1233, '40', true);
       dV(v, 1720, 1786, 1495, 1555, '300'); dV(v, 1786, 1872.5, 1495, 1555, 'VARIES'); dV(v, 1872.5, 1940, 1495, 1555, '300');
-      dHs(v, 1339, 1350, 1940, 2002.5, '30', true); dH(v, 1350, 1442.5, 1940, 2002.5, '440'); dHs(v, 1442.5, 1452.5, 1940, 2002.5, '30'); dH(v, 1339, 1452.5, 1940, 2050, '500');
+      dHs(v, 1339, 1350, 1940, 2002.5, '30', true); dH(v, 1350, 1442.5, 1940, 2002.5, String(eaL - 60)); dHs(v, 1442.5, 1452.5, 1940, 2002.5, '30'); dH(v, 1339, 1452.5, 1940, 2050, String(eaL));
       if (T.fab3) lb(v, 1445, 1741, 1493, 1612, 'SL81 FABRIC\n75 COVER\n(TYP)'); else { lb(v, 1445, 1741, 1493, 1612, 'SL81 FABRIC (TYP)'); lb(v, 1477.5, 1745, 1538, 1660, '75 COVER'); } lb(v, 1436, 1862, 1603, 1798, 'ENSURE CONCRETE\nIN THIS AREA (TYP)');
-      lb(v, 1445, 1882, 1603, 1910, T.rod2 || "THREADED 'U' ROD"); lb(v, 1452.5, 1902.5, 1573, 1995, '75x75x10 EAx500 LONG\nWELDED TO ' + m + '.\nPROVIDE φ22 HOLES\nFOR THREADED ROD.\n(TYP)');
+      lb(v, 1445, 1882, 1603, 1910, T.rod2 || "THREADED 'U' ROD"); lb(v, 1452.5, 1902.5, 1573, 1995, ea + ' EAx' + eaL + ' LONG\nWELDED TO ' + m + '.\nPROVIDE φ' + (rd + 2) + ' HOLES\nFOR THREADED ROD.\n(TYP)');
       lb(v, 1395, 1868, 1300, 1815, 'TRIM EXISTING TIMBER\nPILE TO PROVIDE 75 MIN.\nBEARING FACE WITH WEB\nOF ' + m + '. (TYP)');
       lb(v, 1317.5, 1935, 1285, 1963, 'IF TIMBER SHEETING OCCURS\nAT CONCRETE POT CUT\nAND KEY-IN TIMBER INTO\nCONCRETE AS SHOWN.\nAPPLIES SECTION (' + (T.sec || 'B') + ') ONLY.\n(TYP)');
   }
-  def('pn2126', 'Wing walls', 'Wingwall pile repair – Type 1 (UB alongside the pile)', 'PN30-2126', [P('ub', 'Repair UB', '410UB54', { opts: ['410UB54', '360UB51', '460UB67'] })], (p) => {
-    const B = new Builder(), un = secName(p.ub);
+  // wingwall pot parameters shared by PN30-2126 / 2128: rod dia., cleat angle and length, rod pitch, pot depth below G.L.
+  const EAs = ['75x75x10', '75x75x8', '90x90x10', '100x100x10'];
+  const WWP = [P('rd', 'Threaded rod dia. (mm)', 20, { num: 1 }), P('ea', 'Cleat angle (EA)', '75x75x10', { opts: EAs }), P('eaL', 'Cleat angle length (mm)', 500, { num: 1 }), P('sp', 'Rod pitch (mm)', 600, { num: 1 }), P('emb', 'Pot depth (mm, min.)', 1500, { num: 1 })];
+  const wwPar = p => ({ rd: min(max(Math.round(+p.rd || 20), 12), 36), ea: EAs.indexOf(p.ea) >= 0 ? p.ea : '75x75x10', eaL: min(max(Math.round(+p.eaL || 500), 300), 900), sp: min(max(Math.round(+p.sp || 600), 300), 1200), emb: min(max(Math.round(+p.emb || 1500), 900), 3000) });
+  def('pn2126', 'Wing walls', 'Wingwall pile repair – Type 1 (UB alongside the pile)', 'PN30-2126', [P('ub', 'Repair UB', '410UB54', { opts: ['410UB54', '360UB51', '460UB67'] })].concat(WWP), (p) => {
+    const B = new Builder(), un = secName(p.ub), W = wwPar(p);
     // ---- SECTION A (4 variants)
     const secA = (oy, pile) => {
       const v = FV(B, 0, oy);
       v.line(470, 255, 470, 495, 'S-EXIST'); v.line(490, 255, 490, 495, 'S-EXIST'); tbrk(v, 480, 252, 20, 90); tbrk(v, 480, 498, 20, 90); soil(v, 470, 312, 470, 452, -1);
       v.rect(495, 275, 145, 220, 'S-CONC'); rrect(v, 512, 292, 625, 452, 10);
       v.line(497, 380, 497, 420, 'S-NEW'); v.line(497, 400, 583, 400, 'S-NEW'); v.line(583, 380, 583, 420, 'S-NEW');
-      if (pile) { v.circ(540, 362, 45, 'S-EXIST'); rodD(v, 540, 312, 540, 410); lb(v, 535, 350, 430, 335, 'φ20 THREADED RODS WITH\n1-65x5FLx65 WASHER ABOVE\nCONCRETE POT (TYP)'); lb(v, 585, 375, 685, 398, 'EXISTING TIMBER\nPILE'); }
+      if (pile) { v.circ(540, 362, 45, 'S-EXIST'); rodD(v, 540, 312, 540, 410); lb(v, 535, 350, 430, 335, 'φ' + W.rd + ' THREADED RODS WITH\n1-65x5FLx65 WASHER ABOVE\nCONCRETE POT (TYP)'); lb(v, 585, 375, 685, 398, 'EXISTING TIMBER\nPILE'); }
       lb(v, 625, pile ? 340 : 325, 685, pile ? 322 : 312, 'SL81 FABRIC'); lb(v, 588, 420, 685, pile ? 478 : 440, 'PROPOSED UB\nREPAIR');
       ttl(B, F(485), F(oy + 578), 'SECTION A', 20, 'WHERE EXISTING TIMBER PILE ABOVE\nROTTEN SECTION IS TO ' + (pile ? 'REMAIN' : 'BE REMOVED'), { left: true });
     };
@@ -280,7 +287,7 @@
       [737, 823].forEach(y => { v.line(1346, y, 1434, y, 'S-NEW'); v.line(1434, y - 20, 1434, y + 15, 'S-NEW'); });
       if (pile) { v.circ(1394, 777, 44, 'S-EXIST'); rodD(v, 1394, 727, 1394, 828); }
       else { v.line(1399, 741, 1399, 814, 'S-REO'); rodD(v, 1392.6, 728, 1392.6, 829); stip(v, [[1352, 757], [1386, 757], [1386, 801], [1352, 801]]); v.pl([[1453, 774], [1440, 788], [1453, 802]], false, 'S-TEXT'); vt(v, 1457, 795, '3'); }
-      lb(v, 1392, 734, 1292, 672, 'φ20 THREADED RODS\nABOVE CONCRETE\nPOT (TYP)'); lb(v, 1346, 782, 1250, 842, 'EXISTING TIMBER\nSHEETING BUTTS');
+      lb(v, 1392, 734, 1292, 672, 'φ' + W.rd + ' THREADED RODS\nABOVE CONCRETE\nPOT (TYP)'); lb(v, 1346, 782, 1250, 842, 'EXISTING TIMBER\nSHEETING BUTTS');
       lb(v, 1476, 802, 1542, 820 + (pile ? -95 : 0), 'SL81 FABRIC'); lb(v, 1434, 838, 1542, 890, 'PROPOSED UB\nREPAIR (TYP)');
       if (pile) lb(v, 1438, 780, 1542, 800, 'EXISTING TIMBER\nPILE');
       else { lb(v, 1412, 747, 1439, 560, 'CONCRETE ABOVE CONCRETE POT, TOP OF\nCONCRETE TO HAVE U3 FINISH. CONCRETE\nTO BE POURED A MINIMUM OF 1 DAY AFTER\nPOT REPAIR.'); lb(v, 1399, 800, 1542, 697, 'SL81 FABRIC (ABOVE\nCONCRETE POT) EMBEDDED\n300 INTO PILE POT'); }
@@ -288,9 +295,9 @@
     };
     secA2(0, false); secA2(490, true);
     // ---- SECTION B (2 variants)
-    wwB1(B, 0, null, { m: 'UB' }); ttl(B, F(470), F(2165), 'SECTION B', 20, null, { left: true });
+    wwB1(B, 0, null, Object.assign({ m: 'UB' }, W)); ttl(B, F(470), F(2165), 'SECTION B', 20, null, { left: true });
     nbox(B, F(80), F(1710), 'PROPOSED UB REPAIR\nSHALL BE PLACED ON\nTHE HIGHER SIDE OF\nWINGWALL PILE', F(240), { solid: true });
-    wwB2(B, 0, null, { m: 'UB' }); ttl(B, F(1438), F(2150), 'SECTION B', 20, 'WHERE EXISTING TIMBER SHEETING\nBUTTS AT THE TIMBER PILE REPAIR', { left: true });
+    wwB2(B, 0, null, Object.assign({ m: 'UB' }, W)); ttl(B, F(1438), F(2150), 'SECTION B', 20, 'WHERE EXISTING TIMBER SHEETING\nBUTTS AT THE TIMBER PILE REPAIR', { left: true });
     nbox(B, F(835), F(2170), 'ENSURE WINGWALL SHEETING IS\nSAFELY PROPPED.\nDO NOT REMOVE PROPS UNTIL\nPROPOSED PILE IS IN POSITION &\nCONCRETE HAS BEEN PLACED A\nMINIMUM OF 3 DAYS.', F(362), { solid: true });
     // ---- ELEVATION (crop coordinates, origin offset 2199)
     {
@@ -310,15 +317,15 @@
       secFlag(v, 355, 520, 14, true); secFlag(v, 355, 650, 14, true); secMkL(v, 1095, 517, 'A', 10); secMkL(v, 1095, 640, 'B', 10);
       v.mark(695, 180, 'C', 200);
       dH(v, 497, 535, 150, 45, '175'); dH(v, 535, 571, 150, 70, '298'); dHs(v, 520, 525, 150, 98, '5 GAP', true); dV(v, 150, 160, 540, 553, '10');
-      dH(v, 540, 590, 215, 248, '100'); dV(v, 215, 350, 497, 435, "600 (TYP)", { sub: "IF 'h' > 1500" });
-      dV(v, 127, 462, 640, 755, "'h'"); dV(v, 405, 462, 640, 705, '50'); dV(v, 462, 497, 640, 815, '150'); dV(v, 470, 800, 640, 1005, '1500 MIN.'); dV(v, 775, 800, 640, 850, '100');
+      dH(v, 540, 590, 215, 248, '100'); dV(v, 215, 350, 497, 435, W.sp + ' (TYP)', { sub: "IF 'h' > 1500" });
+      dV(v, 127, 462, 640, 755, "'h'"); dV(v, 405, 462, 640, 705, '50'); dV(v, 462, 497, 640, 815, '150'); dV(v, 470, 800, 640, 1005, W.emb + ' MIN.'); dV(v, 775, 800, 640, 850, '100');
       dV(v, 590, 607, 460, 345, '100', { sub: 'MIN' }); dV(v, 607, 640, 460, 395, '150'); dV(v, 640, 752, 460, 410, '500', { sub: 'MIN' }); dV(v, 752, 800, 460, 395, '100');
       dH(v, 625, 640, 800, 852, '75 CLEAR', { sub: 'COVER (TYP)' }); dH(v, 463, 497, 800, 910, '150');
       vt(v, 640, 168, '15°'); v.line(590, 128, 640, 165, 'S-DIM');
       lb(v, 510, 185, 378, 140, 'RETAIN EXISTING SPIKING\nRAIL (REPLACE IF REQUIRED\nWITH SAME SIZE).\nNOTCH UB PILE TO SUIT.'); lb(v, 565, 292, 620, 265, un, { dot: true });
       lb(v, 465, 432, 400, 432, 'EXISTING TIMBER\nSHEETING'); lb(v, 555, 607, 690, 541, 'WHERE NOTED ABOVE\nCUTBACK PILE TO SOUND\nTIMBER - 250 MIN BELOW\nEXISTING GROUND LEVEL');
       lbs(v, [[625, 610], [625, 780]], 695, 662, 'N16, 500 LAP\nTOP & BOTTOM'); barIcon(B, F(865), F(2199 + 670)); lb(v, 625, 700, 695, 738, 'SL81 FABRIC');
-      lb(v, 460, 735, 370, 745, 'PERMANENT\nFORMWORK'); lb(v, 553, 758, 370, 862, '75x75x10 EA\nx500 LONG'); lb(v, 565, 758, 620, 920, "THREADED 'U' ROD OR 2-THREADED\nRODS SEE SECTIONS (A) & (B) (TYP)");
+      lb(v, 460, 735, 370, 745, 'PERMANENT\nFORMWORK'); lb(v, 553, 758, 370, 862, W.ea + ' EA\nx' + W.eaL + ' LONG'); lb(v, 565, 758, 620, 920, "THREADED 'U' ROD OR 2-THREADED\nRODS SEE SECTIONS (A) & (B) (TYP)");
       vt(v, 812, 203, "IF 'h' < 1500 -"); vt(v, 962, 203, 'a)'); vt(v, 1002, 203, 'REMOVE EXISTING TIMBER PILE\nABOVE ROTTEN SECTION OR'); vt(v, 962, 253, 'b)'); vt(v, 1002, 253, 'WHERE EXISTING TIMBER SHEETING\nBUTTS AT THE TIMBER PILE REPAIR\nEXISTING TIMBER PILE ABOVE\nROTTEN SECTION SHALL REMAIN.');
       vt(v, 812, 377, "IF 'h' > 1500 -"); vt(v, 1002, 377, 'EXISTING TIMBER PILE ABOVE\nROTTEN SECTION SHALL REMAIN.');
       ttl(B, F(488), F(2199 + 990), 'ELEVATION', null, null, { left: true });
@@ -330,8 +337,11 @@
   }, 'Wingwall timber pile rotted at ground level: a UB placed on the higher side of the pile is cast into a reinforced concrete pot and fixed to the pile / spiking rail.');
 
   // ================================================================== PN30-2127 WINGWALL PILE REPAIR TYPE 2 (pile retained, anchor strap)
-  def('pn2127', 'Wing walls', 'Wingwall pile repair – Type 2 (pile retained in pot, anchor strap)', 'PN30-2127', [], (p) => {
-    const B = new Builder();
+  def('pn2127', 'Wing walls', 'Wingwall pile repair – Type 2 (pile retained in pot, anchor strap)', 'PN30-2127', [P('W', 'Pot length (mm)', 900, { num: 1 }), P('Dp', 'Pot width (mm)', 650, { num: 1 }), P('emb', 'Pot depth below rod (mm, min.)', 500, { num: 1 }), P('ann', 'Min. sound annulus (mm)', 100, { num: 1 }),
+    P('Hm', "Max. height 'H' (mm)", 1500, { num: 1 }), P('rd', 'Threaded rod dia. (mm)', 20, { num: 1 }), P('sw', 'Strap width (mm)', 100, { num: 1 }), P('st', 'Strap thickness (mm)', 5, { num: 1 }), P('sL', 'Strap length (mm)', 550, { num: 1 })], (p) => {
+    const B = new Builder(), cl = (x, a, b, d) => min(max(Math.round(+x || d), a), b);
+    const W = cl(p.W, 600, 1500, 900), Dp = cl(p.Dp, 450, 1000, 650), emb = cl(p.emb, 300, 1200, 500), ann = cl(p.ann, 50, 200, 100), Hm = cl(p.Hm, 900, 3000, 1500), rd = cl(p.rd, 12, 36, 20), sw = cl(p.sw, 50, 150, 100), st = cl(p.st, 3, 20, 5), sL = cl(p.sL, 350, 800, 550);
+    const kS = 403 / 550, xs = 615 + (sL - 550) * kS, hw = 35.5 * sw / 100; // strap detail drawn at 403 sheet px for 550
     { // SECTION A
       const v = FV(B, 200, 550);
       v.line(370, 332, 870, 332, 'S-EXIST'); v.line(370, 376, 548, 376, 'S-EXIST'); v.line(548, 376, 870, 376, 'S-HIDDEN'); v.line(870, 332, 870, 376, 'S-EXIST'); tbrk(v, 375, 354, 44, 90 + 90);
@@ -343,9 +353,9 @@
       v.line(610, 578, 625, 578, 'S-NEW'); v.line(735, 578, 750, 578, 'S-NEW');
       stip(v, [[558, 450], [592, 450], [592, 500], [558, 500]]); stip(v, [[765, 505], [805, 505], [805, 560], [765, 560]]);
       dH(v, 548, 870, 332, 78, 'SECTION OF', { sub: 'TIMBER SHEETING' }); vt(v, 709, 116, 'TO BE REMOVED', 2.0, 'c', 'S-DIM');
-      dHs(v, 515, 548, 332, 242, '90'); dV(v, 376, 613, 515, 432, '650'); dH(v, 515, 843, 613, 715, '900');
-      lb(v, 430, 332, 375, 218, 'EXISTING TIMBER\nSHEETING'); lb(v, 700, 400, 800, 218, 'MIN. 100 ANNULAR\nSOLID TIMBER'); lb(v, 758, 495, 930, 420, 'ANCHOR STRAP\nREFER DETAIL');
-      lb(v, 730, 515, 930, 560, 'EXISTING PILE'); lb(v, 818, 583, 930, 650, 'SL81 FABRIC'); lb(v, 585, 565, 450, 690, 'φ20 THREADED ROD');
+      dHs(v, 515, 548, 332, 242, '90'); dV(v, 376, 613, 515, 432, String(Dp)); dH(v, 515, 843, 613, 715, String(W));
+      lb(v, 430, 332, 375, 218, 'EXISTING TIMBER\nSHEETING'); lb(v, 700, 400, 800, 218, 'MIN. ' + ann + ' ANNULAR\nSOLID TIMBER'); lb(v, 758, 495, 930, 420, 'ANCHOR STRAP\nREFER DETAIL');
+      lb(v, 730, 515, 930, 560, 'EXISTING PILE'); lb(v, 818, 583, 930, 650, 'SL81 FABRIC'); lb(v, 585, 565, 450, 690, 'φ' + rd + ' THREADED ROD');
       ttl(B, F(740), F(550 + 845), 'SECTION A', 20, null, { left: true });
     }
     { // SECTION B
@@ -378,9 +388,9 @@
       secMk(v, 350, 195, 'B', 0); v.line(380, 195, 525, 225, 'S-TITLE'); secMk(v, 105, 905, 'A', 14);
       v.pl([[1100, 510], [1160, 540], [1305, 540]], false, 'S-TITLE'); v.add({ t: 'solid', p: [v.P(1235, 540), v.P(1305, 540), v.P(1270, 560)], L: 'S-TEXT' });
       v.line(1160, 893, 1305, 893, 'S-TITLE'); v.add({ t: 'solid', p: [v.P(1235, 893), v.P(1305, 893), v.P(1270, 913)], L: 'S-TEXT' });
-      dV(v, 335, 890, 900, 1425, ''); ["'H' (1500 MAX) - IF 'H' EXCEEDS", '1500 THEN WINGWALL PILE REPAIR', 'DETAIL - TYPE 1, TO BE USED', 'WITH THE ENGINEERS APPROVAL'].forEach((l, i) => { const p = v.P(1418 + i * 40, 612); v.add({ t: 'text', p, s: l, h: 2.2, al: 'c', v: 'b', ang: 90, L: 'S-DIM' }); });
+      dV(v, 335, 890, 900, 1425, ''); ["'H' (" + Hm + " MAX) - IF 'H' EXCEEDS", Hm + ' THEN WINGWALL PILE REPAIR', 'DETAIL - TYPE 1, TO BE USED', 'WITH THE ENGINEERS APPROVAL'].forEach((l, i) => { const p = v.P(1418 + i * 40, 612); v.add({ t: 'text', p, s: l, h: 2.2, al: 'c', v: 'b', ang: 90, L: 'S-DIM' }); });
       v.line(1330, 890, 1440, 890, 'S-DIM');
-      dVs(v, 862, 898, 320, 500, '100'); dV(v, 898, 1078, 720, 500, '500 MIN'); dV(v, 862, 1255, 320, 348, 'MIN. 100 ANNULAR', { sub: 'SOLID TIMBER' }); v.line(320, 862, 1060, 862, 'S-DIM');
+      dVs(v, 862, 898, 320, 500, '100'); dV(v, 898, 1078, 720, 500, emb + ' MIN'); dV(v, 862, 1255, 320, 348, 'MIN. ' + ann + ' ANNULAR', { sub: 'SOLID TIMBER' }); v.line(320, 862, 1060, 862, 'S-DIM');
       dH(v, 720, 745, 1078, 1178, ''); vt(v, 532, 1165, '75 CLEAR\nCOVER\n(TYP)');
       lb(v, 605, 195, 570, 82, 'EXISTING TIMBER\nCAPPING'); lb(v, 605, 275, 495, 295, 'EXISTING TIMBER\nSPIKING RAIL', { dot: true }); lb(v, 750, 345, 485, 430, 'TRIM FABRIC TO\nCLEAR EXISTING\nSPIKING RAIL (TYP)');
       lb(v, 745, 588, 495, 615, 'SL81 FABRIC'); lb(v, 928, 460, 1028, 200, 'CUT BACK TOP OF PILE.\n100 MIN. CONCRETE COVER'); lb(v, 1065, 918, 1135, 968, 'REMOVE SECTION OF\nTIMBER SHEETING\nAT ANCHOR STRAP\nLOCATION');
@@ -391,21 +401,22 @@
     }
     { // ANCHOR STRAP DETAIL 1:10
       const v = FV(B, 1550, 1500);
-      const pts = [[352, 130], [352, 95], [615, 95]]; for (let a = -90; a <= 90; a += 10) pts.push([615 + 145 * Math.cos(a * PI / 180), 240 + 145 * Math.sin(a * PI / 180)]); pts.push([352, 385], [352, 350]); v.pl(pts, false, 'S-NEW');
+      const pts = [[352, 130], [352, 95], [xs, 95]]; for (let a = -90; a <= 90; a += 10) pts.push([xs + 145 * Math.cos(a * PI / 180), 240 + 145 * Math.sin(a * PI / 180)]); pts.push([352, 385], [352, 350]); v.pl(pts, false, 'S-NEW');
       v.line(388, 45, 388, 135, 'S-CL'); v.line(388, 345, 388, 435, 'S-CL');
-      dV(v, 95, 385, 352, 165, 'TO SUIT PILE', { sub: 'DIAMETER' }); dVs(v, 95, 130, 352, 275, '50 (TYP)', true); dH(v, 352, 755, 385, 482, '550');
-      lb(v, 735, 150, 790, 100, '100x5FL\nANCHOR\nSTRAP'); ttl(B, F(1550 + 558), F(1500 + 528), 'PLAN');
-      v.rect(352, 592, 403, 71, 'S-NEW'); v.circ(388, 628, 8, 'S-NEW'); v.line(388, 570, 388, 690, 'S-CL'); v.line(300, 628, 420, 628, 'S-CL');
-      dV(v, 592, 628, 352, 312, ''); dV(v, 628, 663, 352, 312, ''); [610, 646].forEach(y => { const q = v.P(312, y); v.add({ t: 'text', p: [q[0] - 2.5, q[1]], s: '=', h: 2.0, al: 'c', v: 'm', ang: 90, L: 'S-DIM' }); }); dVs(v, 592, 663, 755, 805, '100', true);
-      dH(v, 352, 388, 663, 765, ''); vt(v, 433, 755, '50', 2.0, 'c', 'S-DIM'); vt(v, 450, 795, '(TYP)', 2.0, 'c', 'S-DIM');
-      lb(v, 395, 635, 515, 738, 'φ24 HOLE'); ttl(B, F(1550 + 545), F(1500 + 893), 'ELEVATION');
+      dV(v, 95, 385, 352, 165, 'TO SUIT PILE', { sub: 'DIAMETER' }); dVs(v, 95, 130, 352, 275, '50 (TYP)', true); dH(v, 352, xs + 140, 385, 482, String(sL));
+      lb(v, xs + 120, 150, xs + 175, 100, sw + 'x' + st + 'FL\nANCHOR\nSTRAP'); ttl(B, F(1550 + 558), F(1500 + 528), 'PLAN');
+      v.rect(352, 627.5 - hw, 403 + (sL - 550) * kS, 2 * hw, 'S-NEW'); v.circ(388, 628, 8 * (rd + 4) / 24, 'S-NEW'); v.line(388, 570, 388, 690, 'S-CL'); v.line(300, 628, 420, 628, 'S-CL');
+      dV(v, 627.5 - hw, 628, 352, 312, ''); dV(v, 628, 627.5 + hw, 352, 312, ''); [610, 646].forEach(y => { const q = v.P(312, y); v.add({ t: 'text', p: [q[0] - 2.5, q[1]], s: '=', h: 2.0, al: 'c', v: 'm', ang: 90, L: 'S-DIM' }); }); dVs(v, 627.5 - hw, 627.5 + hw, 755 + (sL - 550) * kS, 805 + (sL - 550) * kS, String(sw), true);
+      dH(v, 352, 388, 627.5 + hw, 765, ''); vt(v, 433, 755, '50', 2.0, 'c', 'S-DIM'); vt(v, 450, 795, '(TYP)', 2.0, 'c', 'S-DIM');
+      lb(v, 395, 635, 515, 738, 'φ' + (rd + 4) + ' HOLE'); ttl(B, F(1550 + 545), F(1500 + 893), 'ELEVATION');
       ttl(B, F(1550 + 295), F(1500 + 975), 'ANCHOR STRAP DETAIL', '1:10', null, { left: true, h: 3.6 });
     }
     return B.E;
   }, 'Wingwall pile with at least 100 mm of sound annular timber and H ≤ 1500: pile retained, cut back and encased in a 900 x 650 reinforced pot tied back with an anchor strap.');
 
   // ================================================================== PN30-2128 WINGWALL PILE REPAIR TYPE 3 (300 PFC alongside the pile)
-  def('pn2128', 'Wing walls', 'Wingwall pile repair – Type 3 (1 or 2 – 300 PFC alongside the pile)', 'PN30-2128', [], (p) => {
+  def('pn2128', 'Wing walls', 'Wingwall pile repair – Type 3 (1 or 2 – 300 PFC alongside the pile)', 'PN30-2128', [P('pfc', 'Repair PFC', '300PFC', { opts: ['300PFC', '250PFC', '380PFC'] })].concat(WWP), (p) => {
+    const W = wwPar(p), pn = secName(['300PFC', '250PFC', '380PFC'].indexOf(p.pfc) >= 0 ? p.pfc : '300PFC'), rl = 'φ' + W.rd + ' THREADED ROD\nAT ' + W.sp + ' CRS VERTICAL';
     const B = new Builder(), pfc = (v, x0, x1, y, up) => v.pl([[x0, y + (up ? -12 : 12)], [x0, y], [x1, y], [x1, y + (up ? -12 : 12)]], false, 'S-NEW');
     const sheet = (v, x, y0, y1) => { v.line(x, y0, x, y1, 'S-EXIST'); v.line(x + 22, y0, x + 22, y1, 'S-EXIST'); tbrk(v, x + 11, y0, 22, 90); tbrk(v, x + 11, y1, 22, 90); };
     const nut = (v, x, y) => { v.line(x - 6, y, x + 6, y, 'S-BOLT'); v.line(x, y - 6, x, y + 6, 'S-BOLT'); v.barEnd(x, y, 3); };
@@ -413,33 +424,33 @@
       let v = FV(B, 0, 550);
       v.rect(538, 277, 142, 185, 'S-CONC'); sheet(v, 682, 235, 495); v.circ(636, 370, 44, 'S-EXIST'); pfc(v, 615, 680, 402, false); v.arc(636, 370, 52, 55, 125, 'S-NEW'); rodD(v, 636, 305, 636, 402); nut(v, 636, 402);
       v.cl(636, 160, 636, 270); vt(v, 630, 177, '℄ EXISTING TIMBER\n   PILE');
-      lb(v, 615, 315, 565, 222, 'CURVED WASHER. REFER\nDRG N° 9530-0072'); lb(v, 592, 355, 490, 355, 'EXISTING TIMBER\nPILE'); lb(v, 612, 409, 510, 409, 'PROPOSED 300 PFC\nREPAIR');
-      lb(v, 645, 337, 745, 337, 'φ20 THREADED ROD\nAT 600 CRS VERTICAL'); lb(v, 707, 455, 745, 455, 'EXISTING TIMBER\nSHEETING');
+      lb(v, 615, 315, 565, 222, 'CURVED WASHER. REFER\nDRG N° 9530-0072'); lb(v, 592, 355, 490, 355, 'EXISTING TIMBER\nPILE'); lb(v, 612, 409, 510, 409, 'PROPOSED ' + pn + '\nREPAIR');
+      lb(v, 645, 337, 745, 337, rl); lb(v, 707, 455, 745, 455, 'EXISTING TIMBER\nSHEETING');
       ttl(B, F(522), F(550 + 562), 'SECTION C', 20, 'WHERE EXISTING TIMBER SHEET DOES\nNOT BUTT AT THE TIMBER PILE REPAIR.', { left: true });
       v.rect(538, 710, 142, 185, 'S-CONC'); sheet(v, 682, 668, 930); rrect(v, 555, 727, 665, 877, 8); v.fabric(555, 745, 555, 860, 30); v.circ(636, 780, 44, 'S-EXIST'); pfc(v, 615, 680, 830, false);
       stip(v, [[565, 738], [595, 738], [595, 765], [565, 765]]); stip(v, [[565, 812], [595, 812], [595, 838], [565, 838]]);
-      lb(v, 555, 740, 460, 740, 'SL81 FABRIC'); lb(v, 592, 787, 455, 787, 'EXISTING TIMBER\nPILE'); lb(v, 612, 838, 510, 842, 'PROPOSED 300 PFC REPAIR\nSHALL BE PLACED ON THE\nHIGHER SIDE OF WINGWALL\nPILE'); lb(v, 707, 888, 745, 888, 'EXISTING TIMBER\nSHEETING');
+      lb(v, 555, 740, 460, 740, 'SL81 FABRIC'); lb(v, 592, 787, 455, 787, 'EXISTING TIMBER\nPILE'); lb(v, 612, 838, 510, 842, 'PROPOSED ' + pn + ' REPAIR\nSHALL BE PLACED ON THE\nHIGHER SIDE OF WINGWALL\nPILE'); lb(v, 707, 888, 745, 888, 'EXISTING TIMBER\nSHEETING');
       ttl(B, F(522), F(550 + 997), 'SECTION B', 20, 'WHERE EXISTING TIMBER SHEET DOES\nNOT BUTT AT THE TIMBER PILE REPAIR.', { left: true });
       v = FV(B, 1000, 550);
       v.rect(365, 155, 140, 217, 'S-CONC'); sheet(v, 507, 120, 410); v.circ(463, 265, 45, 'S-EXIST'); pfc(v, 440, 505, 212, true); pfc(v, 440, 505, 320, false); rodD(v, 463, 212, 463, 320); nut(v, 463, 212); nut(v, 463, 320);
       v.cl(463, 70, 463, 170); vt(v, 457, 87, '℄ EXISTING TIMBER\n   PILE');
-      lb(v, 425, 230, 320, 193, 'EXISTING TIMBER\nPILE'); lb(v, 455, 265, 340, 283, 'φ20 THREADED ROD\nAT 600 CRS VERTICAL'); lb(v, 445, 325, 305, 380, 'PROPOSED 300 PFC\nREPAIR (TYP)'); lb(v, 515, 265, 555, 335, 'EXISTING TIMBER\nSHEETING BUTTS');
+      lb(v, 425, 230, 320, 193, 'EXISTING TIMBER\nPILE'); lb(v, 455, 265, 340, 283, rl); lb(v, 445, 325, 305, 380, 'PROPOSED ' + pn + '\nREPAIR (TYP)'); lb(v, 515, 265, 555, 335, 'EXISTING TIMBER\nSHEETING BUTTS');
       ttl(B, F(1345), F(550 + 470), 'SECTION C', 20, 'WHERE EXISTING TIMBER SHEETING BUTTS\nAT THE TIMBER PILE REPAIR & TOP SECTION\nOF TIMBER PILE REMAINS', { left: true });
       v.rect(1095, 150, 145, 218, 'S-CONC'); sheet(v, 1240, 115, 405); pfc(v, 1170, 1240, 212, true); pfc(v, 1170, 1240, 318, false); v.line(1190, 225, 1190, 300, 'S-REO'); rodD(v, 1196, 212, 1196, 318); nut(v, 1196, 212); nut(v, 1196, 318);
       stip(v, [[1200, 225], [1235, 225], [1235, 265], [1200, 265]]); v.cl(1192, 60, 1192, 150); vt(v, 1186, 77, '℄ EXISTING TIMBER\n   PILE');
       lb(v, 1225, 228, 1090, 78, "CONCRETE ABOVE CONCRETE POT, TOP OF\nCONCRETE TO HAVE U3 FINISH AND  PROFILE\nTO MATCH PFC's. CONCRETE TO POURED A\nMINIMUM OF 1 DAY AFTER POT REPAIR.");
-      lb(v, 1190, 270, 1045, 237, 'SL81 FABRIC (ABOVE\nCONCRETE POT)\nEMBEDDED 300 INTO\nPILE POT'); lb(v, 1175, 322, 1035, 377, 'PROPOSED 300 PFC\nREPAIR (TYP)');
-      lb(v, 1250, 260, 1335, 180, 'EXISTING TIMBER\nSHEETING BUTTS'); lb(v, 1205, 272, 1305, 275, 'φ20 THREADED ROD\nAT 600 CRS VERTICAL'); lb(v, 1262, 362, 1305, 362, 'EXISTING TIMBER\nSHEETING');
+      lb(v, 1190, 270, 1045, 237, 'SL81 FABRIC (ABOVE\nCONCRETE POT)\nEMBEDDED 300 INTO\nPILE POT'); lb(v, 1175, 322, 1035, 377, 'PROPOSED ' + pn + '\nREPAIR (TYP)');
+      lb(v, 1250, 260, 1335, 180, 'EXISTING TIMBER\nSHEETING BUTTS'); lb(v, 1205, 272, 1305, 275, rl); lb(v, 1262, 362, 1305, 362, 'EXISTING TIMBER\nSHEETING');
       ttl(B, F(2078), F(550 + 468), 'SECTION C', 20, 'WHERE EXISTING TIMBER SHEETING BUTTS\nAT THE TIMBER PILE REPAIR & TOP SECTION\nOF TIMBER PILE IS REMOVED', { left: true });
       v.rect(365, 638, 140, 217, 'S-CONC'); sheet(v, 507, 598, 890); rrect(v, 380, 655, 495, 838, 8); v.circ(463, 745, 45, 'S-EXIST'); pfc(v, 440, 505, 698, true); pfc(v, 440, 505, 795, false);
       stip(v, [[390, 700], [420, 700], [420, 725], [390, 725]]); stip(v, [[390, 770], [420, 770], [420, 795], [390, 795]]);
-      lb(v, 380, 687, 318, 687, 'SL81 FABRIC'); lb(v, 420, 745, 322, 735, 'EXISTING TIMBER\nPILE'); lb(v, 440, 800, 340, 800, 'PROPOSED 300 PFC\nREPAIR (TYP)'); lb(v, 530, 847, 570, 847, 'EXISTING TIMBER\nSHEETING');
+      lb(v, 380, 687, 318, 687, 'SL81 FABRIC'); lb(v, 420, 745, 322, 735, 'EXISTING TIMBER\nPILE'); lb(v, 440, 800, 340, 800, 'PROPOSED ' + pn + '\nREPAIR (TYP)'); lb(v, 530, 847, 570, 847, 'EXISTING TIMBER\nSHEETING');
       ttl(B, F(1345), F(550 + 950), 'SECTION B', 20, 'WHERE EXISTING TIMBER SHEETING BUTTS\nAT THE TIMBER PILE REPAIR', { left: true });
     }
     // SECTION A (mirror of the Type 1 pot sections, PFC instead of UB)
-    wwB1(B, -9, 1180, { m: 'PFC', sec: 'A', fab3: true, rod: "φ20 THREADED 'U' ROD", ea: 'ROD.', typ: true });
+    wwB1(B, -9, 1180, Object.assign({ m: 'PFC', sec: 'A', fab3: true, rod: 'φ' + W.rd + " THREADED 'U' ROD", eaT: 'ROD.', typ: true }, W));
     ttl(B, F(522), F(2155), 'SECTION A', 20, 'WHERE EXISTING TIMBER SHEET DOES\nNOT BUTT AT THE TIMBER PILE REPAIR.', { left: true });
-    wwB2(B, 10, 2863, { m: 'PFC', sec: 'A', fab3: true, rod2: 'THREADED ROD\n(TYP)' });
+    wwB2(B, 10, 2863, Object.assign({ m: 'PFC', sec: 'A', fab3: true, rod2: 'THREADED ROD\n(TYP)' }, W));
     ttl(B, F(1348), F(2155), 'SECTION A', 20, 'WHERE EXISTING TIMBER SHEET BUTTS\nAT THE TIMBER PILE REPAIR.', { left: true });
     nbox(B, F(75), F(2125), 'ENSURE WINGWALL SHEETING IS\nADEQUATELY PROPPED.\nDO NOT REMOVE PROPS UNTIL\nPROPOSED PFC REPAIR IS IN\nPOSITION AND CONCRETE HAS BEEN\nPLACED A MINIMUM OF 3 DAYS.', F(360), { solid: true });
     nbox(B, F(1105), F(2270), 'NOTE: PFC PILE SIZE WILL VARY\nACCORDING TO ENGINEERING\nREQUIREMENTS', F(490), { h: 3.0 });
@@ -460,16 +471,16 @@
       v.pl([[532, 660], [520, 672], [532, 684]], false, 'S-TEXT'); vt(v, 514, 680, '4', TH, 'r');
       [488, 605, 685].forEach(y => secFlag(v, 440, y, 14, true)); [['C', 485], ['B', 602], ['A', 680]].forEach(q => { secMk(v, 905, q[1], q[0], 0); v.line(840, q[1], 885, q[1], 'S-TITLE'); });
       v.mark(455, 187, 'D', 0);
-      { const a = v.P(465, 340); B.E.push({ t: 'pl', p: [[a[0] - 1, a[1] - 1.6], [a[0] + 16, a[1] - 1.6], [a[0] + 16, a[1] + 3.4], [a[0] - 1, a[1] + 3.4]], closed: true, L: 'S-TEXT' }); B.E.push({ t: 'text', p: [a[0] + 0.5, a[1]], s: '300 PFC', h: TH, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); const b = v.P(635, 302); B.E.push({ t: 'line', a: [a[0] + 16, a[1] + 1], b, L: 'S-TEXT' }); B.E.push({ t: 'circle', c: b, r: 0.45, L: 'S-TEXT' }); }
+      { const a = v.P(465, 340); B.E.push({ t: 'pl', p: [[a[0] - 1, a[1] - 1.6], [a[0] + 16, a[1] - 1.6], [a[0] + 16, a[1] + 3.4], [a[0] - 1, a[1] + 3.4]], closed: true, L: 'S-TEXT' }); B.E.push({ t: 'text', p: [a[0] + 0.5, a[1]], s: pn, h: TH, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); const b = v.P(635, 302); B.E.push({ t: 'line', a: [a[0] + 16, a[1] + 1], b, L: 'S-TEXT' }); B.E.push({ t: 'circle', c: b, r: 0.45, L: 'S-TEXT' }); }
       dH(v, 640, 685, 155, 45, '175'); dHs(v, 635, 640, 155, 98, '5 GAP', true); dVs(v, 150, 160, 618, 600, '10'); vt(v, 520, 178, '15°'); v.line(533, 182, 578, 196, 'S-DIM');
-      dH(v, 578, 618, 215, 265, '100'); dV(v, 222, 375, 685, 750, "IF 'h' > 1500", { sub: '600 (TYP)' });
-      dV(v, 158, 540, 540, 272, "'h' MAXIMUM", { sub: '(REFER TABLE)' }); v.line(700, 158, 910, 158, 'S-DIM'); dV(v, 540, 868, 540, 272, '1500 MIN.');
+      dH(v, 578, 618, 215, 265, '100'); dV(v, 222, 375, 685, 750, "IF 'h' > 1500", { sub: W.sp + ' (TYP)' });
+      dV(v, 158, 540, 540, 272, "'h' MAXIMUM", { sub: '(REFER TABLE)' }); v.line(700, 158, 910, 158, 'S-DIM'); dV(v, 540, 868, 540, 272, W.emb + ' MIN.');
       dV(v, 540, 578, 540, 462, '150'); dV(v, 490, 540, 555, 505, '50');
       dV(v, 555, 655, 718, 790, '100', { sub: 'MIN' }); dV(v, 655, 690, 718, 770, '150'); dV(v, 690, 800, 718, 790, '500', { sub: 'MIN' }); dV(v, 825, 868, 718, 770, '100'); dV(v, 825, 868, 540, 438, '100', { sub: 'MIN' });
       dH(v, 540, 555, 868, 945, ''); vt(v, 470, 925, '75 CLEAR\nCOVER (TYP)'); dHs(v, 685, 718, 868, 960, '150');
       lb(v, 670, 190, 790, 58, 'RETAIN EXISTING SPIKING\nRAIL (REPLACE IF REQUIRED\nWITH SAME SIZE).\nNOTCH PFC PILE TO SUIT.'); lb(v, 708, 532, 765, 532, 'EXISTING TIMBER\nSHEETING');
       lb(v, 645, 655, 500, 635, 'LIMIT OF SOUND\nTIMBER'); lb(v, 555, 745, 460, 716, 'SL81 FABRIC'); lbs(v, [[555, 655], [555, 840]], 505, 765, 'N16, 500 LAP\nTOP & BOTTOM'); barIcon(B, F(300), F(2250 + 785));
-      lb(v, 724, 810, 815, 810, 'PERMANENT\nFORMWORK'); lb(v, 600, 805, 815, 902, '75x75x10 EA\nx 500 LONG\n(TYP)'); lb(v, 617, 808, 560, 985, "4-THREADED RODS OR\n2-THREADED 'U' RODS\nSEE SECTIONS (A)");
+      lb(v, 724, 810, 815, 810, 'PERMANENT\nFORMWORK'); lb(v, 600, 805, 815, 902, W.ea + ' EA\nx ' + W.eaL + ' LONG\n(TYP)'); lb(v, 617, 808, 560, 985, "4-THREADED RODS OR\n2-THREADED 'U' RODS\nSEE SECTIONS (A)");
       ttl(B, F(588), F(2250 + 1055), 'ELEVATION', null, null, { left: true });
       const rf = mainT(B, F(390), F(2250 + 1098), 'WINGWALL PILE REPAIR DETAIL - TYPE 3', 'ABUTMENT N° X - PILE N° X', 'otri', { scale: 20 });
       drgBox(B, F(1058), F(2250 + 1110), F(265), rf);
@@ -479,8 +490,10 @@
   }, 'Wingwall pile repair with 1 or 2 – 300 PFC on the higher side of the pile, rodded at 600 crs and cast into a reinforced pot; h limited by the table (with / without 20 kPa surcharge).');
 
   // ================================================================== PN30-2129 ABUTMENT PILE RESTRAINT
-  def('prs', 'Abutments', 'Abutment pile restraint (headroom > 1750, no overlay)', 'PN30-2129', [P('uc', 'Steel pile', '200UC52', { opts: UCs })], (p) => {
-    const B = new Builder(), un = secName(p.uc), v = FV(B, 150, 1700), o = { h: 3.0 };
+  def('prs', 'Abutments', 'Abutment pile restraint (headroom > 1750, no overlay)', 'PN30-2129', [P('uc', 'Steel pile', '200UC52', { opts: UCs }), P('ea', 'Restraint angle (EA)', '200x200x13', { opts: ['200x200x13', '200x200x16', '150x150x12'] }), P('eaL', 'Angle length (mm)', 250, { num: 1 }),
+    P('bd', 'Bolt dia. (mm)', 16, { num: 1 }), P('cs', 'Coach screw dia. (mm)', 10, { num: 1 }), P('csp', 'Coach screw spacing (mm)', 175, { num: 1 }), P('gap', 'Max. gap pile to deck (mm)', 75, { num: 1 }), P('hr', 'Min. headroom (mm)', 1750, { num: 1 })], (p) => {
+    const B = new Builder(), un = secName(p.uc), v = FV(B, 150, 1700), o = { h: 3.0 }, cl = (x, a, b, d) => min(max(Math.round(+x || d), a), b);
+    const ea = ['200x200x13', '200x200x16', '150x150x12'].indexOf(p.ea) >= 0 ? p.ea : '200x200x13', eaL = cl(p.eaL, 150, 500, 250), bd = cl(p.bd, 12, 24, 16), cs = cl(p.cs, 8, 16, 10), csp = cl(p.csp, 75, 400, 175), gap = cl(p.gap, 25, 150, 75), hr = cl(p.hr, 1000, 3000, 1750);
     v.pl([[300, 845], [300, 450], [975, 450]], false, 'S-EXIST'); v.line(300, 522, 1090, 522, 'S-EXIST'); [435, 570, 705, 840, 972].forEach(x => v.line(x, 450, x, 522, 'S-HIDDEN'));
     v.pl([[985, 430], [985, 480], [960, 492], [1035, 478], [985, 500], [985, 530]], false, 'S-TEXT');
     v.line(345, 522, 345, 660, 'S-HIDDEN'); [660, 790].forEach(y => v.line(300, y, 345, y, 'S-EXIST'));
@@ -492,12 +505,12 @@
     { const L = []; for (let a = -90; a <= 90; a += 12) L.push([1090 + 45 * Math.cos(a * PI / 180), 591 + 69 * Math.sin(a * PI / 180)]); v.pl(L, false, 'S-EXIST'); const M = []; for (let a = -90; a <= 90; a += 12) M.push([1090 + 45 * Math.cos(a * PI / 180), 731 + 69 * Math.sin(a * PI / 180)]); v.pl(M, false, 'S-EXIST'); const N = []; for (let a = 90; a <= 270; a += 12) N.push([1090 + 45 * Math.cos(a * PI / 180), 591 + 69 * Math.sin(a * PI / 180)]); v.pl(N, false, 'S-EXIST'); }
     v.line(545, 575, 760, 575, 'S-CL'); v.line(570, 645, 760, 645, 'S-DIM'); vt(v, 768, 600, '℄ SLOTTED\n   HOLE', 2.6);
     v.line(130, 522, 300, 522, 'S-DIM'); v.line(130, 570, 345, 570, 'S-DIM');
-    dVs(v, 522, 570, 300, 155, '75 MAX', true); dVs(v, 570, 600, 345, 380, '50'); dVs(v, 575, 645, 560, 730, '100', true);
-    lb(v, 518, 487, 325, 195, 'EXISTING\nTIMBER\nDECK', Object.assign({ dot: true }, o)); lbs(v, [[600, 465], [650, 528]], 770, 97, '200x200x13 EA x250 LONG\nWITH 2-M10 x 75 LONG\nCOACH SCREWS AT 175 CRS\nAND 2-φ18x75 LONG SLOTTED\nHOLES FOR M16 BOLTS', o);
-    lb(v, 1035, 693, 1200, 478, 'EXISTING TIMBER\nSTRINGER', Object.assign({ dot: true }, o)); lb(v, 550, 615, 720, 940, '2-M16 BOLTS AT\nGAUGE OF UC PILE', o);
+    dVs(v, 522, 570, 300, 155, gap + ' MAX', true); dVs(v, 570, 600, 345, 380, '50'); dVs(v, 575, 645, 560, 730, '100', true);
+    lb(v, 518, 487, 325, 195, 'EXISTING\nTIMBER\nDECK', Object.assign({ dot: true }, o)); lbs(v, [[600, 465], [650, 528]], 770, 97, ea + ' EA x' + eaL + ' LONG\nWITH 2-M' + cs + ' x 75 LONG\nCOACH SCREWS AT ' + csp + ' CRS\nAND 2-φ' + (bd + 2) + 'x75 LONG SLOTTED\nHOLES FOR M' + bd + ' BOLTS', o);
+    lb(v, 1035, 693, 1200, 478, 'EXISTING TIMBER\nSTRINGER', Object.assign({ dot: true }, o)); lb(v, 550, 615, 720, 940, '2-M' + bd + ' BOLTS AT\nGAUGE OF UC PILE', o);
     const rf = mainT(B, F(377), F(2875), 'ABUTMENT PILE RESTRAINT DETAIL', 'ABUTMENT N° X - PILE N° X', 'none', { scale: 20, h: 4.2 });
     nbox(B, F(534), F(1027), 'PROPOSED PILE SIZE WILL\nVARY ACCORDING TO\nENGINEERING REQUIREMENTS.\n' + un + ' PILE DRAWN\n\nFULLCAP DETAILS NOT SHOWN\nREFER TO RELEVANT SECTION.', F(858), { h: 3.8 });
-    drgBox(B, F(1640), F(2595), F(738), rf, { h: 3.6 }); nbox(B, F(540), F(3236), 'HEADROOM EXCEEDS 1750 &\nNO OVERLAY', F(810), { h: 3.8 });
+    drgBox(B, F(1640), F(2595), F(738), rf, { h: 3.6 }); nbox(B, F(540), F(3236), 'HEADROOM EXCEEDS ' + hr + ' &\nNO OVERLAY', F(810), { h: 3.8 });
     return B.E;
   }, 'Restrains the top of a steel abutment pile to the timber deck with a 200x200x13 EA cleat where headroom exceeds 1750 and there is no concrete overlay.');
 
@@ -511,38 +524,42 @@
     if (dbl) { v.add({ t: 'line', a: [sx, b[1]], b: [sx, b[1] + 4.5], L: 'S-TEXT' }); v.add({ t: 'line', a: [sx, b[1]], b: [sx + 4.5, b[1] + 4.5], L: 'S-TEXT' }); }
   }
   const zig = (v, x0, x1, y, xm, L) => v.pl([[x0, y], [xm - 8, y], [xm - 2, y - 55], [xm + 6, y + 50], [xm + 10, y], [x1, y]], false, L || 'S-TEXT');
-  def('dsp', 'Piles', 'Driven steel pile – butt splice', 'PN30-2130', [P('uc', 'Driven pile', '200UC52', { opts: UCs }), P('set', 'Min. set (blows / 250 mm)', 'XX', {}), P('kJ', 'Energy per blow (kJ)', 'XX', {})], (p) => {
-    const B = new Builder(), un = secName(p.uc);
+  def('dsp', 'Piles', 'Driven steel pile – butt splice', 'PN30-2130', [P('uc', 'Driven pile', '200UC52', { opts: UCs }), P('set', 'Min. set (blows / 250 mm)', 'XX', {}), P('kJ', 'Energy per blow (kJ)', 'XX', {}),
+    P('gs', 'Splice depth below G.L. (mm, min.)', 3000, { num: 1 }), P('gap', 'Root gap (mm)', 2, { num: 1 }), P('rf', 'Root face (mm)', 2, { num: 1 }), P('ang', 'Bevel angle (°)', 45, { num: 1 })], (p) => {
+    const B = new Builder(), s = SEC[p.uc] || SEC['200UC52'], un = secName(p.uc), cl = (x, a, b, d) => min(max(Math.round(+x || d), a), b);
+    const gs = cl(p.gs, 1000, 9000, 3000), gap = cl(p.gap, 0, 6, 2), rf = cl(p.rf, 0, 6, 2), ang = cl(p.ang, 30, 60, 45) + '°';
+    // splice elevation: the pile is drawn 240 sheet px across its depth for 206 mm (200 UC 52)
+    const k = min(max(s.d / 206, 0.7), 1.5), xl = 925 - 120 * k, xr = 925 + 120 * k, dx = xr - 1045, tf = s.tf / 12.5;
     { // SECTION A (web) and DETAIL 1 (flange), N.T.S.
       const v = FV(B, 150, 100);
       v.pl([[280, 120], [280, 645], [300, 645], [490, 458], [490, 120]], false, 'S-NEW'); zig(v, 245, 525, 120, 385); v.line(300, 405, 300, 645, 'S-NEW');
       v.pl([[278, 912], [278, 670], [487, 670], [487, 912]], false, 'S-NEW'); zig(v, 240, 520, 912, 380);
-      dHs(v, 280, 300, 405, 428, '2', true); v.arc(370, 645, 105, 0, 45, 'S-DIM'); v.arrow(470, 645, -90, 'S-DIM'); v.arrow(445, 571, 135, 'S-DIM'); vt(v, 470, 585, '45°');
-      v.line(445, 645, 697, 645, 'S-DIM'); v.line(505, 670, 697, 670, 'S-DIM'); dVs(v, 645, 670, 697, 672, '2');
+      dHs(v, 280, 300, 405, 428, String(rf), true); v.arc(370, 645, 105, 0, 45, 'S-DIM'); v.arrow(470, 645, -90, 'S-DIM'); v.arrow(445, 571, 135, 'S-DIM'); vt(v, 470, 585, ang);
+      v.line(445, 645, 697, 645, 'S-DIM'); v.line(505, 670, 697, 670, 'S-DIM'); dVs(v, 645, 670, 697, 672, String(gap));
       lb(v, 490, 270, 605, 270, 'WEB', { noArrow: false }); buttRef(v, 370, 585, 578, 842, 37, false);
       v.pl([[1105, 128], [1105, 492], [1262, 650], [1280, 650], [1437, 492], [1437, 128]], false, 'S-NEW'); zig(v, 1070, 1473, 128, 1265); v.line(1262, 415, 1262, 640, 'S-NEW'); v.line(1280, 415, 1280, 640, 'S-NEW');
       v.pl([[1100, 913], [1100, 673], [1435, 673], [1435, 913]], false, 'S-NEW'); zig(v, 1065, 1468, 913, 1275);
-      dHs(v, 1262, 1280, 415, 437, '2'); v.arc(1255, 650, 170, 135, 180, 'S-DIM'); v.arrow(1085, 650, -90, 'S-DIM'); v.arrow(1135, 530, 45, 'S-DIM'); vt(v, 1010, 585, '45°');
-      v.line(1060, 650, 1240, 650, 'S-DIM'); v.line(1425, 650, 1755, 650, 'S-DIM'); v.line(1450, 673, 1755, 673, 'S-DIM'); dVs(v, 650, 673, 1755, 1730, '2');
+      dHs(v, 1262, 1280, 415, 437, String(rf)); v.arc(1255, 650, 170, 135, 180, 'S-DIM'); v.arrow(1085, 650, -90, 'S-DIM'); v.arrow(1135, 530, 45, 'S-DIM'); vt(v, 1010, 585, ang);
+      v.line(1060, 650, 1240, 650, 'S-DIM'); v.line(1425, 650, 1755, 650, 'S-DIM'); v.line(1450, 673, 1755, 673, 'S-DIM'); dVs(v, 650, 673, 1755, 1730, String(gap));
       lb(v, 1437, 300, 1570, 300, 'FLANGE\n(TYP)'); buttRef(v, 1348, 590, 1593, 963, 37, true);
       ttl(B, F(150 + 200), F(100 + 1140), 'SECTION A', 'N.T.S.', null, { left: true, h: 4 }); ttl(B, F(150 + 1080), F(100 + 1140), 'DETAIL 1', 'N.T.S.', null, { left: true, h: 4 });
     }
     { // PILE SPLICE elevation 1:10
       const v = FV(B, 0, 0);
-      [[1601, 2213.5], [2224.5, 2712], [2802, 3134]].forEach(r => { v.line(805, r[0], 805, r[1], 'S-NEW'); v.line(1045, r[0], 1045, r[1], 'S-NEW'); v.line(819.5, r[0], 819.5, r[1], 'S-NEW'); v.line(1031, r[0], 1031, r[1], 'S-NEW'); });
-      v.pl([[805, 2213.5], [812, 2219], [1038, 2219], [1045, 2213.5]], false, 'S-NEW'); v.line(805, 2224.5, 1045, 2224.5, 'S-NEW'); v.line(805, 3134, 1045, 3134, 'S-NEW');
-      zig(v, 794, 1065, 1601, 929); zig(v, 786, 1058, 2712, 924); zig(v, 786, 1058, 2802, 924); v.line(929.5, 1476, 929.5, 3187, 'S-CL');
+      [[1601, 2213.5], [2224.5, 2712], [2802, 3134]].forEach(r => { v.line(xl, r[0], xl, r[1], 'S-NEW'); v.line(xr, r[0], xr, r[1], 'S-NEW'); v.line(xl + 14.5 * tf, r[0], xl + 14.5 * tf, r[1], 'S-NEW'); v.line(xr - 14 * tf, r[0], xr - 14 * tf, r[1], 'S-NEW'); });
+      v.pl([[xl, 2213.5], [xl + 7, 2219], [xr - 7, 2219], [xr, 2213.5]], false, 'S-NEW'); v.line(xl, 2224.5, xr, 2224.5, 'S-NEW'); v.line(xl, 3134, xr, 3134, 'S-NEW');
+      zig(v, xl - 11, xr + 20, 1601, 929); zig(v, xl - 19, xr + 13, 2712, 924); zig(v, xl - 19, xr + 13, 2802, 924); v.line(929.5, 1476, 929.5, 3187, 'S-CL');
       v.line(904, 1900, 904, 2130, 'S-TITLE'); v.add({ t: 'solid', p: [v.P(907, 1898), v.P(907, 2010), v.P(938, 1955)], L: 'S-TEXT' });
       v.line(904, 2290, 904, 2406, 'S-TITLE'); { const c = v.P(904, 2463); v.add({ t: 'circle', c, r: 3.6, L: 'S-TEXT' }); v.add({ t: 'text', p: c, s: 'A', h: 3.6, al: 'c', v: 'm', ang: 0, L: 'S-TEXT' }); v.add({ t: 'solid', p: [[c[0] + 3.4, c[1] + 1.8], [c[0] + 3.4, c[1] - 1.8], [c[0] + 5.6, c[1]]], L: 'S-TEXT' }); }
-      v.circ(1031, 2213.5, 93.5, 'S-TEXT'); v.line(1105, 2153, 1303, 2041, 'S-TEXT'); { const c = v.P(1351, 1981); v.add({ t: 'circle', c, r: 3.6, L: 'S-TEXT' }); v.add({ t: 'text', p: c, s: '1', h: 3.6, al: 'c', v: 'm', ang: 0, L: 'S-TEXT' }); }
-      v.line(233, 2219, 790, 2219, 'S-TEXT'); vt(v, 239, 2185, 'PILE SPLICE', 3.2); vt(v, 311, 2268, '(TYP)', 3.2); v.line(1061, 2213.5, 1617, 2213.5, 'S-DIM');
-      dV(v, 1601, 2219, 805, 583, ''); [['(X GALVANISED', 545], ['LENGTH OF PILE)', 627]].forEach(q => { const c = v.P(q[1], 1910); v.add({ t: 'text', p: c, s: q[0], h: 3.0, al: 'c', v: 'b', ang: 90, L: 'S-DIM' }); });
-      dV(v, 2219, 3134, 805, 583, ''); [['X', 545, 2680], ['(BLACK)', 627, 2680]].forEach(q => { const c = v.P(q[1], q[2]); v.add({ t: 'text', p: c, s: q[0], h: 3.0, al: 'c', v: 'b', ang: 90, L: 'S-DIM' }); });
+      v.circ(xr - 14, 2213.5, 93.5, 'S-TEXT'); v.line(1105 + dx, 2153, 1303 + dx, 2041, 'S-TEXT'); { const c = v.P(1351 + dx, 1981); v.add({ t: 'circle', c, r: 3.6, L: 'S-TEXT' }); v.add({ t: 'text', p: c, s: '1', h: 3.6, al: 'c', v: 'm', ang: 0, L: 'S-TEXT' }); }
+      v.line(233, 2219, xl - 15, 2219, 'S-TEXT'); vt(v, 239, 2185, 'PILE SPLICE', 3.2); vt(v, 311, 2268, '(TYP)', 3.2); v.line(xr + 16, 2213.5, 1617, 2213.5, 'S-DIM');
+      dV(v, 1601, 2219, xl, 583, ''); [['(X GALVANISED', 545], ['LENGTH OF PILE)', 627]].forEach(q => { const c = v.P(q[1], 1910); v.add({ t: 'text', p: c, s: q[0], h: 3.0, al: 'c', v: 'b', ang: 90, L: 'S-DIM' }); });
+      dV(v, 2219, 3134, xl, 583, ''); [['X', 545, 2680], ['(BLACK)', 627, 2680]].forEach(q => { const c = v.P(q[1], q[2]); v.add({ t: 'text', p: c, s: q[0], h: 3.0, al: 'c', v: 'b', ang: 90, L: 'S-DIM' }); });
       v.pl([[583, 2880], [560, 2885], [600, 2895], [583, 2900]], false, 'S-DIM');
-      dV(v, 1700, 2213.5, 1504, 1595, ''); { const c = v.P(1560, 1945); v.add({ t: 'text', p: c, s: '≥ 3000', h: 3.0, al: 'c', v: 'b', ang: 90, L: 'S-DIM' }); } v.pl([[1595, 2100], [1575, 2105], [1615, 2115], [1595, 2120]], false, 'S-DIM');
+      dV(v, 1700, 2213.5, 1504, 1595, ''); { const c = v.P(1560, 1945); v.add({ t: 'text', p: c, s: '≥ ' + gs, h: 3.0, al: 'c', v: 'b', ang: 90, L: 'S-DIM' }); } v.pl([[1595, 2100], [1575, 2105], [1615, 2115], [1595, 2120]], false, 'S-DIM');
       v.line(1504, 1700, 2073, 1700, 'S-GROUND'); soil(v, 2045, 1700, 1683, 1700, -1); v.wl(1672, 1700, 'GROUND LEVEL');
-      v.line(1061, 3134, 1468, 3134, 'S-DIM'); v.line(555, 3134, 786, 3134, 'S-DIM'); v.wl(1320, 3134, 'PILE TOE R.L.');
-      lb(v, 1045, 2448, 1218, 2448, ''); { const a = v.P(1218, 2408), b = v.P(1515, 2488); B.E.push({ t: 'pl', p: [a, [b[0], a[1]], b, [a[0], b[1]]], closed: true, L: 'S-NOTE' }); B.E.push({ t: 'text', p: [a[0] + 2, b[1] + 3.6], s: un, h: 3.4, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); B.E.push({ t: 'text', p: [a[0] + 2, b[1] - 4], s: 'DRIVEN PILE', h: 3.4, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); }
+      v.line(xr + 16, 3134, 1468, 3134, 'S-DIM'); v.line(555, 3134, xl - 19, 3134, 'S-DIM'); v.wl(1320, 3134, 'PILE TOE R.L.');
+      lb(v, xr, 2448, 1218, 2448, ''); { const a = v.P(1218, 2408), b = v.P(1515, 2488); B.E.push({ t: 'pl', p: [a, [b[0], a[1]], b, [a[0], b[1]]], closed: true, L: 'S-NOTE' }); B.E.push({ t: 'text', p: [a[0] + 2, b[1] + 3.6], s: un, h: 3.4, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); B.E.push({ t: 'text', p: [a[0] + 2, b[1] - 4], s: 'DRIVEN PILE', h: 3.4, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); }
       nbox(B, F(1706), F(2156), 'NOTE: PILE SIZE WILL VARY\nACCORDING TO ENGINEERING\nREQUIREMENTS.\n' + un + ' PILE DRAWN', F(672), { h: 3.4 }); B.E.push({ t: 'line', a: v.P(1706, 2296), b: v.P(1515, 2440), L: 'S-NOTE' });
       ttl(B, F(889), F(3336), 'PILE SPLICE', 10, null, { left: true, h: 4 });
     }
@@ -550,19 +567,21 @@
   }, 'Full-penetration butt splice of a driven steel UC pile, at least 3000 below ground; galvanised length above the splice, black below (see pile driving notes PN30-2131).');
 
   // ================================================================== PN30-2131 PILE DRIVING NOTES
-  def('pn2131', 'Piles', 'Pile driving notes (driven steel piles)', 'PN30-2131', [P('set', 'Min. set (blows / 250 mm)', 'XX', {}), P('kJ', 'Hammer energy (kJ / blow)', 'XX', {})], (p) => {
+  def('pn2131', 'Piles', 'Pile driving notes (driven steel piles)', 'PN30-2131', [P('set', 'Min. set (blows / 250 mm)', 'XX', {}), P('kJ', 'Hammer energy (kJ / blow)', 'XX', {}),
+    P('tv', 'Tolerance from vertical (mm / 3 m)', 15, { num: 1 }), P('tp', 'Tolerance on plan position (mm)', 50, { num: 1 }), P('tc', 'Tolerance on cut-off level (mm)', 5, { num: 1 }), P('th', 'Max. helmet oversize (mm)', 20, { num: 1 }), P('gs', 'Galvanised to depth below G.L. (mm)', 3000, { num: 1 })], (p) => {
+    const cl = (x, a, b, d) => min(max(Math.round(+x || d), a), b), tv = cl(p.tv, 1, 100, 15), tp = cl(p.tp, 5, 300, 50), tc = cl(p.tc, 1, 50, 5), th = cl(p.th, 5, 100, 20), gm = Math.round(cl(p.gs, 1000, 9000, 3000) / 100) / 10;
     const B = new Builder(), h = 3.0, x0 = X(F(130)), y0 = Y(F(1610)), L = [];
     const box = (x, y, t) => { const w = t.length * h * 0.7 + 1.2; B.E.push({ t: 'pl', p: [[x - 0.6, y - 1], [x + w, y - 1], [x + w, y + h + 0.8], [x - 0.6, y + h + 0.8]], closed: true, L: 'S-NOTE' }); B.E.push({ t: 'text', p: [x, y], s: t, h, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); return w; };
     B.E.push({ t: 'text', p: [x0, y0], s: 'PILE DRIVING NOTES', h: 4.2, al: 'l', v: 'b', ang: 0, L: 'S-TITLE' }); B.E.push({ t: 'line', a: [x0, y0 - 1.4], b: [x0 + 18 * 4.2 * 0.7, y0 - 1.4], L: 'S-TITLE' });
     const T = (n, x, lines) => { let y = L.length ? L[L.length - 1] : y0 - 4; lines.forEach((l, i) => { y -= (i ? h * 1.75 : h * 2.4); if (!i && n) B.E.push({ t: 'text', p: [x0, y], s: n, h, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); if (l) B.E.push({ t: 'text', p: [x0 + x, y], s: l, h, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); }); L.push(y); return y; };
     T('1.', 8, ['ALL WORKS SHALL BE CARRIED OUT IN ACCORDANCE WITH THE SPECIFICATION.']);
     T('2.', 8, ['PILE DRIVING TOLERANCES SHALL BE:-']);
-    T('', 16, ['a)  DEVIATION FROM VERTICAL IN A 3 METRE TEMPLATE ±15mm.']); L[L.length - 1] += h * 0.65; T('', 16, ['b)  DEVIATION FROM PLAN POSITION 50mm IN ANY DIRECTION.']); L[L.length - 1] += h * 0.65; T('', 16, ['c)  MAXIMUM VARIATION FROM SPECIFIED CUT OFF LEVEL ±5mm.']);
-    T('3.', 8, ['WHERE PILES ARE DRIVEN WITH A DIESEL HAMMER - THE DRIVING HELMET', 'INTERNAL DIAMETER SHALL NOT EXCEED THE PILE SIZE BY MORE THAN 20mm.']);
+    T('', 16, ['a)  DEVIATION FROM VERTICAL IN A 3 METRE TEMPLATE ±' + tv + 'mm.']); L[L.length - 1] += h * 0.65; T('', 16, ['b)  DEVIATION FROM PLAN POSITION ' + tp + 'mm IN ANY DIRECTION.']); L[L.length - 1] += h * 0.65; T('', 16, ['c)  MAXIMUM VARIATION FROM SPECIFIED CUT OFF LEVEL ±' + tc + 'mm.']);
+    T('3.', 8, ['WHERE PILES ARE DRIVEN WITH A DIESEL HAMMER - THE DRIVING HELMET', 'INTERNAL DIAMETER SHALL NOT EXCEED THE PILE SIZE BY MORE THAN ' + th + 'mm.']);
     T('4.', 8, ["PILES MUST BE DRIVEN TO A REQUIRED SET TO BE DETERMINED ON SITE", "USING THE 'HILEY' FORMULA AND BY CONSIDERING THE TEMPORARY COMPRESSION."]);
     const y5 = T('5.', 8, ['ONE REPRESENTATIVE TEMPORARY COMPRESSION GRAPH MUST BE TAKEN FOR', 'EACH GROUP OF SIMILAR PILES (-i.e. PILES OF SIMILAR SIZE) AT']);
     { const s1 = 'EACH GROUP OF SIMILAR PILES (-i.e. PILES OF SIMILAR SIZE) AT ', xs = x0 + 8 + s1.length * h * 0.68; B.E.push({ t: 'text', p: [xs, y5], s: 'FINAL SET.', h, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); B.E.push({ t: 'line', a: [xs, y5 - 0.9], b: [xs + 9.5 * h * 0.7, y5 - 0.9], L: 'S-TEXT' }); }
-    T('6.', 8, ['ALL STEEL PILING TO 3 METRES BELOW GROUND LEVEL AND UP TO TOP OF PILES', 'SHALL BE HOT DIP GALVANISED IN ACCORDANCE WITH AS/NZS 4680. ALL PILING', 'BURIED MORE THAN 3 METRES BELOW GROUND MAY BE LEFT BLACK (UNTREATED).']);
+    T('6.', 8, ['ALL STEEL PILING TO ' + gm + ' METRES BELOW GROUND LEVEL AND UP TO TOP OF PILES', 'SHALL BE HOT DIP GALVANISED IN ACCORDANCE WITH AS/NZS 4680. ALL PILING', 'BURIED MORE THAN ' + gm + ' METRES BELOW GROUND MAY BE LEFT BLACK (UNTREATED).']);
     const y7 = T('7.', 8, ['', 'OF A PILE DRIVING UNIT (HAMMER RATED ENERGY OF', 'ON THE RESULTS REQUIRED FOR 3 & 4 - TO BE CONFIRMED ONCE TEMPORARY', 'COMPRESSION GRAPHS REQUIRED IN 4 HAVE BEEN SUBMITTED TO THE DESIGN', 'ENGINEER.']);
     { const yA = y7 + 4 * h * 1.75, yB = yA - h * 1.75; let x = x0 + 8; const t1 = 'ANTICIPATED MINIMUM SET REQUIREMENTS ARE APPROXIMATELY '; B.E.push({ t: 'text', p: [x, yA], s: t1, h, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); x += t1.length * h * 0.7 + 1.5; x += box(x, yA, String(p.set)) + 0.8; B.E.push({ t: 'text', p: [x, yA], s: 'BLOWS/250mm', h, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' });
       x = x0 + 8 + 'OF A PILE DRIVING UNIT (HAMMER RATED ENERGY OF '.length * h * 0.7; x += box(x, yB, String(p.kJ)) + 0.8; B.E.push({ t: 'text', p: [x, yB], s: 'kJ PER BLOW) DEPENDING', h, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); }
@@ -572,16 +591,18 @@
 
   // ================================================================== PN30-2132 PIER PILE / TIMBER HALFCAP BEARING (driven steel pile)
   const xmark = (v, x, y, r) => { r = r || 7; v.line(x - r, y, x + r, y, 'S-BOLT'); v.line(x, y - r, x, y + r, 'S-BOLT'); v.circ(x, y, r * 0.45, 'S-BOLT'); };
-  def('pn2132', 'Halfcaps', 'Pier pile / timber halfcap bearing – driven steel pile', 'PN30-2132', [P('uc', 'Driven pile', '200UC52', { opts: UCs })], (p) => {
-    const B = new Builder(), un = secName(p.uc);
+  def('pn2132', 'Halfcaps', 'Pier pile / timber halfcap bearing – driven steel pile', 'PN30-2132', [P('uc', 'Driven pile', '200UC52', { opts: UCs }), P('pfc', 'Bearing channels', '250PFC', { opts: ['250PFC', '200PFC', '300PFC'] }), P('pL', 'Channel length (mm)', 500, { num: 1 }),
+    P('plL', 'Cap plate length (mm)', 400, { num: 1 }), P('plW', 'Cap plate width (mm)', 170, { num: 1 }), P('tp', 'Cap plate thickness (mm)', 16, { num: 1 }), P('rd', 'Threaded rod dia. (mm)', 20, { num: 1 }), P('wf', 'Fillet weld (mm)', 8, { num: 1 })], (p) => {
+    const B = new Builder(), un = secName(p.uc), cl = (x, a, b, d) => min(max(Math.round(+x || d), a), b), pn = secName(['250PFC', '200PFC', '300PFC'].indexOf(p.pfc) >= 0 ? p.pfc : '250PFC');
+    const pL = cl(p.pL, 300, 900, 500), plL = cl(p.plL, 250, 600, 400), plW = cl(p.plW, 100, 300, 170), tp = cl(p.tp, 10, 32, 16), rd = cl(p.rd, 12, 36, 20), wf = cl(p.wf, 4, 16, 8), pl = '2-' + plL + 'x' + plW + 'x' + tp + 'PL';
     { // SECTION C 1:10 and DETAIL 1 1:10
       const v = FV(B, 350, 450);
       v.rect(208, 158, 304, 130, 'S-NEW'); v.rect(207, 446, 303, 128, 'S-NEW');
       [[215, 283, 270], [437, 505, 450]].forEach(q => { v.rect(q[0], 177, q[1] - q[0], 380, 'S-HIDDEN'); v.line(q[2], 177, q[2], 557, 'S-HIDDEN'); });
       [213, 275, 437, 505].forEach(x => v.line(x, 288, x, 446, 'S-NEW'));
       v.pl([[283, 295], [437, 295], [437, 303], [362, 303], [362, 429], [437, 429], [437, 437], [283, 437], [283, 429], [355, 429], [355, 303], [283, 303]], true, 'S-NEW');
-      dH(v, 207, 510, 574, 685, '400');
-      lb(v, 507, 375, 630, 298, '2-250 PFC\nx 500 LONG'); lb(v, 512, 480, 630, 527, '2-400x170x16PL');
+      dH(v, 207, 510, 574, 685, String(plL));
+      lb(v, 507, 375, 630, 298, '2-' + pn + '\nx ' + pL + ' LONG'); lb(v, 512, 480, 630, 527, pl);
       ttl(B, F(350 + 240), F(450 + 830), 'SECTION C', 10, null, { left: true, h: 3.6 });
       // DETAIL 1
       v.line(278, 962, 278, 1040, 'S-NEW'); v.line(433, 962, 433, 1040, 'S-NEW'); v.line(278, 1040, 278, 1147, 'S-HIDDEN'); v.line(433, 1040, 433, 1147, 'S-HIDDEN'); v.line(278, 1147, 278, 1493, 'S-NEW'); v.line(433, 1147, 433, 1493, 'S-NEW');
@@ -590,7 +611,7 @@
       v.rect(205, 1147, 302, 13, 'S-NEW');
       [[1, 278], [-1, 433]].forEach(([k, x]) => { v.pl([[x, 1160], [x - k * 53, 1160], [x - k * 53, 1172], [x - k * 15, 1172], [x - k * 15, 1323], [x - k * 68, 1323], [x - k * 68, 1335], [x, 1335]], true, 'S-NEW'); v.rect(min(x, x - k * 70), 1337, 70, 13, 'S-NEW'); });
       { const a = v.P(205, 1160), b = v.P(45, 1270); v.add({ t: 'line', a: b, b: v.P(240, 1162), L: 'S-TEXT' }); } wld(v, 205, 1160, 45, 1270, { size: 4, site: true, tail: 'TYP' });
-      wld(v, 275, 1357, 45, 1478, { size: 8, site: true, tail: 'TYP' }); wld(v, 283, 1320, 530, 1473, { size: 8, site: true, tail: 'TYP' });
+      wld(v, 275, 1357, 45, 1478, { size: wf, site: true, tail: 'TYP' }); wld(v, 283, 1320, 530, 1473, { size: wf, site: true, tail: 'TYP' });
       v.add({ t: 'solid', p: [v.P(240, 1162), v.P(232, 1170), v.P(229, 1164)], L: 'S-TEXT' });
       secFlag(v, 580, 1153, 24); secMk(v, -237, 1150, 'C', 14);
       ttl(B, F(350 + 240), F(450 + 1630), 'DETAIL 1', 10, null, { left: true, h: 3.6 });
@@ -631,8 +652,8 @@
       [520, 592].forEach(y => { rodD(v, 500, y, 720, y); });
       v.rect(512, 620, 206, 8, 'S-NEW'); v.rect(520, 628, 190, 94, 'S-NEW'); v.line(518, 714, 710, 714, 'S-NEW');
       { const c = v.P(1060, 733); v.add({ t: 'circle', c, r: 3.4, L: 'S-TEXT' }); v.add({ t: 'text', p: c, s: 'A', h: 3.2, al: 'c', v: 'm', ang: 0, L: 'S-TEXT' }); v.add({ t: 'solid', p: [[c[0] - 3.2, c[1] + 1.8], [c[0] - 3.2, c[1] - 1.8], [c[0] - 5.6, c[1]]], L: 'S-TEXT' }); }
-      lb(v, 608, 415, 365, 540, 'PILE CUT OFF'); lb(v, 715, 580, 795, 545, 'φ20 THREADED ROD\nWITH 65x5FLx65 WASHER\nTO TIMBER FACE (TYP)'); lb(v, 512, 627, 375, 675, '2-400x170x16PL');
-      lb(v, 712, 708, 795, 708, '250 PFC'); lb(v, 655, 875, 795, 875, 'PROPOSED ' + un + '\nDRIVEN PILE');
+      lb(v, 608, 415, 365, 540, 'PILE CUT OFF'); lb(v, 715, 580, 795, 545, 'φ' + rd + ' THREADED ROD\nWITH 65x5FLx65 WASHER\nTO TIMBER FACE (TYP)'); lb(v, 512, 627, 375, 675, pl);
+      lb(v, 712, 708, 795, 708, pn); lb(v, 655, 875, 795, 875, 'PROPOSED ' + un + '\nDRIVEN PILE');
       const rf = mainT(B, F(230), F(3230), 'PIER PILE/TIMBER HALFCAP BEARING DETAIL', 'PIER N° X - PILE N° X', 'none', { scale: 20 });
       drgBox(B, F(1351), F(3211), F(440), rf);
     }
@@ -640,16 +661,18 @@
   }, 'Driven steel UC pile passing between notched timber halfcaps: 2-250 PFC x 500 with 2-400x170x16 plates welded to the pile cap and rodded through the halfcaps.');
 
   // ================================================================== PN30-2133 ABUTMENT PILE / TIMBER FULLCAP BEARING (driven steel pile)
-  def('pn2133', 'Abutments', 'Abutment pile / timber fullcap bearing – driven steel pile', 'PN30-2133', [P('uc', 'Driven pile', '200UC52', { opts: UCs }), P('cap', 'Bearing stub', '250UC90', { opts: ['250UC90', '250UC73', '310UC97'] })], (p) => {
-    const B = new Builder(), un = secName(p.uc), cn = secName(p.cap);
+  def('pn2133', 'Abutments', 'Abutment pile / timber fullcap bearing – driven steel pile', 'PN30-2133', [P('uc', 'Driven pile', '200UC52', { opts: UCs }), P('cap', 'Bearing stub', '250UC90', { opts: ['250UC90', '250UC73', '310UC97'] }), P('capL', 'Stub length (mm)', 200, { num: 1 }),
+    P('rd', 'Threaded rod dia. (mm)', 20, { num: 1 }), P('re', 'Rod edge distance (mm)', 100, { num: 1 }), P('wf', 'Fillet weld (mm)', 8, { num: 1 }), P('ts', 'Web stiffener thickness (mm)', 10, { num: 1 }), P('gap', 'Gap under fullcap (mm, nom.)', 20, { num: 1 })], (p) => {
+    const B = new Builder(), un = secName(p.uc), cn = secName(p.cap), cl = (x, a, b, d) => min(max(Math.round(+x || d), a), b);
+    const capL = cl(p.capL, 100, 400, 200), rd = cl(p.rd, 12, 36, 20), re = cl(p.re, 50, 200, 100), wf = cl(p.wf, 4, 16, 8), ts = cl(p.ts, 6, 25, 10), gap = cl(p.gap, 5, 50, 20);
     { // DETAIL 1 1:10
       const v = FV(B, 300, 1500);
       [272, 280, 428, 438].forEach(x => v.line(x, 128, x, 507, 'S-NEW')); v.pl([[258, 128], [345, 128], [352, 105], [360, 150], [366, 128], [500, 128], [507, 105], [515, 150], [521, 128], [590, 128]], false, 'S-TEXT'); v.line(580, 128, 580, 210, 'S-EXIST');
       zig(v, 258, 440, 507, 355, 'S-TEXT');
       v.rect(438, 210, 162, 210, 'S-NEW'); v.line(438, 222, 600, 222, 'S-NEW'); v.line(438, 408, 600, 408, 'S-NEW'); v.rect(280, 210, 148, 12, 'S-NEW'); v.rect(280, 408, 148, 12, 'S-NEW');
-      wld(v, 330, 225, 180, 345, { size: 8, both: true, all: true, site: true, tail: 'TYP' }); 
+      wld(v, 330, 225, 180, 345, { size: wf, both: true, all: true, site: true, tail: 'TYP' }); 
       { const a = v.P(440, 225), k = v.P(515, 278), b2 = v.P(640, 110), c = [b2[0] + 26, b2[1]]; v.add({ t: 'pl', p: [a, k, b2, c], closed: false, L: 'S-TEXT' }); v.arrow(440, 225, Math.atan2(a[1] - k[1], a[0] - k[0]) * 180 / PI); v.add({ t: 'line', a: b2, b: [b2[0], b2[1] + 7.5], L: 'S-TEXT' }); v.add({ t: 'solid', p: [[b2[0], b2[1] + 7.5], [b2[0], b2[1] + 4.5], [b2[0] + 2.8, b2[1] + 6]], L: 'S-TEXT' }); v.add({ t: 'line', a: [b2[0] + 11, b2[1]], b: [b2[0] + 11, b2[1] - 4.5], L: 'S-TEXT' }); v.add({ t: 'line', a: [b2[0] + 11, b2[1] - 4.5], b: [b2[0] + 15.5, b2[1] - 9], L: 'S-TEXT' }); }
-      wld(v, 445, 280, 645, 428, { size: 8, both: true, site: true }); wld(v, 445, 425, 645, 578, { size: 8, both: true, site: true });
+      wld(v, 445, 280, 645, 428, { size: wf, both: true, site: true }); wld(v, 445, 425, 645, 578, { size: wf, both: true, site: true });
       ttl(B, F(300 + 255), F(1500 + 690), 'DETAIL 1', 10, null, { left: true, h: 3.6 });
     }
     nbox(B, F(1270), F(1795), 'DETAIL FOR DRIVEN STEEL\nPILE.\n\nPROPOSED PILE SIZE WILL\nVARY ACCORDING TO\nENGINEERING REQUIREMENTS.\n' + un + ' PILE DRAWN', F(570), { h: 3.2 });
@@ -664,9 +687,9 @@
       v.circ(708, 490, 110, 'S-TEXT'); v.line(488, 555, 600, 525, 'S-TEXT'); { const c = v.P(448, 563); v.add({ t: 'circle', c, r: 3.6, L: 'S-TEXT' }); v.add({ t: 'text', p: c, s: '1', h: 3.2, al: 'c', v: 'm', ang: 0, L: 'S-TEXT' }); }
       { const c = v.P(785, 100); v.add({ t: 'circle', c, r: 3.6, L: 'S-TEXT' }); v.add({ t: 'text', p: c, s: 'A', h: 3.2, al: 'c', v: 'm', ang: 0, L: 'S-TEXT' }); v.add({ t: 'solid', p: [[c[0] - 3.4, c[1] + 1.8], [c[0] - 3.4, c[1] - 1.8], [c[0] - 5.8, c[1]]], L: 'S-TEXT' }); }
       v.line(785, 140, 785, 220, 'S-TITLE'); v.line(785, 650, 785, 815, 'S-TITLE'); v.add({ t: 'solid', p: [v.P(785, 730), v.P(785, 805), v.P(760, 768)], L: 'S-TEXT' });
-      v.line(720, 290, 895, 290, 'S-DIM'); v.line(720, 298, 895, 298, 'S-DIM'); dVs(v, 290, 298, 895, 875, '20 NOM.');
-      lb(v, 603, 350, 472, 248, 'JARRAH PACKER\nTO SUIT', { dot: true }); lb(v, 745, 368, 895, 370, 'EXISTING TIMBER\nFULLCAP', { dot: true }); lb(v, 770, 545, 895, 615, cn + ' x 200\nLONG');
-      lb(v, 645, 540, 500, 700, 'PROVIDE 2-10FL WEB\nSTIFFENERS NEAR FACE\n& FAR FACE OF PROPOSED\nUC PILE IF ACCESS PERMITS.');
+      v.line(720, 290, 895, 290, 'S-DIM'); v.line(720, 298, 895, 298, 'S-DIM'); dVs(v, 290, 298, 895, 875, gap + ' NOM.');
+      lb(v, 603, 350, 472, 248, 'JARRAH PACKER\nTO SUIT', { dot: true }); lb(v, 745, 368, 895, 370, 'EXISTING TIMBER\nFULLCAP', { dot: true }); lb(v, 770, 545, 895, 615, cn + ' x ' + capL + '\nLONG');
+      lb(v, 645, 540, 500, 700, 'PROVIDE 2-' + ts + 'FL WEB\nSTIFFENERS NEAR FACE\n& FAR FACE OF PROPOSED\nUC PILE IF ACCESS PERMITS.');
       const rf = mainT(B, F(405), F(2250 + 985), 'ABUTMENT PILE/TIMBER\nFULLCAP BEARING DETAIL', 'ABUTMENT N° X - PILE N° X\nABUTMENT N° X - PILE N° X', 'none', { scale: 20 });
       drgBox(B, F(1015), F(2250 + 812), F(505), rf);
     }
@@ -678,8 +701,8 @@
       v.rect(712, 1187, 106, 6, 'S-NEW'); v.rect(712, 1283, 106, 7, 'S-NEW'); v.line(762, 1193, 762, 1283, 'S-NEW'); v.line(770, 1193, 770, 1283, 'S-NEW');
       [[793, 1083], [737, 1143]].forEach(q => { v.rect(q[0] - 12, q[1] - 12, 24, 24, 'S-BOLT'); v.circ(q[0], q[1], 6, 'S-BOLT'); v.barEnd(q[0], q[1], 3); });
       v.pl([[835, 1520], [835, 1055], [1000, 1055], [1000, 1520]], false, 'S-HIDDEN'); v.pileEnd(917.5, 1525, 165, 'S-EXIST'); [[875, 1088], [955, 1148]].forEach(q => { v.circ(q[0], q[1], 12, 'S-EXIST'); v.circ(q[0], q[1], 6, 'S-EXIST'); });
-      v.line(630, 1083, 760, 1083, 'S-DIM'); dVs(v, 1043, 1083, 722, 645, '100 (TYP)');
-      lb(v, 725, 1155, 595, 1265, 'φ20 THREADED ROD\nWITH 65x5FLx65\nWASHER (TYP)'); lb(v, 720, 1500, 595, 1500, 'PROPOSED PILE'); lb(v, 1000, 1428, 1085, 1428, 'EXISTING TIMBER\nPILE');
+      v.line(630, 1083, 760, 1083, 'S-DIM'); dVs(v, 1043, 1083, 722, 645, re + ' (TYP)');
+      lb(v, 725, 1155, 595, 1265, 'φ' + rd + ' THREADED ROD\nWITH 65x5FLx65\nWASHER (TYP)'); lb(v, 720, 1500, 595, 1500, 'PROPOSED PILE'); lb(v, 1000, 1428, 1085, 1428, 'EXISTING TIMBER\nPILE');
       ttl(B, F(1835), F(3220), 'SECTION A', 20, null, { left: true, h: 3.6 });
     }
     return B.E;

@@ -7,11 +7,20 @@
   const bbox = A.bbox;
 
   // ================================================================== local helpers (common to the PN30-31xx sheets)
-  const DT = 130;   // existing timber deck plank thickness
-  const OV = 110;   // concrete overlay thickness
+  // deck / fixing quantities shared by the helpers below; each generator sets them from its parameters (deckP) before drawing
+  let DT = 130;     // existing timber deck plank thickness
+  let OV = 110;     // concrete overlay thickness
   const PW = 230;   // deck plank width
+  let NP = 3;       // deck rods / coach screws every NP-th plank
+  let RD = 20;      // threaded rod dia.
   const COR = ['310UB46', '310UC97', '360UB51', '410UB54', '250UC90'];
   const sec = (k, dflt) => SEC[k] || SEC[dflt];
+  // numeric parameter clamped to [lo, hi] (blank / invalid -> default)
+  const num = (v, lo, hi, d) => { const x = parseFloat(v); return max(lo, min(hi, isFinite(x) ? x : d)); };
+  const ORD = ['', '', 'SECOND', 'THIRD', 'FOURTH'];
+  function deckP(p) { DT = num(p.dt, 80, 200, 130); OV = num(p.ov, 60, 200, 110); NP = Math.round(num(p.np, 2, 4, 3)); RD = Math.round(num(p.rd, 12, 30, 20)); }
+  const pDT = () => P('dt', 'Deck plank thickness (mm)', 130, { num: 1 }), pOV = () => P('ov', 'Overlay thickness (mm)', 110, { num: 1 }),
+    pNP = () => P('np', 'Deck fixing every N-th plank', 3, { num: 1 }), pRD = () => P('rd', 'Threaded rod dia. (mm)', 20, { num: 1 });
 
   // view title in MRWA style: underlined words, optional letter in a circle, scale under; placed under the view's entities
   function ttl(v, s, ch, scale, opt) {
@@ -81,9 +90,9 @@
   }
   // vertical rod / bolt with nuts + washers: from yt (nut on top) to yb (nut under); hid = shaft drawn dashed
   function rodV(v, x, yt, yb, o) {
-    o = o || {}; const r = 10, L = o.hid ? 'S-HIDDEN' : 'S-BOLT', pr = o.pr == null ? 24 : o.pr;
+    o = o || {}; const dd = o.d || RD, r = dd / 2, L = o.hid ? 'S-HIDDEN' : 'S-BOLT', pr = o.pr == null ? 24 : o.pr;
     v.line(x - r, yt + pr, x - r, yb - pr, L); v.line(x + r, yt + pr, x + r, yb - pr, L);
-    if (o.top !== false) v.nut(x, yt, 0, 1, 20); if (o.bot !== false) v.nut(x, yb, 0, -1, 20);
+    if (o.top !== false) v.nut(x, yt, 0, 1, dd); if (o.bot !== false) v.nut(x, yb, 0, -1, dd);
   }
   // coach screw driven up from under the stringer flange: head + washer under y0, point at y1
   function coach(v, x, y0, y1, hid) {
@@ -114,46 +123,48 @@
   }
   // ================================================================== PN30-3101 / 3102  PIER - STRINGER REPLACEMENT DETAIL - TYPE 1
   // modified flange plan (1:10), x along the plate from the stringer end
+  // o: L plate length (slot end at L-300, second packer 294 short of the slot), w plate width, t plate thickness
   function modFlange(v, o) {
-    o = o || {}; const L = 1129, xs = 829, xh = 365;
-    v.line(0, 0, L, 0, 'S-NEW'); v.line(0, 200, L, 200, 'S-NEW'); v.line(0, 0, 0, 200, 'S-NEW'); v.line(L, 0, L, 95, 'S-NEW'); v.line(L, 105, L, 200, 'S-NEW');
-    v.pl([[L, 95], [xs, 95], [xs, 105], [L, 105]], false, 'S-NEW');
-    [0, 535].forEach(x => { v.pl([[x, 0], [x, -50], [x + 200, -50], [x + 200, 0]], false, 'S-NEW'); v.pl([[x, 200], [x, 250], [x + 200, 250], [x + 200, 200]], false, 'S-NEW'); if (x) v.line(x, 0, x, 200, 'S-HIDDEN'); v.line(x + 200, 0, x + 200, 200, 'S-HIDDEN');
-      [[x + 95, 200, 1], [x + 95, 0, -1]].forEach(([wx, wy, k]) => [0, 12, 24].forEach(d => v.line(wx + d - 6, wy + k * 8, wx + d + 6, wy + k * 16, 'S-TEXT'))); });
-    [35, 165].forEach(y => { v.rect(xh - 20, y - 12, 40, 24, 'S-HIDDEN'); v.arc(xh - 8, y, 12, 90, 270, 'S-NEW'); v.arc(xh + 8, y, 12, -90, 90, 'S-NEW'); v.line(xh - 8, y + 12, xh + 8, y + 12, 'S-NEW'); v.line(xh - 8, y - 12, xh + 8, y - 12, 'S-NEW'); v.line(xh - 30, y, xh + 30, y, 'S-CL'); });
-    v.line(xh, -90, xh, 260, 'S-CL'); v.line(-15, 35, xh - 32, 35, 'S-DIM');
-    v.dim(0, 250, 200, 250, 6, '200', { sub: '(TYP)' }); v.dim(-60, -50, -60, 250, 8, '300 (TYP)'); v.dim(-20, 0, -20, 35, 6, '35', { sub: '(TYP)' });
-    v.dim(L + 80, 0, L + 80, 200, -6, '200'); dimO(v, L + 10, 95, L + 10, 105, -14, '10', 'a');
-    v.dim(0, -120, xh, -120, -6, '365'); v.dim(735, -120, xs, -120, -6, '100'); v.dim(xs, -120, L, -120, -6, '300'); v.dim(0, -220, L, -220, -6, '*');
-    v.leader(0, 250, -12, 12, 'STEEL PACKER\n(TYP)'); v.leader(xh - 10, 175, 20, 46, 'φ24x40 LONG\nSLOTTED HOLE (TYP)'); v.leader(xh + 30 + 420, 200, 22, 8, '200x16FL');
-    weldTail(v, 625, 205, 12, 20, { size: '6', site: true }, '30 LONG (TYP)');
+    o = o || {}; const L = o.L || 1129, W = o.w || 200, T = o.t || 16, xs = L - 300, xh = 365, x2 = xs - 294, ym = W / 2;
+    v.line(0, 0, L, 0, 'S-NEW'); v.line(0, W, L, W, 'S-NEW'); v.line(0, 0, 0, W, 'S-NEW'); v.line(L, 0, L, ym - 5, 'S-NEW'); v.line(L, ym + 5, L, W, 'S-NEW');
+    v.pl([[L, ym - 5], [xs, ym - 5], [xs, ym + 5], [L, ym + 5]], false, 'S-NEW');
+    [0, x2].forEach(x => { v.pl([[x, 0], [x, -50], [x + 200, -50], [x + 200, 0]], false, 'S-NEW'); v.pl([[x, W], [x, W + 50], [x + 200, W + 50], [x + 200, W]], false, 'S-NEW'); if (x) v.line(x, 0, x, W, 'S-HIDDEN'); v.line(x + 200, 0, x + 200, W, 'S-HIDDEN');
+      [[x + 95, W, 1], [x + 95, 0, -1]].forEach(([wx, wy, k]) => [0, 12, 24].forEach(d => v.line(wx + d - 6, wy + k * 8, wx + d + 6, wy + k * 16, 'S-TEXT'))); });
+    [35, W - 35].forEach(y => { v.rect(xh - 20, y - 12, 40, 24, 'S-HIDDEN'); v.arc(xh - 8, y, 12, 90, 270, 'S-NEW'); v.arc(xh + 8, y, 12, -90, 90, 'S-NEW'); v.line(xh - 8, y + 12, xh + 8, y + 12, 'S-NEW'); v.line(xh - 8, y - 12, xh + 8, y - 12, 'S-NEW'); v.line(xh - 30, y, xh + 30, y, 'S-CL'); });
+    v.line(xh, -90, xh, W + 60, 'S-CL'); v.line(-15, 35, xh - 32, 35, 'S-DIM');
+    v.dim(0, W + 50, 200, W + 50, 6, '200', { sub: '(TYP)' }); v.dim(-60, -50, -60, W + 50, 8, (W + 100) + ' (TYP)'); v.dim(-20, 0, -20, 35, 6, '35', { sub: '(TYP)' });
+    v.dim(L + 80, 0, L + 80, W, -6, String(W)); dimO(v, L + 10, ym - 5, L + 10, ym + 5, -14, '10', 'a');
+    v.dim(0, -120, xh, -120, -6, '365'); v.dim(x2 + 200, -120, xs, -120, -6, '100'); v.dim(xs, -120, L, -120, -6, '300'); v.dim(0, -220, L, -220, -6, '*');
+    v.leader(0, W + 50, -12, 12, 'STEEL PACKER\n(TYP)'); v.leader(xh - 10, W - 25, 20, 46, 'φ24x40 LONG\nSLOTTED HOLE (TYP)'); v.leader(xh + 30 + 420, W, 22, 8, `${W}x${T}FL`);
+    weldTail(v, x2 + 90, W + 5, 12, 20, { size: '6', site: true }, '30 LONG (TYP)');
   }
   function stringerType1(p, ovl) {
-    const LY = new Lay(560), u = sec(p.ub, '410UB54'), d = u.d, ubT = secName(p.ub);
+    deckP(p);
+    const LY = new Lay(560), u = sec(p.ub, '410UB54'), d = u.d, ubT = secName(p.ub), Lf = num(p.Lf, 1000, 1350, 1129), W = num(p.pw, 150, 250, 200), T = num(p.pt, 10, 32, 16);
     // ---- modified flange details 1:10
-    const f = LY.view(10); modFlange(f); nbox(f, 1260, -60, '', 'NOTE:\nDIMENSIONS DENOTED THUS *\nSHALL BE SITE MEASURED\nPRIOR TO FABRICATION &\nCONSTRUCTION.', 56, { ul: false });
+    const f = LY.view(10); modFlange(f, { L: Lf, w: W, t: T }); nbox(f, Lf + 131, -60, '', 'NOTE:\nDIMENSIONS DENOTED THUS *\nSHALL BE SITE MEASURED\nPRIOR TO FABRICATION &\nCONSTRUCTION.', 56, { ul: false });
     ttl(f, 'MODIFIED FLANGE DETAILS', '', 10, { dx: -40 });
     LY.break();
-    // ---- elevation 1:20  (x = 0 at ℄ pier, y = 0 at the underside of the deck)
-    const v = LY.view(20), xe = 10, Lf = 1129, xn = xe + 829, xb = 1450, yPl = -d + 50, yPk = yPl - 16, yc = yPk - 12, dc = 320, xr = xe + 365, xa = 800;
+    // ---- elevation 1:20  (x = 0 at ℄ pier, y = 0 at the underside of the deck); the existing corbel ends 49 short of the notch (50 shown)
+    const v = LY.view(20), xe = 10, xn = xe + Lf - 300, xb = 1450, yPl = -d + 50, yPk = yPl - T, yc = yPk - 12, dc = num(p.dc, 240, 420, 320), xr = xe + 365, cE = xn - 49, xa = cE + 10, x2 = xe + Lf - 594;
     const top = deckElev(v, -1900, xb + 120, { ovl, ag: 1050 });
     // existing timber stringer (left span) on the existing corbel, end trimmed to the pier
-    v.pl([[-1780, -470], [-950, -470], [-700, yc], [0, yc]], false, 'S-EXIST'); v.line(0, yc, 0, 0, 'S-EXIST'); v.pileEnd(-1780, -235, 470, 'S-EXIST', 1);
-    corbelLog(v, -790, 790, yc, dc); halfcapsElev(v, yc - dc, 160, 320, 125);
+    v.pl([[-1780, -470], [-cE - 160, -470], [-cE + 90, yc], [0, yc]], false, 'S-EXIST'); v.line(0, yc, 0, 0, 'S-EXIST'); v.pileEnd(-1780, -235, 470, 'S-EXIST', 1);
+    corbelLog(v, -cE, cE, yc, dc); halfcapsElev(v, yc - dc, 160, 320, 125);
     v.cl(0, yc - dc - 420, 0, top + 330, 'PIER');
     // proposed steel stringer: notched end on the modified flange
-    v.line(xe, 0, xb, 0); v.line(xe, -u.tf, xb, -u.tf); v.line(xe, 0, xe, yPl); v.line(xe + 8, -u.tf, xe + 8, yPl); v.line(xe, yPl, xn, yPl); v.line(xn, yPl - 16, xn, -d); v.line(xn, -d, xb, -d); v.line(xn, -d + u.tf, xb, -d + u.tf);
-    v.rect(xe, yPl - 16, Lf, 16); [xe, xe + 535].forEach(x => { v.rect(x, yc, 200, 12); v.hatch([[x, yc], [x + 200, yc], [x + 200, yc + 12], [x, yc + 12]], 'ansi31', 'S-HATCH', 0.5); });
+    v.line(xe, 0, xb, 0); v.line(xe, -u.tf, xb, -u.tf); v.line(xe, 0, xe, yPl); v.line(xe + 8, -u.tf, xe + 8, yPl); v.line(xe, yPl, xn, yPl); v.line(xn, yPl - T, xn, -d); v.line(xn, -d, xb, -d); v.line(xn, -d + u.tf, xb, -d + u.tf);
+    v.rect(xe, yPl - T, Lf, T); [xe, x2].forEach(x => { v.rect(x, yc, 200, 12); v.hatch([[x, yc], [x + 200, yc], [x + 200, yc + 12], [x, yc + 12]], 'ansi31', 'S-HATCH', 0.5); });
     v.brk(xb, -d - 25, xb, 25);
-    // rods: corbel rod through the slotted holes; deck rods (or coach screws) every third plank
+    // rods: corbel rod through the slotted holes; deck rods (or coach screws) every NP-th plank
     rodV(v, xr, yPl, yc - dc - 10, { hid: true }); v.rect(xr - 50, yc - dc - 10, 100, 10, 'S-BOLT');
-    if (ovl) { coach(v, xr - 220, -u.tf, -u.tf + 130); coach(v, xr - 220 + 3 * PW, -u.tf, -u.tf + 130, true); }
-    else { rodV(v, xr, DT, -u.tf); rodV(v, xr + 3 * PW, DT, -u.tf, { hid: true }); spikes(v, xr); spikes(v, xr + 3 * PW, true); }
+    if (ovl) { coach(v, xr - 220, -u.tf, -u.tf + 130); coach(v, xr - 220 + NP * PW, -u.tf, -u.tf + 130, true); }
+    else { rodV(v, xr, DT, -u.tf); rodV(v, xr + NP * PW, DT, -u.tf, { hid: true }); spikes(v, xr); spikes(v, xr + NP * PW, true); }
     cutV(v, xa, top + 200, yc - dc - 350, 'A', 180, 7);
     // dimensions
-    dimO(v, 0, top + 170, xe, top + 170, 6, '10', 'a'); v.dim(790, yc - dc - 300, xn, yc - dc - 300, -6, '50'); v.line(xn, yPl - 16, xn, yc - dc - 330, 'S-DIM');
+    dimO(v, 0, top + 170, xe, top + 170, 6, '10', 'a'); v.dim(cE, yc - dc - 300, xn, yc - dc - 300, -6, '50'); v.line(xn, yPl - T, xn, yc - dc - 330, 'S-DIM');
     v.dim(xb + 260, yPl, xb + 260, 0, -10, '300', { sub: 'MIN' }); v.text(xb + 260 + 20 * 20, yPl / 2, '*', 3.5, 'c', 'm');
-    v.dim(xb + 190, -d, xb + 190, yPl - 16, -6, '50', { sub: 'MIN' });
+    v.dim(xb + 190, -d, xb + 190, yPl - T, -6, '50', { sub: 'MIN' });
     // leaders
     v.leader(-1000, DT, -50, 22, 'EXISTING TIMBER\nDECK'); v.leader(-1200, -250, -42, 12, 'EXISTING TIMBER\nSTRINGER', { dot: true }); v.leader(-700, yc - dc + 60, -54, -8, 'EXISTING TIMBER\nCORBEL'); v.leader(-220, yc - dc - 160, -48, -10, 'EXISTING TIMBER\nHALFCAP (TYP)');
     if (!ovl) { v.leader(xr - 140, DT - 50, 12, 62, 'FIX LOOSE PLANKS TO\nADJACENT BOLTED PLANKS\nWITH φ10x200 LONG SPIKE\n(TYP)'); v.leader(xr + 30, DT + 8, 18, 38, '65x5FLx65 STEEL\nWASHER (TYP)'); }
@@ -164,197 +175,208 @@
     v.noteBox(2200, -780, 'NOTE: STRINGER SIZE WILL\nVARY ACCORDING TO\nENGINEERING REQUIREMENTS\n' + ubT + ' STRINGER DRAWN', 46, { h: 1.8 });
     ttl(v, 'ELEVATION', '', null, { h: 2.6, dx: -20 });
     // ---- sectional elevation A 1:20 (x = 0 at ℄ stringer)
-    const w = LY.view(20), R = 230, hh = dc / 2, cy = yc - hh;
+    const w = LY.view(20), hh = dc / 2, R = max(230, hh + 70), cy = yc - hh, hp = (W + 100) / 2, hr = W / 2 - 35;
     const wt = deckSec(w, -430, 430, { ovl });
     iSec(w, 0, -u.tf / 2, { d: u.tf, b: u.b, tf: u.tf / 2, tw: u.b }); w.rect(-u.tw / 2, yPl, u.tw, -u.tf - yPl); w.fill([[-u.tw / 2, yPl], [u.tw / 2, yPl], [u.tw / 2, -u.tf], [-u.tw / 2, -u.tf]]);
-    w.rect(-100, yPl - 16, 200, 16); w.rect(-150, yc, 300, 12); logTrim(w, 0, cy, R, hh, { top: false }); w.line(-sq(R * R - hh * hh), yc, -150, yc, 'S-EXIST'); w.line(150, yc, sq(R * R - hh * hh), yc, 'S-EXIST');
-    [-65, 65].forEach(x => rodV(w, x, yPl, yc - dc - 10)); w.rect(-150, yc - dc - 10, 300, 10, 'S-BOLT');
+    w.rect(-W / 2, yPl - T, W, T); w.rect(-hp, yc, 2 * hp, 12); logTrim(w, 0, cy, R, hh, { top: false }); w.line(-sq(R * R - hh * hh), yc, -hp, yc, 'S-EXIST'); w.line(hp, yc, sq(R * R - hh * hh), yc, 'S-EXIST');
+    [-hr, hr].forEach(x => rodV(w, x, yPl, yc - dc - 10)); w.rect(-150, yc - dc - 10, 300, 10, 'S-BOLT');
     if (ovl) { coach(w, -45, -u.tf, -u.tf + 130); coach(w, 45, -u.tf, -u.tf + 130, true); } else { rodV(w, -45, DT, -u.tf); rodV(w, 45, DT, -u.tf, { hid: true }); }
     w.cl(0, yc - dc - 120, 0, wt + 360, 'STRINGER');
     dimO(w, -45, wt + 160, 0, wt + 160, 6, '45', 'a'); dimO(w, 0, wt + 160, 45, wt + 160, 6, '45', 'b');
     if (!ovl) w.dim(-230, DT, -230, DT + 50, -6, '50', { sub: '(TYP)' });
     secLeader(w, u.tw / 2, -150, 34, 0, ubT, ' STRINGER');
-    w.leader(-100, yPl - 6, -16, 10, 'MODIFIED\nFLANGE'); w.leader(140, yc + 12, 28, -8, '200x(6,8,10 OR 12FL)x300 LONG\nSTEEL PACKERS, USED TO\nWEDGE STEEL STRINGER TIGHT\nAGAINST EXISTING DECKING.\nTACK WELD STEEL PACKERS TO\nSTRINGER AFTER PLACEMENT.');
-    w.leader(-65, yc - dc - 40, -12, -14, 'φ20 THREADED\nROD (TYP)'); w.leader(65, yc - dc - 10, 22, -28, '100x10FLx300 WASHER');
-    if (ovl) { w.leader(-45, 110, -32, 50, 'φ20x130 LONG COACH\nSCREW EVERY THIRD\nDECK PLANK ON\nALTERNATE SIDES OF\nWEB'); w.leader(250, DT + OV / 2, 16, 36, 'EXISTING CONCRETE\nOVERLAY', { dot: true }); }
-    else { w.leader(45, DT + 30, 26, 22, 'THREADED ROD EVERY\nTHIRD DECK PLANK ON\nALTERNATING SIDES OF\nWEB'); w.leader(-45, DT + 40, -28, 46, '', { noArrow: false }); nbox(w, -1500, DT + 1250, '', 'TACK WELD OR\nCENTRE PUNCH BOLT\nTHREAD TO NUT\nTO PREVENT UNDOING\nOF NUT. (TYP)', 44, { ul: false }); }
+    w.leader(-W / 2, yPl - 6, -16, 10, 'MODIFIED\nFLANGE'); w.leader(hp - 10, yc + 12, 28, -8, '200x(6,8,10 OR 12FL)x' + 2 * hp + ' LONG\nSTEEL PACKERS, USED TO\nWEDGE STEEL STRINGER TIGHT\nAGAINST EXISTING DECKING.\nTACK WELD STEEL PACKERS TO\nSTRINGER AFTER PLACEMENT.');
+    w.leader(-hr, yc - dc - 40, -12, -14, `φ${RD} THREADED\nROD (TYP)`); w.leader(hr, yc - dc - 10, 22, -28, '100x10FLx300 WASHER');
+    if (ovl) { w.leader(-45, 110, -32, 50, `φ20x130 LONG COACH\nSCREW EVERY ${ORD[NP]}\nDECK PLANK ON\nALTERNATE SIDES OF\nWEB`); w.leader(250, DT + OV / 2, 16, 36, 'EXISTING CONCRETE\nOVERLAY', { dot: true }); }
+    else { w.leader(45, DT + 30, 26, 22, `THREADED ROD EVERY\n${ORD[NP]} DECK PLANK ON\nALTERNATING SIDES OF\nWEB`); w.leader(-45, DT + 40, -28, 46, '', { noArrow: false }); nbox(w, -1500, DT + 1250, '', 'TACK WELD OR\nCENTRE PUNCH BOLT\nTHREAD TO NUT\nTO PREVENT UNDOING\nOF NUT. (TYP)', 44, { ul: false }); }
     ttl(w, 'SECTIONAL ELEVATION', 'A', 20);
     LY.caption('PIER - STRINGER REPLACEMENT DETAIL - TYPE 1', 20, 'SPAN N° X - STRINGER N° X', { ref: 'XX30-XXXX' });
     return drgBox(LY.done());
   }
   const pUB = () => P('ub', 'Proposed stringer', '410UB54', { opts: UBs });
-  def('pn3101', 'Stringers', 'Pier stringer replacement – Type 1 (no overlay)', 'PN30-3101', [pUB()], p => stringerType1(p, false),
+  const pT1 = (ovl) => [pUB(), P('Lf', 'Modified flange length (mm)', 1129, { num: 1 }), P('pw', 'Flange plate width (mm)', 200, { num: 1 }), P('pt', 'Flange plate thickness (mm)', 16, { num: 1 }),
+    P('dc', 'Existing corbel depth (mm)', 320, { num: 1 }), pRD(), pDT(), ...(ovl ? [pOV()] : []), pNP()];
+  def('pn3101', 'Stringers', 'Pier stringer replacement – Type 1 (no overlay)', 'PN30-3101', pT1(false), p => stringerType1(p, false),
     'Replacing a pier stringer with a steel UB on a modified flange seated on the existing corbel, fixed to the deck with φ20 threaded rods every third plank (no concrete overlay).');
-  def('pn3102', 'Stringers', 'Pier stringer replacement – Type 1 (existing overlay)', 'PN30-3102', [pUB()], p => stringerType1(p, true),
+  def('pn3102', 'Stringers', 'Pier stringer replacement – Type 1 (existing overlay)', 'PN30-3102', pT1(true), p => stringerType1(p, true),
     'As Type 1 where an existing concrete overlay is present: stringer fixed to the deck with φ20x130 coach screws every third plank.');
 
   // ================================================================== PN30-3103  STRINGER REPLACEMENT DETAIL - TYPE 2 (on a timber bearer)
   // solid I section (small steel sections at 1:20 are drawn filled on the sheets)
   function iFill(v, cx, cy, s) { const { d, b, tf, tw } = s; iSec(v, cx, cy, s, 0); v.fill([[cx - b / 2, cy - d / 2], [cx + b / 2, cy - d / 2], [cx + b / 2, cy - d / 2 + tf], [cx - b / 2, cy - d / 2 + tf]]); v.fill([[cx - b / 2, cy + d / 2 - tf], [cx + b / 2, cy + d / 2 - tf], [cx + b / 2, cy + d / 2], [cx - b / 2, cy + d / 2]]); v.fill([[cx - tw / 2, cy - d / 2], [cx + tw / 2, cy - d / 2], [cx + tw / 2, cy + d / 2], [cx - tw / 2, cy + d / 2]]); }
   // horizontal rod through timber (shaft hidden inside), nut + washer each end
-  function rodH(v, y, xl, xr, o) { o = o || {}; v.line(xl - 24, y + 10, xr + 24, y + 10, 'S-HIDDEN'); v.line(xl - 24, y - 10, xr + 24, y - 10, 'S-HIDDEN'); v.nut(xl, y, -1, 0, 20); v.nut(xr, y, 1, 0, 20); }
+  function rodH(v, y, xl, xr, o) { o = o || {}; const r = RD / 2; v.line(xl - 24, y + r, xr + 24, y + r, 'S-HIDDEN'); v.line(xl - 24, y - r, xr + 24, y - r, 'S-HIDDEN'); v.nut(xl, y, -1, 0, RD); v.nut(xr, y, 1, 0, RD); }
   // designer's dashed note under the main caption (left aligned with it)
   function capNote(E, txt, w) { const bb = bbox(E), t = E.find(e => e.t === 'text' && e.L === 'S-TITLE' && e.h === 3.6), B = new Builder(); B.noteBox(t ? t.p[0] : bb.x0, bb.y0 - 4, txt, w || 60, { h: 1.9 }); E.push(...B.E); return E; }
-  def('pn3103', 'Stringers', 'Stringer replacement – Type 2 (on timber bearer)', 'PN30-3103', [pUB()], (p) => {
-    const LY = new Lay(), u = sec(p.ub, '410UB54'), d = u.d, ubT = secName(p.ub), hb = 250, wb = 190;
+  def('pn3103', 'Stringers', 'Stringer replacement – Type 2 (on timber bearer)', 'PN30-3103', [pUB(), P('hb', 'Bearer depth (mm)', 250, { num: 1 }), P('wb', 'Bearer width (mm)', 190, { num: 1 }),
+    P('pw', 'Plate width (mm)', 170, { num: 1 }), P('pt', 'Plate thickness (mm)', 10, { num: 1 }), P('re', 'Rod edge distance (mm)', 75, { num: 1 }), pRD()], (p) => {
+    deckP(p);
+    const LY = new Lay(), u = sec(p.ub, '410UB54'), d = u.d, ubT = secName(p.ub), hb = num(p.hb, 150, 450, 250), wb = num(p.wb, 120, 320, 190);
+    const pw = num(p.pw, 150, 260, 170), pt = num(p.pt, 6, 25, 10), re = num(p.re, 40, hb / 2 - 25, 75), a = pw / 2, xo = a - 60, rc = RD * 0.8, plT = `${hb}x${pt}FLx${pw}`;
     // ---- view along the stringer: bearer seen along its length, 250x10FLx170 plate on the stringer top flange
     const v = LY.view(20);
     v.line(-640, 0, 640, 0, 'S-EXIST'); v.line(-640, hb, 640, hb, 'S-EXIST'); v.brk(-640, -20, -640, hb + 20); v.brk(640, -20, 640, hb + 20);
-    iFill(v, 0, -d / 2, u); v.rect(-85, 0, 170, hb); v.boltEnd(-25, hb - 75, 20); v.boltEnd(25, 75, 20); v.circ(-25, hb - 75, 16, 'S-BOLT'); v.circ(25, 75, 16, 'S-BOLT');
-    v.dim(-85, hb, 85, hb, 14, '170'); dimO(v, -85, hb, -25, hb, 7, '60', 'a', '(TYP)');
-    dimO(v, -560, hb - 75, -560, hb, 6, '75', 'a'); v.line(-560, hb - 75, -40, hb - 75, 'S-DIM'); dimO(v, 300, 0, 300, 75, -6, '75', 'a'); v.line(40, 75, 330, 75, 'S-DIM');
-    v.leader(85, hb, 8, 22, '250x10FLx170'); v.leader(380, hb, 7, 13, 'EXISTING TIMBER BEARER');
-    weldTail(v, -85, 6, -14, -14, { size: '6', both: true, site: true });
+    iFill(v, 0, -d / 2, u); v.rect(-a, 0, pw, hb); v.boltEnd(-xo, hb - re, RD); v.boltEnd(xo, re, RD); v.circ(-xo, hb - re, rc, 'S-BOLT'); v.circ(xo, re, rc, 'S-BOLT');
+    v.dim(-a, hb, a, hb, 14, String(pw)); dimO(v, -a, hb, -xo, hb, 7, '60', 'a', '(TYP)');
+    dimO(v, -560, hb - re, -560, hb, 6, String(re), 'a'); v.line(-560, hb - re, -xo - 15, hb - re, 'S-DIM'); dimO(v, 300, 0, 300, re, -6, String(re), 'a'); v.line(xo + 15, re, 330, re, 'S-DIM');
+    v.leader(a, hb, 8, 22, plT); v.leader(380, hb, 7, 13, 'EXISTING TIMBER BEARER');
+    weldTail(v, -a, 6, -14, -14, { size: '6', both: true, site: true });
     secLeader(v, u.b / 2, -d, 18, -14, ubT, ' STRINGER\nREPLACEMENT');
     // ---- elevation of the stringer: bearer in cross-section, rods through the bearer and the plate
     const w = LY.view(20);
     iElevWebH(w, -580, 580, -d / 2, u); w.brk(-580, -d - 20, -580, 20); w.brk(580, -d - 20, 580, 20);
-    timberX(w, -wb / 2, 0, wb, hb); w.rect(-wb / 2 - 10, 0, 10, hb); rodH(w, 75, -wb / 2 - 10, wb / 2); rodH(w, hb - 75, -wb / 2 - 10, wb / 2);
-    w.leader(-30, hb, -10, 14, 'EXISTING TIMBER BEARER'); w.leader(10, hb + 30, 4, 24, 'φ20 THREADED ROD\n(TYP)'); w.leader(wb / 2 + 4, hb - 60, 9, 10, '65x5FLx65 STEEL\nWASHER (TYP)');
+    timberX(w, -wb / 2, 0, wb, hb); w.rect(-wb / 2 - pt, 0, pt, hb); rodH(w, re, -wb / 2 - pt, wb / 2); rodH(w, hb - re, -wb / 2 - pt, wb / 2);
+    w.leader(-30, hb, -10, 14, 'EXISTING TIMBER BEARER'); w.leader(10, hb + 30, 4, 24, `φ${RD} THREADED ROD\n(TYP)`); w.leader(wb / 2 + 4, hb - re + 15, 9, 10, '65x5FLx65 STEEL\nWASHER (TYP)');
     w.leader(-300, -d, -10, -14, '', { noArrow: false });
     LY.caption('STRINGER REPLACEMENT DETAIL - TYPE 2', 20, 'SPAN N° X - STRINGER N° X', { ref: 'XX30-XXXX' });
     return capNote(drgBox(LY.done()), 'NOTE: STRINGER SIZE WILL VARY ACCORDING TO ENGINEERING REQUIREMENTS\n' + ubT + ' STRINGER DRAWN', 66);
-  }, 'Replacement steel stringer connected to an existing timber bearer with a 250x10FLx170 plate welded to the top flange and two φ20 threaded rods.');
+  }, 'Replacement steel stringer connected to an existing timber bearer with a 250x10FLx170 plate (bearer, plate and rod sizes adjustable) welded to the top flange and two φ20 threaded rods.');
 
   // ================================================================== PN30-3104 … 3111  PIER - STRINGER & CORBEL REPLACEMENT / STRENGTHENING
   // cfg.type: '1' (existing timber stringer retained on the left span, steel stringer on the right), '2' (steel stringers both spans),
   //           'S' (strengthening: additional steel stringer beside the retained timber stringer); cfg.ovl existing concrete overlay;
   //           cfg.cleat (3105: 75x75x8 EA cleats at the corbel end against the timber stringer)
   // M16x120 anchor bolt standing on the stringer top flange (elevation / section), head up in the overlay
-  function anchorBolt(v, x) { v.line(x - 8, -u0tf - 30, x - 8, 75, 'S-BOLT'); v.line(x + 8, -u0tf - 30, x + 8, 75, 'S-BOLT'); v.rect(x - 13, 75, 26, 14, 'S-BOLT'); v.nut(x, 0, 0, 1, 16); v.nut(x, -u0tf, 0, -1, 16); }
-  let u0tf = 10.9;
+  function anchorBolt(v, x) { v.line(x - 8, -u0tf - 30, x - 8, ABH, 'S-BOLT'); v.line(x + 8, -u0tf - 30, x + 8, ABH, 'S-BOLT'); v.rect(x - 13, ABH, 26, 14, 'S-BOLT'); v.nut(x, 0, 0, 1, 16); v.nut(x, -u0tf, 0, -1, 16); }
+  let u0tf = 10.9, ABH = 75; // stringer flange thickness and anchor bolt head height above the flange, set by the generator
   // plan section A (type 3): deck cut back to ℄ stringer, φ20 rods every third plank one side, anchor bolts at 1000 crs the other side
-  function planA(v, u, t3a) {
+  function planA(v, u, t3a, ab, al) {
     const xl = -1750, xr = 1750, b2 = u.b / 2;
     v.line(xl - 150, b2, xr + 150, b2, 'S-HIDDEN'); v.line(xl - 150, -b2, xr + 150, -b2, 'S-HIDDEN'); v.line(xl, 0, xr, 0, 'S-NEW'); v.brk(xl - 150, -b2 - 20, xl - 150, b2 + 20); v.brk(xr + 150, -b2 - 20, xr + 150, b2 + 20);
     v.line(-10, -b2, -10, 30, 'S-NEW'); v.line(10, -b2, 10, 30, 'S-NEW');
     v.line(xl, 0, xl, 450, 'S-EXIST'); v.line(xr, 0, xr, 450, 'S-EXIST'); v.line(xl, 450, xr, 450, 'S-EXIST'); v.brk(xl, 50, xl, 400); v.brk(xr, 50, xr, 400); v.brk(-1250, 450, -850, 450); v.brk(250, 450, 650, 450);
     for (let x = xl + 120; x < xr - 60; x += PW * 0.8) v.line(x, 0, x, 450, 'S-EXIST');
     v.line(xl, -300, xr, -300, 'S-CONC'); v.line(xl, -b2, xl, -300, 'S-CONC'); v.line(xr, -b2, xr, -300, 'S-CONC'); v.brk(-1250, -300, -850, -300); v.brk(250, -300, 650, -300);
-    const rx = [-1530, -900, -270, 360, 990, 1620].filter(x => abs(x) < xr - 60); rx.forEach(x => { v.rect(x - 32, 13, 64, 64, 'S-BOLT'); v.rect(x - 22, 23, 44, 44, 'S-BOLT'); v.circ(x, 45, 12, 'S-BOLT'); });
-    [-1000, 1000].forEach(x => v.circ(x, -45, 16, 'S-BOLT'));
+    const rx = []; for (let x = -1530; abs(x) < xr - 60; x += NP * 210) rx.push(x); rx.forEach(x => { v.rect(x - 32, 13, 64, 64, 'S-BOLT'); v.rect(x - 22, 23, 44, 44, 'S-BOLT'); v.circ(x, 45, 12, 'S-BOLT'); });
+    [-ab, ab].forEach(x => v.circ(x, -45, 16, 'S-BOLT'));
     v.cl(0, -330, 0, 600, 'PIER');
-    v.dim(-1000, -420, 0, -420, -6, '1000', { sub: '(TYP)' }); v.dim(-2000, -420, -1000, -420, -6, 'ANCHOR BOLTS AT', { sub: '1000 CTS (TYP)' }); v.line(-1000, -60, -1000, -440, 'S-DIM');
-    v.leader(-500, 250, -10, 22, 'EXISTING TIMBER\nDECKING', { dot: true }); v.leader(360, 60, 8, 36, 'φ20 THREADED ROD\nEVERY THIRD DECK\nPLANK'); v.leader(xl - 60, b2 - 10, -8, 18, 'PROPOSED STEEL\nSTRINGER'); v.leader(-1000, -55, -26, -12, 'ANCHOR BOLT -\nM16x120 LONG\nBOLT (TYP)');
+    v.dim(-ab, -420, 0, -420, -6, String(ab), { sub: '(TYP)' }); v.dim(-ab - 1000, -420, -ab, -420, -6, 'ANCHOR BOLTS AT', { sub: ab + ' CTS (TYP)' }); v.line(-ab, -60, -ab, -440, 'S-DIM');
+    const r1 = rx.reduce((a, x) => abs(x - 360) < abs(a - 360) ? x : a, rx[0]);
+    v.leader(-500, 250, -10, 22, 'EXISTING TIMBER\nDECKING', { dot: true }); v.leader(r1, 60, 8, 36, `φ${RD} THREADED ROD\nEVERY ${ORD[NP]} DECK\nPLANK`); v.leader(xl - 60, b2 - 10, -8, 18, 'PROPOSED STEEL\nSTRINGER'); v.leader(-ab, -55, -26, -12, `ANCHOR BOLT -\nM16x${al} LONG\nBOLT (TYP)`);
     ttl(v, 'SECTION', 'A', 20);
   }
   // detail 1 (1:5): anchor bolt through the stringer flange into the proposed overlay
-  function det1(v, u, w150) {
-    const tf = u.tf, H = w150 ? 150 : 120, top = w150 ? 210 : 180;
+  // o: al anchor bolt length, sp anchor bolt spacing (3112: alternate sides, so the crs on one side are 2 sp)
+  function det1(v, u, w150, o) {
+    o = o || {}; const tf = u.tf, H = o.al || (w150 ? 150 : 120), top = H + 60, sp = o.sp || 400;
     v.line(-330, 0, 330, 0); v.line(-330, -tf, 330, -tf); v.brk(-330, -tf - 10, -330, 10); v.brk(330, -tf - 10, 330, 10); v.line(-310, -100, 310, -100, 'S-EXIST'); v.brk(-310, -110, -310, -tf - 5); v.brk(310, -110, 310, -tf - 5);
     v.line(-300, top, 300, top, 'S-CONC'); v.line(-300, 0, -300, top, 'S-CONC'); v.line(300, 0, 300, top, 'S-CONC'); v.brk(-300, 20, -300, top - 20); v.brk(300, 20, 300, top - 20); v.brk(-30, top, 30, top);
-    const yf = w150 ? 85 : 75; aggr(v, 170, w150 ? 175 : 140); v.fabric(-300, yf, 300, yf, 140); v.line(-300, yf + 6, 300, yf + 6, 'S-REO');
+    const yf = w150 ? 85 : 75; aggr(v, 170, top - (w150 ? 35 : 40)); v.fabric(-300, yf, 300, yf, 140); v.line(-300, yf + 6, 300, yf + 6, 'S-REO');
     if (w150) { aggr(v, -200, 35); v.line(-300, 1, 300, 1, 'S-NEW'); [-170, 170].forEach(x => v.pl([[x - 25, 1], [x - 18, 55], [x + 18, 55], [x + 25, 1]], false, 'S-NEW')); v.leader(190, 40, 30, 22, '1mm BONDEK\nPERMANENT\nFORMWORK'); dimO(v, 360, 55, 360, yf, -6, '30', 'a', 'COVER'); v.line(195, 55, 375, 55, 'S-DIM'); v.line(305, yf, 375, yf, 'S-DIM'); }
     const x = 0; v.line(x - 8, -tf - 45, x - 8, H - tf - 25, 'S-BOLT'); v.line(x + 8, -tf - 45, x + 8, H - tf - 25, 'S-BOLT'); v.rect(x - 14, H - tf - 25, 28, 12, 'S-BOLT'); v.rect(x - 13, H - tf - 13, 26, 10, 'S-BOLT'); v.nut(x, 0, 0, 1, 16); v.nut(x, -tf, 0, -1, 16); v.fill([[x - 9, -tf], [x + 9, -tf], [x + 9, 0], [x - 9, 0]], 'S-BOLT');
     if (w150) { v.dim(-360, 0, -360, 110, -6, '110'); v.line(-370, 110, -20, 110, 'S-DIM'); } else { v.dim(-360, 0, -360, 75, -6, '75'); v.line(-370, 75, -310, 75, 'S-DIM'); }
-    v.leader(w150 ? 120 : -120, yf + 4, w150 ? 14 : -12, w150 ? 34 : 18, 'DECK FABRIC'); v.leader(w150 ? -14 : 14, H - tf - 20, w150 ? -4 : 8, w150 ? 40 : 22, 'ANCHOR BOLT - ' + (w150 ? 'M16x150 LONG BOLT\nWITH 30 O.D. x 3 THICK WASHER\nEACH SIDE OF STRINGER FLANGE.\nANCHOR BOLTS ARE AT 800 CRS\nON ALTERNATE SIDES OF WEB AS\nSHOWN IN ELEVATION' : 'M16x120\nLONG BOLT WITH 30 O.D.\nx 3 THICK WASHER'));
+    v.leader(w150 ? 120 : -120, yf + 4, w150 ? 14 : -12, w150 ? 34 : 18, 'DECK FABRIC'); v.leader(w150 ? -14 : 14, H - tf - 20, w150 ? -4 : 8, w150 ? 40 : 22, 'ANCHOR BOLT - ' + (w150 ? `M16x${H} LONG BOLT\nWITH 30 O.D. x 3 THICK WASHER\nEACH SIDE OF STRINGER FLANGE.\nANCHOR BOLTS ARE AT ${2 * sp} CRS\nON ALTERNATE SIDES OF WEB AS\nSHOWN IN ELEVATION` : `M16x${H}\nLONG BOLT WITH 30 O.D.\nx 3 THICK WASHER`));
     v.leader(-150, -tf, -10, -18, 'PROPOSED\nSTRINGER\nFLANGE'); v.leader(9, -tf / 2, 14, -20, w150 ? 'DRILL φ18 HOLE IN STRINGER\nFLANGE AND BONDEK SHEETING\nON ALTERNATE SIDES OF WEB\n(TYP)' : 'DRILL φ18 HOLE IN\nSTRINGER FLANGE');
     ttl(v, 'DETAIL', '1', 5);
   }
   // modified flange detail (type 3A, 1:10)
-  function modFlange3A(v) {
-    v.line(0, 0, 840, 0); v.line(0, 200, 840, 200); v.line(0, 0, 0, 200); v.line(840, 0, 840, 95); v.line(840, 105, 840, 200); v.pl([[840, 95], [540, 95], [540, 105], [840, 105]], false, 'S-NEW');
-    [50, 440].forEach(x => [55, 145].forEach(y => { v.circ(x, y, 12); v.line(x - 30, y, x + 30, y, 'S-CL'); v.line(x, y - 30, x, y + 30, 'S-CL'); }));
-    v.dim(0, -60, 540, -60, -14, '540'); v.dim(0, -60, 840, -60, -24, '840'); dimO(v, 0, -60, 50, -60, -6, '50', 'a'); v.dim(50, -60, 440, -60, -6, '390'); v.line(50, 25, 50, -80, 'S-DIM'); v.line(440, 25, 440, -80, 'S-DIM');
-    dimO(v, -40, 145, -40, 200, 6, '55', 'b', '(TYP)'); v.line(-50, 145, 20, 145, 'S-DIM'); dimO(v, 880, 95, 880, 105, -6, '10', 'a');
-    v.leader(50, 157, 10, 24, 'φ24 HOLE (TYP)'); v.leader(700, 200, 8, 18, '200x16FL');
+  function modFlange3A(v, e) {
+    e = e || 500; const L = e + 340, xs = e + 40, xh = e - 60;
+    v.line(0, 0, L, 0); v.line(0, 200, L, 200); v.line(0, 0, 0, 200); v.line(L, 0, L, 95); v.line(L, 105, L, 200); v.pl([[L, 95], [xs, 95], [xs, 105], [L, 105]], false, 'S-NEW');
+    [50, xh].forEach(x => [55, 145].forEach(y => { v.circ(x, y, 12); v.line(x - 30, y, x + 30, y, 'S-CL'); v.line(x, y - 30, x, y + 30, 'S-CL'); }));
+    v.dim(0, -60, xs, -60, -14, String(xs)); v.dim(0, -60, L, -60, -24, String(L)); dimO(v, 0, -60, 50, -60, -6, '50', 'a'); v.dim(50, -60, xh, -60, -6, String(xh - 50)); v.line(50, 25, 50, -80, 'S-DIM'); v.line(xh, 25, xh, -80, 'S-DIM');
+    dimO(v, -40, 145, -40, 200, 6, '55', 'b', '(TYP)'); v.line(-50, 145, 20, 145, 'S-DIM'); dimO(v, L + 40, 95, L + 40, 105, -6, '10', 'a');
+    v.leader(50, 157, 10, 24, 'φ24 HOLE (TYP)'); v.leader(L - 140, 200, 8, 18, '200x16FL');
     ttl(v, 'MODIFIED FLANGE DETAIL - STRINGER', '', null); ttl(v, 'REPLACEMENT ON PROPOSED UC CORBEL', '', 10, { gap: 3 });
   }
   function corbelElev(v, p, cfg) {
-    const t3 = cfg.type[0] === '3', t3a = cfg.type === '3A', u = sec(p.ub, '410UB54'); u0tf = u.tf; const c = sec(p.cor, cfg.type === '1' ? '310UC97' : '310UB46'), d = u.d, dc = c.d, yPl = -d + 50, ycT = t3a ? yPl - 28 : -d, ycB = ycT - dc, yh = ycB - 13, hh = 400, xb = 1560, xl = -1560;
+    const t3 = cfg.type[0] === '3', t3a = cfg.type === '3A', u = sec(p.ub, '410UB54'); u0tf = u.tf; const c = sec(p.cor, cfg.type === '1' ? '310UC97' : '310UB46'), d = u.d, dc = c.d, yPl = -d + 50, ycT = t3a ? yPl - 28 : -d, ycB = ycT - dc, yh = ycB - 13, xb = 1560, xl = -1560;
     const ovl = cfg.ovl, t1 = cfg.type === '1', t2 = cfg.type === '2' || t3, ts = cfg.type === 'S';
+    // halfcap width / depth, seat angle leg, half corbel length (the seat angles must fit under the corbel), anchor bolt spacing (type 3)
+    const hw = num(p.hw, 150, 300, 200), hh = num(p.hd, 250, 600, 400), al = num(p.al, 150, 250, 200), e = max(num(p.Lc, 960, 1600, 1000) / 2, 80 + hw + al), ab = num(p.ab, 600, 1500, 1000);
+    const xh = 65 + hw, xa = xh + 0.6 * al, yr = ycB - al + 30, de = e - 500; // angle heel, angle-to-corbel rod, halfcap rod level, shift of the corbel end
     const top = deckElev(v, xl - 40 - (t1 ? 300 : 0), xb + 40, { ovl, prop: t3, ag: t3 ? 1240 : 1080 });
     // proposed steel corbel, stiffeners, seat angles, steel packers, halfcaps, halfcap rods
-    iElevWebH(v, -500, 500, ycT - dc / 2, c); [-1, 1].forEach(k => { v.rect(k * 175 - 5, ycB + c.tf, 10, dc - 2 * c.tf); aSec(v, k * 265, ycB, 200, 200, 13, k, -1); v.rect(k > 0 ? 65 : -262, yh, 197, 13); v.hatch(k > 0 ? [[65, yh], [262, yh], [262, ycB], [65, ycB]] : [[-262, yh], [-65, yh], [-65, ycB], [-262, ycB]], 'ansi31', 'S-HATCH', 0.4); rodV(v, k * 385, ycB + c.tf, ycB - 13, { pr: 18 }); });
-    halfcapsElev(v, yh, 200, hh, 130); { const yr = ycB - 170; v.line(-300, yr + 10, 300, yr + 10, 'S-HIDDEN'); v.line(-300, yr - 10, 300, yr - 10, 'S-HIDDEN'); [-278, -65].forEach(x => v.nut(x, yr, -1, 0, 20)); [65, 278].forEach(x => v.nut(x, yr, 1, 0, 20)); }
+    iElevWebH(v, -e, e, ycT - dc / 2, c); [-1, 1].forEach(k => { v.rect(k * 175 - 5, ycB + c.tf, 10, dc - 2 * c.tf); aSec(v, k * xh, ycB, al, al, 13, k, -1); v.rect(k > 0 ? 65 : -xh + 3, yh, hw - 3, 13); v.hatch(k > 0 ? [[65, yh], [xh - 3, yh], [xh - 3, ycB], [65, ycB]] : [[-xh + 3, yh], [-65, yh], [-65, ycB], [-xh + 3, ycB]], 'ansi31', 'S-HATCH', 0.4); rodV(v, k * xa, ycB + c.tf, ycB - 13, { pr: 18, d: 20 }); });
+    halfcapsElev(v, yh, hw, hh, 130); { const r = RD / 2, xw = hw + 100; v.line(-xw, yr + r, xw, yr + r, 'S-HIDDEN'); v.line(-xw, yr - r, xw, yr - r, 'S-HIDDEN'); [-(xh + 13), -65].forEach(x => v.nut(x, yr, -1, 0, RD)); [65, xh + 13].forEach(x => v.nut(x, yr, 1, 0, RD)); }
     v.cl(0, yh - hh - 60, 0, top + 360, 'PIER');
     // steel stringer(s) + stringer-to-corbel bolts
     const strg = (k) => { // k = 1 right span, -1 left span
       const X = x => k * x;
-      if (t3a) { const xn = 550; v.line(X(10), 0, X(xb), 0); v.line(X(10), -u.tf, X(xb), -u.tf); v.line(X(10), 0, X(10), yPl); v.line(X(10), yPl, X(xn), yPl); v.line(X(xn), yPl - 16, X(xn), -d); v.line(X(xn), -d, X(xb), -d); v.line(X(xn), -d + u.tf, X(xb), -d + u.tf);
-        v.rect(min(X(10), X(850)), yPl - 16, 840, 16); v.rect(min(X(10), X(500)), ycT, 490, 12); v.hatch([[X(10), ycT], [X(500), ycT], [X(500), ycT + 12], [X(10), ycT + 12]], 'ansi31', 'S-HATCH', 0.4); }
+      if (t3a) { const xn = e + 50; v.line(X(10), 0, X(xb), 0); v.line(X(10), -u.tf, X(xb), -u.tf); v.line(X(10), 0, X(10), yPl); v.line(X(10), yPl, X(xn), yPl); v.line(X(xn), yPl - 16, X(xn), -d); v.line(X(xn), -d, X(xb), -d); v.line(X(xn), -d + u.tf, X(xb), -d + u.tf);
+        v.rect(min(X(10), X(e + 350)), yPl - 16, e + 340, 16); v.rect(min(X(10), X(e)), ycT, e - 10, 12); v.hatch([[X(10), ycT], [X(e), ycT], [X(e), ycT + 12], [X(10), ycT + 12]], 'ansi31', 'S-HATCH', 0.4); }
       else iElevWebH(v, min(X(10), X(xb)), max(X(10), X(xb)), -d / 2, u);
-      v.brk(X(xb), -d - 25, X(xb), 25); [60, 450].forEach(x => rodV(v, X(x), t3a ? yPl : -d + u.tf, ycT - c.tf, { pr: 18 }));
+      v.brk(X(xb), -d - 25, X(xb), 25); [60, e - 50].forEach(x => rodV(v, X(x), t3a ? yPl : -d + u.tf, ycT - c.tf, { pr: 18, d: 20 }));
     };
     strg(1); if (t2) { strg(-1); v.line(-10, 0, -10, top + 40, 'S-NEW'); v.line(10, 0, 10, top + 40, 'S-NEW'); }
     if (ts) v.line(10, 0, 10, top + 30, 'S-NEW');
     // deck fixings
-    const rods = [392, 392 + 3 * PW * 1, ...(t2 ? [-305, -305 - 3 * PW] : [])];
+    const rods = [392, 392 + NP * PW * 1, ...(t2 ? [-305, -305 - NP * PW] : [])];
     rods.forEach((x, i) => { const hid = !ts && (i % 2 === 1) !== (x < 0); if (ovl) coach(v, x, -u.tf, -u.tf + 130, hid); else { rodV(v, x, DT, -u.tf, { hid }); spikes(v, x, hid); } });
     // existing timber stringer (type 1): trimmed end on continuous timber packers over the corbel
     const yS = ycT + 60;
     if (t1) {
       v.pl([[xl - 300, -480], [-1000, -480], [-720, yS], [0, yS]], false, 'S-EXIST'); v.line(0, yS, 0, 0, 'S-EXIST'); v.pileEnd(xl - 300, -240, 480, 'S-EXIST', 1);
-      v.rect(-500, ycT, 500, 60); for (let x = -500; x < 0; x += 100) { v.line(x, ycT, x + 100, yS, 'S-NEW'); v.line(x, yS, x + 100, ycT, 'S-NEW'); }
-      if (cfg.cleat) { v.rect(-545, ycB, 45, dc + 220); v.rect(-570, -240, 90, 220); v.boltEnd(-525, -130, 20); v.line(-525, ycB - 30, -525, -20, 'S-HIDDEN'); }
+      const nq = Math.round(e / 100), q = e / nq; v.rect(-e, ycT, e, 60); for (let i = 0; i < nq; i++) { const x = -e + i * q; v.line(x, ycT, x + q, yS, 'S-NEW'); v.line(x, yS, x + q, ycT, 'S-NEW'); }
+      if (cfg.cleat) { v.rect(-545 - de, ycB, 45, dc + 220); v.rect(-570 - de, -240, 90, 220); v.boltEnd(-525 - de, -130, RD); v.line(-525 - de, ycB - 30, -525 - de, -20, 'S-HIDDEN'); }
       else { v.line(-433 - 10, top + 40, -433 - 10, ycT - c.tf - 30, 'S-HIDDEN'); v.line(-433 + 10, top + 40, -433 + 10, ycT - c.tf - 30, 'S-HIDDEN'); v.nut(-433, DT, 0, 1, 20); v.nut(-433, ycT - c.tf, 0, -1, 20); v.rect(-333, -300, 100, 240); v.boltEnd(-283, -180, 20); }
     }
     // section markers
-    if (t3) { [-1000, 1000].forEach(x => anchorBolt(v, x)); v.circ(1000, 40, 100, 'S-TEXT'); { const q = v.P(1000, 40); v.add({ t: 'line', a: [q[0] - 2, q[1] + 4.6], b: [q[0] - 4, q[1] + 12], L: 'S-TEXT' }); v.add({ t: 'circle', c: [q[0] - 4.6, q[1] + 15.4], r: 3.2, L: 'S-TEXT' }); v.add({ t: 'text', p: [q[0] - 4.6, q[1] + 15.4], s: '1', h: 3, al: 'c', v: 'm', ang: 0, L: 'S-TEXT' }); }
+    if (t3) { [-ab, ab].forEach(x => anchorBolt(v, x)); v.circ(ab, 40, 100, 'S-TEXT'); { const q = v.P(ab, 40); v.add({ t: 'line', a: [q[0] - 2, q[1] + 4.6], b: [q[0] - 4, q[1] + 12], L: 'S-TEXT' }); v.add({ t: 'circle', c: [q[0] - 4.6, q[1] + 15.4], r: 3.2, L: 'S-TEXT' }); v.add({ t: 'text', p: [q[0] - 4.6, q[1] + 15.4], s: '1', h: 3, al: 'c', v: 'm', ang: 0, L: 'S-TEXT' }); }
       cutH(v, xl - 120, xb + 120, DT * 0.6, 'A'); cutV(v, -455, top + 260, ycB - 300, 'B', 0, 8); }
     else cutV(v, 1120, top + 260, ycB - 60, 'A', 180, 8);
     if (t1) cutV(v, -433, top + 260, yh - hh - 120, 'B', 0, 8);
     // dimensions
     if (t3) dimO(v, 0, top + 180, 10, top + 180, 6, '10', 'a', '(TYP)'); else if (t2) { dimO(v, -10, top + 180, 0, top + 180, 6, '10', 'a'); dimO(v, 0, top + 180, 10, top + 180, 6, '10', 'b'); } else dimO(v, 0, top + 180, 10, top + 180, 6, '10', 'a');
-    dimO(v, 10, -d / 2 - 60, 60, -d / 2 - 60, 6, '50', 'a', '(TYP)'); dimO(v, 450, -d / 2 - 60, 500, -d / 2 - 60, 6, '50', 'b', '(TYP)'); v.line(60, -d + u.tf + 40, 60, -d / 2 - 60, 'S-DIM'); v.line(450, -d + u.tf + 40, 450, -d / 2 - 60, 'S-DIM'); v.line(500, ycT + 20, 500, -d / 2 - 60, 'S-DIM');
-    dimO(v, 265, ycT - 170, 385, ycT - 170, 6, '120', 'b', '(TYP)', 4); v.line(385, ycB + c.tf + 20, 385, ycT - 170, 'S-DIM'); v.dim(-175, yh - hh - 160, 175, yh - hh - 160, 6, '350');
-    if (cfg.cleat) { dimO(v, -545, -80, -525, -80, 6, '25', 'b'); dimO(v, -545, ycT - 100, -500, ycT - 100, 6, '45', 'a'); }
+    dimO(v, 10, -d / 2 - 60, 60, -d / 2 - 60, 6, '50', 'a', '(TYP)'); dimO(v, e - 50, -d / 2 - 60, e, -d / 2 - 60, 6, '50', 'b', '(TYP)'); v.line(60, -d + u.tf + 40, 60, -d / 2 - 60, 'S-DIM'); v.line(e - 50, -d + u.tf + 40, e - 50, -d / 2 - 60, 'S-DIM'); v.line(e, ycT + 20, e, -d / 2 - 60, 'S-DIM');
+    dimO(v, xh, ycT - 170, xa, ycT - 170, 6, String(Math.round(xa - xh)), 'b', '(TYP)', 4); v.line(xa, ycB + c.tf + 20, xa, ycT - 170, 'S-DIM'); v.dim(-175, yh - hh - 160, 175, yh - hh - 160, 6, '350');
+    if (cfg.cleat) { dimO(v, -545 - de, -80, -525 - de, -80, 6, '25', 'b'); dimO(v, -545 - de, ycT - 100, -e, ycT - 100, 6, '45', 'a'); }
     // leaders
     if (t3) { v.leader(-560, top, -26, 46, 'PROPOSED CONCRETE\nOVERLAY'); v.leader(-780, DT - 20, -30, 32, 'EXISTING TIMBER\nDECK'); }
     else v.leader(-900, DT, -36, 30, 'EXISTING TIMBER\nDECK');
-    if (t3a) { dimO(v, -500, ycB + 80, -550, ycB + 80, -6, '50', 'b', '(TYP)'); v.line(-550, yPl - 16, -550, ycB + 60, 'S-DIM');
+    if (t3a) { dimO(v, -e, ycB + 80, -e - 50, ycB + 80, -6, '50', 'b', '(TYP)'); v.line(-e - 50, yPl - 16, -e - 50, ycB + 60, 'S-DIM');
       v.dim(xl - 160, yPl, xl - 160, 0, -6, '300', { sub: 'MIN' }); v.text(xl - 160 - 140, yPl / 2, '*', 3.5, 'c', 'm'); dimO(v, -1250, -d, -1250, yPl - 16, -6, '50', 'b', 'MIN');
-      v.leader(-850, yPl - 8, -14, 34, 'MODIFIED FLANGE REFER\nTO DETAIL (TYP)'); weldTail(v, -560, yPl - 8, -60, -20, { size: '6', both: true }, 'BOTH SIDES OF\nWEB (TYP)');
+      v.leader(-e - 350, yPl - 8, -14, 34, 'MODIFIED FLANGE REFER\nTO DETAIL (TYP)'); weldTail(v, -e - 60, yPl - 8, -60, -20, { size: '6', both: true }, 'BOTH SIDES OF\nWEB (TYP)');
       v.noteBox(xl - 1500, 300, 'NOTE:\n300 MIN CAN BE REDUCED\nSUBJECT TO ENGINEER\'S\nASSESSMENT & VERIFICATION', 46, { h: 1.8 });
       nbox(v, xl - 1700, ycB - 300, '', 'NOTE:\nDIMENSION DENOTED THUS *\nSHALL BE DETERMINED FROM\nSITE MEASUREMENT PRIOR TO\nFABRICATION.', 54, { ul: false }); } if (ovl) v.leader(300, DT + OV / 2, 30, 34, 'EXISTING CONCRETE\nOVERLAY', { dot: true });
     if (t1) v.leader(-1250, -230, -52, 16, 'EXISTING TIMBER\nSTRINGER', { dot: true });
     if (!ovl) { v.leader(392 - 150, DT - 40, ts ? -30 : 6, ts ? 70 : 74, 'FIX LOOSE PLANKS TO\nADJACENT BOLTED PLANKS\nWITH φ10x200 LONG SPIKE\n(TYP)'); v.leader(392 + 20, DT + 10, 16, 52, '65x5FLx65 STEEL\nWASHER (TYP)'); }
-    v.leader(-500, ycT - dc / 2, -26, 0, 'PROPOSED STEEL\nCORBEL'); v.leader(1300, -d, 12, -14, 'PROPOSED STEEL\nSTRINGER' + (t1 ? '' : ' (TYP)'));
-    v.leader(-200, yh - 250, -40, 4, 'EXISTING TIMBER\nHALFCAP (TYP)'); v.leader(-120, ycB - 170, -46, -22, 'φ20 THREADED ROD' + (ts ? 'S' : '') + ' WITH\n65x5FLx65 WASHER TO\nTIMBER FACE (TYP)');
-    if (t3a) v.leader(300, ycT + 6, 30, -34, '200x(6,8,10 OR 12FL)x490 LONG\nSTEEL PACKERS WITH φ24 HOLES\nTO SUIT M20 BOLTS. USE PACKERS\nTO WEDGE STEEL STRINGER TIGHT\nAGAINST EXISTING DECKING.'); else v.leader(230, yh + 6, 34, -14, '200x(6,8,10 OR 12FL)x300 LONG\nSTEEL PACKERS, USED TO\nWEDGE STEEL STRINGER TIGHT\nAGAINST EXISTING DECKING.\nTACK WELD STEEL PACKERS\nTO CORBEL AFTER PLACEMENT');
+    v.leader(-e, ycT - dc / 2, -26, 0, 'PROPOSED STEEL\nCORBEL'); v.leader(1300, -d, 12, -14, 'PROPOSED STEEL\nSTRINGER' + (t1 ? '' : ' (TYP)'));
+    v.leader(-200, yh - hh * 0.625, -40, 4, 'EXISTING TIMBER\nHALFCAP (TYP)'); v.leader(-120, yr, -46, -22, `φ${RD} THREADED ROD` + (ts ? 'S' : '') + ' WITH\n65x5FLx65 WASHER TO\nTIMBER FACE (TYP)');
+    if (t3a) v.leader(300, ycT + 6, 30, -34, `200x(6,8,10 OR 12FL)x${e - 10} LONG\nSTEEL PACKERS WITH φ24 HOLES\nTO SUIT M20 BOLTS. USE PACKERS\nTO WEDGE STEEL STRINGER TIGHT\nAGAINST EXISTING DECKING.`); else v.leader(hw + 30, yh + 6, 34, -14, '200x(6,8,10 OR 12FL)x300 LONG\nSTEEL PACKERS, USED TO\nWEDGE STEEL STRINGER TIGHT\nAGAINST EXISTING DECKING.\nTACK WELD STEEL PACKERS\nTO CORBEL AFTER PLACEMENT');
     nbox(v, 1880, top + 300, 'NOTE:', 'GAP BETWEEN STRINGER\nAND DECK SHALL BE\nSUITABLY PACKED REFER\nTO STEEL STRINGER\nPACKING DETAIL', 50);
     ttl(v, 'ELEVATION', '', null, { h: 2.6 });
-    return { u, c, d, dc, ycT, ycB, yh };
+    return { u, c, d, dc, ycT, ycB, yh, hw, hh, al, e, ab, yr };
   }
   // sectional elevation A (x = 0 at ℄ stringer)
   function corbelSecA(w, p, cfg, g) {
-    const { u, c, d, dc, ycT, ycB, yh } = g, ovl = cfg.ovl, ts = cfg.type === 'S', t3 = cfg.type[0] === '3', t3a = cfg.type === '3A', yPl = -d + 50;
+    const { u, c, d, dc, ycT, ycB, yh, hh, al, e, yr } = g, ovl = cfg.ovl, ts = cfg.type === 'S', t3 = cfg.type[0] === '3', t3a = cfg.type === '3A', yPl = -d + 50, ya = ycB - al;
     let wt;
     if (t3) { wt = DT + OV; w.line(-480, 0, 0, 0, 'S-EXIST'); w.line(-480, DT, 0, DT, 'S-EXIST'); w.line(-480, wt, 480, wt, 'S-CONC'); w.line(u.b / 2, 0, 480, 0, 'S-CONC'); w.brk(-480, -25, -480, wt + 25); w.brk(480, -25, 480, wt + 25); aggr(w, 230, DT); }
     else wt = deckSec(w, -480, 480, { ovl });
     if (t3a) { w.rect(-u.b / 2, -u.tf, u.b, u.tf); w.fill([[-u.b / 2, -u.tf], [u.b / 2, -u.tf], [u.b / 2, 0], [-u.b / 2, 0]]); w.fill([[-u.tw / 2, yPl], [u.tw / 2, yPl], [u.tw / 2, -u.tf], [-u.tw / 2, -u.tf]]); w.rect(-100, yPl - 16, 200, 16); w.rect(-100, ycT, 200, 12); w.hatch([[-100, ycT], [100, ycT], [100, ycT + 12], [-100, ycT + 12]], 'ansi31', 'S-HATCH', 0.4); }
     else iFill(w, 0, -d / 2, u); iSec(w, 0, ycT - dc / 2, c); w.rect(-c.b / 2 + 3, ycB + c.tf, c.b - 6, dc - 2 * c.tf, 'S-NEW'); w.line(-c.tw / 2, ycB + c.tf, -c.tw / 2, ycT - c.tf); w.line(c.tw / 2, ycB + c.tf, c.tw / 2, ycT - c.tf);
-    [-1, 1].forEach(k => { rodV(w, k * (t3a ? 45 : 40), t3a ? yPl : -d + u.tf, ycT - c.tf, { pr: 18 }); rodV(w, k * 40, ycB + c.tf, ycB - 13, { pr: 18 }); });
-    w.rect(-150, ycB - 200, 300, 200); w.line(-150, ycB - 13, 150, ycB - 13); [-100, 100].forEach(x => { w.circ(x, ycB - 170, 22, 'S-BOLT'); w.boltEnd(x, ycB - 170, 20); });
-    w.line(-480, yh, -150, yh, 'S-EXIST'); w.line(150, yh, 480, yh, 'S-EXIST'); w.line(-480, yh - 400, 480, yh - 400, 'S-EXIST'); w.brk(-480, yh - 420, -480, yh + 20); w.brk(480, yh - 420, 480, yh + 20);
+    [-1, 1].forEach(k => { rodV(w, k * (t3a ? 45 : 40), t3a ? yPl : -d + u.tf, ycT - c.tf, { pr: 18, d: 20 }); rodV(w, k * 40, ycB + c.tf, ycB - 13, { pr: 18, d: 20 }); });
+    w.rect(-150, ya, 300, al); w.line(-150, ycB - 13, 150, ycB - 13); [-100, 100].forEach(x => { w.circ(x, yr, RD + 2, 'S-BOLT'); w.boltEnd(x, yr, RD); });
+    w.line(-480, yh, -150, yh, 'S-EXIST'); w.line(150, yh, 480, yh, 'S-EXIST'); w.line(-480, yh - hh, 480, yh - hh, 'S-EXIST'); w.brk(-480, yh - hh - 20, -480, yh + 20); w.brk(480, yh - hh - 20, 480, yh + 20);
     if (ts) { w.arc(500, -265, 265, -62, 242, 'S-EXIST'); w.arc(500, ycT - 150, 235, 150, 390, 'S-EXIST'); }
     if (ovl) { coach(w, -45, -u.tf, -u.tf + 130); if (!ts) coach(w, 45, -u.tf, -u.tf + 130, true); } else { rodV(w, -45, DT, -u.tf); if (t3) anchorBolt(w, 45); else if (!ts) rodV(w, 45, DT, -u.tf, { hid: true }); }
-    w.cl(0, ycB - 330, 0, wt + (t3 ? 1150 : 380), 'STRINGER'); if (t3) { w.leader(0, wt + 1000, 12, 0, 'CUT BACK EXISTING TIMBER\nDECKING FOR FULL LENGTH OF\nPROPOSED STEEL STRINGER\nTO THE ℄ OF PROPOSED STRINGER'); w.leader(55, 80, 16, 34, 'ANCHOR BOLT -\nM16x120 LONG BOLT'); }
+    w.cl(0, ya - 130, 0, wt + (t3 ? 1150 : 380), 'STRINGER'); if (t3) { w.leader(0, wt + 1000, 12, 0, 'CUT BACK EXISTING TIMBER\nDECKING FOR FULL LENGTH OF\nPROPOSED STEEL STRINGER\nTO THE ℄ OF PROPOSED STRINGER'); w.leader(55, ABH + 5, 16, 34, `ANCHOR BOLT -\nM16x${ABH + 45} LONG BOLT`); }
     dimO(w, -45, wt + 170, 0, wt + 170, 6, '45', 'a'); if (!ts) dimO(w, 0, wt + 170, 45, wt + 170, 6, '45', 'b');
     if (!ovl) dimO(w, -260, DT, -260, DT + 50, -6, '50', 'b', '(TYP)');
-    dimO(w, -100, ycB - 280, 0, ycB - 280, -6, '100', 'a'); dimO(w, 0, ycB - 280, 100, ycB - 280, -6, '100', 'b'); w.line(-100, ycB - 180, -100, ycB - 300, 'S-DIM'); w.line(100, ycB - 180, 100, ycB - 300, 'S-DIM');
-    dimO(w, 250, ycB - 200, 250, ycB - 170, -6, '30', 'a'); w.line(130, ycB - 170, 270, ycB - 170, 'S-DIM');
-    secLeader(w, u.tw / 2, -d / 2, ts ? 60 : 36, 0, secName(p.ub), ' STRINGER'); secLeader(w, c.tw / 2, ycT - dc / 2, ts ? 60 : 36, 0, secName(p.cor), ' CORBEL x\n1000 LONG');
-    w.leader(-40, -d + u.tf + 10, -22, 14, 'M20 BOLT (TYP)'); w.leader(-c.b / 4, ycT - dc / 2, -30, -6, '10FL STIFFENER\n(TYP)', { dot: true }); w.leader(-150, ycB - 200, -18, -12, '200x200x13 EA\nx300 LONG (TYP)');
+    dimO(w, -100, ya - 80, 0, ya - 80, -6, '100', 'a'); dimO(w, 0, ya - 80, 100, ya - 80, -6, '100', 'b'); w.line(-100, ya + 20, -100, ya - 100, 'S-DIM'); w.line(100, ya + 20, 100, ya - 100, 'S-DIM');
+    dimO(w, 250, ya, 250, yr, -6, '30', 'a'); w.line(130, yr, 270, yr, 'S-DIM');
+    secLeader(w, u.tw / 2, -d / 2, ts ? 60 : 36, 0, secName(p.ub), ' STRINGER'); secLeader(w, c.tw / 2, ycT - dc / 2, ts ? 60 : 36, 0, secName(p.cor), ` CORBEL x\n${2 * e} LONG`);
+    w.leader(-40, -d + u.tf + 10, -22, 14, 'M20 BOLT (TYP)'); w.leader(-c.b / 4, ycT - dc / 2, -30, -6, '10FL STIFFENER\n(TYP)', { dot: true }); w.leader(-150, ya, -18, -12, `${al}x${al}x13 EA\nx300 LONG (TYP)`);
     weldTail(w, -c.tw / 2 - 2, ycT - c.tf - 30, -8, 8, { size: '6', all: true }, 'TYP');
-    if (ovl) { w.leader(-45, 110, -32, 54, 'φ20x130 LONG COACH\nSCREW EVERY THIRD\nDECK PLANK' + (ts ? '' : ' ON\nALTERNATING SIDES OF\nWEB')); w.leader(260, DT + OV / 2, 18, 40, 'EXISTING CONCRETE\nOVERLAY', { dot: true }); }
-    else { if (!t3) w.leader(ts ? -40 : 45, DT + 30, ts ? 30 : 26, 26, (cfg.type === '1' ? 'φ20 ' : '') + 'THREADED ROD EVERY\nTHIRD DECK PLANK' + (ts ? '' : ' ON\nALTERNATING SIDES OF\nWEB')); w.leader(-45, DT + 40, -26, 46, ''); nbox(w, -1440, DT + 1280, '', 'TACK WELD OR\nCENTRE PUNCH BOLT\nTHREAD TO NUT\nTO PREVENT UNDOING\nOF NUT. (TYP)', 44, { ul: false }); }
-    w.noteBox(-1450, ycB - 640, 'NOTE: STRINGER & CORBEL\nSIZE WILL VARY ACCORDING\nTO ENGINEERING REQUIREMENTS\n' + secName(p.ub) + ' STRINGER DRAWN\n' + secName(p.cor) + ' CORBEL DRAWN', 46, { h: 1.8 });
+    if (ovl) { w.leader(-45, 110, -32, 54, `φ20x130 LONG COACH\nSCREW EVERY ${ORD[NP]}\nDECK PLANK` + (ts ? '' : ' ON\nALTERNATING SIDES OF\nWEB')); w.leader(260, DT + OV / 2, 18, 40, 'EXISTING CONCRETE\nOVERLAY', { dot: true }); }
+    else { if (!t3) w.leader(ts ? -40 : 45, DT + 30, ts ? 30 : 26, 26, (cfg.type === '1' ? `φ${RD} ` : '') + `THREADED ROD EVERY\n${ORD[NP]} DECK PLANK` + (ts ? '' : ' ON\nALTERNATING SIDES OF\nWEB')); w.leader(-45, DT + 40, -26, 46, ''); nbox(w, -1440, DT + 1280, '', 'TACK WELD OR\nCENTRE PUNCH BOLT\nTHREAD TO NUT\nTO PREVENT UNDOING\nOF NUT. (TYP)', 44, { ul: false }); }
+    w.noteBox(-1450, min(ycB - 640, yh - hh - 227), 'NOTE: STRINGER & CORBEL\nSIZE WILL VARY ACCORDING\nTO ENGINEERING REQUIREMENTS\n' + secName(p.ub) + ' STRINGER DRAWN\n' + secName(p.cor) + ' CORBEL DRAWN', 46, { h: 1.8 });
     ttl(w, 'SECTIONAL ELEVATION', t3 ? 'B' : 'A', 20);
   }
   // section B through the retained timber stringer over the corbel (type 1)
   function corbelSecB(b, p, cfg, g) {
-    const { c, d, dc, ycT, ycB, yh } = g, ovl = cfg.ovl, yS = ycT + 60, R = 240, cy = yS / 2, hh = -yS / 2;
+    const { c, d, dc, ycT, ycB, yh, al, yr } = g, H = g.hh, ovl = cfg.ovl, yS = ycT + 60, R = 240, cy = yS / 2, hh = -yS / 2;
     const wt = deckSec(b, -400, 400, { ovl });
-    iSec(b, 0, ycT - dc / 2, c); b.rect(-150, ycB - 200, 300, 200); b.line(-150, ycB - 13, 150, ycB - 13); [-100, 100].forEach(x => b.boltEnd(x, ycB - 170, 20)); [-40, 40].forEach(x => rodV(b, x, ycB + c.tf, ycB - 13, { pr: 18 }));
-    b.line(-400, yh, -150, yh, 'S-EXIST'); b.line(150, yh, 400, yh, 'S-EXIST'); b.line(-400, yh - 400, 400, yh - 400, 'S-EXIST'); b.brk(-400, yh - 420, -400, yh + 20); b.brk(400, yh - 420, 400, yh + 20);
+    iSec(b, 0, ycT - dc / 2, c); b.rect(-150, ycB - al, 300, al); b.line(-150, ycB - 13, 150, ycB - 13); [-100, 100].forEach(x => b.boltEnd(x, yr, RD)); [-40, 40].forEach(x => rodV(b, x, ycB + c.tf, ycB - 13, { pr: 18, d: 20 }));
+    b.line(-400, yh, -150, yh, 'S-EXIST'); b.line(150, yh, 400, yh, 'S-EXIST'); b.line(-400, yh - H, 400, yh - H, 'S-EXIST'); b.brk(-400, yh - H - 20, -400, yh + 20); b.brk(400, yh - H - 20, 400, yh + 20);
     // continuous timber packer (grain across the stringer)
     b.rect(-240, ycT, 480, 60); for (let i = 1; i < 4; i++) b.pl(Array.from({ length: 9 }, (_, k) => [-230 + k * 57.5, ycT + i * 15 + (k % 2 ? 4 : -4)]), false, 'S-HATCH');
     if (!cfg.cleat) {
       logTrim(b, 0, cy, R, hh, { top: false, bot: false });
       const xs = c.b / 2 - 30; [[-60, xs], [60, -xs]].forEach(([x0, x1]) => { const yt = (ovl ? wt : DT), L = Math.hypot(x1 - x0, yt - (ycT - c.tf)), ux = (x1 - x0) / L, uy = ((ycT - c.tf) - yt) / L; b.line(x0 - uy * 10, yt + ux * 10 + 0, x1 - uy * 10, ycT - c.tf + ux * 10, 'S-BOLT'); b.line(x0 + uy * 10, yt - ux * 10, x1 + uy * 10, ycT - c.tf - ux * 10, 'S-BOLT'); b.nut(x0, yt, -ux, -uy, 20); b.nut(x1, ycT - c.tf, ux, uy, 20); });
       rodH(b, cy, -R - 12, R + 12); [-1, 1].forEach(k => { b.arc(0, cy, R + 4, k > 0 ? -25 : 155, k > 0 ? 25 : 205, 'S-NEW'); b.arc(0, cy, R + 14, k > 0 ? -25 : 155, k > 0 ? 25 : 205, 'S-NEW'); });
-      b.leader(30, wt + 10, 18, 30, 'φ20 THREADED ROD WITH\n65x5FLx65 WASHER TO\nTIMBER FACE (TYP)'); b.leader(-200, ycT + 30, -26, 22, 'CONTINUOUS TIMBER\nPACKERS (F11 SEASONED\nJARRAH) TO WEDGE\nCORBEL AGAINST\nEXISTING STRINGER'); b.leader(R + 14, cy - 60, 26, -18, 'CURVED WASHER REFER\nDRG N° 9530-0072.\nINSTALL & TIGHTEN\nBEFORE CROSS BOLTS\nARE IN PLACE.');
+      b.leader(30, wt + 10, 18, 30, `φ${RD} THREADED ROD WITH\n65x5FLx65 WASHER TO\nTIMBER FACE (TYP)`); b.leader(-200, ycT + 30, -26, 22, 'CONTINUOUS TIMBER\nPACKERS (F11 SEASONED\nJARRAH) TO WEDGE\nCORBEL AGAINST\nEXISTING STRINGER'); b.leader(R + 14, cy - 60, 26, -18, 'CURVED WASHER REFER\nDRG N° 9530-0072.\nINSTALL & TIGHTEN\nBEFORE CROSS BOLTS\nARE IN PLACE.');
       b.leader(-120, ycT + 15, -26, -22, 'GRAIN DIRECTION\nTO BE ACROSS\nSTRINGER');
     } else {
       // 75x75x8 EA cleats welded to the corbel flange tips, splayed against the stringer, with steel packers and curved washers
@@ -365,7 +387,7 @@
         b.arc(0, cy, R2 + 4, k > 0 ? 5 : 140, k > 0 ? 40 : 175, 'S-NEW'); b.arc(0, cy, R2 + 14, k > 0 ? 5 : 140, k > 0 ? 40 : 175, 'S-NEW'); });
       const a1 = [-R2 * 0.94, cy + R2 * 0.34], a2 = [R2 * 0.94, cy - R2 * 0.05];
       [[a1, a2], [[-a1[0], a1[1]], [-a2[0], a2[1]]]].forEach(([q0, q1]) => { const L = Math.hypot(q1[0] - q0[0], q1[1] - q0[1]), ux = (q1[0] - q0[0]) / L, uy = (q1[1] - q0[1]) / L; b.line(q0[0] - ux * 40, q0[1] - uy * 40, q1[0] + ux * 40, q1[1] + uy * 40, 'S-BOLT'); b.nut(q0[0] - ux * 14, q0[1] - uy * 14, -ux, -uy, 20); b.nut(q1[0] + ux * 14, q1[1] + uy * 14, ux, uy, 20); });
-      b.leader(-120, ycT + 40, -10, 70, 'CONTINUOUS TIMBER PACKERS\n(F11 SEASONED JARRAH) TO\nWEDGE CORBEL AGAINST\nEXISTING STRINGER'); b.leader(20, cy, 18, 72, 'φ20 THREADED ROD\n(TYP)'); b.leader(60, ycT + 40, 24, 54, 'GRAIN DIRECTION TO\nBE ACROSS STRINGER');
+      b.leader(-120, ycT + 40, -10, 70, 'CONTINUOUS TIMBER PACKERS\n(F11 SEASONED JARRAH) TO\nWEDGE CORBEL AGAINST\nEXISTING STRINGER'); b.leader(20, cy, 18, 72, `φ${RD} THREADED ROD\n(TYP)`); b.leader(60, ycT + 40, 24, 54, 'GRAIN DIRECTION TO\nBE ACROSS STRINGER');
       b.leader(-(c.b / 2 + 70), cy, -30, 4, 'NOTCH FACE OF EXISTING\nTIMBER STRINGER OR\nPACK GAP BETWEEN ANGLE\nAND STRINGER FACE WITH\n100x(5,6,8,10,12 OR 16FL)x100\nSTEEL PACKERS AS REQUIRED BY\nEXISTING STRINGER DIAMETER.\nTACK WELD STEEL PACKERS\nTO ANGLE AFTER PLACEMENT');
       b.leader(R, cy + 20, 26, 14, 'CURVED WASHER (TYP)\nREFER DRG N° 9530-0072.\nTRIM WASHER EDGE AS\nREQUIRED TO OBTAIN SNUG\nFITMENT.'); b.leader(c.b / 2 + 60, ycT + 60, 22, -6, '75x75x8 EA (TYP)');
       weldTail(b, c.b / 2 + 4, ycT - 40, 22, -14, { size: '6', all: true }, 'TYP'); weldTail(b, c.b / 2 - 4, ycB + 30, 6, -22, { size: '6', both: true }, 'TYP');
@@ -373,6 +395,7 @@
     ttl(b, 'SECTION', 'B', 20);
   }
   function corbelDet(p, cfg) {
+    deckP(p); ABH = num(p.abl, 100, 160, 120) - 45;
     if (cfg.type[0] === '3') return corbelDet3(p, cfg);
     const LY = new Lay(760); let g;
     if (cfg.type === '1') { const b = LY.view(20); g = { pending: b }; }
@@ -386,9 +409,9 @@
   function corbelDet3(p, cfg) {
     const LY = new Lay(700), u = sec(p.ub, '410UB54'), t3a = cfg.type === '3A';
     const B0 = new Builder(), v = B0.view(20); const g = corbelElev(v, p, cfg); // build first to get geometry, placed later
-    const a = LY.view(20); planA(a, u, t3a);
-    const d1 = LY.view(5); det1(d1, u);
-    if (t3a) { const m = LY.view(10); modFlange3A(m); }
+    const a = LY.view(20); planA(a, u, t3a, g.ab, ABH + 45);
+    const d1 = LY.view(5); det1(d1, u, false, { al: ABH + 45 });
+    if (t3a) { const m = LY.view(10); modFlange3A(m, g.e); }
     LY.break();
     if (!t3a) { const w = LY.view(20); corbelSecA(w, p, cfg, g); }
     LY.G.push({ B: B0, t: null });
@@ -397,70 +420,77 @@
     return drgBox(LY.done());
   }
   const pCor = (v) => P('cor', 'Proposed corbel', v, { opts: COR });
-  def('pn3104', 'Stringers', 'Pier stringer & corbel replacement – Type 1 (no overlay)', 'PN30-3104', [pUB(), pCor('310UC97')], p => corbelDet(p, { type: '1' }),
+  // corbel family parameters (o: overlay thickness shown, t3: anchor bolts into a proposed overlay)
+  const pC = (cor, o, t3) => [pUB(), pCor(cor), P('Lc', 'Corbel length (mm)', 1000, { num: 1 }), P('hw', 'Halfcap width (mm)', 200, { num: 1 }), P('hd', 'Halfcap depth (mm)', 400, { num: 1 }),
+    P('al', 'Seat angle leg (mm)', 200, { num: 1 }), pRD(), pDT(), ...(o ? [pOV()] : []), pNP(), ...(t3 ? [P('ab', 'Anchor bolt spacing (mm)', 1000, { num: 1 }), P('abl', 'Anchor bolt length (mm)', 120, { num: 1 })] : [])];
+  def('pn3104', 'Stringers', 'Pier stringer & corbel replacement – Type 1 (no overlay)', 'PN30-3104', pC('310UC97'), p => corbelDet(p, { type: '1' }),
     'Replacing one span\'s stringer with a steel UB on a new steel corbel seated on the halfcaps, the retained timber stringer wedged on continuous jarrah packers and cross-bolted (no overlay).');
-  def('pn3105', 'Stringers', 'Pier stringer & corbel replacement – Type 1 (existing overlay)', 'PN30-3105', [pUB(), pCor('310UC97')], p => corbelDet(p, { type: '1', ovl: true, cleat: true }),
+  def('pn3105', 'Stringers', 'Pier stringer & corbel replacement – Type 1 (existing overlay)', 'PN30-3105', pC('310UC97', true), p => corbelDet(p, { type: '1', ovl: true, cleat: true }),
     'As Type 1 where an existing concrete overlay is present: coach screws to the deck and 75x75x8 EA cleats with curved washers holding the retained timber stringer.');
-  def('pn3106', 'Stringers', 'Pier stringer & corbel replacement – Type 2 (no overlay)', 'PN30-3106', [pUB(), pCor('310UB46')], p => corbelDet(p, { type: '2' }),
+  def('pn3106', 'Stringers', 'Pier stringer & corbel replacement – Type 2 (no overlay)', 'PN30-3106', pC('310UB46'), p => corbelDet(p, { type: '2' }),
     'Replacing the stringers of both spans with steel UBs seated on a new steel corbel bolted to the halfcaps (no overlay).');
-  def('pn3107', 'Stringers', 'Pier stringer & corbel replacement – Type 2 (existing overlay)', 'PN30-3107', [pUB(), pCor('310UB46')], p => corbelDet(p, { type: '2', ovl: true }),
+  def('pn3107', 'Stringers', 'Pier stringer & corbel replacement – Type 2 (existing overlay)', 'PN30-3107', pC('310UB46', true), p => corbelDet(p, { type: '2', ovl: true }),
     'As Type 2 where an existing concrete overlay is present: stringers fixed to the deck with φ20x130 coach screws every third plank.');
-  def('scs', 'Stringers', 'Pier stringer & corbel strengthening (no overlay)', 'PN30-3110', [pUB(), pCor('310UB46')], p => corbelDet(p, { type: 'S' }),
+  def('scs', 'Stringers', 'Pier stringer & corbel strengthening (no overlay)', 'PN30-3110', pC('310UB46'), p => corbelDet(p, { type: 'S' }),
     'Additional steel stringer on a steel corbel beside the retained timber stringer and corbel, seated on the halfcaps with 200x200x13 EA (no overlay).');
-  def('pn3111', 'Stringers', 'Pier stringer & corbel strengthening (existing overlay)', 'PN30-3111', [pUB(), pCor('310UB46')], p => corbelDet(p, { type: 'S', ovl: true }),
+  def('pn3111', 'Stringers', 'Pier stringer & corbel strengthening (existing overlay)', 'PN30-3111', pC('310UB46', true), p => corbelDet(p, { type: 'S', ovl: true }),
     'As the strengthening detail where an existing concrete overlay is present: the additional stringer is fixed to the deck with φ20x130 coach screws.');
-  def('pn3108', 'Stringers', 'Pier stringer & corbel replacement – Type 3 (proposed overlay)', 'PN30-3108', [pUB(), pCor('310UB46')], p => corbelDet(p, { type: '3' }),
+  def('pn3108', 'Stringers', 'Pier stringer & corbel replacement – Type 3 (proposed overlay)', 'PN30-3108', pC('310UB46', true, true), p => corbelDet(p, { type: '3' }),
     'Stringer and corbel replacement where a concrete overlay is proposed: decking cut back to the stringer ℄ and M16x120 anchor bolts at 1000 crs through the top flange into the overlay.');
-  def('pn3109', 'Stringers', 'Pier stringer & corbel replacement – Type 3A (modified flange, proposed overlay)', 'PN30-3109', [pUB(), pCor('310UB46')], p => corbelDet(p, { type: '3A' }),
+  def('pn3109', 'Stringers', 'Pier stringer & corbel replacement – Type 3A (modified flange, proposed overlay)', 'PN30-3109', pC('310UB46', true, true), p => corbelDet(p, { type: '3A' }),
     'As Type 3 with notched stringer ends on 200x16FL modified flanges and 490 long steel packers bolted to the proposed corbel (300 MIN depth, site measured).');
 
   // ================================================================== PN30-3112  PIER - WIDENING & ADDITIONAL STRINGER DETAIL
   // Bondek sheeting on the stringer flange in elevation / section: sheet line + trapezoidal ribs every 200
   function bondek(v, x0, x1, ph) { v.line(x0, 2, x1, 2, 'S-NEW'); for (let x = x0 + (ph || 100); x < x1 - 20; x += 200) v.pl([[x - 25, 2], [x - 18, 55], [x + 18, 55], [x + 25, 2]], false, 'S-NEW'); }
   function fabDash(v, x0, x1, y) { for (let x = x0; x < x1; x += 160) v.line(x, y, min(x + 110, x1), y, 'S-REO'); }
-  const OT = 230; // overlay top above the stringer flange (3112)
-  def('pn3112', 'Stringers', 'Pier widening & additional stringer', 'PN30-3112', [pUB(), pCor('310UB46'), P('col', 'Stub column', '200UC52', { opts: UCs })], (p) => {
-    const LY = new Lay(700), u = sec(p.ub, '410UB54'), c = sec(p.cor, '310UB46'), q = sec(p.col, '200UC52'), d = u.d, dc = c.d, ycT = -d, ycB = ycT - dc, ycp = ycB - 16, xb = 1560;
-    u0tf = u.tf;
+  def('pn3112', 'Stringers', 'Pier widening & additional stringer', 'PN30-3112', [pUB(), pCor('310UB46'), P('col', 'Stub column', '200UC52', { opts: UCs }), P('Lc', 'Corbel length (mm)', 1000, { num: 1 }),
+    P('cpt', 'Cap plate thickness (mm)', 16, { num: 1 }), P('ot', 'Overlay depth above stringer (mm)', 230, { num: 1 }), P('sp', 'Screw / anchor bolt spacing (mm)', 400, { num: 1 }), P('abl', 'Anchor bolt length (mm)', 150, { num: 1 })], (p) => {
+    deckP(p);
+    const OT = num(p.ot, 180, 350, 230), e = num(p.Lc, 600, 1600, 1000) / 2, cpt = num(p.cpt, 10, 32, 16), sp = num(p.sp, 250, 600, 400), abl = num(p.abl, 120, 200, 150), a0 = 1000; // overlay top above the flange, half corbel, cap plate, spacing, anchor length, first anchor bolt
+    const LY = new Lay(700), u = sec(p.ub, '410UB54'), c = sec(p.cor, '310UB46'), q = sec(p.col, '200UC52'), d = u.d, dc = c.d, ycT = -d, ycB = ycT - dc, ycp = ycB - cpt, xb = 1560;
+    u0tf = u.tf; ABH = abl - 75;
+    // tapping screws at sp from the pier, anchor bolts from a0 at sp (elevation); in plan alternate sides of the web, anchors beyond a0
+    const nK = Math.floor((1270 - 70) / sp), xsc = [], xab = []; for (let x = sp; x < xb - 300; x += sp) xsc.push(-x, x); for (let x = a0; x < xb - 100; x += sp) xab.push(-x, x); xsc.sort((m, n) => m - n); xab.sort((m, n) => m - n);
     // ---- plan
     const a = LY.view(20), b2 = u.b / 2, PX = 1270;
     a.line(-PX, 345, PX, 345, 'S-NEW'); a.line(-PX, -345, PX, -345, 'S-NEW'); a.brk(-PX, -365, -PX, 365); a.brk(PX, -365, PX, 365); a.brk(-30, 345, 30, 345); a.brk(-30, -345, 30, -345);
     for (let x = -PX + 150; x < PX - 40; x += 200) { a.line(x - 18, -345, x - 18, 345, 'S-NEW'); a.line(x + 18, -345, x + 18, 345, 'S-NEW'); }
     a.line(-PX - 40, b2, PX + 40, b2, 'S-HIDDEN'); a.line(-PX - 40, -b2, PX + 40, -b2, 'S-HIDDEN'); a.line(-PX - 120, 0, PX + 120, 0, 'S-CL'); a.text(PX + 150, 0, '℄ STRINGER', TH, 'l', 'm'); a.line(0, -470, 0, 640, 'S-CL'); a.text(0, 665, '℄ PIER', TH, 'c', 'b');
-    [-1200, -800, -400, 0, 400, 800, 1200].forEach((x, i) => { const xx = x + (x < 0 ? -0 : 0), y = i % 2 ? -45 : 45; if (abs(x) >= 1000) { a.circ(x, y, 16, 'S-BOLT'); a.line(x - 26, y, x + 26, y, 'S-BOLT'); a.line(x, y - 26, x, y + 26, 'S-BOLT'); } else if (x) { a.line(x - 22, y, x + 22, y, 'S-BOLT'); a.line(x, y - 22, x, y + 22, 'S-BOLT'); a.circ(x, y, 5, 'S-BOLT'); } });
+    Array.from({ length: 2 * nK + 1 }, (_, i) => (i - nK) * sp).forEach((x, i) => { const y = i % 2 ? -45 : 45; if (abs(x) >= a0) { a.circ(x, y, 16, 'S-BOLT'); a.line(x - 26, y, x + 26, y, 'S-BOLT'); a.line(x, y - 26, x, y + 26, 'S-BOLT'); } else if (x) { a.line(x - 22, y, x + 22, y, 'S-BOLT'); a.line(x, y - 22, x, y + 22, 'S-BOLT'); a.circ(x, y, 5, 'S-BOLT'); } });
     dimO(a, -PX - 100, 0, -PX - 100, 45, 6, '45', 'b', '(TYP)'); dimO(a, -PX - 100, -45, -PX - 100, 0, 6, '45', 'a', '(TYP)');
-    a.dim(0, 450, 600, 450, 6, '600 (NOM.)'); a.line(600, 60, 600, 470, 'S-DIM'); a.dim(-400, -560, 400, -560, -6, 'TAPPING SCREWS AT 400', { sub: 'CRS ALTERNATE SIDES OF' }); a.text(0, -560 - 11 * 20, 'STRINGER WEB', TH * 0.9, 'c', 't', 'S-DIM'); a.line(-400, 30, -400, -580, 'S-DIM'); a.line(400, -30, 400, -580, 'S-DIM');
-    a.leader(-200, 45, -26, 40, 'BUILDEX WAFER HEAD TAPTITE SCREW\nOR SIMILAR APPROVED AT 400 CRS IN\nPREDRILLED HOLE TO MANUFACTURES\nDETAILS'); a.leader(820, b2, 10, 28, 'PROPOSED STEEL\nSTRINGER FLANGE\n(TYP)'); a.leader(-750 + 18, -300, -14, -14, '1mm BONDEK PERMANENT\nFORMWORK OR SIMILAR\nAPPROVED'); a.leader(1000, -45, 12, -16, 'ANCHOR BOLT\nM16x150 LONG\nBOLT (TYP)');
+    a.dim(0, 450, 600, 450, 6, '600 (NOM.)'); a.line(600, 60, 600, 470, 'S-DIM'); a.dim(-sp, -560, sp, -560, -6, 'TAPPING SCREWS AT ' + sp, { sub: 'CRS ALTERNATE SIDES OF' }); a.text(0, -560 - 11 * 20, 'STRINGER WEB', TH * 0.9, 'c', 't', 'S-DIM'); a.line(-sp, 30, -sp, -580, 'S-DIM'); a.line(sp, -30, sp, -580, 'S-DIM');
+    a.leader(-sp / 2, 45, -26, 40, `BUILDEX WAFER HEAD TAPTITE SCREW\nOR SIMILAR APPROVED AT ${sp} CRS IN\nPREDRILLED HOLE TO MANUFACTURES\nDETAILS`); a.leader(820, b2, 10, 28, 'PROPOSED STEEL\nSTRINGER FLANGE\n(TYP)'); a.leader(-750 + 18, -300, -14, -14, '1mm BONDEK PERMANENT\nFORMWORK OR SIMILAR\nAPPROVED'); a.leader(a0, -45, 12, -16, `ANCHOR BOLT\nM16x${abl} LONG\nBOLT (TYP)`);
     ttl(a, 'PLAN', '', null, { h: 2.6 });
-    const d1 = LY.view(5); det1(d1, u, true);
+    const d1 = LY.view(5); det1(d1, u, true, { al: abl, sp });
     LY.break();
     // ---- elevation
     const v = LY.view(20);
-    v.line(-xb, OT, xb, OT, 'S-CONC'); v.line(-xb, 0, -xb, OT, 'S-CONC'); v.line(xb, 0, xb, OT, 'S-CONC'); v.brk(-xb, 20, -xb, OT - 20); v.brk(xb, 20, xb, OT - 20); aggr(v, -500, 150); aggr(v, 700, 150);
-    fabDash(v, -xb, xb, 76); fabDash(v, -xb, xb, 185); bondek(v, -xb, xb);
-    [-1, 1].forEach(k => { iElevWebH(v, min(k * 10, k * xb), max(k * 10, k * xb), -d / 2, u); v.brk(k * xb, -d - 25, k * xb, 25); [60, 450].forEach(x => rodV(v, k * x, -d + u.tf, ycT - c.tf, { pr: 18 })); rodV(v, k * 50, ycB + c.tf, ycp, { pr: 18 }); v.rect(k * q.b / 2 - 5, ycB + c.tf, 10, dc - 2 * c.tf); });
+    v.line(-xb, OT, xb, OT, 'S-CONC'); v.line(-xb, 0, -xb, OT, 'S-CONC'); v.line(xb, 0, xb, OT, 'S-CONC'); v.brk(-xb, 20, -xb, OT - 20); v.brk(xb, 20, xb, OT - 20); aggr(v, -500, OT - 80); aggr(v, 700, OT - 80);
+    fabDash(v, -xb, xb, 76); fabDash(v, -xb, xb, OT - 45); bondek(v, -xb, xb);
+    [-1, 1].forEach(k => { iElevWebH(v, min(k * 10, k * xb), max(k * 10, k * xb), -d / 2, u); v.brk(k * xb, -d - 25, k * xb, 25); [60, e - 50].forEach(x => rodV(v, k * x, -d + u.tf, ycT - c.tf, { pr: 18 })); rodV(v, k * 50, ycB + c.tf, ycp, { pr: 18 }); v.rect(k * q.b / 2 - 5, ycB + c.tf, 10, dc - 2 * c.tf); });
     v.line(-10, 0, -10, OT, 'S-NEW'); v.line(10, 0, 10, OT, 'S-NEW');
-    iElevWebH(v, -500, 500, ycT - dc / 2, c); v.rect(-140, ycp, 280, 16); iElevWebV(v, 0, ycp - 520, ycp, q); v.brk(-q.d / 2 - 20, ycp - 520, q.d / 2 + 20, ycp - 520);
-    [-1400, -1000, 1000, 1400].forEach(x => anchorBolt(v, x)); [-1200, -800, -400, 400, 800, 1200].forEach(x => { v.line(x - 6, 2, x - 6, -u.tf - 8, 'S-BOLT'); v.line(x + 6, 2, x + 6, -u.tf - 8, 'S-BOLT'); v.rect(x - 14, 2, 28, 6, 'S-BOLT'); });
-    v.circ(-1000, 40, 110, 'S-TEXT'); { const qq = v.P(-1000, 40); v.add({ t: 'line', a: [qq[0] + 2.5, qq[1] + 4.8], b: [qq[0] + 4.5, qq[1] + 12], L: 'S-TEXT' }); v.add({ t: 'circle', c: [qq[0] + 5, qq[1] + 15.4], r: 3.2, L: 'S-TEXT' }); v.add({ t: 'text', p: [qq[0] + 5, qq[1] + 15.4], s: '1', h: 3, al: 'c', v: 'm', ang: 0, L: 'S-TEXT' }); }
-    v.cl(0, ycp - 560, 0, OT + 420, 'PIER'); cutV(v, 1000, OT + 380, ycB - 60, 'A', 180, 8); cutH(v, -xb - 160, xb + 160, 100, 'B');
-    v.dim(-1000, OT + 260, 0, OT + 260, 6, '1000 (NOM.)'); v.dim(0, OT + 260, 1000, OT + 260, 6, '1000 (NOM.)'); v.dim(1000, OT + 260, 1700, OT + 260, 6, 'ANCHOR BOLTS', { sub: '@ 400 CRS (TYP)' }); v.line(-1000, 120, -1000, OT + 280, 'S-DIM'); v.line(1000, 120, 1000, OT + 280, 'S-DIM');
-    dimO(v, -1400, OT + 120, -1000, OT + 120, 6, '400', 'a', '(TYP)'); v.line(-1400, 120, -1400, OT + 140, 'S-DIM');
+    iElevWebH(v, -e, e, ycT - dc / 2, c); v.rect(-140, ycp, 280, cpt); iElevWebV(v, 0, ycp - 520, ycp, q); v.brk(-q.d / 2 - 20, ycp - 520, q.d / 2 + 20, ycp - 520);
+    xab.forEach(x => anchorBolt(v, x)); xsc.forEach(x => { v.line(x - 6, 2, x - 6, -u.tf - 8, 'S-BOLT'); v.line(x + 6, 2, x + 6, -u.tf - 8, 'S-BOLT'); v.rect(x - 14, 2, 28, 6, 'S-BOLT'); });
+    v.circ(-a0, 40, 110, 'S-TEXT'); { const qq = v.P(-a0, 40); v.add({ t: 'line', a: [qq[0] + 2.5, qq[1] + 4.8], b: [qq[0] + 4.5, qq[1] + 12], L: 'S-TEXT' }); v.add({ t: 'circle', c: [qq[0] + 5, qq[1] + 15.4], r: 3.2, L: 'S-TEXT' }); v.add({ t: 'text', p: [qq[0] + 5, qq[1] + 15.4], s: '1', h: 3, al: 'c', v: 'm', ang: 0, L: 'S-TEXT' }); }
+    v.cl(0, ycp - 560, 0, OT + 420, 'PIER'); cutV(v, a0, OT + 380, ycB - 60, 'A', 180, 8); cutH(v, -xb - 160, xb + 160, 100, 'B');
+    v.dim(-a0, OT + 260, 0, OT + 260, 6, a0 + ' (NOM.)'); v.dim(0, OT + 260, a0, OT + 260, 6, a0 + ' (NOM.)'); v.dim(a0, OT + 260, a0 + 700, OT + 260, 6, 'ANCHOR BOLTS', { sub: `@ ${sp} CRS (TYP)` }); v.line(-a0, 120, -a0, OT + 280, 'S-DIM'); v.line(a0, 120, a0, OT + 280, 'S-DIM');
+    dimO(v, -a0 - sp, OT + 120, -a0, OT + 120, 6, String(sp), 'a', '(TYP)'); v.line(-a0 - sp, 120, -a0 - sp, OT + 140, 'S-DIM');
     dimO(v, -10, OT + 120, 0, OT + 120, 6, '10', 'a'); dimO(v, 0, OT + 120, 10, OT + 120, 6, '10', 'b');
-    dimO(v, -60, -d / 2 - 40, -10, -d / 2 - 40, 6, '50', 'a', '(TYP)'); dimO(v, 450, -d / 2 - 40, 500, -d / 2 - 40, 6, '50', 'a', '(TYP)'); v.line(450, -d + u.tf + 30, 450, -d / 2 - 40, 'S-DIM'); v.line(500, ycT + 20, 500, -d / 2 - 40, 'S-DIM'); v.line(-60, -d + u.tf + 30, -60, -d / 2 - 40, 'S-DIM');
+    dimO(v, -60, -d / 2 - 40, -10, -d / 2 - 40, 6, '50', 'a', '(TYP)'); dimO(v, e - 50, -d / 2 - 40, e, -d / 2 - 40, 6, '50', 'a', '(TYP)'); v.line(e - 50, -d + u.tf + 30, e - 50, -d / 2 - 40, 'S-DIM'); v.line(e, ycT + 20, e, -d / 2 - 40, 'S-DIM'); v.line(-60, -d + u.tf + 30, -60, -d / 2 - 40, 'S-DIM');
     v.leader(-700, 30, -10, 36, 'BONDEK\nSHEETING'); v.leader(-800, -u.tf, -8, -40, 'BUILDEX WAFER\nHEAD TAPTITE'); v.leader(1350, OT - 40, 12, -4, 'PROPOSED CONCRETE\nOVERLAY', { dot: true }); v.leader(1300, -200, 16, 0, 'PROPOSED STEEL\nSTRINGER (TYP)', { dot: true });
-    v.leader(1000, -u.tf - 30, 14, -40, 'ANCHOR BOLT\n(TYP)'); v.leader(-q.d / 2, ycp - 300, -14, 0, 'PROPOSED STEEL\nSTUB COLUMN'); v.leader(300, ycB, 10, -26, 'PROPOSED STEEL\nCORBEL');
+    v.leader(a0, -u.tf - 30, 14, -40, 'ANCHOR BOLT\n(TYP)'); v.leader(-q.d / 2, ycp - 300, -14, 0, 'PROPOSED STEEL\nSTUB COLUMN'); v.leader(300, ycB, 10, -26, 'PROPOSED STEEL\nCORBEL');
     v.noteBox(-xb - 600, ycp - 300, 'NOTE: STRINGER & CORBEL\nSIZE WILL VARY ACCORDING\nTO ENGINEERING REQUIREMENTS\n' + secName(p.ub) + ' STRINGER DRAWN\n' + secName(p.cor) + ' CORBEL DRAWN', 46, { h: 1.8 });
     v.noteBox(1100, ycp - 340, 'NOTE: FOR STUB COLUMN AND CAP PLATE\nDETAILS REFER TO PN30_2311 & 2312', 58, { h: 1.8 });
     ttl(v, 'ELEVATION', '', null, { h: 2.6 });
     // ---- sectional elevation A
     const w = LY.view(20);
-    w.line(-400, OT, 400, OT, 'S-CONC'); w.brk(-400, -20, -400, OT + 20); w.brk(400, -20, 400, OT + 20); w.line(-400, 0, -b2, 0, 'S-CONC'); w.line(b2, 0, 400, 0, 'S-CONC'); fabDash(w, -400, 400, 76); fabDash(w, -400, 400, 185); w.line(-400, 2, 400, 2, 'S-NEW'); aggr(w, -230, 150);
+    w.line(-400, OT, 400, OT, 'S-CONC'); w.brk(-400, -20, -400, OT + 20); w.brk(400, -20, 400, OT + 20); w.line(-400, 0, -b2, 0, 'S-CONC'); w.line(b2, 0, 400, 0, 'S-CONC'); fabDash(w, -400, 400, 76); fabDash(w, -400, 400, OT - 45); w.line(-400, 2, 400, 2, 'S-NEW'); aggr(w, -230, OT - 80);
     iFill(w, 0, -d / 2, u); [-45, 45].forEach(x => anchorBolt(w, x)); iSec(w, 0, ycT - dc / 2, c); w.rect(-c.b / 2 + 3, ycB + c.tf, c.b - 6, dc - 2 * c.tf); w.line(-c.tw / 2, ycB + c.tf, -c.tw / 2, ycT - c.tf); w.line(c.tw / 2, ycB + c.tf, c.tw / 2, ycT - c.tf);
     [-1, 1].forEach(k => { rodV(w, k * 40, -d + u.tf, ycT - c.tf, { pr: 18 }); rodV(w, k * 40, ycB + c.tf, ycp, { pr: 18 }); });
-    w.rect(-140, ycp, 280, 16); iElevFlange(w, 0, ycp - 330, ycp, q); w.brk(-q.b / 2 - 20, ycp - 330, q.b / 2 + 20, ycp - 330);
+    w.rect(-140, ycp, 280, cpt); iElevFlange(w, 0, ycp - 330, ycp, q); w.brk(-q.b / 2 - 20, ycp - 330, q.b / 2 + 20, ycp - 330);
     w.cl(0, ycp - 380, 0, OT + 380, 'STRINGER'); dimO(w, -45, OT + 180, 0, OT + 180, 6, '45', 'a', '(TYP)'); dimO(w, 0, OT + 180, 45, OT + 180, 6, '45', 'b', '(TYP)');
-    secLeader(w, u.tw / 2, -d / 2, 36, 0, secName(p.ub), ' STRINGER'); secLeader(w, c.tw / 2, ycT - dc / 2, 36, 0, secName(p.cor), ' CORBEL x\n1000 LONG');
+    secLeader(w, u.tw / 2, -d / 2, 36, 0, secName(p.ub), ' STRINGER'); secLeader(w, c.tw / 2, ycT - dc / 2, 36, 0, secName(p.cor), ` CORBEL x\n${2 * e} LONG`);
     w.leader(-40, -d + u.tf + 10, -22, 14, 'M20 BOLT (TYP)'); w.leader(-c.b / 4, ycT - dc / 2, -30, -6, '10 FL STIFFENER\n(TYP)', { dot: true }); weldTail(w, -c.tw / 2 - 2, ycT - c.tf - 30, -8, 8, { size: '6', all: true }, 'TYP');
     ttl(w, 'SECTIONAL ELEVATION', 'A', 20);
     LY.caption('PIER - WIDENING & ADDITIONAL STRINGER DETAIL', 20, 'SPAN N° X TO X - STRINGER N° X', { ref: 'XX30-XXXX' });

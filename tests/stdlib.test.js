@@ -7,7 +7,7 @@ let bad = 0; const fail = (...a) => { bad++; if (bad < 40) console.log('FAIL', .
 const idx = JSON.parse(fs.readFileSync(path.join(dir, 'index.json'), 'utf8'));
 const num = v => typeof v === 'number' && Number.isFinite(v), pt = p => Array.isArray(p) && p.length === 2 && num(p[0]) && num(p[1]);
 const glyphs = new Set(); let nd = 0, ne = 0;
-const LAYERS = /^STD-(0\.13|0\.18|0\.25|0\.35|0\.50|0\.70|1\.00|TEXT)$/;
+const LAYERS = /^(L18|L25|L35|L50|L70|L10|T18|T25|T35|T50|T70)$/;
 for (const s of idx) {
   if (!s.sheet || !s.f || !s.th || !Array.isArray(s.d) || !s.d.length) fail('index entry', s.sheet);
   if (!fs.existsSync(path.join(dir, 'th', s.th))) fail('missing thumbnail', s.th);

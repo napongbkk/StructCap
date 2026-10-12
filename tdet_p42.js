@@ -117,8 +117,9 @@
   }, 'Design data summary for the front sheet: design code, traffic load ratings (design vehicles and during lane restrictions) and barrier level; the engineer completes it for each bridge.');
 
   // ================================================================== PN30-4203 general notes / general maintenance
-  def('pn4203', 'Project sheets', 'General notes and general maintenance', 'PN30-4203', [P('lane', 'Lane open to traffic (m)', 'xxx', {})], (p) => {
-    const LY = new Lay(760);
+  def('pn4203', 'Project sheets', 'General notes and general maintenance', 'PN30-4203', [P('lane', 'Lane open to traffic (m)', 'xxx', {}), P('cls', 'Concrete class', 'S40', { opts: ['S32', 'S40', 'S50'] }), P('cv', 'Clear cover to reinforcement (mm)', 40, { num: 1 }),
+    P('rd', 'Threaded rod dia. (mm)', 20, { num: 1 }), P('lapD', 'Bar lap length (x bar dia.)', 40, { num: 1 })], (p) => {
+    const LY = new Lay(760), cls = /^S\d\d$/.test(p.cls) ? p.cls : 'S40', cv = max(20, min(100, Math.round(+p.cv || 40))), rd = max(12, min(36, Math.round(+p.rd || 20))), ld = max(20, min(60, Math.round(+p.lapD || 40)));
     LY.block(B => {
       const h = 2.3, ls = 3.4, X1 = 0, X2 = 200;
       const H = (x, y, s) => { T(B, x, y, s, { h: 2.5, L: 'S-TITLE' }); return y - 5.2; };
@@ -132,13 +133,13 @@
       y = Pp(X1 + 6, y, '1.3', 'THE BRIDGE SHALL RECEIVE PREVENTATIVE AND PRESERVATION MAINTENANCE IN\nACCORDANCE WITH THE SPECIFICATION.');
       y = Pp(X1 + 6, y, '1.4', 'DIMENSIONS SHALL NOT BE SCALED FROM THE DRAWINGS.');
       y -= 1.5; y = H(X1 + 1, y, '2.   CONCRETE');
-      y = Pp(X1 + 6, y, '2.1', 'CONCRETE SHALL BE CLASS S40 IN ACCORDANCE WITH THE SPECIFICATION.');
+      y = Pp(X1 + 6, y, '2.1', `CONCRETE SHALL BE CLASS ${cls} IN ACCORDANCE WITH THE SPECIFICATION.`);
       y = Pp(X1 + 6, y, '2.2', 'CONCRETE SURFACE FINISHES SHALL BE IN ACCORDANCE WITH THE SPECIFICATION.');
       T(B, X1 + 6, y, '2.3', { h }); T(B, X1 + 14, y, 'ABBREVIATIONS USED:-', { h });
       finSym(B, X1 + 62, y - 3.6, 'N°'); T(B, X1 + 70, y - 3.4, 'FORMED FINISH CLASS N°.', { h }); finSym(B, X1 + 62, y - 10.6, 'UN°'); T(B, X1 + 70, y - 10.4, 'UNFORMED FINISH CLASS N°.', { h }); y -= 17;
       y = H(X1 + 1, y, '3.   REINFORCEMENT');
-      y = Pp(X1 + 6, y, '3.1', 'CLEAR COVER TO REINFORCEMENT SHALL BE 40 mm UNLESS OTHERWISE SHOWN.');
-      y = Pp(X1 + 6, y, '3.2', 'BAR LAP LENGTH SHALL BE A MINIMUM OF 40D AND A MAXIMUM OF 40D+150\nUNLESS OTHERWISE SHOWN.');
+      y = Pp(X1 + 6, y, '3.1', `CLEAR COVER TO REINFORCEMENT SHALL BE ${cv} mm UNLESS OTHERWISE SHOWN.`);
+      y = Pp(X1 + 6, y, '3.2', `BAR LAP LENGTH SHALL BE A MINIMUM OF ${ld}D AND A MAXIMUM OF ${ld}D+150\nUNLESS OTHERWISE SHOWN.`);
       y = Pp(X1 + 6, y, '3.3', 'FABRIC OVERLAP SHALL BE A MINIMUM OF TWO CROSS WIRES ON BOTH SHEETS\nUNLESS OTHERWISE SHOWN.');
       y = Pp(X1 + 6, y, '3.4', 'ABBREVIATIONS USED:-', 8);
       [['NF', '- NEAR FACE'], ['FF', '- FAR FACE'], ['T', '- TOP'], ['B', '- BOTTOM'], ['ES', '- EQUALLY SPACED']].forEach(([a, b]) => { T(B, X1 + 56, y + 1.2, a, { h }); T(B, X1 + 64, y + 1.2, b, { h }); y -= ls; }); y -= 1;
@@ -147,7 +148,7 @@
       y = H(X1 + 1, y, '4.   STEELWORK');
       y = Pp(X1 + 6, y, '4.1', 'ALL WELDING SHALL BE STRUCTURAL PURPOSE IN ACCORDANCE WITH AS/NZS 1554\nAND THE SPECIFICATION.');
       y = Pp(X1 + 6, y, '4.2', 'ALL BOLTS AND THREADED RODS SHALL BE SUPPLIED WITH NUTS & WASHERS.\nHIGH STRENGTH GRADE 8.8 BOLTS, NUTS AND WASHERS SHALL BE IN ACCORDANCE\nWITH AS/NZS 1252.\nALL OTHER BOLTING, NUTS AND WASHERS SHALL BE COMMERCIAL GRADE (GRADE 4.6S)\nIN ACCORDANCE WITH AS 1111 AND AS 1112.');
-      y = Pp(X1 + 6, y, '4.3', 'ALL THREADED ROD SHALL BE DIAMETER 20 UNLESS OTHERWISE SHOWN AND SHALL\nBE GRADE 300 IN ACCORDANCE WITH AS/NZS 3679.1.');
+      y = Pp(X1 + 6, y, '4.3', `ALL THREADED ROD SHALL BE DIAMETER ${rd} UNLESS OTHERWISE SHOWN AND SHALL\nBE GRADE 300 IN ACCORDANCE WITH AS/NZS 3679.1.`);
       y = Pp(X1 + 6, y, '4.4', 'AFTER FABRICATION STEELWORK SHALL BE HOT-DIP GALVANISED AS FOLLOWS:');
       y += 1.5; y = Pp(X1 + 14, y, '4.4.1', 'BOLTS, NUTS, COACH SCREWS, WASHERS, SPIKES AND THREADED RODS IN\nACCORDANCE WITH AS 1214. AFTER GALVANISING ALL THREADED COMPONENTS\nSHALL BE ABLE TO BE ASSEMBLED BY HAND.', 11); y += 1.5;
       y = Pp(X1 + 14, y, '4.4.2', 'ALL OTHER STEELWORK IN ACCORDANCE WITH AS/NZS 4680.', 11);
@@ -249,7 +250,9 @@
   }, 'Legend of the plan symbols used on the general arrangement to locate each repair type, with the project drawing on which the detail is shown.');
 
   // ================================================================== PN30-4206 surface drain
-  def('pn4206', 'Deck & overlay', 'Surface drain at abutment', 'PN30-4206', [P('X', 'Dimension X – kerb to toe of batter (mm)', 'X'), P('XX', 'Dimension XX – along kerb (mm)', 'XXXX')], (p) => {
+  def('pn4206', 'Deck & overlay', 'Surface drain at abutment', 'PN30-4206', [P('X', 'Dimension X – kerb to toe of batter (mm)', 'X'), P('XX', 'Dimension XX – along kerb (mm)', 'XXXX'),
+    P('dw', 'Drain width (mm)', 600, { num: 1 }), P('dd', 'Drain depth (mm)', 225, { num: 1 }), P('dr', 'Dish radius (mm)', 175, { num: 1 }), P('ps', 'Barrier post spacing (mm)', 2000, { num: 1 })], (p) => {
+    const cl = (k, a, b, d) => max(a, min(b, Math.round(+p[k] || d))), Wb = cl('dw', 400, 900, 600) / 2, D = cl('dd', 150, 400, 225), r = min(Wb - 50, cl('dr', 100, 400, 175)), ps = cl('ps', 1000, 4000, 2000);
     const LY = new Lay(520), v = LY.view(100), B = v.B, sX = String(p.X || 'X'), sXX = String(p.XX || 'XXXX');
     const yG = 4900, yC = 730, xK = 5600;
     // toe of batter (ground line, slightly wavy)
@@ -258,7 +261,7 @@
     const R = 700; v.pl(Array.from({ length: 25 }, (_, i) => [R * Math.cos(PI * i / 24), yG + R * 0.75 * Math.sin(PI * i / 24)]), false, 'S-NEW'); v.line(-R, yG, R, yG, 'S-NEW');
     [[-430, 160, 200, 130], [-80, 140, 190, 120], [300, 160, 190, 140], [-300, 430, 180, 110], [120, 420, 200, 110], [-560, 70, 110, 60], [560, 80, 110, 60], [0, 600, 160, 70]].forEach(([x, y, a, b]) => v.pl(ellP(x, yG + y, a, b, 7), true, 'S-NEW'));
     // spoon drain (with break) into the insitu kerb
-    const seg = (y0, y1) => { [-280, -200, 200, 280].forEach(x => v.line(x, y0, x, y1, 'S-NEW')); };
+    const seg = (y0, y1) => { [-(Wb - 20), -(r + 25), r + 25, Wb - 20].forEach(x => v.line(x, y0, x, y1, 'S-NEW')); };
     seg(yG, 3150); seg(2520, yC); v.line(0, yG + 900, 0, 2520, 'S-CL'); v.line(0, 2520, 0, -500, 'S-CL');
     v.brk(-380, 3150, 380, 3150); v.brk(-380, 2520, 380, 2520);
     v.text(0, yG + 1000, '℄', 2.6, 'c');
@@ -267,9 +270,9 @@
     v.pl(kp, true, 'S-CONC'); v.hatch(kp, 'gravel', 'S-HATCH', 0.6); v.line(-280, yC, -280, -830, 'S-CONC');
     // traffic barrier (W-beam) and posts
     v.line(-3600, 0, 6300, 0, 'S-NEW'); v.line(-3600, 60, 6300, 60, 'S-NEW'); v.arrow(-3600, 30, 180); v.arrow(6300, 30, 0);
-    const posts = [-3000, -1000, 1000, 3000, 5000]; posts.forEach(x => { v.line(x, 0, x, 300, 'S-NEW'); v.line(x, 300, x + 150, 300, 'S-NEW'); v.line(x, 200, x + 100, 200, 'S-NEW'); });
+    const posts = [-1.5, -0.5, 0.5, 1.5, 2.5, 3.5].map(k => k * ps).filter(x => x > -3500 && x < 6000); posts.forEach(x => { v.line(x, 0, x, 300, 'S-NEW'); v.line(x, 300, x + 150, 300, 'S-NEW'); v.line(x, 200, x + 100, 200, 'S-NEW'); });
     // dimensions
-    v.dimChain([[-1000, 0], [0, 0], [1000, 0]], -12, ['=', '=']);
+    v.dimChain([[-ps / 2, 0], [0, 0], [ps / 2, 0]], -12, ['=', '=']);
     v.dim(0, -830, xK, -830, -16, ''); vXB(v, xK / 2 - 400, -2580, sXX, { al: 'c', h: 2.4 });
     v.line(xK, -830, xK, -2600, 'S-DIM'); { const a = v.P(xK, -2430), b = v.P(xK + 2400, -2430); Ln(B, a[0], a[1], b[0], b[1], 'S-DIM'); Arrow(B, b[0], b[1], 0, 'S-DIM', 2.2, 0.7); Arrow(B, a[0], a[1], 180, 'S-DIM', 2.2, 0.7); T(B, (a[0] + b[0]) / 2, a[1] + 1, 'DECK', { h: 2.4, al: 'c' }); }
     { const a = v.P(-1900, yG), b = v.P(-1900, yC); v.line(-1900, yG, -280, yG, 'S-DIM'); v.line(-1900, yC, -400, yC, 'S-DIM'); Ln(B, a[0], a[1], a[0], a[1] - 9, 'S-DIM'); PLn(B, [[a[0], a[1] - 9], [a[0] + 1, a[1] - 10], [a[0] - 1, a[1] - 11], [a[0], a[1] - 12]], false, 'S-DIM'); Ln(B, a[0], a[1] - 12, b[0], b[1], 'S-DIM'); Arrow(B, a[0], a[1], 90, 'S-DIM', 2.2, 0.7); Arrow(B, b[0], b[1], -90, 'S-DIM', 2.2, 0.7);
@@ -279,15 +282,15 @@
     { const y = 1500; v.line(-4300, y, -2600, y, 'S-TITLE'); const a = v.P(-4300, y); Fill(B, [[a[0], a[1]], [a[0] + 7, a[1]], [a[0] + 3.5, a[1] + 2.2]], 'S-TITLE'); v.line(900, y, 1700, y, 'S-TITLE'); v.mark(2050, y, 'A', 90); }
     // notes
     v.leader(380, yG + 600, 8, 10, 'φ900 SEMICIRCLE\nGROUTED ROCK\nPROTECTION'); v.leader(4300, yG - 30, 8, 12, 'TOE OF\nBATTER');
-    v.leader(200, 3700, 20, 0, 'SPOON DRAIN\n(TYP)'); v.leader(3000, 300, 8, 10, 'TRAFFIC BARRIER\nPOST (TYP)'); v.leader(3800, -600, 26, -3, '150 WIDE INSITU KERB\nPROFILED TO SUIT\nBRIDGE KERB (TYP)');
+    v.leader(200, 3700, 20, 0, 'SPOON DRAIN\n(TYP)'); v.leader(1.5 * ps, 300, 8, 10, 'TRAFFIC BARRIER\nPOST (TYP)'); v.leader(3800, -600, 26, -3, '150 WIDE INSITU KERB\nPROFILED TO SUIT\nBRIDGE KERB (TYP)');
     LY.title('PART PLAN', 100);
     LY.break();
-    const w = LY.view(20), Wb = 300, D = 225, r = 175;
+    const w = LY.view(20);
     w.pl([[-Wb, 0], [-r, 0]], false, 'S-CONC'); w.pl([[r, 0], [Wb, 0], [Wb + 10, -D], [-Wb - 10, -D], [-Wb, 0]], false, 'S-CONC'); w.arc(0, 0, r, 180, 360, 'S-CONC');
     w.ground(-1150, -Wb, 0); w.ground(Wb, 1150, 0);
-    w.dim(r, 0, Wb, 0, 12, '125 * (INSITU OPTION)');
-    w.leader(Wb + 10, -D, 6, -8, '225 x 600 CONCRETE SURFACE\nDRAIN (BY GALVINS OR SIMILAR\nAPPROVED) OR * APPROVED INSITU\nCONSTRUCTION.', { h: 2.4 });
-    w.mtext(320, -760, '* APPROVED INSITU CONSTRUCTION OF\n   A MASS CONCRETE DRAIN REQUIRES\n   REINFORCING (MINIMUM REINF SL41\n   FABRIC WITH 50 MINIMUM COVER TOP\n   AND BOTTOM) SL81 OFFCUTS CAN BE\n   USED. LAP MESH AS REQUIRED.', 2.4);
+    w.dim(r, 0, Wb, 0, 12, (Wb - r) + ' * (INSITU OPTION)');
+    w.leader(Wb + 10, -D, 6, -8, D + ' x ' + 2 * Wb + ' CONCRETE SURFACE\nDRAIN (BY GALVINS OR SIMILAR\nAPPROVED) OR * APPROVED INSITU\nCONSTRUCTION.', { h: 2.4 });
+    w.mtext(Wb + 20, -D - 535, '* APPROVED INSITU CONSTRUCTION OF\n   A MASS CONCRETE DRAIN REQUIRES\n   REINFORCING (MINIMUM REINF SL41\n   FABRIC WITH 50 MINIMUM COVER TOP\n   AND BOTTOM) SL81 OFFCUTS CAN BE\n   USED. LAP MESH AS REQUIRED.', 2.4);
     LY.title('SECTION A', 20);
     return LY.done();
   }, 'Concrete surface drain (spoon drain) from the traffic barrier kerb down the batter to grouted rock protection at the toe, where deck run-off must be taken clear of the abutment.');
@@ -300,8 +303,10 @@
   // leader whose first word sits in a dashed variable box (text to the right of the shoulder)
   function vLeadX(v, x, y, dx, dy, boxed, rest, h) { h = h || 2.2; const a = v.P(x, y), b = [a[0] + dx, a[1] + dy], k = dx >= 0 ? 1 : -1, c = [b[0] + k * 2.5, b[1]]; PLn(v.B, [a, b, c]); Arrow(v.B, a[0], a[1], Math.atan2(a[1] - b[1], a[0] - b[0]) * 180 / PI); const L = rest.split('\n'), w0 = tw(boxed, h) + 2.2, wt = max(w0 + tw(L[0], h), ...L.slice(1).map(l => tw(l, h))), x0 = k > 0 ? c[0] + 1 : c[0] - 1 - wt; XB(v.B, x0 + 0.8, c[1] - h / 2, boxed, { h }); T(v.B, x0 + w0, c[1] - h / 2, L[0], { h }); L.slice(1).forEach((l, i) => T(v.B, x0, c[1] - h / 2 - (i + 1) * h * 1.55, l, { h })); }
   function vBreakV(v, x, y0, y1) { v.brk(x, y0, x, y1, 'S-TEXT'); }
-  def('pn4207', 'Deck & overlay', 'Approach slab', 'PN30-4207', [P('Wk', 'Width between kerbs (mm)', 7200, { num: 1 }), P('Ls', 'Approach slab length (mm, min 5000)', 5000, { num: 1 }), P('fab', 'Deck fabric type', 'X')], (p) => {
-    const Wk = max(3000, +p.Wk || 7200), Ls = max(5000, +p.Ls || 5000), fab = String(p.fab || 'X'), Hw = Wk / 2 + 300, LY = new Lay(760);
+  def('pn4207', 'Deck & overlay', 'Approach slab', 'PN30-4207', [P('Wk', 'Width between kerbs (mm)', 7200, { num: 1 }), P('Ls', 'Approach slab length (mm, min 5000)', 5000, { num: 1 }), P('fab', 'Deck fabric type', 'X'),
+    P('t', 'Slab thickness (mm)', 200, { num: 1 }), P('ps', 'Anchor rod spacing (mm)', 2000, { num: 1 }), P('lap', 'Deck fabric lap (mm)', 300, { num: 1 }), P('g', 'Expansion joint gap (mm)', 25, { num: 1 })], (p) => {
+    const Wk = max(3000, +p.Wk || 7200), Ls = max(5000, +p.Ls || 5000), fab = String(p.fab || 'X'), Hw = Wk / 2 + 300, LY = new Lay(760), cl = (k, a, b, d) => max(a, min(b, Math.round(+p[k] || d)));
+    const ts = cl('t', 150, 350, 200), ps = cl('ps', 1000, 2000, 2000), lap = cl('lap', 200, 600, 300), gj = cl('g', 10, 60, 25);
     const TX = 'TYPE ' + fab;
     // ---------------- PLAN 1:100
     {
@@ -313,7 +318,7 @@
       [[60, 2300], [3400, j2]].forEach(([a, b]) => { [Hw, hk, -hk, -Hw].forEach(y => v.line(a, y, b, y, 'S-EXIST')); });
       v.line(60, -Hw, 60, Hw, 'S-NEW'); v.line(j2, -Hw, j2, Hw, 'S-NEW'); vBreakV(v, 2300, -Hw, Hw); vBreakV(v, 3400, -Hw, Hw);
       // anchor rods (pairs) at 2000 crs
-      const rods = [-500, -2500, -4500, 1500, s2 + 500, s2 + 2500, s2 + 4500, j2 - 1500].filter(x => (x > -Ls + 200 && x < 0) || (x > 60 && x < 2300) || (x > 3400 && x < j2) || (x > s2 && x < e2 - 200));
+      const rods = []; for (let x = -500; x > -Ls + 200; x -= ps) rods.push(x); rods.push(1500); for (let x = s2 + 500; x < e2 - 200; x += ps) rods.push(x); rods.push(j2 - 1500);
       rods.forEach(x => [Hw - 60, Hw - 260, -Hw + 60, -Hw + 260].forEach(y => v.fill([[x - 70, y - 60], [x + 70, y - 60], [x + 70, y + 60], [x - 70, y + 60]], 'S-BOLT')));
       // reinforcement zones in slab 2
       const hz = (pts, sc) => { v.pl(pts, true, 'S-REO'); v.hatch(pts, 'ansi31', 'S-HATCH', sc); };
@@ -334,13 +339,13 @@
       v.line(e2, 2300, e2 + 700, 2300, 'S-TITLE'); v.mark(e2 + 1000, 2300, 'C', 180); v.line(e2, -1400, e2 + 700, -1400, 'S-TITLE'); v.mark(e2 + 1000, -1400, 'D', 180);
       [[s2 + 75, 'A'], [s2 + 1300, 'B']].forEach(([x, c]) => { v.line(x, -Hw - 200, x, -Hw - 1900, 'S-TITLE'); v.mark(x, -Hw - 2200, c, 0); v.line(x, Hw + 200, x, Hw + 1700, 'S-TITLE'); const q = v.P(x, Hw + 1700); Fill(B, [[q[0], q[1]], [q[0], q[1] - 3], [q[0] + 2.4, q[1] - 1.5]], 'S-TITLE'); });
       // dimensions
-      v.dim(-4500, Hw, -2500, Hw, 9, '2000'); T(B, ...v.P(-3500, Hw + 1400), '(TYP)', { h: 2.0, al: 'c' });
-      v.dim(-500, Hw, s2 + 500, Hw, 9, ' '); { const q = v.P((-500 + s2 + 500) / 2, Hw + 900); const bx = XB(B, q[0], q[1] + 1, 'XX000', { al: 'c' }); T(B, q[0], q[1] - 3.2, '(TYP)', { h: 2.0, al: 'c' }); const nb = NB(B, q[0] - 6, q[1] + 22, 'NOTE: THIS DIMENSION TO\nBE A MULTIPLE OF 2000', { h: 2.2 }); dashTo(B, [q[0] + 2, bx[3]], [nb[0] + 12, nb[1]]); }
+      v.dim(-500 - 2 * ps, Hw, -500 - ps, Hw, 9, String(ps)); T(B, ...v.P(-500 - 1.5 * ps, Hw + 1400), '(TYP)', { h: 2.0, al: 'c' });
+      v.dim(-500, Hw, s2 + 500, Hw, 9, ' '); { const q = v.P((-500 + s2 + 500) / 2, Hw + 900); const bx = XB(B, q[0], q[1] + 1, 'XX000', { al: 'c' }); T(B, q[0], q[1] - 3.2, '(TYP)', { h: 2.0, al: 'c' }); const nb = NB(B, q[0] - 6, q[1] + 22, 'NOTE: THIS DIMENSION TO\nBE A MULTIPLE OF ' + ps, { h: 2.2 }); dashTo(B, [q[0] + 2, bx[3]], [nb[0] + 12, nb[1]]); }
       v.dim(-500, Hw - 1000, 0, Hw - 1000, 0, ' '); vXB(v, 700, Hw - 950, 'XXX', { h: 2.2 });
       v.dim(-Ls, -Hw, 0, -Hw, -9, ' '); { const q = v.P(-Ls / 2, -Hw - 900); const bx = XB(B, q[0], q[1] - 1, String(Ls), { al: 'c' }); T(B, q[0], q[1] - 5, '(TYP)', { h: 2.0, al: 'c' }); const nb = NB(B, q[0] - 40, q[1] - 15, 'LENGTH OF APPROACH SLAB TO BE\nA MINIMUM LENGTH OF 5000.', { h: 2.2 }); dashTo(B, [bx[0], bx[1]], [nb[0] + 26, nb[3]]); }
       v.dimChain([[-Ls, -Hw], [-Ls, 0], [-Ls, Hw]], 8, ['=', '=']);
       // notes
-      { const q = v.P(-4500, Hw - 60); v.leaders([[-4500, Hw - 60], [-2500, Hw - 60]], -16, 14, '2 - TYPE ARX\nANCHOR RODS\n(TYP)', { h: 2.2 }); const nb = NB(B, q[0] - 46, q[1] + 30, 'TYPE TO BE SPECIFIED\nREFER DRG N° 0430-0775', { h: 2.2 }); dashTo(B, [nb[0] + 26, nb[1]], [q[0] - 22, q[1] + 16.5]); }
+      { const q = v.P(-500 - 2 * ps, Hw - 60); v.leaders([[-500 - 2 * ps, Hw - 60], [-500 - ps, Hw - 60]], -16, 14, '2 - TYPE ARX\nANCHOR RODS\n(TYP)', { h: 2.2 }); const nb = NB(B, q[0] - 46, q[1] + 30, 'TYPE TO BE SPECIFIED\nREFER DRG N° 0430-0775', { h: 2.2 }); dashTo(B, [nb[0] + 26, nb[1]], [q[0] - 22, q[1] + 16.5]); }
       v.leader(s2 + 2500, Hw - 150, 10, 16, 'SL81 KERB FABRIC\nTYPE 4 (T & B)\n(TYP)', { h: 2.2 });
       v.leader(s2 + Ls * 0.75, 1200, (e2 + 1500 - s2 - Ls * 0.75) / sP, -2, 'SL81 DECK FABRIC\n' + TX + '(TYP)\nTRIM TO SUIT', { h: 2.2 });
       v.leader(e2 - 200, -2400, 15, -2, 'SL81 DROP PANEL FABRIC\n' + TX + ' - T\nSL81 DOWNTURN FABRIC\n' + TX + ' - B', { h: 2.2 });
@@ -377,7 +382,7 @@
     LY.break();
     // ---------------- SECTION B 1:25 (across the approach slab)
     {
-      const sB = Wk > 8000 ? 50 : 25, v = LY.view(sB), B = v.B, W = Wk + 600, xc = W / 2, top = x => -0.025 * abs(x - xc), t = 200;
+      const sB = Wk > 8000 ? 50 : 25, v = LY.view(sB), B = v.B, W = Wk + 600, xc = W / 2, top = x => -0.025 * abs(x - xc), t = ts;
       const bot = x => { const d = min(x - 300, W - 300 - x); return top(x) - t - (d < 250 ? 250 - max(0, d) : 0); };
       const xs = Array.from({ length: 41 }, (_, i) => 300 + (W - 600) * i / 40);
       v.pl(xs.map(x => [x, top(x)]), false, 'S-CONC'); v.pl(xs.map(x => [x, bot(x)]), false, 'S-CONC');
@@ -400,7 +405,7 @@
     }
     // ---------------- SECTION C 1:10 (through the expansion joint)
     {
-      const v = LY.view(25), B = v.B, g = 25, te = 200, xE = 2300, hb = 20;
+      const v = LY.view(25), B = v.B, g = gj, te = ts, xE = 2300, hb = 20;
       // bridge deck (left) and approach slab (right)
       const deck = [[-700, 0], [-g, 0], [-g, -te], [-700, -te]]; v.pl(deck.slice(1).concat([deck[0]]), false, 'S-CONC'); v.hatch(deck, 'conc', 'S-HATCH');
       const sl = [[g, 0], [xE, 0], [xE, -te], [g, -te]]; v.pl(sl, true, 'S-CONC'); v.hatch(sl, 'conc', 'S-HATCH'); vBreakV(v, -700, 60, -te - 40); vBreakV(v, 1100, 60, -te - 40);
@@ -413,7 +418,7 @@
       // compression seal and polystyrene block
       v.pl(ellP(0, -50, g - 3, 35, 16), true, 'S-NEW'); const ps = [[-g, -120], [g, -120], [g, -te], [-g, -te]]; v.pl(ps, true, 'S-NEW'); v.hatch(ps, 'ansi37', 'S-HATCH', 0.4);
       // sill beam, bearing pad, foam, membrane, fill
-      const sb = [[-500, -te], [260, -te], [260, -900], [-500, -900]]; v.pl([[-500, -900], [-500, -te], [260, -te], [260, -900]], false, 'S-HIDDEN'); v.hatch(sb, 'conc', 'S-HATCH'); vBreakV(v, -120, -900, -900);
+      const sb = [[-500, -te], [260, -te], [260, -900], [-500, -900]]; v.pl([[-500, -900], [-500, -te], [260, -te], [260, -900]], false, 'S-HIDDEN'); v.hatch(sb, 'conc', 'S-HATCH');
       const bp = [[100, -te], [250, -te], [250, -te - 12], [100, -te - 12]]; v.fill(bp, 'S-NEW');
       const fm = [[260, -te - 12], [300, -te - 12], [300, -900], [260, -900]]; v.pl(fm, true, 'S-NEW'); v.hatch(fm, 'ansi37', 'S-HATCH', 0.35);
       v.pl([[300, -te - 15], [1700, -te - 15], [1950, -te - 265], [xE, -te - 265]], false, 'S-HIDDEN');
@@ -437,7 +442,7 @@
     LY.break();
     // ---------------- DETAIL 1 1:10 (construction joint)
     {
-      const v = LY.view(10), B = v.B, top = x => -0.025 * abs(x), t = 200, xs = Array.from({ length: 17 }, (_, i) => -800 + 100 * i);
+      const v = LY.view(10), B = v.B, top = x => -0.025 * abs(x), t = ts, xs = Array.from({ length: 17 }, (_, i) => -800 + 100 * i);
       v.pl(xs.map(x => [x, top(x)]), false, 'S-CONC'); v.line(-800, -t, 800, -t, 'S-CONC'); v.line(-800, -t - 20, 800, -t - 20, 'S-HIDDEN'); vBreakV(v, -800, 30, -t - 40); vBreakV(v, 800, 30, -t - 40);
       v.line(0, top(0), 0, -t, 'S-NEW'); v.line(0, 250, 0, -t - 60, 'S-CL');
       [-1, 1].forEach(k => { v.fabric(k * 25, -45, k * 760, -45 - 0.025 * 735, 100); v.line(k * 15, -75, k * 450, -75, 'S-REO'); });
@@ -451,14 +456,14 @@
     // ---------------- TYPICAL DECK FABRIC LAP 1:10
     {
       const v = LY.view(20), B = v.B, sp = 100;
-      for (let x = -900; x <= 300; x += sp) v.line(x, 0, x, 900, 'S-REO'); for (let x = 0; x <= 1200; x += 2 * sp) v.line(x + 25, 0, x + 25, 900, 'S-REO');
-      for (let y = 100; y <= 800; y += 200) { v.line(-900, y, 300, y, 'S-REO'); v.line(25, y + 20, 1225, y + 20, 'S-REO'); }
+      for (let x = -900; x <= lap; x += sp) v.line(x, 0, x, 900, 'S-REO'); for (let x = 0; x <= 1200; x += 2 * sp) v.line(x + 25, 0, x + 25, 900, 'S-REO');
+      for (let y = 100; y <= 800; y += 200) { v.line(-900, y, lap, y, 'S-REO'); v.line(25, y + 20, 1225, y + 20, 'S-REO'); }
       vBreakV(v, -950, 0, 900); vBreakV(v, 1275, 0, 900); v.brk(-300, 950, 100, 950); v.brk(-300, -50, 100, -50);
-      v.dim(0, 0, 300, 0, -10, '300 LAP');
+      v.dim(0, 0, lap, 0, -10, lap + ' LAP');
       v.leader(-200, 300, -10, -30, 'SL81 DECK FABRIC\n' + TX, { h: 2.2 }); v.leader(700, 300, 10, -30, 'SL81 DECK FABRIC\n' + TX, { h: 2.2 });
       UT(B, ...v.P(150, -400), 'PLAN', 2.4, 'c', 'S-TEXT');
       const y0 = 850, dx = 2700; v.line(dx - 900, y0, dx + 1200, y0, 'S-CONC'); v.line(dx - 900, y0 - 200, dx + 1200, y0 - 200, 'S-CONC'); v.line(dx - 900, y0 - 230, dx + 1200, y0 - 230, 'S-HIDDEN'); vBreakV(v, dx - 900, y0 + 30, y0 - 240); vBreakV(v, dx + 1200, y0 + 30, y0 - 240);
-      v.fabric(dx - 850, y0 - 45, dx + 300, y0 - 45, 200); v.fabric(dx, y0 - 60, dx + 1150, y0 - 60, 200);
+      v.fabric(dx - 850, y0 - 45, dx + lap, y0 - 45, 200); v.fabric(dx, y0 - 60, dx + 1150, y0 - 60, 200);
       v.leaders([[dx - 300, y0 - 45], [dx + 400, y0 - 60]], -14, 14, 'SL81 DECK FABRIC\n' + TX + '(TYP)', { h: 2.2 }); v.leader(dx + 600, y0 - 230, 8, -10, 'PVC MEMBRANE', { h: 2.2 });
       UT(B, ...v.P(dx + 150, y0 - 560), 'ELEVATION', 2.4, 'c', 'S-TEXT');
       LY.title('TYPICAL DECK FABRIC LAP', 10);
@@ -486,9 +491,9 @@
     }
     // ---------------- SECTION D 1:10 (end of the approach slab)
     {
-      const v = LY.view(15), B = v.B, t = 200, xe = 1300;
-      const o = [[0, 0], [xe, 0], [xe, -475], [xe - 300, -475], [xe - 575, -t], [0, -t]]; v.pl(o, false, 'S-CONC'); vBreakV(v, 0, 40, -t - 40);
-      v.pl([[0, -t - 20], [xe - 583, -t - 20], [xe - 308, -495], [xe + 10, -495]], false, 'S-HIDDEN');
+      const v = LY.view(15), B = v.B, t = ts, xe = 1300;
+      const o = [[0, 0], [xe, 0], [xe, -475], [xe - 300, -475], [xe - 775 + t, -t], [0, -t]]; v.pl(o, false, 'S-CONC'); vBreakV(v, 0, 40, -t - 40); // 45° splay from the downturn to the slab soffit
+      v.pl([[0, -t - 20], [xe - 783 + t, -t - 20], [xe - 308, -495], [xe + 10, -495]], false, 'S-HIDDEN');
       v.fabric(0, -40, xe - 75, -40, 100); v.bar([[xe - 75, -40], [xe - 75, -400], [xe - 290, -400], [xe - 520, -170], [xe - 700, -170]]); [-150, -250, -350].forEach(y => v.barEnd(xe - 90, y, 10)); [[xe - 390, -310], [xe - 470, -230]].forEach(([x, y]) => v.barEnd(x, y, 10));
       v.fill([[xe, 0], [xe + 15, 0], [xe + 15, -100], [xe, -100]], 'S-NEW'); v.line(xe + 15, 0, xe + 700, 0, 'S-EXIST'); v.line(xe + 15, -100, xe + 700, -100, 'S-EXIST');
       vFin(v, 500, 0, 'U3 (BROOM FINISH)'); vFin(v, xe, -260, '3', 'r');
@@ -513,8 +518,10 @@
   }, 'Reinforced concrete approach slab (min 5000 long) on a cement stabilised fill with expansion angles, compression seal and bearing pad at the abutment, for bridges receiving a concrete overlay.');
 
   // ================================================================== PN30-4208 / 4209 expansion angles Types 1 and 2
-  def('exa', 'Deck & overlay', 'Expansion angles – Types 1 and 2', 'PN30-4208 / 4209', [P('Wk', 'Width between kerbs (mm)', 7200, { num: 1 }), P('type', 'Angle type shown', '1 & 2', { opts: ['1 & 2', '1', '2'] }), P('seal', 'Road seal', 'Road seal (PN30-4208)', { opts: ['Road seal (PN30-4208)', 'No road seal (PN30-4209)'] })], (p) => {
-    const Wk = max(3000, +p.Wk || 7200), L = Math.round(Wk / 2 + 10), ty = String(p.type == null ? '1 & 2' : p.type), noSeal = /^No/.test(String(p.seal || '')), n = Math.ceil((L - 210) / 200), LY = new Lay(760);
+  def('exa', 'Deck & overlay', 'Expansion angles – Types 1 and 2', 'PN30-4208 / 4209', [P('Wk', 'Width between kerbs (mm)', 7200, { num: 1 }), P('type', 'Angle type shown', '1 & 2', { opts: ['1 & 2', '1', '2'] }), P('seal', 'Road seal', 'Road seal (PN30-4208)', { opts: ['Road seal (PN30-4208)', 'No road seal (PN30-4209)'] }),
+    P('ang', 'Expansion angle (UA)', '150x90x12', { opts: ['150x90x10', '150x90x12', '150x100x10', '150x100x12'] }), P('ss', 'Anchor strap spacing (mm, max)', 200, { num: 1 }), P('hs', 'Air release / tapped hole spacing (mm)', 300, { num: 1 })], (p) => {
+    const ang = /^150x(90|100)x(10|12)$/.test(p.ang) ? p.ang : '150x90x12', aw = +ang.split('x')[1], at = +ang.split('x')[2], ss = max(150, min(300, Math.round(+p.ss || 200))), hs = max(200, min(600, Math.round(+p.hs || 300)));
+    const Wk = max(3000, +p.Wk || 7200), L = Math.round(Wk / 2 + 10), ty = String(p.type == null ? '1 & 2' : p.type), noSeal = /^No/.test(String(p.seal || '')), n = Math.ceil((L - 210) / ss), LY = new Lay(760);
     const show1 = ty !== '2', show2 = ty !== '1';
     // ---------------- KEY PLAN (N.T.S., drawn in paper mm)
     {
@@ -541,22 +548,22 @@
     // ---------------- expansion angle plan (1:10), k = 1 (Type 1: kerb end on the right) or 2
     const angle = k => {
       const sA = L > 4300 ? 20 : 10, v = LY.view(sA), B = v.B, kerbR = k === 1, X = x => kerbR ? x : L - x; // x measured from the end AWAY from the kerb
-      v.rect(0, -90, L, 90, 'S-NEW'); v.line(0, -12, L, -12, 'S-HIDDEN'); v.line(0, -4, L, -4, 'S-NEW');
+      v.rect(0, -aw, L, aw, 'S-NEW'); v.line(0, -at, L, -at, 'S-HIDDEN'); v.line(0, -4, L, -4, 'S-NEW');
       const s0 = 60, s1 = L - 150, xs = Array.from({ length: n }, (_, i) => s0 + (s1 - s0) * i / max(1, n - 1));
-      xs.forEach(x0 => { const x = X(x0); v.line(x - 10, -90, x - 10, -440, 'S-NEW'); v.line(x + 10, -90, x + 10, -440, 'S-NEW'); v.line(x - 10, -440, x + 10, -440, 'S-NEW'); v.line(x, -90, x, -150, 'S-HIDDEN'); v.line(x - 16, -330, x + 16, -330, 'S-NEW'); v.line(x - 10, -150, x + 10, -150, 'S-HIDDEN'); });
+      xs.forEach(x0 => { const x = X(x0); v.line(x - 10, -aw, x - 10, -440, 'S-NEW'); v.line(x + 10, -aw, x + 10, -440, 'S-NEW'); v.line(x - 10, -440, x + 10, -440, 'S-NEW'); v.line(x, -aw, x, -150, 'S-HIDDEN'); v.line(x - 16, -330, x + 16, -330, 'S-NEW'); v.line(x - 10, -150, x + 10, -150, 'S-HIDDEN'); });
       // end plate and anchor straps type C at the kerb end
-      const xe = X(L), dir = kerbR ? 1 : -1; v.rect(min(xe, xe + dir * 230), -12, 230, 12, 'S-NEW'); [70, 170].forEach(d => { const x = xe + dir * d; v.line(x - 10, -12, x - 10, -300, 'S-NEW'); v.line(x + 10, -12, x + 10, -300, 'S-NEW'); v.line(x - 10, -300, x + 10, -300, 'S-NEW'); v.line(x - 16, -220, x + 16, -220, 'S-NEW'); });
+      const xe = X(L), dir = kerbR ? 1 : -1; v.rect(min(xe, xe + dir * 230), -at, 230, at, 'S-NEW'); [70, 170].forEach(d => { const x = xe + dir * d; v.line(x - 10, -at, x - 10, -300, 'S-NEW'); v.line(x + 10, -at, x + 10, -300, 'S-NEW'); v.line(x - 10, -300, x + 10, -300, 'S-NEW'); v.line(x - 16, -220, x + 16, -220, 'S-NEW'); });
       // holes: φ25 air release / φ10 tapped (from the kerb end)
-      const hole = (d, tap) => { const x = X(L - d); if (tap) { v.line(x - 30, -45, x + 30, -45, 'S-BOLT'); v.line(x, -75, x, -15, 'S-BOLT'); } else { v.circ(x, -45, 12.5, 'S-BOLT'); v.line(x - 22, -45, x + 22, -45, 'S-CL'); v.line(x, -67, x, -23, 'S-CL'); } };
-      hole(80, false); let i = 0; for (let d = 300; d < L - 100; d += 300, i++) hole(d, i % 3 === 0);
+      const yh = -aw / 2, hole = (d, tap) => { const x = X(L - d); if (tap) { v.line(x - 30, yh, x + 30, yh, 'S-BOLT'); v.line(x, yh - 30, x, yh + 30, 'S-BOLT'); } else { v.circ(x, yh, 12.5, 'S-BOLT'); v.line(x - 22, yh, x + 22, yh, 'S-CL'); v.line(x, yh - 22, x, yh + 22, 'S-CL'); } };
+      hole(80, false); let i = 0; for (let d = hs; d < L - 100; d += hs, i++) hole(d, i % 3 === 0);
       // dimensions
       v.dim(0, 0, L, 0, 16, ' '); vXB(v, L / 2, 175, noSeal ? String(L) : 'XXXX', { al: 'c', h: 2.4 });
       { const q = v.P(L / 2 + (kerbR ? -400 : 400), 330); const fb = [q[0] - 10, q[1] + 10]; Box(B, fb[0], fb[1], fb[0] + 96, fb[1] - 10, 'S-NOTE'); Ln(B, fb[0] + 58, fb[1], fb[0] + 58, fb[1] - 10, 'S-NOTE'); T(B, fb[0] + 2, fb[1] - 6, (noSeal ? String(L) : 'XXXX') + ' = (', { h: 2.2 }); const tx = fb[0] + 2 + tw((noSeal ? String(L) : 'XXXX') + ' = (', 2.2); T(B, tx, fb[1] - 4.2, 'WIDTH BETWEEN KERBS', { h: 2.0 }); Ln(B, tx, fb[1] - 4.8, tx + tw('WIDTH BETWEEN KERBS', 2.0), fb[1] - 4.8); T(B, tx + tw('WIDTH BETWEEN KERBS', 2.0) / 2, fb[1] - 8, '2', { h: 2.0, al: 'c' }); T(B, tx + tw('WIDTH BETWEEN KERBS', 2.0) + 0.6, fb[1] - 6, ') + 10', { h: 2.2 }); T(B, fb[0] + 60, fb[1] - 4.2, 'where symmetrical about ℄\nof bridge', { h: 2.0, ls: 1.5 }); dashTo(B, [fb[0] + 30, fb[1] - 10], [v.P(L / 2, 175)[0], v.P(L / 2, 175)[1] + 3.6]); }
       v.dim(X(0), -440, X(s0), -440, kerbR ? -10 : 10, '60'); v.dim(X(s1), -440, X(L), -440, kerbR ? -10 : 10, '150');
-      { const a = v.P(min(X(s0), X(s1)), -440), b = v.P(max(X(s0), X(s1)), -440), y = a[1] - 10; Ln(B, a[0], y, b[0], y, 'S-DIM'); Arrow(B, a[0], y, 180, 'S-DIM', 2.2, 0.7); Arrow(B, b[0], y, 0, 'S-DIM', 2.2, 0.7); T(B, (a[0] + b[0]) / 2, y + 0.8, (noSeal ? n : 'XX') + ' - ANCHOR STRAPS TYPE A & B AT 200 CRS MAX', { h: 2.0, al: 'c', L: 'S-DIM' }); }
-      v.dimChain([[X(L - 600), -90], [X(L - 300), -90], [X(L - 80), -90], [X(L), -90]].sort((a, b) => a[0] - b[0]).map(q => [q[0], 0]), 8, kerbR ? ['300', '220', '80'] : ['80', '220', '300']); T(B, ...v.P(X(L - 450), 0).map((c, j) => j ? c + 4 : c), 'TYP', { h: 2.0, al: 'c' });
-      [0.3, 0.62].forEach(t => v.dim(X(L * t) + 40, -45, X(L * t) + 40, -90, -2, '45', { sub: 'TYP' }));
-      v.leader(X(L - 1200), -45, kerbR ? -16 : 12, 12, 'φ10 TAPPED HOLE (TYP)\n(SEE NOTE 2)', { h: 2.2 }); v.leader(X(L - 600), -45, kerbR ? -14 : 14, 12, 'φ25 AIR RELEASE\nHOLE', { h: 2.2 }); v.leader(X(L * 0.82), -100, kerbR ? -10 : 10, -18, '150x90x12 UA', { h: 2.2 });
+      { const a = v.P(min(X(s0), X(s1)), -440), b = v.P(max(X(s0), X(s1)), -440), y = a[1] - 10; Ln(B, a[0], y, b[0], y, 'S-DIM'); Arrow(B, a[0], y, 180, 'S-DIM', 2.2, 0.7); Arrow(B, b[0], y, 0, 'S-DIM', 2.2, 0.7); T(B, (a[0] + b[0]) / 2, y + 0.8, (noSeal ? n : 'XX') + ' - ANCHOR STRAPS TYPE A & B AT ' + ss + ' CRS MAX', { h: 2.0, al: 'c', L: 'S-DIM' }); }
+      v.dimChain([[X(L - 2 * hs), -aw], [X(L - hs), -aw], [X(L - 80), -aw], [X(L), -aw]].sort((a, b) => a[0] - b[0]).map(q => [q[0], 0]), 8, kerbR ? [String(hs), String(hs - 80), '80'] : ['80', String(hs - 80), String(hs)]); T(B, ...v.P(X(L - 1.5 * hs), 0).map((c, j) => j ? c + 4 : c), 'TYP', { h: 2.0, al: 'c' });
+      [0.3, 0.62].forEach(t => v.dim(X(L * t) + 40, yh, X(L * t) + 40, -aw, -2, String(aw / 2), { sub: 'TYP' }));
+      v.leader(X(L - 4 * hs), yh, kerbR ? -16 : 12, 12, 'φ10 TAPPED HOLE (TYP)\n(SEE NOTE 2)', { h: 2.2 }); v.leader(X(L - 2 * hs), yh, kerbR ? -14 : 14, 12, 'φ25 AIR RELEASE\nHOLE', { h: 2.2 }); v.leader(X(L * 0.82), -aw - 10, kerbR ? -10 : 10, -18, ang + ' UA', { h: 2.2 });
       // section A cut and end view marker
       const xm = X(L * 0.55); v.mark(xm, 230, 'A', -90); v.line(xm, 200, xm, 80, 'S-TITLE'); const q = v.P(xm, -250); Ln(B, q[0], q[1], q[0], q[1] - 7, 'S-TITLE'); Fill(B, [[q[0], q[1] - 7], [q[0], q[1] - 3], [q[0] + 2.2, q[1] - 5]], 'S-TITLE');
       v.mark(xe + dir * 420, 100, kerbR ? 'B' : 'C', kerbR ? 180 : 0);
@@ -566,10 +573,10 @@
     LY.break();
     // ---------------- SECTION A 1:5
     {
-      const v = LY.view(5), B = v.B; const ang = [[0, 0], [90, 0], [90, -12], [12, -12], [12, -150], [0, -150]]; v.pl(ang, true, 'S-NEW'); v.hatch(ang, 'ansi31', 'S-HATCH', 0.25);
+      const v = LY.view(5), B = v.B; const ua = [[0, 0], [aw, 0], [aw, -at], [at, -at], [at, -150], [0, -150]]; v.pl(ua, true, 'S-NEW'); v.hatch(ua, 'ansi31', 'S-HATCH', 0.25);
       v.pl([[12, -12], [40, -12], [52, -16], [92, -61], [104, -65], [500, -65], [500, -75], [100, -75], [86, -68], [46, -24], [38, -22], [12, -22]], true, 'S-NEW');
       v.pl([[12, -60], [22, -60], [22, -92], [26, -104], [40, -110], [500, -110], [500, -120], [36, -120], [18, -114], [12, -100]], true, 'S-NEW');
-      v.line(-60, 0, 0, 0, 'S-TEXT'); v.line(90, 0, 170, 0, 'S-CONC'); v.line(170, 0, 170, -20, 'S-CONC'); v.line(170, -20, 380, -20, 'S-CONC'); v.line(470, 0, 560, 0, 'S-TEXT');
+      v.line(-60, 0, 0, 0, 'S-TEXT'); v.line(aw, 0, 170, 0, 'S-CONC'); v.line(170, 0, 170, -20, 'S-CONC'); v.line(170, -20, 380, -20, 'S-CONC'); v.line(470, 0, 560, 0, 'S-TEXT');
       v.wl(520, 0, 'RUNNING\nSURFACE');
       v.dim(0, 0, 40, 0, 26, '40'); v.dim(40, 0, 100, 0, 26, '60'); v.dim(100, 0, 500, 0, 26, '400'); v.dim(-30, 0, 0, 0, 14, '30');
       v.dim(-25, 0, -25, -60, 6, '60'); v.dim(-25, -60, -25, -100, 6, '40'); v.dim(12, -150, 42, -150, -6, '30'); v.dim(0, -150, 500, -150, -22, '500');
@@ -578,7 +585,7 @@
       { const a = v.P(300, 0), b = v.P(300, -20); Ln(B, a[0], a[1] + 6, a[0], a[1], 'S-DIM'); Arrow(B, a[0], a[1], -90, 'S-DIM', 1.6, 0.5); Ln(B, b[0], b[1] - 6, b[0], b[1], 'S-DIM'); Arrow(B, b[0], b[1], 90, 'S-DIM', 1.6, 0.5); XB(B, a[0] + 2, a[1] + 2, '20', { h: 2.0 }); }
       { const a = v.P(610, 0), b = v.P(610, -75); Ln(B, a[0], a[1], b[0], b[1], 'S-DIM'); Arrow(B, a[0], a[1], 90, 'S-DIM', 1.8, 0.6); Arrow(B, b[0], b[1], -90, 'S-DIM', 1.8, 0.6); Ln(B, a[0] - 6, a[1], a[0] + 1, a[1], 'S-DIM'); Ln(B, b[0] - 6, b[1], b[0] + 1, b[1], 'S-DIM'); const bx = XB(B, a[0] + 2, (a[1] + b[1]) / 2 - 1, '75', { h: 2.0 }); NB(B, bx[2] + 4, (a[1] + b[1]) / 2 + 3.5, 'DRAWN FOR 20\nUPSTAND ONLY', { h: 2.0 }); dashTo(B, [bx[2], (a[1] + b[1]) / 2], [bx[2] + 4, (a[1] + b[1]) / 2]); }
       v.circ(17, -100, 22, 'S-TEXT'); { const c = v.P(-30, -125); B.E.push({ t: 'circle', c, r: 2.6, L: 'S-TEXT' }); T(B, c[0], c[1], '1', { h: 2.6, al: 'c', v: 'm' }); Ln(B, c[0] + 2.4, c[1] + 1, ...v.P(2, -110)); }
-      v.leader(0, 0, -14, 8, '150x90x12 UA', { h: 2.2 }); v.leader(95, -66, 14, 26, '20 RAD\n(TYP)', { h: 2.2 }); v.leader(300, -65, 10, 28, '20x10 FL ANCHOR\nSTRAP TYPE A', { h: 2.2 }); v.leader(200, -120, 10, -8, '20x10 FL ANCHOR\nSTRAP TYPE B', { h: 2.2 });
+      v.leader(0, 0, -14, 8, ang + ' UA', { h: 2.2 }); v.leader(95, -66, 14, 26, '20 RAD\n(TYP)', { h: 2.2 }); v.leader(300, -65, 10, 28, '20x10 FL ANCHOR\nSTRAP TYPE A', { h: 2.2 }); v.leader(200, -120, 10, -8, '20x10 FL ANCHOR\nSTRAP TYPE B', { h: 2.2 });
       v.weld(70, -42, 10, -36, { size: '5', len: '40', both: true, tail: 'TYP' });
       LY.title('SECTION A', 5);
     }

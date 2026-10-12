@@ -10,8 +10,14 @@
   // colours on a black working background (CAD style): brighter versions of the same layer colours; colour 7 becomes white
   const ACI_DARK = { 1: '#ff5a5a', 2: '#ffd400', 3: '#3ddc84', 4: '#38c6f4', 5: '#7b96ff', 6: '#e070e0', 8: '#a9afb9', 9: '#6b7280', 32: '#e0915c' };
   let PAPER_DARK = false;
-  const DASH = { CONTINUOUS: '', DASHED: '3 1.5', HIDDEN: '1.6 0.9', CENTER: '8 1.5 1.5 1.5', DASHDOT: '5 1.2 0.6 1.2', PHANTOM: '10 1.5 1.5 1.5 1.5 1.5' };
-  const layerDef = (doc, L) => (doc.layers && doc.layers[L]) || (D().LAYERS[L]) || { c: 7, lt: 'CONTINUOUS', lw: 0.25 };
+  // MRWA linetypes in paper mm (the dot of a dash-dot is drawn as a 0.3 mm dash on screen, a true dot in the DXF)
+  const LTDEF = { CONTINUOUS: ['Solid line', []], DASHED: ['Dashed __ __ __', [12.7, -6.35]], HIDDEN: ['Hidden _ _ _', [3, -2]], HIDDEN2: ['Hidden (.5x) _ _ _', [1.5, -1]],
+    CENTER: ['Center ____ _ ____', [31.75, -6.35, 6.35, -6.35]], CENTER2: ['Center (.5x) ___ _ ___', [19.05, -3.175, 3.175, -3.175]], DASHDOT: ['Dash dot __ . __ .', [5, -2.5, 0, -2.5]],
+    DASHDOT2: ['Dash dot (.5x) _._._', [6.35, -3.175, 0, -3.175]], PHANTOM: ['Phantom ____ _ _ ____', [10, -1.5, 1.5, -1.5, 1.5, -1.5]] };
+  const DASH = {}; Object.entries(LTDEF).forEach(([k, [, p]]) => { DASH[k] = p.map(v => abs(v) || 0.3).join(' '); });
+  const LTYPES = Object.keys(LTDEF);
+  const layerDef = (doc, L) => (doc.layers && doc.layers[L]) || D().LAYERS[L] || D().LAYERS[D().LEGACY[L]] || { c: 7, lt: 'CONTINUOUS', lw: 0.25 };
+  let PLOT_MONO = false;   // plotted output (PDF / SVG): black ink, pen weight by layer colour, as MRWA sheets are plotted
 
   // ------------------------------------------------------------------ geometry helpers
   const xf = (t) => (p) => { const c = Math.cos(t.r || 0), s = Math.sin(t.r || 0), k = t.s || 1; return [t.x + k * (c * p[0] - s * p[1]), t.y + k * (s * p[0] + c * p[1])]; };
@@ -74,12 +80,12 @@
 
   // ------------------------------------------------------------------ title block & border (paper mm)
   function sheetFrame(sh) {
-    const [W, H] = SIZES[sh.size] || SIZES.A1, E = [], t = sh.title || {}, m = 10, add = e => E.push(Object.assign({ L: 'S-BORDER' }, e));
+    const [W, H] = SIZES[sh.size] || SIZES.A1, E = [], t = sh.title || {}, m = 10, add = e => E.push(D().mrwa(Object.assign({ L: 'S-BORDER' }, e)));
     add({ t: 'pl', p: [[m, m], [W - m, m], [W - m, H - m], [m, H - m]], closed: true });
     const bw = 180, bh = 70, x0 = W - m - bw, y0 = m; add({ t: 'pl', p: [[x0, y0], [x0 + bw, y0], [x0 + bw, y0 + bh], [x0, y0 + bh]], closed: true });
     [[y0 + 52], [y0 + 38], [y0 + 26], [y0 + 14]].forEach(([y]) => add({ t: 'line', a: [x0, y], b: [x0 + bw, y] }));
     add({ t: 'line', a: [x0 + 90, y0], b: [x0 + 90, y0 + 26] }); add({ t: 'line', a: [x0 + 135, y0], b: [x0 + 135, y0 + 14] });
-    const T = (x, y, s, h, al, L) => E.push({ t: 'text', p: [x, y], s: String(s || ''), h, al: al || 'l', v: 'b', ang: 0, L: L || 'S-TEXT' });
+    const T = (x, y, s, h, al, L) => E.push(D().mrwa({ t: 'text', p: [x, y], s: String(s || ''), h, al: al || 'l', v: 'b', ang: 0, L: L || 'S-TEXT' }));
     T(x0 + 3, y0 + 64, (t.client || 'CLIENT / ASSET OWNER').toUpperCase(), 3.5, 'l', 'S-TITLE'); T(x0 + 3, y0 + 56, (t.project || 'PROJECT').toUpperCase(), 2.8);
     T(x0 + bw / 2, y0 + 45, (t.title1 || 'TIMBER BRIDGE REPAIR DETAILS').toUpperCase(), 3.5, 'c', 'S-TITLE'); T(x0 + bw / 2, y0 + 40, (t.title2 || '').toUpperCase(), 3, 'c');
     T(x0 + 3, y0 + 30, 'BRIDGE No ' + (t.bridge || '') + (t.road ? '  —  ' + t.road : ''), 2.5);
@@ -95,7 +101,7 @@
   // ------------------------------------------------------------------ SVG rendering
   const escX = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   function svgEnt(e, doc, H, extra) {
-    const ld = layerDef(doc, e.L), aci = c => (PAPER_DARK && ACI_DARK[c]) || ACI[c], col = e.col != null ? (aci(e.col) || e.col) : (aci(ld.c) || ld.c || 'currentColor'), dash = (DASH[e.lt || ld.lt] || '').split(' ').filter(Boolean).map(v => +(v * (e.ls || 1)).toFixed(3)).join(' '), lw = max(0.13, e.lw || ld.lw || 0.25), Y = y => H - y, at = extra || '';
+    const ld = layerDef(doc, e.L), aci = c => (PLOT_MONO ? '#000' : (PAPER_DARK && ACI_DARK[c]) || ACI[c]), col = e.col != null ? (aci(e.col) || e.col) : (aci(ld.c) || ld.c || 'currentColor'), dash = (DASH[e.lt || ld.lt] || '').split(' ').filter(Boolean).map(v => +(v * (e.ls || 1)).toFixed(3)).join(' '), lw = max(0.13, e.lw || ld.lw || 0.25), Y = y => H - y, at = extra || '';
     const st = `stroke="${col}" stroke-width="${lw}" fill="none"${dash ? ` stroke-dasharray="${dash}"` : ''}`;
     switch (e.t) {
       case 'line': return `<line x1="${e.a[0]}" y1="${Y(e.a[1])}" x2="${e.b[0]}" y2="${Y(e.b[1])}" ${st} ${at}/>`;
@@ -103,7 +109,7 @@
       case 'circle': return `<circle cx="${e.c[0]}" cy="${Y(e.c[1])}" r="${e.r}" ${st} ${at}/>`;
       case 'arc': { if (Math.abs(e.a1 - e.a0) >= 359.99) return `<circle cx="${e.c[0]}" cy="${Y(e.c[1])}" r="${e.r}" ${st} ${at}/>`; const a0 = e.a0 * PI / 180, a1 = e.a1 * PI / 180, sweep = ((e.a1 - e.a0) % 360 + 360) % 360, large = sweep > 180 ? 1 : 0, p0 = [e.c[0] + e.r * Math.cos(a0), Y(e.c[1] + e.r * Math.sin(a0))], p1 = [e.c[0] + e.r * Math.cos(a1), Y(e.c[1] + e.r * Math.sin(a1))]; return `<path d="M${p0[0]},${p0[1]} A${e.r},${e.r} 0 ${large} 0 ${p1[0]},${p1[1]}" ${st} ${at}/>`; }
       case 'solid': return `<polygon points="${e.p.map(q => q[0] + ',' + Y(q[1])).join(' ')}" fill="${col}" stroke="none" ${at}/>`;
-      case 'hatch': { const L = hatchLines(e); return `<g ${at}><path d="${L.map(s => `M${s[0][0].toFixed(2)},${Y(s[0][1]).toFixed(2)}L${s[1][0].toFixed(2)},${Y(s[1][1]).toFixed(2)}`).join('')}" stroke="${col}" stroke-width="0.13" fill="none"/></g>`; }
+      case 'hatch': { const L = hatchLines(e); return `<g ${at}><path d="${L.map(s => `M${s[0][0].toFixed(2)},${Y(s[0][1]).toFixed(2)}L${s[1][0].toFixed(2)},${Y(s[1][1]).toFixed(2)}`).join('')}" stroke="${col}" stroke-width="${max(0.13, ld.lw || 0.18)}" fill="none"/></g>`; }
       case 'text': { const TF = G.TFONT, wf = e.wf || 1, h = e.h; if (!TF) return ''; const tw = TF.width(e.s) * h * wf, dx = e.al === 'c' ? -tw / 2 : e.al === 'r' ? -tw : 0, dy = e.v === 'm' ? h * 0.5 : e.v === 't' ? h : 0, sw = max(0.1, e.sw || h * 0.1);
         return `<path d="${TF.path(e.s, h, wf)}" transform="translate(${e.p[0]} ${Y(e.p[1])})${e.ang ? ` rotate(${-e.ang})` : ''} translate(${dx.toFixed(2)} ${dy.toFixed(2)})" fill="none" stroke="${col}" stroke-width="${sw.toFixed(3)}" stroke-linecap="round" stroke-linejoin="round" ${at}/>`; }
     }
@@ -116,36 +122,37 @@
     (sh.items || []).forEach((it, i) => { s += `<g data-i="${i}">` + itemEnts(it).filter(e => vis(e.L)).map(e => svgEnt(e, doc, H)).join('') + '</g>'; });
     return { W, H, body: s };
   }
-  function svgStandalone(doc, sh, dark) { const r = svgSheet(doc, sh); return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${r.W} ${r.H}" width="${r.W}mm" height="${r.H}mm" preserveAspectRatio="xMidYMid meet" style="background:${dark ? '#111' : '#fff'};color:${dark ? '#eee' : '#111'}">${r.body}</svg>`; }
+  function svgStandalone(doc, sh, dark, mono) { PLOT_MONO = !!mono; let r; try { r = svgSheet(doc, sh); } finally { PLOT_MONO = false; } return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${r.W} ${r.H}" width="${r.W}mm" height="${r.H}mm" preserveAspectRatio="xMidYMid meet" style="background:${dark ? '#111' : '#fff'};color:${dark ? '#eee' : '#111'}">${r.body}</svg>`; }
   function svgThumb(E, w, h) { const b = bboxOf(E), pad = 4, W = b.x1 - b.x0 + 2 * pad, H = b.y1 - b.y0 + 2 * pad; const doc = { layers: {} }; return `<svg viewBox="${b.x0 - pad} ${-b.y1 - pad} ${W} ${H}" width="${w}" height="${h}" preserveAspectRatio="xMidYMid meet">${E.map(e => svgEnt(e, doc, 0)).join('')}</svg>`; }
 
   // ------------------------------------------------------------------ DXF writer (R12 / AC1009)
   function dxf(doc, sh, opt) {
     opt = opt || {}; const out = [], w = (c, v) => { out.push(String(c), String(v)); }, f = v => (+v).toFixed(4);
-    const E = allEnts(sh, opt), Ls = {}; E.forEach(e => { Ls[e.L || '0'] = 1; }); Object.keys(D().LAYERS).forEach(k => { Ls[k] = 1; });
+    const LN = L => (L && !D().LAYERS[L] && D().LEGACY[L]) || L || '0', E = allEnts(sh, opt), Ls = {}; E.forEach(e => { Ls[LN(e.L)] = 1; }); Object.keys(D().LAYERS).forEach(k => { Ls[k] = 1; });
     const [W, H] = SIZES[sh.size] || SIZES.A1;
     w(0, 'SECTION'); w(2, 'HEADER'); w(9, '$ACADVER'); w(1, 'AC1009'); w(9, '$INSBASE'); w(10, '0.0'); w(20, '0.0'); w(30, '0.0'); w(9, '$EXTMIN'); w(10, '0.0'); w(20, '0.0'); w(30, '0.0'); w(9, '$EXTMAX'); w(10, f(W)); w(20, f(H)); w(30, '0.0');
-    w(9, '$LIMMIN'); w(10, '0.0'); w(20, '0.0'); w(9, '$LIMMAX'); w(10, f(W)); w(20, f(H)); w(9, '$LTSCALE'); w(40, '1.0'); w(9, '$TEXTSTYLE'); w(7, 'STANDARD'); w(9, '$MEASUREMENT'); w(70, 1); w(0, 'ENDSEC');
+    w(9, '$LIMMIN'); w(10, '0.0'); w(20, '0.0'); w(9, '$LIMMAX'); w(10, f(W)); w(20, f(H)); w(9, '$LTSCALE'); w(40, '1.0'); w(9, '$PSLTSCALE'); w(70, 1); w(9, '$TEXTSTYLE'); w(7, 'T25'); w(9, '$CLAYER'); w(8, 'L35'); w(9, '$MEASUREMENT'); w(70, 1); w(0, 'ENDSEC');
     w(0, 'SECTION'); w(2, 'TABLES');
-    const LT = { CONTINUOUS: ['Solid line', []], DASHED: ['Dashed __ __ __', [3, -1.5]], HIDDEN: ['Hidden _ _ _', [1.6, -0.9]], CENTER: ['Center ____ _ ____', [8, -1.5, 1.5, -1.5]], DASHDOT: ['Dash dot __ . __ .', [5, -1.2, 0.6, -1.2]], PHANTOM: ['Phantom ____ _ _ ____', [10, -1.5, 1.5, -1.5, 1.5, -1.5]] };
+    const LT = {}; Object.entries(LTDEF).forEach(([k, v]) => { LT[k] = v; });
     const LSQ = [0.5, 0.75, 1, 1.5, 2, 3], lsq = v => LSQ.reduce((a, b) => (abs(b - v) < abs(a - v) ? b : a), 1), ltName = e => { const lt = e.lt; if (!lt || lt === 'CONTINUOUS' || !e.ls) return lt; const q = lsq(e.ls); return q === 1 ? lt : lt + '_X' + String(q).replace('.', '_'); };
     E.forEach(e => { const n = ltName(e); if (n && !LT[n]) { const base = LT[e.lt]; if (base) LT[n] = [base[0] + ' (x' + lsq(e.ls) + ')', base[1].map(v => v * lsq(e.ls))]; } });
     w(0, 'TABLE'); w(2, 'LTYPE'); w(70, Object.keys(LT).length); Object.entries(LT).forEach(([n, [d, p]]) => { w(0, 'LTYPE'); w(2, n); w(70, 0); w(3, d); w(72, 65); w(73, p.length); w(40, f(p.reduce((a, v) => a + abs(v), 0))); p.forEach(v => w(49, f(v))); }); w(0, 'ENDTAB');
     w(0, 'TABLE'); w(2, 'LAYER'); w(70, Object.keys(Ls).length + 1); w(0, 'LAYER'); w(2, '0'); w(70, 0); w(62, 7); w(6, 'CONTINUOUS');
     Object.keys(Ls).filter(k => k !== '0').forEach(k => { const ld = layerDef(doc, k); w(0, 'LAYER'); w(2, k); w(70, 0); w(62, ld.dxf || (typeof ld.c === 'number' ? ld.c : 7)); w(6, ld.lt || 'CONTINUOUS'); }); w(0, 'ENDTAB');
-    w(0, 'TABLE'); w(2, 'STYLE'); w(70, 2); w(0, 'STYLE'); w(2, 'STANDARD'); w(70, 0); w(40, '0.0'); w(41, '0.8'); w(50, '0.0'); w(71, 0); w(42, '2.5'); w(3, 'txt'); w(4, '');
-    w(0, 'STYLE'); w(2, 'ISO'); w(70, 0); w(40, '0.0'); w(41, '1.0'); w(50, '0.0'); w(71, 0); w(42, '2.5'); w(3, 'isocpeur.ttf'); w(4, ''); w(0, 'ENDTAB');
+    // text styles as the MRWA template: STANDARD, ISO and one per text layer, all ISO 3098 lettering (isocp2.shx), width factor 1, height set per text
+    const STY = ['STANDARD', 'ISO', 'T18', 'T25', 'T35', 'T50', 'T70']; w(0, 'TABLE'); w(2, 'STYLE'); w(70, STY.length);
+    STY.forEach(n => { w(0, 'STYLE'); w(2, n); w(70, 0); w(40, '0.0'); w(41, '1.0'); w(50, '0.0'); w(71, 0); w(42, '2.5'); w(3, 'isocp2.shx'); w(4, ''); }); w(0, 'ENDTAB');
     w(0, 'ENDSEC');
     w(0, 'SECTION'); w(2, 'BLOCKS'); w(0, 'ENDSEC');
     w(0, 'SECTION'); w(2, 'ENTITIES');
-    const common = e => { w(8, e.L || '0'); if (e.lt) w(6, ltName(e)); if (e.col != null && typeof e.col === 'number') w(62, e.col); };
+    const common = e => { w(8, LN(e.L)); if (e.lt) w(6, ltName(e)); if (e.col != null && typeof e.col === 'number') w(62, e.col); };
     E.forEach(e0 => primitives(e0).forEach(e => {
       if (e.t === 'line') { w(0, 'LINE'); common(e); w(10, f(e.a[0])); w(20, f(e.a[1])); w(30, '0.0'); w(11, f(e.b[0])); w(21, f(e.b[1])); w(31, '0.0'); }
-      else if (e.t === 'pl') { w(0, 'POLYLINE'); common(e); w(66, 1); w(10, '0.0'); w(20, '0.0'); w(30, '0.0'); w(70, e.closed ? 1 : 0); e.p.forEach(q => { w(0, 'VERTEX'); w(8, e.L || '0'); w(10, f(q[0])); w(20, f(q[1])); w(30, '0.0'); }); w(0, 'SEQEND'); w(8, e.L || '0'); }
+      else if (e.t === 'pl') { w(0, 'POLYLINE'); common(e); w(66, 1); w(10, '0.0'); w(20, '0.0'); w(30, '0.0'); w(70, e.closed ? 1 : 0); e.p.forEach(q => { w(0, 'VERTEX'); w(8, LN(e.L)); w(10, f(q[0])); w(20, f(q[1])); w(30, '0.0'); }); w(0, 'SEQEND'); w(8, LN(e.L)); }
       else if (e.t === 'circle') { w(0, 'CIRCLE'); common(e); w(10, f(e.c[0])); w(20, f(e.c[1])); w(30, '0.0'); w(40, f(e.r)); }
       else if (e.t === 'arc') { w(0, 'ARC'); common(e); w(10, f(e.c[0])); w(20, f(e.c[1])); w(30, '0.0'); w(40, f(e.r)); w(50, f(((e.a0 % 360) + 360) % 360)); w(51, f(((e.a1 % 360) + 360) % 360)); }
       else if (e.t === 'solid') { w(0, 'SOLID'); common(e); const p = e.p; w(10, f(p[0][0])); w(20, f(p[0][1])); w(30, '0.0'); w(11, f(p[1][0])); w(21, f(p[1][1])); w(31, '0.0'); w(12, f(p[2][0])); w(22, f(p[2][1])); w(32, '0.0'); w(13, f((p[3] || p[2])[0])); w(23, f((p[3] || p[2])[1])); w(33, '0.0'); }
-      else if (e.t === 'text') { w(0, 'TEXT'); common(e); w(10, f(e.p[0])); w(20, f(e.p[1])); w(30, '0.0'); w(40, f(e.h)); w(1, String(e.s).replace(/[\r\n]+/g, ' ').replace(/℄/g, 'CL').replace(/[^\x20-\x7e°±φ≥≤]/g, '?').replace(/φ/g, '%%c').replace(/°/g, '%%d').replace(/±/g, '%%p').replace(/≥/g, '>=').replace(/≤/g, '<=')); if (e.ang) w(50, f(e.ang)); w(41, f(e.wf || 1)); w(7, 'ISO');
+      else if (e.t === 'text') { w(0, 'TEXT'); common(e); w(10, f(e.p[0])); w(20, f(e.p[1])); w(30, '0.0'); w(40, f(e.h)); w(1, String(e.s).replace(/[\r\n]+/g, ' ').replace(/℄/g, 'CL').replace(/[^\x20-\x7e°±φ≥≤]/g, '?').replace(/φ/g, '%%c').replace(/°/g, '%%d').replace(/±/g, '%%p').replace(/≥/g, '>=').replace(/≤/g, '<=')); if (e.ang) w(50, f(e.ang)); w(41, f(e.wf || 1)); w(7, /^T(18|25|35|50|70)$/.test(e.L) ? e.L : 'ISO');
         const h = e.al === 'c' ? 1 : e.al === 'r' ? 2 : 0, v = e.v === 'm' ? 2 : e.v === 't' ? 3 : 0; if (h || v) { w(72, h); w(11, f(e.p[0])); w(21, f(e.p[1])); w(31, '0.0'); if (v) w(73, v); } }
     }));
     w(0, 'ENDSEC'); w(0, 'EOF');
@@ -195,7 +202,10 @@
     const store = { get() { try { return JSON.parse(localStorage.getItem(LS) || 'null'); } catch (e) { return null; } }, set(v) { try { localStorage.setItem(LS, JSON.stringify(v, (k, x) => (k === '_ents' || k === '_k' ? undefined : x))); } catch (e) { } } };
     const newSheet = n => ({ name: n || 'Sheet 1', size: 'A1', title: { client: 'ASSET OWNER', project: 'TIMBER BRIDGE REFURBISHMENT', title1: 'TIMBER BRIDGE REPAIR DETAILS', title2: 'SUBSTRUCTURE / SUPERSTRUCTURE', bridge: '', dwg: 'XXXX-XXXX', rev: 'A', drawn: '', checked: '', designed: '', date: today(), scale: 'AS SHOWN', sheet: '1 OF 1', status: 'PRELIMINARY' }, ents: [], items: [] });
     const bgGet = () => { try { return localStorage.getItem('sc.tdraw.bg') === 'white' ? 'white' : 'black'; } catch (e) { return 'black'; } };   // black (CAD style) unless the user chose white
-    const saved = store.get(), A = { bg: bgGet(), doc: saved && saved.sheets ? saved : { sheets: [newSheet()], cur: 0, hidden: {}, layers: {} }, tool: 'select', sel: [], cam: null, draft: null, place: null, hist: [], fut: [], snap: { end: true, mid: true, grid: true, ortho: false }, lib: 'Piles', curL: 'S-NEW', rib: 'home', cursor: [0, 0], clip: null };
+    const saved = store.get(), A = { bg: bgGet(), doc: saved && saved.sheets ? saved : { sheets: [newSheet()], cur: 0, hidden: {}, layers: {} }, tool: 'select', sel: [], cam: null, draft: null, place: null, hist: [], fut: [], snap: { end: true, mid: true, grid: true, ortho: false }, lib: 'Piles', curL: 'L35', rib: 'home', cursor: [0, 0], clip: null };
+    // drawings saved before the MRWA layers: move every object onto its MRWA layer
+    (A.doc.sheets || []).forEach(sh => { (sh.ents || []).forEach(e => D().mrwa(e)); (sh.items || []).forEach(it => { (it.ents || []).forEach(e => D().mrwa(e)); }); });
+    if (A.doc.hidden) Object.keys(A.doc.hidden).forEach(k => { if (D().LEGACY[k]) { A.doc.hidden[D().LEGACY[k]] = A.doc.hidden[k]; delete A.doc.hidden[k]; } });
     const SH = () => A.doc.sheets[A.doc.cur] || A.doc.sheets[0];
     const persist = () => store.set(A.doc);
     const snapH = () => { A.hist.push(JSON.stringify(A.doc, (k, x) => (k === '_ents' || k === '_k' ? undefined : x))); if (A.hist.length > 80) A.hist.shift(); A.fut = []; };
@@ -243,6 +253,9 @@
     // standard drawings traced from the scanned sheets (tdx/index.json + one file per sheet, loaded on demand)
     const STD = G.SC_TDX || (G.SC_TDX = { idx: null, busy: false, err: false, files: {} });
     const STD_CATS = ['Piles', 'Halfcaps', 'Stringers', 'Deck & overlay', 'Abutments', 'Wing walls', 'Sheeting', 'Barrier', 'Bracing', 'Bearings', 'General'];
+    // parametric (editable) versions of a standard sheet: defs whose reference lists that sheet ('PN30-2103 / 2104' covers both)
+    const refList = r => { const m = /^(\w+-)/.exec(r || ''), pre = m ? m[1] : ''; return String(r || '').split('/').map(x => x.trim()).filter(Boolean).map(x => (/-/.test(x) ? x : pre + x)); };
+    const parFor = sheet => D().DEF.filter(d => refList(d.ref).includes(sheet));
     function stdLoad() { if (STD.idx || STD.busy) return; STD.busy = true; fetch('tdx/index.json').then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(j => { STD.idx = j; }).catch(() => { STD.err = true; }).finally(() => { STD.busy = false; refreshSide(); }); }
     function stdSheet(f) { if (STD.files[f]) return Promise.resolve(STD.files[f]); return fetch('tdx/' + f).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(j => (STD.files[f] = j)); }
     function libHTML() {
@@ -254,7 +267,7 @@
         if (!cats.includes(A.slib)) A.slib = cats[0];
         const sheets = STD.idx.map((s, si) => [s, si]).filter(([s]) => s.cat === A.slib).sort((a, b) => String(a[0].sheet).localeCompare(String(b[0].sheet)));
         return head + `<div class="td-libh">${cats.map(c => `<button class="td-cat" data-act="td-scat" data-v="${esc(c)}" aria-pressed="${A.slib === c}">${esc(c)}</button>`).join('')}</div>
-          <div class="td-libl">${sheets.map(([s, si]) => `<div class="td-shh"><b>${esc(s.sheet)}</b><span>${esc(s.title)}</span></div>` + s.d.map((d, di) => `<button class="td-li td-std ${A.place && A.place.src === si + ':' + di ? 'on' : ''}" data-act="td-std" data-s="${si}" data-i="${di}" title="${esc(d.n)} · ${esc(s.sheet)}"><span class="td-th"><span class="td-thm" style="${(() => { const n = s.d.length, u = `url('tdx/th/${esc(s.th)}')`, sz = `${n * 100}% 100%`, ps = `${n > 1 ? (di / (n - 1)) * 100 : 0}% 0`; return `-webkit-mask-image:${u};mask-image:${u};-webkit-mask-size:${sz};mask-size:${sz};-webkit-mask-position:${ps};mask-position:${ps}`; })()}"></span></span><b>${esc(d.n)}</b><span class="muted small">${esc(s.sheet)} · ${Math.round(d.w)} × ${Math.round(d.h)} mm</span></button>`).join('')).join('')}</div>`;
+          <div class="td-libl">${sheets.map(([s, si]) => `<div class="td-shh"><b>${esc(s.sheet)}</b><span>${esc(s.title)}</span>${parFor(s.sheet).map(d => `<button class="td-parb" data-act="td-pick" data-v="${esc(d.id)}" title="${esc(T('Editable version — sizes, sections and numbers can be changed', 'แบบแก้ไขค่าได้ — เปลี่ยนขนาด หน้าตัด และจำนวนได้') + ': ' + d.name)}">⚙ ${T('Editable version', 'แบบแก้ไขค่าได้')}</button>`).join('')}</div>` + s.d.map((d, di) => `<button class="td-li td-std ${A.place && A.place.src === si + ':' + di ? 'on' : ''}" data-act="td-std" data-s="${si}" data-i="${di}" title="${esc(d.n)} · ${esc(s.sheet)}"><span class="td-th"><span class="td-thm" style="${(() => { const n = s.d.length, u = `url('tdx/th/${esc(s.th)}')`, sz = `${n * 100}% 100%`, ps = `${n > 1 ? (di / (n - 1)) * 100 : 0}% 0`; return `-webkit-mask-image:${u};mask-image:${u};-webkit-mask-size:${sz};mask-size:${sz};-webkit-mask-position:${ps};mask-position:${ps}`; })()}"></span></span><b>${esc(d.n)}</b><span class="muted small">${esc(s.sheet)} · ${Math.round(d.w)} × ${Math.round(d.h)} mm</span></button>`).join('')).join('')}</div>`;
       }
       const cats = [...new Set(D().DEF.map(d => d.cat))];
       return head + `<div class="td-libh">${cats.map(c => `<button class="td-cat" data-act="td-cat" data-v="${esc(c)}" aria-pressed="${A.lib === c}">${esc(c)}</button>`).join('')}</div>
@@ -266,13 +279,13 @@
       const layers = Object.keys(D().LAYERS).map(k => [k, k]);
       let h = '';
       if (one && one.k === 'i') { const it = sh.items[one.i], d = D().DEF.find(q => q.id === it.det); if (it && d) { h = `<div class="cn-ph"><b>${esc(d.name)}</b><span class="muted small">${T('After drawing', 'อ้างอิงแบบ')} ${esc(d.ref)}</span></div>` + d.params.map(q => fld('p.' + q.k, esc(q.n), it.params[q.k] != null ? it.params[q.k] : q.v, q.opts ? 'sel' : q.num ? 'num' : 'text', q.opts && q.opts.map(o => [o, String(o).replace(/(\d+)(UC|UB|PFC)(\d*)/, '$1 $2 $3').trim()]))).join('') + fld('it.s', T('Size factor', 'ตัวคูณขนาด'), it.s || 1, 'num') + fld('it.rd', T('Rotation (°)', 'มุมหมุน (°)'), Math.round((it.r || 0) * 180 / PI), 'num') + `<p class="cn-note">${esc(d.info || '')} ${T('Each view keeps its drawing scale; the size factor scales the whole detail on the sheet.', 'แต่ละมุมมองคงมาตราส่วนเดิม ตัวคูณขนาดย่อ/ขยายรายละเอียดทั้งหมดบนแผ่น')}</p><div class="cn-btns"><button class="btn btn-ghost xs" data-act="td-rb" data-c="explode">${T('Explode to editable lines', 'แยกเป็นเส้นแก้ไขได้')}</button><button class="btn btn-ghost xs" data-act="td-rb" data-c="del">${T('Delete', 'ลบ')}</button></div>`; }
-        else if (it && it.det === '__import') { h = `<div class="cn-ph"><b>${esc(it.name || T('Imported drawing', 'แบบที่นำเข้า'))}</b><span class="muted small">${it.ref ? T('From standard drawing', 'จากแบบมาตรฐาน') + ' ' + esc(it.ref) : ''}</span></div>` + fld('it.s', T('Size factor', 'ตัวคูณขนาด'), it.s || 1, 'num') + fld('it.rd', T('Rotation (°)', 'มุมหมุน (°)'), Math.round((it.r || 0) * 180 / PI), 'num') + `<p class="cn-note">${it.ref ? T('Traced from the standard drawing at its printed size. Explode it to edit the lines and text.', 'คัดลอกจากแบบมาตรฐานตามขนาดที่พิมพ์ แยกส่วนเพื่อแก้ไขเส้นและข้อความ') : ''}</p><div class="cn-btns"><button class="btn btn-ghost xs" data-act="td-rb" data-c="explode">${T('Explode to editable lines', 'แยกเป็นเส้นแก้ไขได้')}</button><button class="btn btn-ghost xs" data-act="td-rb" data-c="del">${T('Delete', 'ลบ')}</button></div>`; } }
+        else if (it && it.det === '__import') { h = `<div class="cn-ph"><b>${esc(it.name || T('Imported drawing', 'แบบที่นำเข้า'))}</b><span class="muted small">${it.ref ? T('From standard drawing', 'จากแบบมาตรฐาน') + ' ' + esc(it.ref) : ''}</span></div>` + fld('it.s', T('Size factor', 'ตัวคูณขนาด'), it.s || 1, 'num') + fld('it.rd', T('Rotation (°)', 'มุมหมุน (°)'), Math.round((it.r || 0) * 180 / PI), 'num') + `<p class="cn-note">${it.ref ? T('Traced from the standard drawing at its printed size. Explode it to edit the lines and text.', 'คัดลอกจากแบบมาตรฐานตามขนาดที่พิมพ์ แยกส่วนเพื่อแก้ไขเส้นและข้อความ') : ''}</p>${parFor(it.ref).length ? `<div class="cn-ph"><b>${T('Editable version', 'แบบแก้ไขค่าได้')}</b></div><p class="cn-note">${T('Swap this traced detail for the parametric version of the same standard drawing: section sizes, plate thicknesses, heights, diameters and numbers of bolts, piles or bars can then be changed and the drawing, dimensions and labels follow.', 'เปลี่ยนเป็นแบบพารามิเตอร์ของแบบมาตรฐานเดียวกัน แล้วแก้ขนาดหน้าตัด ความหนา ความสูง เส้นผ่านศูนย์กลาง และจำนวนสลักเกลียว เสาเข็ม หรือเหล็กเสริมได้ โดยแบบ มิติ และป้ายกำกับจะเปลี่ยนตาม')}</p><div class="cn-btns">${parFor(it.ref).map(d => `<button class="btn btn-ghost xs" data-act="td-par" data-v="${esc(d.id)}">${esc(d.name)}</button>`).join('')}</div>` : ''}<div class="cn-btns"><button class="btn btn-ghost xs" data-act="td-rb" data-c="explode">${T('Explode to editable lines', 'แยกเป็นเส้นแก้ไขได้')}</button><button class="btn btn-ghost xs" data-act="td-rb" data-c="del">${T('Delete', 'ลบ')}</button></div>`; } }
       else if (one && one.k === 'e') { const e = sh.ents[one.i]; if (e) { h = `<div class="cn-ph"><b>${{ line: T('Line', 'เส้น'), pl: T('Polyline', 'เส้นต่อเนื่อง'), circle: T('Circle', 'วงกลม'), arc: T('Arc', 'ส่วนโค้ง'), text: T('Text', 'ข้อความ'), hatch: T('Hatch', 'แรเงา'), solid: T('Solid', 'ทึบ') }[e.t] || e.t}</b></div>` + fld('e.L', T('Layer', 'เลเยอร์'), e.L, 'sel', layers);
         if (e.t === 'text') h += fld('e.s', T('Text', 'ข้อความ'), e.s, 'text') + fld('e.h', T('Height (mm)', 'ความสูง (มม.)'), e.h, 'num') + fld('e.ang', T('Angle (°)', 'มุม (°)'), e.ang || 0, 'num') + fld('e.al', T('Align', 'จัดแนว'), e.al || 'l', 'sel', [['l', T('Left', 'ซ้าย')], ['c', T('Centre', 'กลาง')], ['r', T('Right', 'ขวา')]]);
         if (e.t === 'line') h += fld('e.a0', 'X1', e.a[0].toFixed(2), 'num') + fld('e.a1', 'Y1', e.a[1].toFixed(2), 'num') + fld('e.b0', 'X2', e.b[0].toFixed(2), 'num') + fld('e.b1', 'Y2', e.b[1].toFixed(2), 'num');
         if (e.t === 'circle') h += fld('e.r', T('Radius', 'รัศมี'), e.r, 'num');
         if (e.t === 'hatch') h += fld('e.pat', T('Pattern', 'ลาย'), e.pat, 'sel', [['ansi31', 'ANSI31 (steel / section)'], ['ansi37', 'ANSI37 (cross)'], ['conc', T('Concrete', 'คอนกรีต')], ['earth', T('Earth', 'ดิน')]]) + fld('e.sc', T('Pattern scale', 'มาตราส่วนลาย'), e.sc || 1, 'num');
-        h += fld('e.lt', T('Linetype', 'ชนิดเส้น'), e.lt || '', 'sel', [['', T('By layer', 'ตามเลเยอร์')], ['CONTINUOUS', 'CONTINUOUS'], ['DASHED', 'DASHED'], ['HIDDEN', 'HIDDEN'], ['CENTER', 'CENTER'], ['PHANTOM', 'PHANTOM']]); } }
+        h += fld('e.lt', T('Linetype', 'ชนิดเส้น'), e.lt || '', 'sel', [['', T('By layer', 'ตามเลเยอร์')]].concat(LTYPES.map(k => [k, k]))); } }
       else if (A.sel.length > 1) h = `<div class="cn-ph"><b>${A.sel.length} ${T('objects selected', 'วัตถุที่เลือก')}</b></div>` + fld('m.L', T('Move to layer', 'ย้ายไปเลเยอร์'), '', 'sel', [['', '—']].concat(layers));
       else { const t = sh.title || {}; h = `<div class="cn-ph"><b>${T('Sheet', 'แผ่นงาน')} — ${esc(sh.name)}</b><span class="muted small">${sh.size} · ${(sh.items || []).length} ${T('details', 'รายละเอียด')} · ${(sh.ents || []).length} ${T('objects', 'วัตถุ')}</span></div>` +
         [['name', T('Sheet name', 'ชื่อแผ่น')], ['t.client', T('Client / asset owner', 'เจ้าของทรัพย์สิน')], ['t.project', T('Project', 'โครงการ')], ['t.title1', T('Title line 1', 'ชื่อแบบบรรทัด 1')], ['t.title2', T('Title line 2', 'ชื่อแบบบรรทัด 2')], ['t.bridge', T('Bridge No.', 'หมายเลขสะพาน')], ['t.road', T('Road / location', 'ถนน / ที่ตั้ง')], ['t.dwg', T('Drawing No.', 'เลขที่แบบ')], ['t.rev', T('Revision', 'ฉบับแก้ไข')], ['t.designed', T('Designed', 'ออกแบบ')], ['t.drawn', T('Drawn', 'เขียนแบบ')], ['t.checked', T('Checked', 'ตรวจสอบ')], ['t.date', T('Date', 'วันที่')], ['t.sheet', T('Sheet', 'แผ่นที่')], ['t.status', T('Status stamp', 'สถานะ')]].map(([k, l]) => fld(k, l, k === 'name' ? sh.name : t[k.slice(2)], 'text')).join(''); }
@@ -342,11 +355,11 @@
         if (A.tool === 'rect' || A.tool === 'circle' || A.tool === 'leader') { if (!A.draftPts) A.draftPts = [sp]; else { const a = A.draftPts[0];
           if (A.tool === 'rect') addEnt({ t: 'pl', p: [a, [sp[0], a[1]], sp, [a[0], sp[1]]], closed: true });
           else if (A.tool === 'circle') addEnt({ t: 'circle', c: a, r: Math.hypot(sp[0] - a[0], sp[1] - a[1]) });
-          else { const right = sp[0] >= a[0]; snapH(); const ang = Math.atan2(sp[1] - a[1], sp[0] - a[0]); SH().ents.push({ t: 'pl', p: [a, sp, [sp[0] + (right ? 3 : -3), sp[1]]], closed: false, L: 'S-TEXT' }, { t: 'solid', p: [a, [a[0] + 2.2 * Math.cos(ang) - 0.7 * Math.sin(ang), a[1] + 2.2 * Math.sin(ang) + 0.7 * Math.cos(ang)], [a[0] + 2.2 * Math.cos(ang) + 0.7 * Math.sin(ang), a[1] + 2.2 * Math.sin(ang) - 0.7 * Math.cos(ang)]], L: 'S-TEXT' }, { t: 'text', p: [sp[0] + (right ? 4.2 : -4.2), sp[1] - 1.1], s: T('NOTE TEXT', 'ข้อความ'), h: 2.2, al: right ? 'l' : 'r', v: 'b', ang: 0, L: 'S-TEXT' }); A.sel = [{ k: 'e', i: SH().ents.length - 1 }]; persist(); setTool('select'); refreshSide(); focusText(); }
+          else { snapH(); const Bd = new (D().Builder)(), v = Bd.view(1, 0, 0); v.leader(a[0], a[1], sp[0] - a[0], sp[1] - a[1], T('NOTE TEXT', 'ข้อความ')); Bd.E.forEach(q => SH().ents.push(D().mrwa(q))); A.sel = [{ k: 'e', i: SH().ents.length - 1 }]; persist(); setTool('select'); refreshSide(); focusText(); }
           A.draftPts = null; A.draft = null; redraw(); refreshSide(); } return; }
-        if (A.tool === 'text') { addEnt({ t: 'text', p: sp, s: T('TEXT', 'ข้อความ'), h: 2.5, al: 'l', v: 'b', ang: 0, L: 'S-TEXT' }); A.sel = [{ k: 'e', i: SH().ents.length - 1 }]; setTool('select'); refreshSide(); redraw(); focusText(); return; }
-        if (A.tool === 'dim') { (A.draftPts = A.draftPts || []).push(sp); if (A.draftPts.length === 3) { const [a, b, c] = A.draftPts, Bd = new (D().Builder)(), v = Bd.view(1, 0, 0), dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, off = ((c[0] - a[0]) * -dy + (c[1] - a[1]) * dx) / L; v.dim(a[0], a[1], b[0], b[1], off, prompt1(String(Math.round(L * (A.dimScale || 1))))); snapH(); Bd.E.forEach(q => SH().ents.push(q)); persist(); A.draftPts = null; A.draft = null; redraw(); refreshSide(); } return; }
-        if (A.tool === 'hatch') { const sh = SH(); const k = sh.ents.findIndex(q => (q.t === 'pl' && q.closed || q.t === 'circle') && (q.t === 'circle' ? Math.hypot(p[0] - q.c[0], p[1] - q.c[1]) < q.r : inPoly(p, q.p))); if (k < 0) { toast(T('Click inside a closed polyline, rectangle or circle.', 'คลิกภายในรูปปิด'), 'bad'); return; } const q = sh.ents[k], P = q.t === 'circle' ? Array.from({ length: 48 }, (_, i) => [q.c[0] + q.r * Math.cos(2 * PI * i / 48), q.c[1] + q.r * Math.sin(2 * PI * i / 48)]) : q.p.slice(); addEnt({ t: 'hatch', p: P, pat: 'ansi31', sc: 1, L: 'S-HATCH' }); redraw(); return; }
+        if (A.tool === 'text') { addEnt({ t: 'text', p: sp, s: T('TEXT', 'ข้อความ'), h: 2.5, al: 'l', v: 'b', ang: 0, L: 'T25' }); A.sel = [{ k: 'e', i: SH().ents.length - 1 }]; setTool('select'); refreshSide(); redraw(); focusText(); return; }
+        if (A.tool === 'dim') { (A.draftPts = A.draftPts || []).push(sp); if (A.draftPts.length === 3) { const [a, b, c] = A.draftPts, Bd = new (D().Builder)(), v = Bd.view(1, 0, 0), dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1, off = ((c[0] - a[0]) * -dy + (c[1] - a[1]) * dx) / L; v.dim(a[0], a[1], b[0], b[1], off, prompt1(String(Math.round(L * (A.dimScale || 1))))); snapH(); Bd.E.forEach(q => SH().ents.push(D().mrwa(q))); persist(); A.draftPts = null; A.draft = null; redraw(); refreshSide(); } return; }
+        if (A.tool === 'hatch') { const sh = SH(); const k = sh.ents.findIndex(q => (q.t === 'pl' && q.closed || q.t === 'circle') && (q.t === 'circle' ? Math.hypot(p[0] - q.c[0], p[1] - q.c[1]) < q.r : inPoly(p, q.p))); if (k < 0) { toast(T('Click inside a closed polyline, rectangle or circle.', 'คลิกภายในรูปปิด'), 'bad'); return; } const q = sh.ents[k], P = q.t === 'circle' ? Array.from({ length: 48 }, (_, i) => [q.c[0] + q.r * Math.cos(2 * PI * i / 48), q.c[1] + q.r * Math.sin(2 * PI * i / 48)]) : q.p.slice(); addEnt({ t: 'hatch', p: P, pat: 'ansi31', sc: 1, L: 'L18' }); redraw(); return; }
       });
       svg.addEventListener('pointermove', e => {
         const p = toModel(e), xy = $('#tdXY'); if (xy) xy.textContent = 'X ' + p[0].toFixed(1) + '  Y ' + p[1].toFixed(1) + ' mm';
@@ -359,7 +372,7 @@
           else if (A.tool === 'pl') A.draft = [{ t: 'pl', p: A.draftPts.concat([sp]), closed: false, L: A.curL }];
           else if (A.tool === 'rect') A.draft = [{ t: 'pl', p: [a, [sp[0], a[1]], sp, [a[0], sp[1]]], closed: true, L: A.curL }];
           else if (A.tool === 'circle') A.draft = [{ t: 'circle', c: a, r: Math.hypot(sp[0] - a[0], sp[1] - a[1]), L: A.curL }];
-          else if (A.tool === 'dim') A.draft = A.draftPts.length === 1 ? [{ t: 'line', a, b: sp, L: 'S-DIM' }] : [{ t: 'line', a, b: A.draftPts[1], L: 'S-DIM' }, { t: 'line', a: A.draftPts[1], b: sp, L: 'S-DIM' }];
+          else if (A.tool === 'dim') A.draft = A.draftPts.length === 1 ? [{ t: 'line', a, b: sp, L: 'DIMENSION' }] : [{ t: 'line', a, b: A.draftPts[1], L: 'DIMENSION' }, { t: 'line', a: A.draftPts[1], b: sp, L: 'DIMENSION' }];
           redraw(); return; }
         if (A.tool !== 'select') { snapPoint(p); redraw(); }
       });
@@ -379,7 +392,7 @@
     function rotSel() { if (!A.sel.length) return; snapH(); const sh = SH(), E = A.sel.flatMap(s => (s.k === 'i' ? itemEnts(sh.items[s.i]) : [sh.ents[s.i]])), b = bboxOf(E), cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2;
       A.sel.forEach(s => { if (s.k === 'i') { const it = sh.items[s.i], dx = it.x - cx, dy = it.y - cy; it.x = cx - dy; it.y = cy + dx; it.r = (it.r || 0) + PI / 2; } else { const e = transform(sh.ents[s.i], { x: -cx, y: -cy, s: 1, r: 0 }); sh.ents[s.i] = transform(e, { x: cx, y: cy, s: 1, r: PI / 2 }); } }); persist(); redraw(); refreshSide(); }
     async function exportPDF() {
-      const sh = SH(), [W, H] = SIZES[sh.size] || SIZES.A1, svgS = svgStandalone(A.doc, sh, false).replace(/currentColor/g, '#111');
+      const sh = SH(), [W, H] = SIZES[sh.size] || SIZES.A1, svgS = svgStandalone(A.doc, sh, false, true).replace(/currentColor/g, '#111');
       try {
         await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
         const img = new Image(), url = URL.createObjectURL(new Blob([svgS], { type: 'image/svg+xml' })); await new Promise((ok, bad) => { img.onload = ok; img.onerror = bad; img.src = url; });
@@ -404,7 +417,7 @@
       if (c === 'bg') { A.bg = v === 'black' ? 'black' : 'white'; try { localStorage.setItem('sc.tdraw.bg', A.bg); } catch (e) { } redraw(); ribRefresh(); return; }
       if ((c === 'dxf' || c === 'pdf') && G.SC_FEAT_OFF && G.SC_FEAT_OFF(c)) return;
       if (c === 'dxf') { const s = dxf(A.doc, SH()); saveFile(fname('dxf'), new Blob([s], { type: 'application/dxf' })); return; }
-      if (c === 'svg') { saveFile(fname('svg'), new Blob([svgStandalone(A.doc, SH(), false).replace(/currentColor/g, '#111')], { type: 'image/svg+xml' })); return; }
+      if (c === 'svg') { saveFile(fname('svg'), new Blob([svgStandalone(A.doc, SH(), false, true).replace(/currentColor/g, '#111')], { type: 'image/svg+xml' })); return; }
       if (c === 'pdf') { exportPDF(); return; }
     }
     // first free spot on a sheet for an item (top-left first, clear of other details and the title block)
@@ -432,6 +445,10 @@
       if (a === 'td-std') { const s = STD.idx && STD.idx[+b.dataset.s], di = +b.dataset.i; if (!s) return true; b.classList.add('busy');
         stdSheet(s.f).then(j => { const d = j.details[di]; if (!d) return; A.place = { det: '__import', ents: d.ents, name: d.name, ref: j.sheet, src: b.dataset.s + ':' + di, x: 300, y: 300, s: 1, r: 0 }; A.placeOff = [d.w / 2, d.h / 2]; A.tool = 'select'; refreshSide(); setHint(); redraw(); })
           .catch(() => toast(T('That drawing could not be loaded.', 'โหลดแบบนี้ไม่ได้'), 'bad')); return true; }
+      if (a === 'td-par') { const one = A.sel[0], sh = SH(), it = one && one.k === 'i' && sh.items[one.i], d = D().DEF.find(q => q.id === b.dataset.v); if (!it || !d) return true;
+        snapH(); const ob = bboxOf(itemEnts(it)), p = {}; d.params.forEach(q => { p[q.k] = q.v; }); const ni = { det: d.id, params: p, x: 0, y: 0, s: it.s || 1, r: it.r || 0 }, nb = bboxOf(itemEnts(ni));
+        ni.x = (ob.x0 + ob.x1) / 2 - (nb.x0 + nb.x1) / 2; ni.y = (ob.y0 + ob.y1) / 2 - (nb.y0 + nb.y1) / 2; { const [W, H] = SIZES[sh.size] || SIZES.A1, w = nb.x1 - nb.x0, h = nb.y1 - nb.y0; ni.x = min(max(ni.x, 15 - nb.x0), max(15 - nb.x0, W - 15 - w - nb.x0)); ni.y = min(max(ni.y, 15 - nb.y0), max(15 - nb.y0, H - 15 - h - nb.y0)); } sh.items[one.i] = ni; persist(); redraw(); refreshSide();
+        toast(T('Replaced with the editable version — change its values in Properties.', 'เปลี่ยนเป็นแบบแก้ไขค่าได้แล้ว — แก้ค่าในแผงคุณสมบัติ'), 'ok'); return true; }
       if (a === 'td-sheet') { A.doc.cur = +b.dataset.v; A.sel = []; A.cam = null; persist(); redraw(); refreshSide(); return true; }
       if (a === 'td-curl') { A.curL = b.dataset.v; refreshSide(); return true; }
       return false;

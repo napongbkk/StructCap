@@ -85,9 +85,9 @@
     // channel, shim, threaded rod
     pfcSec(v, 0, yT, s, 1);
     v.rect(0, yB - 10, 130, 10, 'S-NEW'); v.line(b, yB - 5, 130, yB - 5, 'S-NEW');
-    v.line(g - 10, yT - tf - 45, g - 10, fy, 'S-BOLT'); v.line(g + 10, yT - tf - 45, g + 10, fy, 'S-BOLT'); v.nut(g, yT - tf, 0, -1, 20);
-    if (o.rhs) { rhsSec(v, 50, -25, 100, 50, 5); v.line(g - 10, 0, g - 10, -50, 'S-HIDDEN'); v.weld(100, -50, 14, 9, { size: '6', both: true, len: '50-300' }); }
-    else v.nut(g, 0, 0, -1, 20);
+    const rr = FC.RD / 2; v.line(g - rr, yT - tf - 45, g - rr, fy, 'S-BOLT'); v.line(g + rr, yT - tf - 45, g + rr, fy, 'S-BOLT'); v.nut(g, yT - tf, 0, -1, FC.RD);
+    if (o.rhs) { rhsSec(v, 50, -25, 100, 50, 5); v.line(g - rr, 0, g - rr, -50, 'S-HIDDEN'); v.weld(100, -50, 14, 9, { size: '6', both: true, len: '50-300' }); }
+    else v.nut(g, 0, 0, -1, FC.RD);
     // trimmed pile face under the channel
     v.line(70, yB - 10, 70, yB - 135, 'S-EXIST');
     if (cl) {
@@ -98,7 +98,7 @@
       v.dim(-100, c1 + 70, 0, c1 + 70, 0, '100'); v.line(-100, c1 + 85, -100, yc + 100, 'S-DIM'); v.line(0, c1 + 85, 0, yT + 10, 'S-DIM');
       dimV(v, -200, yc + 80, c1, '35', 'TYP', { ext1: -100, ext2: -160 }); v.dim(-200, c0, -200, c1, 0, '230'); v.line(-160, c0, -210, c0, 'S-DIM');
       v.dim(b + 40, yc - 60, b + 40, yc + 60, 0, '120'); v.line(w + 50, yc - 60, b + 48, yc - 60, 'S-DIM'); v.line(w + 50, yc + 60, b + 48, yc + 60, 'S-DIM');
-      v.leader(-100, yc + 80 + 10, -14, 22, 'φ20 THREADED RODS\nWITH 65x5FLx65\nWASHER TO TIMBER\nFACE');
+      v.leader(-100, yc + 80 + 10, -14, 22, 'φ' + FC.RD + ' THREADED RODS\nWITH 65x5FLx65\nWASHER TO TIMBER\nFACE');
       v.leader(w + 40, yc + 60, 18, 15, '2 - M20 BOLTS (SITE DRILL\nφ22 HOLES IN PFC)');
       v.leader(-100, c0, -16, -2, '150x100x10UA\nCLEAT');
       v.leader(-170, yc + 20, -12, 4, 'EXISTING\nTIMBER PILE', { dot: true });
@@ -141,7 +141,8 @@
   function lab(v, x, y, sx, sy, s, opt) { const a = v.P(x, y); (/\[/.test(s) ? leadB : (vv, ...r) => vv.leader(...r))(v, x, y, sx - a[0], sy - a[1], s, opt); }
   // retaining-earth hatch: vertical line with oblique ticks on the left (model coords)
   function earth(v, x, y0, y1) { v.line(x, y0, x, y1, 'S-GROUND'); for (let y = y0 + 20; y < y1 - 40; y += 55) v.line(x, y, x - 40, y + 40, 'S-GROUND'); }
-  const FC = { W: 250, D: 300, SD: 400, DK: 100 };
+  // fullcap width / depth, stringer depth, decking; RD / RS rod dia. and max. spacing, BK bearing bracket UC, UB widening stringer (set per sheet by compose)
+  const FC = { W: 250, D: 300, SD: 400, DK: 100, RD: 20, RS: 900, BK: '250UC90', UB: '360UB45' };
 
   // ================================================================== SECTION through an abutment fullcap at a TIMBER pile (1:20)
   // c: { cleat: 'UA' | 'EA' | null, rhs, urod, ea (2321 rod + curved washer), tag ('1'/'2'), sheet (label the sheeting), typ }
@@ -179,7 +180,7 @@
     if (c.sheet) { lab(v, xs0, -60, pl, ly - 4, 'EXISTING TIMBER\nSHEETING'); ly -= 10; }
     if (c.rhs) { lab(v, 20, -25, pl, ly - 4, 'RHS STEEL\nPACKER'); ly -= 10; }
     if (c.cleat) { lab(v, -150, yc + 90, pl, ly - 4, 'NOTCH PILE\nTO SUIT'); lab(v, -150, yc - 100, pl, ly - 20, '150x100x10' + c.cleat + '\nCLEAT'); }
-    else if (!c.ea) lab(v, xpL - 20, yr, pl, ly - 6, 'φ20 \'U\' THREADED\nROD (TYP)');
+    else if (!c.ea) lab(v, xpL - 20, yr, pl, ly - 6, 'φ' + FC.RD + ' \'U\' THREADED\nROD (TYP)');
     lab(v, 4, yc - 30, pr, v.P(0, yc - R * 0.6)[1], 'PROPOSED PFC FULLCAP\nSTRENGTHENING' + (c.typ ? ' (TYP)' : ''));
     lab(v, 70, yB - 650, pr, v.P(0, yB - 650)[1], 'EXISTING TIMBER\nPILE');
   }
@@ -197,15 +198,16 @@
     // proposed channel, packers, rods
     let XW = XL, xcol = 0;
     if (c.widen) { xcol = XL - 750; XW = xcol - 250; const xg = XL - 380; pfcElevH(v, XW, xg, yT, s, 'S-NEW'); v.line(XW, yT, XW, yT - d, 'S-NEW'); v.brk(xg, yT - d - 20, xg, yT + 20, 'S-NEW'); pfcElevH(v, xg + 70, XR, yT, s, 'S-NEW'); v.brk(xg + 70, yT - d - 20, xg + 70, yT + 20, 'S-NEW');
-      const ub = SEC['360UB45']; v.rect(xcol - 150, yT, 300, fD - 12 - yT, 'S-NEW'); v.line(xcol - 150 + s.tf, yT, xcol - 150 + s.tf, fD - 12, 'S-NEW'); v.line(xcol + 150 - s.tf, yT, xcol + 150 - s.tf, fD - 12, 'S-NEW'); v.rect(xcol - 160, fD - 12, 320, 12, 'S-NEW'); iSec(v, xcol, fD + ub.d / 2, ub, 0, 'S-NEW');
+      const ub = SEC[FC.UB]; v.rect(xcol - 150, yT, 300, fD - 12 - yT, 'S-NEW'); v.line(xcol - 150 + s.tf, yT, xcol - 150 + s.tf, fD - 12, 'S-NEW'); v.line(xcol + 150 - s.tf, yT, xcol + 150 - s.tf, fD - 12, 'S-NEW'); v.rect(xcol - 160, fD - 12, 320, 12, 'S-NEW'); iSec(v, xcol, fD + ub.d / 2, ub, 0, 'S-NEW');
       [-1, 1].forEach(kk => { v.fill([[xcol + kk * 45 - 10, fD - 12], [xcol + kk * 45 + 10, fD - 12], [xcol + kk * 45 + 10, fD + ub.tf + 15], [xcol + kk * 45 - 10, fD + ub.tf + 15]], 'S-BOLT'); v.line(xcol + kk * 150, yT - s.tf, xcol + kk * 150, yT - d + s.tf, 'S-NEW'); v.line(xcol + kk * 140, yT - s.tf, xcol + kk * 140, yT - d + s.tf, 'S-NEW'); });
       v.rect(-D / 2 - 85, yT - d + s.tf, 10, d - 2 * s.tf, 'S-NEW'); }
     else { pfcElevH(v, XL, XR, yT, s, 'S-NEW'); v.brk(XL, yT - d - 20, XL, yT + 20, 'S-NEW'); } v.brk(XR, yT - d - 20, XR, yT + 20, 'S-NEW');
     const rods = c.rods || [-790, -240, 600, 1115, 1920].map(x => x * k);
+    for (let i = 0; !c.rods && i + 1 < rods.length; i++) { const gp = rods[i + 1] - rods[i]; if (gp > FC.RS + 0.5) { const n = Math.ceil(gp / FC.RS), a = rods[i]; rods.splice(i + 1, 0, ...Array.from({ length: n - 1 }, (_, j) => a + gp * (j + 1) / n)); i += n - 1; } } // rods at RS crs max
     if (c.rhs) { const cuts = [XL].concat(rods.slice(0, -1).map((x, i) => (x + rods[i + 1]) / 2), [XR]); cuts.forEach((x, i) => { if (i + 1 < cuts.length) v.rect(x + (i ? 15 : 0), -50, cuts[i + 1] - x - (i ? 15 : 0) - (i + 2 < cuts.length ? 15 : 0), 50, 'S-NEW'); }); }
     rods.forEach(x => { v.line(x, yT - tf - 20, x, fD + 25, 'S-BOLT'); v.line(x - 32, fD, x + 32, fD, 'S-BOLT'); v.fill([[x - 14, fD + 2], [x + 14, fD + 2], [x + 14, fD + 20], [x - 14, fD + 20]], 'S-BOLT'); v.fill([[x - 14, yT - tf], [x + 14, yT - tf], [x + 14, yT - tf - 18], [x - 14, yT - tf - 18]], 'S-BOLT'); });
     // piles (timber), shims, cleats / U rods
-    if (c.steel) { const u = SEC[c.uc] || SEC['200UC52'], ub = SEC['250UC90']; piles.forEach(xp => {
+    if (c.steel) { const u = SEC[c.uc] || SEC['200UC52'], ub = SEC[FC.BK]; piles.forEach(xp => {
       iSec(v, xp, yT - d - ub.d / 2, ub, 0, 'S-NEW'); iElevFlange(v, xp, yT - d - ub.d - 760, yT - d - ub.d, u, 'S-NEW'); v.brk(xp - u.b / 2, yT - d - ub.d - 760, xp + u.b / 2, yT - d - ub.d - 760, 'S-NEW');
       v.rect(xp - u.b / 2, yT - d, u.b, fD - yT + d, 'S-HIDDEN'); v.rect(xp - u.b / 2, fD, u.b, 20, 'S-NEW'); v.line(xp - u.tw / 2, fD, xp - u.tw / 2, fD + 20, 'S-HIDDEN'); v.line(xp + u.tw / 2, fD, xp + u.tw / 2, fD + 20, 'S-HIDDEN');
       const pk = [[xp - 125, yT - d], [xp + 125, yT - d], [xp + 125, yT], [xp - 125, yT]]; v.pl(pk, true, 'S-NEW'); v.hatch(pk, 'ansi31', 'S-HATCH', 2.5);
@@ -236,8 +238,8 @@
     else lab(v, r.sx[0] - 60, (r.yS + r.fD) / 2, xl - 4, top + 13, 'EXISTING TIMBER\nSTRINGER (TYP)', { dot: true });
     if (c.widen) lab(v, r.XL + 100, r.fD, xl - 2, top + 22, 'EXISTING\nTIMBER\nFULLCAP'); else lab(v, r.XL + 150, r.fD, xl - 4, Q(0, r.fD)[1] + 9, 'EXISTING TIMBER\nFULLCAP');
     { const xk = c.scl ? r.sx[2] : r.sx[1]; lab(v, xk + 300, r.yD, Q(xk, 0)[0] + 20, top + 14, 'EXISTING TIMBER\nDECKING'); }
-    const rx = r.rods[r.rods.length - 1];
-    lab(v, c.scl ? r.rods[1] : rx, r.fD + 22, c.scl ? Q(r.rods[1], 0)[0] + 3 : xr + 2, top + (c.scl ? 26 : 16), c.rhs ? 'φ20 THREADED RODS\nAT 900 CRS MAXIMUM\n(A MINIMUM OF 1 - φ20\nROD PER PACKER) WITH\n65x5FLx65 WASHER TO\nTIMBER FACE (TYP)' : c.scl ? '1 - φ20 THREADED\nROD PER SPAN WITH\n65x5FLx65 WASHER\nTO TIMBER FACE (TYP)' : 'φ20 THREADED RODS\nAT 900 CRS MAXIMUM\nWITH 65x5FLx65 WASHER\nTO TIMBER FACE (TYP)');
+    const rx = r.rods[r.rods.length - 1], f = 'φ' + FC.RD;
+    lab(v, c.scl ? r.rods[1] : rx, r.fD + 22, c.scl ? Q(r.rods[1], 0)[0] + 3 : xr + 2, top + (c.scl ? 26 : 16), c.rhs ? f + ' THREADED RODS\nAT ' + FC.RS + ' CRS MAXIMUM\n(A MINIMUM OF 1 - ' + f + '\nROD PER PACKER) WITH\n65x5FLx65 WASHER TO\nTIMBER FACE (TYP)' : c.scl ? '1 - ' + f + ' THREADED\nROD PER SPAN WITH\n65x5FLx65 WASHER\nTO TIMBER FACE (TYP)' : f + ' THREADED RODS\nAT ' + FC.RS + ' CRS MAXIMUM\nWITH 65x5FLx65 WASHER\nTO TIMBER FACE (TYP)');
     if (c.widen) lab(v, r.XL - 150, r.yT - s.d, Q(r.XL - 150, 0)[0] - 3, bot - 10, 'PROPOSED [' + secName(c.name).split(' ')[0] + '] PFC\nFULLCAP STRENGTHENING');
     else lab(v, r.XL + 450, r.yT - s.d, xl - 4, bot - 14, 'PROPOSED [' + secName(c.name).split(' ')[0] + '] PFC\nFULLCAP\nSTRENGTHENING');
     if (c.rhs && !c.jarrah) lab(v, r.XR - 120, r.yT + 25, xr + 2, Q(0, r.yT)[1] + 4, '100x50x5.0 RHS\nSTEEL PACKER\n(TYP)');
@@ -270,7 +272,8 @@
   const NOTE_PROP = ['NOTE: PROP STRINGERS PRIOR TO INSTALLING', 'FULLCAP STRENGTHENING. INSTALL FULLCAP', 'STRENGTHENING BY JACKING AGAINST TIMBER', 'FULLCAP TO REMOVE ALL BOWS, DEFLECTIONS', 'AND PROVIDE CONTINUOUS SUPPORT TO THE', 'EXISTING TIMBER FULLCAP.'];
   const NOTE_BANDS = (w) => ['NOTE: RELOCATE EXISTING PILE', 'BANDS AS REQUIRED TO SUIT', 'PROPOSED ' + (w || 'FULLCAP') + ' REPAIRS'];
   const NOTE_VARY = (pf) => ['NOTE: FULLCAP STRENGTHENING CHANNELS WILL VARY', 'ACCORDING TO ENGINEERING REQUIREMENTS.', secName(pf) + ' FULLCAP DRAWN. THIS DETAIL IS ONLY TO BE', 'USED WHERE THERE IS NO SIGNIFICANT PERMANENT', 'BOWING OR CRUSHING IN THE UNDERSIDE OF THE', 'EXISTING TIMBER FULLCAP (ENGINEER TO DETERMINE)'];
-  const PRM = () => [P('pfc', 'PFC fullcap strengthening', '300PFC', { opts: ['300PFC', '380PFC'] }), P('D', 'Pile dia. (mm)', 350, { num: 1 }), P('ps', 'Pile spacing (mm)', 1700, { num: 1 })];
+  const capP = () => [P('fd', 'Fullcap depth (mm)', 300, { num: 1 }), P('fw', 'Fullcap width (mm)', 250, { num: 1 }), P('rd', 'Rod dia. (mm)', 20, { num: 1 }), P('rs', 'Rod spacing max. (mm)', 900, { num: 1 })];
+  const PRM = () => [P('pfc', 'PFC fullcap strengthening', '300PFC', { opts: ['300PFC', '380PFC'] }), P('D', 'Pile dia. (mm)', 350, { num: 1 }), P('ps', 'Pile spacing (mm)', 1700, { num: 1 })].concat(capP());
   const num = (x, dflt, lo, hi) => { x = +x; return isFinite(x) && x > 0 ? min(hi, max(lo, x)) : dflt; };
 
   // ================================================================== SECTION through the fullcap at a stringer, with stringer/fullcap angle cleat (1:20)
@@ -337,7 +340,7 @@
   function endMark(v, r, ch) { const a = v.P(r.XR + 60, r.yc); LN(v.B, a[0], a[1], a[0] + 8, a[1], 'S-TITLE'); v.B.E.push({ t: 'circle', c: [a[0] + 11, a[1]], r: 3, L: 'S-TEXT' }); T(v.B, a[0] + 11, a[1], ch, 3, 'c', 'm'); v.B.E.push({ t: 'solid', p: [[a[0] + 11, a[1] - 5.2], [a[0] + 11 - 2.2, a[1] - 1.2], [a[0] + 11 + 2.2, a[1] - 1.2]], L: 'S-TEXT' }); }
   // ================================================================== steel piles: DETAIL 1 (bracket welding, 1:10) and SECTION A (1:20)
   function detSteel(v, uc) {
-    const u = SEC[uc] || SEC['200UC52'], b = SEC['250UC90'], W = u.d, f = u.tf;
+    const u = SEC[uc] || SEC['200UC52'], b = SEC[FC.BK], W = u.d, f = u.tf;
     [-W, -W + f, -f, 0].forEach(x => v.line(x, -b.d - 150, x, 330, 'S-NEW')); v.brk(-W, 330, 0, 330, 'S-NEW'); v.brk(-W, -b.d - 150, 0, -b.d - 150, 'S-NEW');
     [0, -b.d].forEach(y => { v.line(-W + f, y - 5, -f, y - 5, 'S-NEW'); v.line(-W + f, y + 5, -f, y + 5, 'S-NEW'); });
     v.rect(0, -b.d, 200, b.d, 'S-NEW'); v.line(0, -b.tf, 200, -b.tf, 'S-NEW'); v.line(0, -b.d + b.tf, 200, -b.d + b.tf, 'S-NEW');
@@ -347,7 +350,7 @@
     v.weld(-W / 2, -b.d + 5, -22, -12, { size: '6', both: true, all: true, tail: 'TYP' });
   }
   function secSteel(v, s, c) {
-    c = c || {}; const u = SEC[c.uc] || SEC['200UC52'], ub = SEC['250UC90'], d = s.d, g = gap(s), pk = c.rhs ? 50 : 0, yT = -pk, yB = yT - d, fD = FC.D, fx0 = -25, fx1 = fx0 + FC.W, xu1 = -25, xu0 = xu1 - u.d, xt0 = xu0 - 75, xs1 = xt0, xs0 = xs1 - 75, yS = fD + FC.SD, yD = yS + FC.DK, xE = fx1 + 520, yP = yB - ub.d - 500;
+    c = c || {}; const u = SEC[c.uc] || SEC['200UC52'], ub = SEC[FC.BK], d = s.d, g = gap(s), pk = c.rhs ? 50 : 0, yT = -pk, yB = yT - d, fD = FC.D, fx0 = -25, fx1 = fx0 + FC.W, xu1 = -25, xu0 = xu1 - u.d, xt0 = xu0 - 75, xs1 = xt0, xs0 = xs1 - 75, yS = fD + FC.SD, yD = yS + FC.DK, xE = fx1 + 520, yP = yB - ub.d - 500;
     timberX(v, fx0, 0, FC.W, fD);
     v.pl([[xs1, yS], [xE, yS]], false, 'S-EXIST'); v.pl([[xu0, fD + 30], [xs1, fD + 30]], false, 'S-EXIST'); v.pl([[xu1, fD + 30], [xu0, fD + 30]], false, 'S-EXIST'); v.pl([[fx0, fD], [fx1 + 60, fD], [fx1 + 200, fD - 60], [xE, fD - 60]], false, 'S-EXIST'); v.line(xs1, fD + 30, xs1, yS, 'S-EXIST'); v.pileEnd(xE, (yS + fD - 60) / 2, yS - fD + 60, 'S-EXIST', 1);
     v.rect(xs0, yS, xE + 40 - xs0, FC.DK, 'S-EXIST'); for (let x = xs0 + 150; x < xE; x += 160) v.line(x, yS, x, yD, 'S-EXIST'); v.brk(xE + 40, yS - 10, xE + 40, yD + 10);
@@ -373,7 +376,7 @@
     v.leaders([[xu0 + 50, yB - 6], [xu0 + 60, yB - ub.d + 6]], pl - v.P(xu0 + 50, 0)[0], Y(yB - ub.d) - 4 - Y(yB - 6), 'PROVIDE 2-10FL WEB\nSTIFFENERS NEAR AND\nFAR FACE IF ACCESS\nPERMITS');
     if (c.rhs) lab(v, 100, -25, pr, Y(yT) - 8, 'RHS STEEL PACKER');
     lab(v, 4, yT - d * 0.4, pr, Y(yT - d * 0.4) - 9, 'PROPOSED PFC FULLCAP\nSTRENGTHENING');
-    lab(v, xu1 + 200, yB - ub.d * 0.7, pr, Y(yB - ub.d * 0.7) - 7, '250 UC 90\nx 200 LONG');
+    lab(v, xu1 + 200, yB - ub.d * 0.7, pr, Y(yB - ub.d * 0.7) - 7, secName(FC.BK) + '\nx 200 LONG');
     lab(v, xu1, yP + 100, pr, Y(yP + 100), 'PROPOSED PILE');
   }
   // TYPICAL STEEL PACKER TO PFC WELDING DETAIL
@@ -386,7 +389,7 @@
     v.arc(0, 0, r + 8, 120, 240, 'S-NEW'); v.arc(0, 0, r + 22, 120, 240, 'S-NEW');
     [1, -1].forEach(k => { const a = [-(r + 8) * 0.5, k * (r + 8) * 0.866], e = [xw - 5, -k * r * 0.62]; v.line(a[0], a[1], e[0], e[1], 'S-BOLT'); v.pl([[xw, e[1] - 40], [xw - 45, e[1]], [xw, e[1] + 40]], true, 'S-NEW'); });
     v.circ(xw, 0, 20, 'S-HIDDEN');
-    v.leader(xw, 18, -14, 26, 'φ40 HOLE TO PFC\nTO BE DRILLED ON\nSITE (TYP)'); v.leader(-(r + 22) * 0.9, (r + 22) * 0.4, -12, 4, 'CURVED WASHER\nREFER TO DRG\nN° 9530-0072'); v.leader(-r * 0.5, -r * 0.3, -14, -10, 'φ20 THREADED\nROD (TYP)');
+    v.leader(xw, 18, -14, 26, 'φ40 HOLE TO PFC\nTO BE DRILLED ON\nSITE (TYP)'); v.leader(-(r + 22) * 0.9, (r + 22) * 0.4, -12, 4, 'CURVED WASHER\nREFER TO DRG\nN° 9530-0072'); v.leader(-r * 0.5, -r * 0.3, -14, -10, 'φ' + FC.RD + ' THREADED\nROD (TYP)');
     v.leader(xw - 20, r * 0.62, 12, 6, '75x75x6 EA x\n100 LONG WITH\nφ26 HOLE (TYP)'); v.weld(xw - 20, -r * 0.62 - 20, 10, -14, { size: '6', site: true, tail: 'TYP' });
   }
   function detCap(v) {
@@ -398,11 +401,11 @@
     v.leader(45, 30, 12, 26, 'M20 BOLTS\n(TYP)'); v.leader(-100, 6, -14, -16, '200x12FLx320 LONG\nCAP PLATE'); v.weld(85, -5, 18, -12, { size: '6', all: true });
   }
   function viewA(v) {
-    const W = 500, f = 16; v.line(-W / 2, 0, W / 2, 0, 'S-NEW'); v.line(-W / 2, f, W / 2, f, 'S-NEW'); v.line(-W / 2, 352 - f, W / 2, 352 - f, 'S-NEW'); v.line(-W / 2, 352, W / 2, 352, 'S-NEW'); v.line(0, f, 0, 352 - f, 'S-NEW'); [-W / 2, W / 2].forEach(x => v.brk(x, -10, x, 362));
+    const W = 500, f = 16, H = SEC[FC.UB].d; v.line(-W / 2, 0, W / 2, 0, 'S-NEW'); v.line(-W / 2, f, W / 2, f, 'S-NEW'); v.line(-W / 2, H - f, W / 2, H - f, 'S-NEW'); v.line(-W / 2, H, W / 2, H, 'S-NEW'); v.line(0, f, 0, H - f, 'S-NEW'); [-W / 2, W / 2].forEach(x => v.brk(x, -10, x, H + 10));
     v.rect(-100, -12, 200, 12, 'S-NEW'); v.rect(-45, -400, 90, 388, 'S-NEW'); v.line(-37, -400, -37, -12, 'S-NEW'); v.line(-45, -400, 45, -400, 'S-NEW');
     v.rect(45, -330, 10, 300, 'S-NEW'); [-45, 45].forEach(x => v.fill(circP(x / 3, 2, 10, 10), 'S-BOLT'));
-    v.circ(0, 0, 110, 'S-TEXT'); tagC(v, 95, 55, 14, 8, '1'); v.cl(0, -460, 0, 470); T(v.B, v.P(0, 470)[0] + 1, v.P(0, 470)[1] + 1, '℄ PILE');
-    v.leader(0, 352, 14, 10, 'PROPOSED\nSTRINGER'); v.leader(-100, -6, -14, -4, 'CAP PLATE'); v.leader(45, -100, 14, 6, 'STUB COLUMN'); v.leader(55, -200, 14, -2, '75x10FL STIFFENER\nTYP');
+    v.circ(0, 0, 110, 'S-TEXT'); tagC(v, 95, 55, 14, 8, '1'); v.cl(0, -460, 0, H + 118); T(v.B, v.P(0, H + 118)[0] + 1, v.P(0, H + 118)[1] + 1, '℄ PILE');
+    v.leader(0, H, 14, 10, 'PROPOSED\nSTRINGER'); v.leader(-100, -6, -14, -4, 'CAP PLATE'); v.leader(45, -100, 14, 6, 'STUB COLUMN'); v.leader(55, -200, 14, -2, '75x10FL STIFFENER\nTYP');
     v.weld(-45, -60, -18, -6, { size: '6', both: true }); v.weld(55, -320, 18, -10, { size: '6', all: true, tail: 'TYP' });
   }
   // groups built about their own origin, with title
@@ -410,6 +413,7 @@
   // sheet composition: top row = detail column + extra groups; second row = sections + elevation (note boxes under the sections)
   function compose(p, cfg) {
     const s = pfcOf(p), D = num(p.D, 350, 250, 500), ps = num(p.ps, 1700, 1200, 2600), out = []; s.name = p.pfc;
+    Object.assign(FC, { W: num(p.fw, 250, 150, 400), D: num(p.fd, 300, 200, 450), RD: Math.round(num(p.rd, 20, 12, 36)), RS: Math.round(num(p.rs, 900, 300, 1500)), BK: SEC[p.bk] ? p.bk : '250UC90', UB: SEC[p.ub] ? p.ub : '360UB45' });
     const g1 = put(out, cfg.det(s, D), 60, 0); let x = g1.x1 + 14, ylow = g1.y0;
     (cfg.top || []).forEach(fn => { const E = fn(s, D); const b = put(out, E, x, 0); x = b.x1 + 14; ylow = min(ylow, b.y0); });
     const y2 = ylow - 12; x = 0; let yl = 0;
@@ -455,7 +459,7 @@
   // ------------------------------------------------------------------ PN30-2318 / 2320  steel abutment piles
   const NOTE_STEEL = (p) => ['FOR PILE RESTRAINTS', 'REFER TO RELEVANT DETAILS.', '', 'PROPOSED FULLCAP & PILE', 'SIZE WILL VARY ACCORDING TO', 'ENGINEERING REQUIREMENTS.', secName(p.pfc) + ' FULLCAP DRAWN', secName(p.uc || '200UC52') + ' PILE DRAWN', '', 'THESE DETAILS ARE RELEVANT', 'FOR NON DRIVEN PILES.'];
   const NOTE_INSTALL = ['NOTE: INSTALL FULLCAP STRENGTHENING', 'BY JACKING AGAINST TIMBER FULLCAP TO', 'REMOVE ALL BOWS, DEFLECTIONS AND', 'PROVIDE CONTINUOUS SUPPORT TO THE', 'EXISTING TIMBER FULLCAP.'];
-  const PRS = () => [P('pfc', 'PFC fullcap strengthening', '300PFC', { opts: ['300PFC', '380PFC'] }), P('uc', 'Steel pile', '200UC52', { opts: ['150UC30', '200UC46', '200UC52', '200UC60', '250UC73'] }), P('ps', 'Pile spacing (mm)', 1700, { num: 1 })];
+  const PRS = () => [P('pfc', 'PFC fullcap strengthening', '300PFC', { opts: ['300PFC', '380PFC'] }), P('uc', 'Steel pile', '200UC52', { opts: ['150UC30', '200UC46', '200UC52', '200UC60', '250UC73'] }), P('ps', 'Pile spacing (mm)', 1700, { num: 1 }), P('bk', 'Bearing bracket', '250UC90', { opts: UCs })].concat(capP());
   function steelSheet(p, rhs) {
     const uc = SEC[p.uc] ? p.uc : '200UC52';
     return compose(p, {
@@ -463,7 +467,7 @@
       top: (rhs ? [weldG('300PFC'), weldG('380PFC')] : []).concat([() => { const B = new Builder(); boxT(B, 0, 0, NOTE_STEEL(Object.assign({}, p, { uc })), { dashed: true }); return B.E; }]),
       secs: [(s) => grp(B => secSteel(B.view(20, 0, 0), s, { uc, rhs }), 'SECTION A', 20)],
       el: { steel: true, uc, rhs }, lb: { steel: true, uc, rhs, jarrah: rhs }, bands: false, prop: rhs ? NOTE_PROP : NOTE_INSTALL,
-      marks: (v, r) => { cutMark(v, -330, r.yD + 40, 'A', 0, 8); cutTick(v, -330, r.yB - 500, 14, 1); if (rhs) { const x = (r.rods[1] + r.rods[2]) / 2; v.leader(x, -25, 4, v.P(0, r.yB - 600)[1] - v.P(0, -25)[1], '175 WIDE x 75 THICK\nF11 SEASONED JARRAH\nTIMBER PACKER (TYP)'); } },
+      marks: (v, r) => { cutMark(v, -330, r.yD + 40, 'A', 0, 8); cutTick(v, -330, r.yB - 500, 14, 1); if (rhs) { const x = 180 * r.piles[1] / 1700; /* between the drawn rods 2 and 3, clear of added rods */ v.leader(x, -25, 4, v.P(0, r.yB - 600)[1] - v.P(0, -25)[1], '175 WIDE x 75 THICK\nF11 SEASONED JARRAH\nTIMBER PACKER (TYP)'); } },
       title: 'STEEL ABUTMENT PILES/ABUTMENT\nFULLCAP STRENGTHENING DETAIL'
     });
   }
@@ -494,7 +498,7 @@
       el: { widen: true, ea: !cleat, cleat }, lb: { widen: true, coach: cleat }, bands: 'HALFCAP',
       title: 'ABUTMENT FULLCAP STRENGTHENING & WIDENING DETAIL', subs: 'ABUTMENT N° X\nABUTMENT N° X',
       marks: (v, r) => {
-        const xc = r.xcol, Q = (x, y) => v.P(x, y), ub = SEC['360UB45'];
+        const xc = r.xcol, Q = (x, y) => v.P(x, y), ub = SEC[FC.UB];
         cutMark(v, r.sx[0] - 50, r.yD + 40, 'B', 0, 8); cutTick(v, r.sx[0] + 300, r.yB - 520, 14, 1);
         const a = Q(xc - 330, r.yc); v.B.E.push({ t: 'circle', c: a, r: 3, L: 'S-TEXT' }); T(v.B, a[0], a[1], 'A', 3, 'c', 'm'); v.B.E.push({ t: 'solid', p: [[a[0] + 5.2, a[1]], [a[0] + 1.2, a[1] + 2.2], [a[0] + 1.2, a[1] - 2.2]], L: 'S-TEXT' });
         lab(v, xc - 150, (r.yT + r.fD) / 2, Q(xc - 150, 0)[0] - 8, Q(0, r.fD)[1] + 2, '300 PFC STUB\nCOLUMN (LENGTH\nTO SUIT)');
@@ -507,9 +511,9 @@
       }
     });
   }
-  def('pn2321', 'Abutments', 'Abutment fullcap strengthening & widening – stub column, U-rods', 'PN30-2321', PRM(), p => widenSheet(p, false),
+  def('pn2321', 'Abutments', 'Abutment fullcap strengthening & widening – stub column, U-rods', 'PN30-2321', PRM().concat([P('ub', 'Proposed stringer', '360UB45', { opts: ['310UB46', '360UB45', '410UB54', '460UB67'] })]), p => widenSheet(p, false),
     'Abutment fullcap strengthening (PFC fixed to the timber piles with φ20 rods, curved washers and 75x75x6 EA brackets) extended past the last pile as a 300 PFC stub column carrying a proposed widening stringer.');
-  def('pn2321a', 'Abutments', 'Abutment fullcap strengthening & widening – stub column, pile cleats', 'PN30-2321A', PRM(), p => widenSheet(p, true),
+  def('pn2321a', 'Abutments', 'Abutment fullcap strengthening & widening – stub column, pile cleats', 'PN30-2321A', PRM().concat([P('ub', 'Proposed stringer', '360UB45', { opts: ['310UB46', '360UB45', '410UB54', '460UB67'] })]), p => widenSheet(p, true),
     'As PN30-2321 with the PFC fixed to each timber pile with 150x100x10UA cleats and a coach screw.');
 
 })(typeof window !== 'undefined' ? window : globalThis);

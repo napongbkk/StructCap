@@ -277,25 +277,26 @@
   }, 'Where to place Thriebeam (and top rail) expansion joints for bridges of 4 to 12 spans and beyond, with the expansion per joint.');
 
   // ================================================================== PN30-4107 RHS POST FOOTING
-  def('pn4107', 'Barrier', 'RHS guardrail & balustrade post footing', 'PN30-4107', [], () => {
-    const LY = new Lay(), v = LY.view(10);
-    const D = 600, H = 900, top = -250, pw = 100;
+  def('pn4107', 'Barrier', 'RHS guardrail & balustrade post footing', 'PN30-4107', [P('D', 'Footing dia. (mm)', 600, { num: 1 }), P('H', 'Footing depth (mm)', 900, { num: 1 }), P('dt', 'Footing top below FGL (mm)', 250, { num: 1 }),
+    P('emb', 'Post embedment (mm)', 600, { num: 1 }), P('pw', 'RHS post size (mm)', 100, { num: 1 }), P('pt', 'RHS wall thickness (mm)', 9, { num: 1 })], (p) => {
+    const LY = new Lay(), v = LY.view(10), cl = (k, a, b, d) => max(a, min(b, +p[k] || d));
+    const D = cl('D', 300, 900, 600), H = cl('H', 500, 1500, 900), top = -cl('dt', 100, 400, 250), pw = cl('pw', 50, 200, 100), pt = cl('pt', 2, 12, 9), emb = min(H - 100, cl('emb', 300, 1200, 600)), rhs = `${pw}x${pw}x${pt.toFixed(1)}`;
     // ground and footing
-    v.line(-650, 0, -60, 0, 'S-GROUND'); v.line(60, 0, 560, 0, 'S-GROUND'); tufts(v, [[-600, 0], [-80, 0]], -1, 90, 35); tufts(v, [[80, 0], [540, 0]], -1, 90, 35);
+    v.line(-650, 0, -pw / 2 - 10, 0, 'S-GROUND'); v.line(pw / 2 + 10, 0, 560, 0, 'S-GROUND'); tufts(v, [[-600, 0], [-pw / 2 - 30, 0]], -1, 90, 35); tufts(v, [[pw / 2 + 30, 0], [540, 0]], -1, 90, 35);
     const F = [[-D / 2, top], [D / 2, top], [D / 2, top - H], [-D / 2, top - H]]; v.pl(F, true, 'S-CONC');
-    v.hatch([[-250, -290], [-110, -290], [-110, -470], [-250, -470]], 'conc', 'S-HATCH', 1.6); v.hatch([[110, -800], [270, -800], [270, -980], [110, -980]], 'conc', 'S-HATCH', 1.6);
-    tufts(v, [[-D / 2, -290], [-D / 2, -560]], 1, 90, 35); tufts(v, [[D / 2, -560], [D / 2, -290]], 1, 90, 35); tufts(v, [[-150, top - H], [150, top - H]], -1, 90, 35);
-    // RHS post: embedded 600 into the footing, broken off above ground
-    const yb = top - 600, yt = 130; v.line(-pw / 2, yb, -pw / 2, yt, 'S-NEW'); v.line(pw / 2, yb, pw / 2, yt, 'S-NEW'); v.line(-pw / 2, yb, pw / 2, yb, 'S-NEW');
-    v.line(-pw / 2 + 9, yb + 9, -pw / 2 + 9, yt - 20, 'S-HIDDEN'); v.line(pw / 2 - 9, yb + 9, pw / 2 - 9, yt - 20, 'S-HIDDEN');
-    v.pl([[-pw / 2, yt], [0, yt - 25], [pw / 2, yt]], false, 'S-NEW'); v.pl([[-pw / 2 + 9, yt - 4], [0, yt - 27], [pw / 2 - 9, yt - 4]], false, 'S-NEW');
-    v.line(0, top - H + 120, 0, 380, 'S-CL'); v.text(0, 395, '℄', 2.6, 'c'); v.text(25, 395, 'RHS BALUSTRADE POST OR', 2.2, 'l'); v.text(25, 395 - 34, '100x100x9.0 RHS GUARDRAIL', 2.2, 'l'); v.text(25, 395 - 68, 'POST', 2.2, 'l');
+    v.hatch([[-D / 2 + 50, top - 40], [-pw / 2 - 60, top - 40], [-pw / 2 - 60, top - 220], [-D / 2 + 50, top - 220]], 'conc', 'S-HATCH', 1.6); v.hatch([[pw / 2 + 60, top - H + 350], [D / 2 - 30, top - H + 350], [D / 2 - 30, top - H + 170], [pw / 2 + 60, top - H + 170]], 'conc', 'S-HATCH', 1.6);
+    tufts(v, [[-D / 2, top - 40], [-D / 2, top - 310]], 1, 90, 35); tufts(v, [[D / 2, top - 310], [D / 2, top - 40]], 1, 90, 35); tufts(v, [[-D / 4, top - H], [D / 4, top - H]], -1, 90, 35);
+    // RHS post: embedded into the footing, broken off above ground
+    const yb = top - emb, yt = 130; v.line(-pw / 2, yb, -pw / 2, yt, 'S-NEW'); v.line(pw / 2, yb, pw / 2, yt, 'S-NEW'); v.line(-pw / 2, yb, pw / 2, yb, 'S-NEW');
+    v.line(-pw / 2 + pt, yb + pt, -pw / 2 + pt, yt - 20, 'S-HIDDEN'); v.line(pw / 2 - pt, yb + pt, pw / 2 - pt, yt - 20, 'S-HIDDEN');
+    v.pl([[-pw / 2, yt], [0, yt - 25], [pw / 2, yt]], false, 'S-NEW'); v.pl([[-pw / 2 + pt, yt - 4], [0, yt - 27], [pw / 2 - pt, yt - 4]], false, 'S-NEW');
+    v.line(0, top - H + 120, 0, 380, 'S-CL'); v.text(0, 395, '℄', 2.6, 'c'); v.text(25, 395, 'RHS BALUSTRADE POST OR', 2.2, 'l'); v.text(25, 395 - 34, rhs + ' RHS GUARDRAIL', 2.2, 'l'); v.text(25, 395 - 68, 'POST', 2.2, 'l');
     v.wl(170, 0, 'NOMINAL FGL');
     // dimensions (left)
     v.line(-640, top, -D / 2 - 10, top, 'S-DIM'); v.line(-640, top - H, -D / 2 - 10, top - H, 'S-DIM'); v.line(-420, yb, -pw / 2 - 10, yb, 'S-DIM'); v.line(-640, 0, -620, 0, 'S-DIM');
-    v.dim(-640, top, -640, 0, 0.01, '250'); v.text(-640 + 45, top / 2, '(NOM)', 2.0, 'c', 'b', 'S-DIM', 90);
-    v.dim(-640, top - H, -640, top, 0.01, '900'); v.dim(-420, yb, -420, top, 0.01, '600'); v.text(-420 + 45, top - 300, 'NOMINAL', 2.0, 'c', 'b', 'S-DIM', 90);
-    v.leader(D / 2, top - 600 + 15, 22, 0, 'φ600 MASS\nCONCRETE\nFOOTING');
+    v.dim(-640, top, -640, 0, 0.01, String(-top)); v.text(-640 + 45, top / 2, '(NOM)', 2.0, 'c', 'b', 'S-DIM', 90);
+    v.dim(-640, top - H, -640, top, 0.01, String(H)); v.dim(-420, yb, -420, top, 0.01, String(emb)); v.text(-420 + 45, top - emb / 2, 'NOMINAL', 2.0, 'c', 'b', 'S-DIM', 90);
+    v.leader(D / 2, top - H * 2 / 3 + 15, 22, 0, `φ${D} MASS\nCONCRETE\nFOOTING`);
     LY.title('RHS GUARDRAIL & BALUSTRADE POST FOOTING DETAIL', 10);
     LY.break(); LY.block(B => B.noteBox(0, 0, 'NOTE :- THIS DETAIL IS TO BE USED FOR RHS\nBALUSTRADE POSTS & FOR MAINTENANCE OF\nEXISTING RHS GUARDRAIL POSTS.', 92));
     return LY.done();
@@ -332,16 +333,19 @@
   }, 'Lapping of W-beams and Thriebeams in the direction of traffic over the bridge rail and end terminals, with the end terminal notes.');
 
   // ================================================================== PN30-4109 WIDTH MARKER
-  def('pn4109', 'Barrier', 'Width marker details', 'PN30-4109', [P('side', 'Width marker shown', 'D4-3B(R)', { opts: ['D4-3B(R)', 'D4-3B(L)'] })], (p) => {
+  def('pn4109', 'Barrier', 'Width marker details', 'PN30-4109', [P('side', 'Width marker shown', 'D4-3B(R)', { opts: ['D4-3B(R)', 'D4-3B(L)'] }),
+    P('sw', 'Sign width (mm)', 450, { num: 1 }), P('sh', 'Sign height (mm)', 900, { num: 1 }), P('yb', 'Sign height above ground (mm)', 300, { num: 1 }), P('pw', 'RHS post width (mm)', 76, { num: 1 }),
+    P('pd', 'RHS post depth (mm)', 38, { num: 1 }), P('pt', 'RHS wall thickness (mm)', 2, { num: 1 }), P('fw', 'Footing width (mm)', 200, { num: 1 }), P('fd', 'Footing depth (mm)', 600, { num: 1 })], (p) => {
     const LY = new Lay();
     LY.block(B => B.noteBox(0, 0, 'NOTE\nWHERE GUARDRAILING IS STRAIGHT WIDTH MARKERS\n(STD SIGNS) D4-3B(L) - LHS ROAD & D4-3B(R) - RHS\nROAD CAN BE ATTACHED TO END OF GUARDRAILING.', 112));
     LY.break();
-    const v = LY.view(20), Rt = p.side !== 'D4-3B(L)', sw = 450, sh = 900, yb = 300, rr = 40, pw = 76;
+    const cl = (k, a, b, d) => max(a, min(b, +p[k] || d)), v = LY.view(20), Rt = p.side !== 'D4-3B(L)', sw = cl('sw', 300, 900, 450), sh = cl('sh', 450, 1500, 900), yb = cl('yb', 150, 1000, 300), rr = 40, pw = cl('pw', 50, 150, 76);
+    const pd = cl('pd', 25, 150, 38), pt = cl('pt', 1.6, 6, 2), fw = max(pw + 50, cl('fw', 150, 500, 200)), fd = cl('fd', 300, 1200, 600);
     // ground, footing and post
-    v.line(-1350, 0, -280, 0, 'S-GROUND'); v.line(-1350, 12, -620, 12, 'S-GROUND'); v.line(100, 0, 1050, 0, 'S-GROUND'); v.line(-100, 0, 100, 0, 'S-GROUND');
-    tufts(v, [[-1300, 0], [-420, 0]], -1, 140, 45); tufts(v, [[130, 0], [1000, 0]], -1, 140, 45);
-    v.rect(-100, -600, 200, 600, 'S-CONC');
-    v.line(-pw / 2, -580, -pw / 2, 0, 'S-HIDDEN'); v.line(pw / 2, -580, pw / 2, 0, 'S-HIDDEN'); v.line(-pw / 2, -580, pw / 2, -580, 'S-HIDDEN');
+    v.line(-1350, 0, -280, 0, 'S-GROUND'); v.line(-1350, 12, -620, 12, 'S-GROUND'); v.line(fw / 2, 0, 1050, 0, 'S-GROUND'); v.line(-fw / 2, 0, fw / 2, 0, 'S-GROUND');
+    tufts(v, [[-1300, 0], [-420, 0]], -1, 140, 45); tufts(v, [[fw / 2 + 30, 0], [1000, 0]], -1, 140, 45);
+    v.rect(-fw / 2, -fd, fw, fd, 'S-CONC');
+    v.line(-pw / 2, 20 - fd, -pw / 2, 0, 'S-HIDDEN'); v.line(pw / 2, 20 - fd, pw / 2, 0, 'S-HIDDEN'); v.line(-pw / 2, 20 - fd, pw / 2, 20 - fd, 'S-HIDDEN');
     v.line(-pw / 2, 0, -pw / 2, yb, 'S-NEW'); v.line(pw / 2, 0, pw / 2, yb, 'S-NEW'); v.line(-pw / 2, yb, -pw / 2, yb + sh, 'S-HIDDEN'); v.line(pw / 2, yb, pw / 2, yb + sh, 'S-HIDDEN');
     // sign with diagonal black bands (sloping down towards the traffic side)
     const x0 = -sw / 2, x1 = sw / 2, y0 = yb, y1 = yb + sh, per = 300, bw = 150, k = Rt ? 1 : -1;
@@ -352,35 +356,36 @@
       const band = [[-sw, k > 0 ? c - sw : c + sw], [2 * sw, k > 0 ? c + 2 * sw : c - 2 * sw], [2 * sw, k > 0 ? c + 2 * sw + bw : c - 2 * sw + bw], [-sw, k > 0 ? c - sw + bw : c + sw + bw]].map(q => [q[0] + x0, q[1] + y0 + (k < 0 ? -sw : 0)]);
       const cp = clipRect(band, x0 + 4, y0 + 4, x1 - 4, y1 - 4); if (cp.length >= 3) v.fill(cp, 'S-NEW');
     }
-    v.line(x1 + 20, yb, 900, yb, 'S-DIM'); v.dim(820, 0, 820, yb, 0.01, '300'); v.text(820 + 110, yb / 2, 'NOM.', 2.0, 'c', 'b', 'S-DIM', 90);
-    v.line(-pw / 2, -620, -pw / 2, -780, 'S-DIM'); v.line(pw / 2, -620, pw / 2, -780, 'S-DIM'); v.dim(-pw / 2, -760, pw / 2, -760, 0.01, '76');
+    v.line(x1 + 20, yb, max(900, x1 + 120), yb, 'S-DIM'); v.dim(max(820, x1 + 40), 0, max(820, x1 + 40), yb, 0.01, String(yb)); v.text(max(820, x1 + 40) + 110, yb / 2, 'NOM.', 2.0, 'c', 'b', 'S-DIM', 90);
+    v.line(-pw / 2, -fd - 20, -pw / 2, -fd - 180, 'S-DIM'); v.line(pw / 2, -fd - 20, pw / 2, -fd - 180, 'S-DIM'); v.dim(-pw / 2, -fd - 160, pw / 2, -fd - 160, 0.01, String(pw));
     v.leader(x0, y0 + 360, -22, 14, 'WIDTH MARKER (STD\nSIGNS) D4-3B(L) - LHS\nROAD & D4-3B(R) -\nRHS ROAD');
-    v.leader(-100, -170, -22, -8, 'POST FOOTING (FOR\nDETAILS REFER TO\nMRWA DRAWING\nN° 9548-106)');
-    v.leader(pw / 2 - 10, -170, 22, -14, '76x38x2.0RHS\nPOST');
+    v.leader(-fw / 2, -170, -22, -8, 'POST FOOTING (FOR\nDETAILS REFER TO\nMRWA DRAWING\nN° 9548-106)');
+    v.leader(pw / 2 - 10, -170, 22, -14, `${pw}x${pd}x${pt.toFixed(1)}RHS\nPOST`);
     LY.title('WIDTH MARKER DETAILS', 20, 'WIDTH MARKER ' + (Rt ? 'D4-3B(R)' : 'D4-3B(L)') + ' - SHOWN');
     return LY.done();
   }, 'Width marker sign on a 76x38x2.0 RHS post at the ends of the barrier (right or left hand version).');
 
   // ================================================================== PN30-4104 POST CONNECTION DETAILS
-  def('pn4104', 'Barrier', 'Traffic barrier – post connection to kerb', 'PN30-4104', [P('pt', 'Post types', 'PT1 & PT2')], (p) => {
-    const LY = new Lay(), M = 24;
+  def('pn4104', 'Barrier', 'Traffic barrier – post connection to kerb', 'PN30-4104', [P('pt', 'Post types', 'PT1 & PT2'), P('M', 'Anchor rod dia. (mm)', 24, { num: 1 }), P('sp', 'Anchor rod spacing (mm)', 170, { num: 1 }),
+    P('tp', 'Connection plate thickness (mm)', 14, { num: 1 }), P('ht', 'Rail height above running surface (mm)', 820, { num: 1 })], (p) => {
+    const cl = (k, a, b, d) => max(a, min(b, Math.round(+p[k] || d))), LY = new Lay(), M = cl('M', 16, 36, 24), h = cl('sp', 120, 300, 170) / 2, tp = cl('tp', 10, 32, 14), px = tp + 11, yh = cl('ht', 600, 1100, 820) - 2;
     // ---- VIEW A (plan on top of the kerb)
     const a = LY.view(10);
     const yT = 411, yB = -371, xL = -1228;
     a.line(xL, yT, 0, yT, 'S-CONC'); a.line(xL, yB, 0, yB, 'S-CONC'); a.line(0, yT, 0, yB, 'S-CONC'); a.line(-280, yT, -280, yB, 'S-CONC');
     a.brk(xL, yB, xL, yT, 'S-CONC');
     [-312, -298].forEach((x, i) => a.pl([[x, yT + 40], [x, yT - 10], [x - 12, yT - 30], [x + 12, yT - 50], [x, yT - 70], [x, yB + 70], [x - 12, yB + 50], [x + 12, yB + 30], [x, yB + 10], [x, yB - 40]], false, 'S-CONC'));
-    [85, -85].forEach(y => {
+    [h, -h].forEach(y => {
       a.line(-1159, y + M / 2, 0, y + M / 2, 'S-HIDDEN'); a.line(-1159, y - M / 2, 0, y - M / 2, 'S-HIDDEN'); a.rect(-1159, y - 18, 14, 36, 'S-HIDDEN');
-      a.line(-1185, y, 420, y, 'S-CL'); a.line(14, y + M / 2, 65, y + M / 2, 'S-BOLT'); a.line(14, y - M / 2, 65, y - M / 2, 'S-BOLT'); a.nut(14, y, 1, 0, M);
+      a.line(-1185, y, 420, y, 'S-CL'); a.line(tp, y + M / 2, tp + 51, y + M / 2, 'S-BOLT'); a.line(tp, y - M / 2, tp + 51, y - M / 2, 'S-BOLT'); a.nut(tp, y, 1, 0, M);
     });
-    a.rect(0, -118, 14, 235, 'S-NEW');
+    a.rect(0, -h - 33, tp, 2 * h + 65, 'S-NEW');
     // post (channel) seen from above, bolted through the web
-    a.pl([[25, 45], [175, 45], [175, -45], [25, -45], [25, -37], [165, -37], [165, 37], [25, 37]], true, 'S-NEW');
-    a.bolt(14, 0, 175, 0, 20); a.line(-20, 0, 210, 0, 'S-CL');
-    a.dimChain([[258, 85], [258, 0], [258, -85]], 0.01, ['=', '=']); a.dim(363, 85, 363, -85, 0.01, '170');
-    a.line(0, -125, 0, -260, 'S-DIM'); a.line(65, -105, 65, -260, 'S-DIM'); a.dim(0, -237, 65, -237, 0.01, '65');
-    a.leader(-63, 305, 22, 26, 'KERB', { dot: true }); a.leader(7, 118, 20, 22, 'POST CONNECTION\nPLATE');
+    a.pl([[px, 45], [px + 150, 45], [px + 150, -45], [px, -45], [px, -37], [px + 140, -37], [px + 140, 37], [px, 37]], true, 'S-NEW');
+    a.bolt(tp, 0, px + 150, 0, 20); a.line(-20, 0, 210, 0, 'S-CL');
+    a.dimChain([[258, h], [258, 0], [258, -h]], 0.01, ['=', '=']); a.dim(363, h, 363, -h, 0.01, String(2 * h));
+    a.line(0, -h - 40, 0, -h - 175, 'S-DIM'); a.line(tp + 51, -h - 20, tp + 51, -h - 175, 'S-DIM'); a.dim(0, -h - 152, tp + 51, -h - 152, 0.01, String(tp + 51));
+    a.leader(-63, 305, 22, 26, 'KERB', { dot: true }); a.leader(tp / 2, h + 33, 20, 22, 'POST CONNECTION\nPLATE');
     LY.title('VIEW A', 10);
     LY.break();
     // ---- SECTIONAL ELEVATION
@@ -394,25 +399,25 @@
     v.circ(-299, -486, 219, 'S-EXIST');
     // anchor rod cast into the kerb / overlay, clamping the post connection plate; bolt through the post
     const yr = -81; v.line(-934, yr + M / 2, 0, yr + M / 2, 'S-HIDDEN'); v.line(-934, yr - M / 2, 0, yr - M / 2, 'S-HIDDEN'); v.rect(-944, yr - 20, 10, 40, 'S-HIDDEN'); v.line(-975, yr, 260, yr, 'S-CL');
-    v.rect(0, -248, 10, 236, 'S-NEW'); v.nut(10, yr, 1, 0, M);
-    const x0 = 25, x1 = 175, yb = -262, yt = 770;
+    const te = tp - 4; v.rect(0, -248, te, 236, 'S-NEW'); v.nut(te, yr, 1, 0, M); // plate drawn 4 thinner than in plan (as the sheet)
+    const x0 = te + 15, x1 = x0 + 150, yb = -262, yt = yh - 48;
     v.line(x0, yb, x0, yt, 'S-NEW'); v.line(x0 + 9, yb, x0 + 9, yt, 'S-NEW'); v.line(x1, yb, x1, yt, 'S-NEW'); v.line(x1 - 9, yb, x1 - 9, yt, 'S-NEW'); v.line(x0, yb, x1, yb, 'S-NEW');
     v.brk(x0 - 15, yt, x1 + 25, yt); v.line(x0 + 9, 25, x1 - 9, 25, 'S-NEW'); v.line(x0 + 9, -123, x1 - 9, -123, 'S-NEW');
-    v.line(10, yr + M / 2, x1, yr + M / 2, 'S-HIDDEN'); v.line(10, yr - M / 2, x1, yr - M / 2, 'S-HIDDEN'); v.nut(x1, yr, 1, 0, M);
+    v.line(te, yr + M / 2, x1, yr + M / 2, 'S-HIDDEN'); v.line(te, yr - M / 2, x1, yr - M / 2, 'S-HIDDEN'); v.nut(x1, yr, 1, 0, M);
     v.line(-30, -229, x0 + 9, -229, 'S-BOLT'); v.line(-30, -237, x0 + 9, -237, 'S-BOLT'); v.rect(x0 + 9, -243, 8, 20, 'S-BOLT');
     // blockout and Thriebeam
-    v.rect(-123, 293, 148, 551, 'S-NEW'); v.line(-108, 293, -108, 844, 'S-HIDDEN'); v.line(10, 293, 10, 844, 'S-HIDDEN');
-    const pr = beamProfile(v, -123, 818, -1, true);
+    v.rect(-123, yh - 525, 148, 551, 'S-NEW'); v.line(-108, yh - 525, -108, yh + 26, 'S-HIDDEN'); v.line(10, yh - 525, 10, yh + 26, 'S-HIDDEN');
+    const pr = beamProfile(v, -123, yh, -1, true);
     pr.valleys.forEach(y => { v.arc(-123, y, 14, 90, 270, 'S-BOLT'); v.line(-123, y, -80, y, 'S-BOLT'); v.nut(-108, y, 1, 0, 16); });
-    [696, 441].forEach(y => { v.fill([[x0, y - 40], [x0 + 9, y - 40], [x0 + 9, y + 40], [x0, y + 40]]); v.line(-5, y, x0 + 40, y, 'S-BOLT'); v.nut(x0 + 9, y, 1, 0, 16); v.nut(10, y, -1, 0, 16); });
+    [yh - 122, yh - 377].forEach(y => { v.fill([[x0, y - 40], [x0 + 9, y - 40], [x0 + 9, y + 40], [x0, y + 40]]); v.line(-5, y, x0 + 40, y, 'S-BOLT'); v.nut(x0 + 9, y, 1, 0, 16); v.nut(10, y, -1, 0, 16); });
     // dimensions
-    v.line(-1000, 818, -140, 818, 'S-DIM'); v.dim(-546, 6, -546, 818, 0.01, '820 ± 10');
+    v.line(-1000, yh, -140, yh, 'S-DIM'); v.dim(-546, 6, -546, yh, 0.01, (yh + 2) + ' ± 10');
     v.line(-420, 99, -265, 99, 'S-DIM'); v.dim(-384, 2, -384, 99, 0.01, '100');
     v.line(5, 99, 470, 99, 'S-DIM'); v.line(200, yr, 470, yr, 'S-DIM'); v.dim(435, -81, 435, 99, 0.01, '180');
     v.wl(-897, 16, 'TOP OF\nRUNNING\nSURFACE');
-    v.mark(-352, 349, 'A', -90);
+    v.mark(-352, yh - 469, 'A', -90);
     v.leader(-527, -93, -28, -48, 'ANCHOR ROD'); v.leader(x0 + 17, -233, 30, -12, 'SET SCREW'); v.leader(x1 + 30, yr - 10, 22, -8, 'BOLT');
-    v.leader(x1, 460, 22, 22, 'POSTS TYPE\n' + (p.pt || 'PT1 & PT2'));
+    v.leader(x1, yh - 358, 22, 22, 'POSTS TYPE\n' + (p.pt || 'PT1 & PT2'));
     v.pl([[-69, -160], [74, -160], [74, -280], [-69, -280]], true, 'S-NOTE'); v.line(40, -280, 150, -470, 'S-NOTE');
     v.noteBox(150, -470, 'NOTE: ENGINEER TO CHECK THAT\nCONNECTION PLATE FITS ABOVE\nBOTTOM CHAMFER (OR BOTTOM\nOF KERB PERMANENT FORMWORK)\nTHICKEN OVERLAY AS REQUIRED\nTO SUIT.', 66);
     LY.title('SECTIONAL ELEVATION');
@@ -421,8 +426,8 @@
   }, 'Connection of the barrier posts (types PT1 & PT2) to the concrete kerb: post connection plate on the kerb face, two anchor rods at 170 crs.');
 
   // ================================================================== PN30-4105 FORMATION WIDENING
-  def('pn4105', 'Barrier', 'Traffic barrier – formation widening details', 'PN30-4105', [], () => {
-    const LY = new Lay();
+  def('pn4105', 'Barrier', 'Traffic barrier – formation widening details', 'PN30-4105', [P('ht', 'Thriebeam height (mm)', 820, { num: 1 }), P('hw', "'W' beam height (mm)", 725, { num: 1 })], (p) => {
+    const LY = new Lay(), cl = (k, a, b, d) => max(a, min(b, Math.round(+p[k] || d)));
     // ---- THRIEBEAM & TRANSITION BEAM (traced from the sheet: image units ix, iy at 1:20)
     const v = LY.view(20), I = (ix, iy) => [((100 + ix / 0.6) - 1105) * 1.76, (888 - (100 + iy / 0.6)) * 1.76], L1 = (pts, Ly) => v.pl(pts.map(q => I(...q)), false, Ly || 'S-GROUND');
     const base = [[330, 473], [550, 473], [550, 527], [330, 527]].map(q => I(...q)); v.line(...base[0], ...base[1], 'S-CONC'); v.line(...base[3], ...base[2], 'S-CONC'); v.hatch(base, 'gravel', 'S-HATCH', 1.5);
@@ -433,13 +438,13 @@
     L1([[620, 473], [700, 505], [890, 578], [1015, 632], [1140, 686], [1185, 700]], 'S-EXIST');
     L1([[620, 476], [620, 578], [888, 578], [888, 685], [1140, 685]]); L1([[1145, 685], [1145, 700]]);
     // post, blockout and Thriebeam (real sizes)
-    const yt = 820, xb = 5, xp = 153, xq = 303, yb = I(0, 925)[1];
+    const yt = cl('ht', 650, 1000, 820), xb = 5, xp = 153, xq = 303, yb = I(0, 925)[1];
     v.rect(xp, yb, xq - xp, yt - yb, 'S-NEW'); v.line(xp + 10, yb, xp + 10, yt, 'S-HIDDEN'); v.line(xq - 10, yb, xq - 10, yt, 'S-HIDDEN');
     v.rect(xb, yt - 551 + 25, xp - xb, 551, 'S-NEW'); beamProfile(v, xb, yt, -1, true);
-    [696, 441].forEach(y => { v.line(xb + 110, y, xp + 50, y, 'S-BOLT'); v.line(xp - 4, y - 20, xp - 4, y + 20, 'S-BOLT'); });
-    [653, 468].forEach(y => v.line(xb - 30, y, xb + 40, y, 'S-BOLT'));
+    [yt - 124, yt - 379].forEach(y => { v.line(xb + 110, y, xp + 50, y, 'S-BOLT'); v.line(xp - 4, y - 20, xp - 4, y + 20, 'S-BOLT'); });
+    [yt - 167, yt - 352].forEach(y => v.line(xb - 30, y, xb + 40, y, 'S-BOLT'));
     // dimensions and notes
-    v.line(-640, yt, -30, yt, 'S-DIM'); v.line(-640, 0, -600, 0, 'S-DIM'); v.dim(-567, 0, -567, yt, 0.01, '820 ± 10');
+    v.line(-640, yt, -30, yt, 'S-DIM'); v.line(-640, 0, -600, 0, 'S-DIM'); v.dim(-567, 0, -567, yt, 0.01, yt + ' ± 10');
     v.text(-567 + 130, yt / 2, 'ABOVE ADJACENT', 2.2, 'c', 'b', 'S-DIM', 90); v.text(-567 + 200, yt / 2, 'ROAD SURFACE', 2.2, 'c', 'b', 'S-DIM', 90);
     const yd = I(0, 405)[1], xe = I(832, 0)[0]; v.line(xe, yd + 30, xe, I(0, 470)[1], 'S-DIM'); v.dim(0, yd, xe, yd, 0.01, ' '); v.text(xq + 40, yd + 25, '600', 2.2, 'l', 'b', 'S-DIM'); v.text(xq + 40, yd - 25, 'MIN', 2.2, 'l', 't', 'S-DIM');
     const yg = I(0, 527)[1]; v.dim(-567, yg - 140, -567, yg, 0.01, ''); v.dim(-567, 140, -567, 0, 0.01, ''); v.text(-567 + 45, yg - 250, '150 MIN', 2.2, 'c', 'b', 'S-DIM', 90);
@@ -457,11 +462,11 @@
     L2([[75, 357], [455, 357]]); tufts(w, [J(75, 357), J(290, 357)], -1, 110, 40);
     L2([[515, 357], [760, 355], [800, 365], [900, 395], [1015, 420]], 'S-NEW'); tufts(w, [J(545, 357), J(740, 357)], -1, 110, 40);
     L2([[660, 359], [660, 475], [960, 475], [960, 590], [1015, 590]]);
-    const wt = 725, wb = -9, wp = J(458, 0)[0], wq = J(518, 0)[0], wyb = J(0, 778)[1];
+    const wt = cl('hw', 550, 900, 725), wb = -9, wp = J(458, 0)[0], wq = J(518, 0)[0], wyb = J(0, 778)[1];
     w.rect(wp, wyb, wq - wp, wt + 27 - wyb, 'S-NEW'); w.line(wp + 10, wyb, wp + 10, wt + 27, 'S-HIDDEN'); w.line(wq - 10, wyb, wq - 10, wt + 27, 'S-HIDDEN');
     w.rect(wb, wt - 350, wp - wb, 377, 'S-NEW'); beamProfile(w, wb, wt, -1, false);
-    [699, 435].forEach(y => { w.line(wb + 110, y, wp + 50, y, 'S-BOLT'); w.line(wp - 4, y - 20, wp - 4, y + 20, 'S-BOLT'); }); w.line(wb - 30, wt - 155, wb + 40, wt - 155, 'S-BOLT');
-    const xm = J(150, 0)[0]; w.line(xm - 60, wt, -30, wt, 'S-DIM'); w.dim(xm, 0, xm, wt, 0.01, '725 ± 10 ABOVE');
+    [wt - 26, wt - 290].forEach(y => { w.line(wb + 110, y, wp + 50, y, 'S-BOLT'); w.line(wp - 4, y - 20, wp - 4, y + 20, 'S-BOLT'); }); w.line(wb - 30, wt - 155, wb + 40, wt - 155, 'S-BOLT');
+    const xm = J(150, 0)[0]; w.line(xm - 60, wt, -30, wt, 'S-DIM'); w.dim(xm, 0, xm, wt, 0.01, wt + ' ± 10 ABOVE');
     w.text(xm + 130, wt / 2, 'ADJACENT', 2.2, 'c', 'b', 'S-DIM', 90); w.text(xm + 200, wt / 2, 'ROAD SURFACE', 2.2, 'c', 'b', 'S-DIM', 90);
     const xt = J(760, 0)[0], yd2 = J(0, 277)[1]; w.line(wb, wt - 350, wb, yd2 - 40, 'S-DIM'); w.line(xt, 20, xt, yd2 + 40, 'S-DIM'); w.dim(wb, yd2, xt, yd2, 0.01, '1000 TO 1800');
     w.leader(...J(800, 365), 14, 26, 'PROPOSED BATTER\n1:4');
