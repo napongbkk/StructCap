@@ -380,7 +380,6 @@
     ['Structural analysis', 'วิเคราะห์โครงสร้าง', [['analysis', '3D frame & truss', 'โครงข้อแข็งและโครงถัก 3 มิติ'], ['building', 'Building design', 'อาคาร'], ['bridge', 'Bridge', 'สะพาน'], ['conn', 'Steel connections', 'รอยต่อเหล็ก']]],
     ['Special design', 'งานออกแบบพิเศษ', [['shelter', 'Bus shelter footing', 'ฐานรากที่พักผู้โดยสาร'], ['signcol', 'Sign column footing', 'ฐานรากเสาป้าย']]],
     ['Timber bridges', 'สะพานไม้', [['timber', 'Timber bridge assessment', 'ประเมินสะพานไม้'], ['tdraw', 'Repair detail drawings', 'แบบรายละเอียดการซ่อม']]],
-    ['Cost estimating', 'ประมาณราคา', [['boqwh', 'Warehouse / factory BOQ', 'BOQ โกดังและโรงงาน'], ['xlsx', 'Excel BOQ export', 'ส่งออก BOQ เป็น Excel']]],
     ['Output', 'ผลลัพธ์', [['pdf', 'PDF export (reports and drawings)', 'ส่งออก PDF (รายงานและแบบ)'], ['dxf', 'AutoCAD DXF export', 'ส่งออก DXF สำหรับ AutoCAD']]]
   ];
   const featOff = k => !!(S.off && S.off[k]);                 // switched off by the administrator
@@ -628,7 +627,7 @@
   }
 
   // ------------------------------------------------------------------ navigation
-  const ANV = ['analysis', 'building', 'bridge', 'conn', 'timber', 'tdraw', 'boqwh'];
+  const ANV = ['analysis', 'building', 'bridge', 'conn', 'timber', 'tdraw'];
   function go(view, patch) { Object.assign(S, patch || {}); S.view = view; S.codePop = false; S.reportOpen = false; render(); window.scrollTo(0, 0); }
   function saveSession() { ss.set('srcSession', { role: S.role, user: S.user }); }
   function logout() { S.role = 'guest'; S.user = null; ss.del('srcSession'); ss.del('scAdminToken'); ss.del('scUserToken'); A.loaded = false; go('landing'); toast(T('Signed out', 'ออกจากระบบแล้ว')); }
@@ -1061,18 +1060,11 @@
         <div class="menu-hd"><span class="menu-n">4</span><div><p class="eyebrow">${T('Special design', 'งานออกแบบพิเศษ')}</p><h2>${T('Street furniture and small structures', 'อุปกรณ์ริมทางและโครงสร้างขนาดเล็ก')}</h2><p class="muted">${T('Complete designs of particular structures to Australian Standards, from wind loads to the foundations and the connections.', 'ออกแบบโครงสร้างเฉพาะครบชุดตามมาตรฐานออสเตรเลีย ตั้งแต่แรงลมถึงฐานรากและรอยต่อ')}</p></div></div>
         <div class="an-apps an-apps2">${[['shelter', shelterIcon(), T('Bus shelter footing', 'ฐานรากที่พักผู้โดยสาร'), T('Steel bus shelter on concrete strip footings: wind to AS/NZS 1170.2:2021, overall stability, sliding and uplift, bearing, footing reinforcement, hold-down bolts and anchorage (AS 5216), base plate and weld (AS 4100).', 'ที่พักผู้โดยสารโครงเหล็กบนฐานรากแถบคอนกรีต: แรงลมตาม AS/NZS 1170.2:2021 เสถียรภาพ การเลื่อนและแรงยก แรงแบกทาน เหล็กเสริมฐานราก สลักยึดและการยึดในคอนกรีต (AS 5216) แผ่นฐานและรอยเชื่อม (AS 4100)'), ['AS/NZS 1170.2', 'AS 4100', 'AS 5216', T('Full report', 'รายการคำนวณ')]], ['signcol', signcolIcon(), T('Sign column footing', 'ฐานรากเสาป้าย'), T('Free-standing sign column (totem) on a concrete pad: wind to AS/NZS 1170.2:2021, pad overturning, sliding and bearing, RHS stub legs, base plate, hold-down bolts and anchorage, leg welds and the framework splice bolts.', 'เสาป้ายตั้งอิสระบนฐานรากคอนกรีต: แรงลมตาม AS/NZS 1170.2:2021 การพลิกคว่ำ การเลื่อน และแรงแบกทาน ขาตั้ง RHS แผ่นฐาน สลักยึดและการยึดในคอนกรีต รอยเชื่อมขา และสลักรอยต่อโครง'), ['AS/NZS 1170.2', 'AS 4100', 'AS 5216', T('Full report', 'รายการคำนวณ')]]].map(([v, ic, t, d, ch]) => { const off = isOff(v), locked = off || !isPro(); return `<button class="an-appc ${off ? 'feat-off' : ''}" data-act="elem" data-e="${v}" data-code="AS">${ic}<b>${t} <span class="pill ${S.promo ? 'free' : 'pro'}">${S.promo ? T('Pro · free now', 'Pro · ฟรี') : 'Pro'}</span>${offPill(v)}</b><span class="muted small">${d}</span><span class="an-chips">${ch.map(c => `<i>${c}</i>`).join('')}</span><span class="pick-go">${off ? T('Unavailable for now', 'ปิดใช้งานชั่วคราว') : locked ? T('Sign in with Pro to unlock', 'เข้าสู่ระบบ Pro เพื่อใช้งาน') : T('Open →', 'เปิด →')}</span></button>`; }).join('')}</div>
       </section>
-      <section class="menu-box box-qto">
-        <div class="menu-hd"><span class="menu-n">5</span><div><p class="eyebrow">${T('Cost estimating', 'ประมาณราคา')}</p><h2>${T('Quantities and prices · BOQ', 'ปริมาณงานและราคา · BOQ')}</h2><p class="muted">${T('Bills of quantities from a parametric building: every quantity shows its calculation, unit prices are editable, totals go to Excel with live formulas.', 'บัญชีแสดงปริมาณงานจากแบบจำลองอาคาร ทุกปริมาณแสดงรายการคำนวณ แก้ราคาต่อหน่วยได้ ส่งออก Excel พร้อมสูตร')}</p></div></div>
-        <div class="an-apps an-apps1">${[['boqwh', warehouseIcon(), T('Warehouse / factory BOQ', 'BOQ โกดังและโรงงาน'), T('Steel portal-frame warehouse: piled footings, tie beams, slab on grade, H-beam frames, purlins and girts, bracing, metal roof and walls, block walls, doors and drains. BOQ with material and labour, price summary with overheads or Factor F, Excel and PDF.', 'โกดัง/โรงงานโครงเหล็กพอร์ทัล: ฐานรากเสาเข็ม คานคอดิน พื้น โครงเหล็ก H แป เคร่า ค้ำยัน หลังคาและผนังเมทัลชีท ผนังก่อ ประตู รางระบายน้ำ BOQ ค่าวัสดุและค่าแรง สรุปราคาพร้อมค่าดำเนินการหรือ Factor F ส่งออก Excel และ PDF'), ['BOQ', T('Material + labour', 'ค่าวัสดุ + ค่าแรง'), 'Factor F', 'Excel']]].map(appCard).join('')}</div>
-      </section>
       <section class="menu-box box-field">
-        <div class="menu-hd"><span class="menu-n">6</span><div><p class="eyebrow">${T('Site work', 'งานภาคสนาม')}</p><h2>${T('Bridge site inspection', 'ตรวจสอบสะพานในพื้นที่')}</h2><p class="muted">${T('A separate app for recording bridge inspections on site from a phone or tablet. It opens in a new tab.', 'แอปแยกสำหรับบันทึกการตรวจสอบสะพานในพื้นที่จากโทรศัพท์หรือแท็บเล็ต เปิดในแท็บใหม่')}</p></div></div>
+        <div class="menu-hd"><span class="menu-n">5</span><div><p class="eyebrow">${T('Site work', 'งานภาคสนาม')}</p><h2>${T('Bridge site inspection', 'ตรวจสอบสะพานในพื้นที่')}</h2><p class="muted">${T('A separate app for recording bridge inspections on site from a phone or tablet. It opens in a new tab.', 'แอปแยกสำหรับบันทึกการตรวจสอบสะพานในพื้นที่จากโทรศัพท์หรือแท็บเล็ต เปิดในแท็บใหม่')}</p></div></div>
         <div class="an-apps an-apps1"><a class="an-appc an-link" href="https://bridge-site-inspection.vercel.app/" target="_blank" rel="noopener">${inspectIcon()}<b>${T('Bridge Site Inspection', 'ตรวจสอบสะพานในพื้นที่')}</b><span class="muted small">${T('Record defects, photos and condition on site. Inspections are kept on your device, so it works where there is no signal.', 'บันทึกความเสียหาย รูปถ่าย และสภาพสะพานในพื้นที่ ข้อมูลเก็บไว้ในเครื่อง จึงใช้งานได้แม้ไม่มีสัญญาณ')}</span><span class="an-chips"><i>${T('Phone · tablet', 'โทรศัพท์ · แท็บเล็ต')}</i><i>${T('Works offline', 'ใช้งานออฟไลน์')}</i><i>${T('Photos', 'รูปถ่าย')}</i></span><span class="pick-go">${T('Open app ↗', 'เปิดแอป ↗')}</span></a></div>
       </section>
     </main>`;
-  }
-  function warehouseIcon() {
-    return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M4 66h112" class="ln"/><path d="M14 66V30l46-18 46 18v36" class="ln"/><path d="M14 30h92" class="ln-thin"/><path d="M14 52h92" class="ln-dash"/><rect x="44" y="42" width="32" height="24" class="ln-acc" style="fill:var(--bg)"/><path d="M44 48h32M44 54h32M44 60h32" class="ln-thin"/><path d="M84 6h28v20H84z" class="ln-acc" style="fill:var(--bg)"/><path d="M88 12h20M88 17h20M88 22h12" class="ln-thin"/></svg>`;
   }
   function inspectIcon() {
     return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M4 30h112" class="ln"/><path d="M4 36h112" class="ln-thin"/><path d="M22 36v30M60 36v30M98 36v30" class="ln"/><path d="M14 66h16M52 66h16M90 66h16" class="ln-thin"/><path d="M4 30c20-14 36-14 56 0c20-14 36-14 56 0" class="ln-dash"/><rect x="72" y="4" width="26" height="36" rx="3" class="ln-acc" style="fill:var(--bg)"/><path d="M78 13h14M78 19h14M78 25h9" class="ln-thin"/><path d="M78 32l3 3 6-6" class="ln-acc"/></svg>`;
@@ -2113,7 +2105,7 @@
         pdf.text('Page ' + (i + 1) + ' of ' + n, 210 - mm.r, 297 - mm.b + 8.5, { align: 'right' });
       }
       const blob = pdf.output('blob');
-      const name = ANV.includes(S.view) ? (S.meta.ref || S.view).replace(/[^\w\-]+/g, '_') + (S.view === 'conn' ? '_steel-connection_' : S.view === 'timber' ? '_timber-bridge-rating_' : S.view === 'boqwh' ? '_BOQ_' : '_frame-analysis_') + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
+      const name = ANV.includes(S.view) ? (S.meta.ref || S.view).replace(/[^\w\-]+/g, '_') + (S.view === 'conn' ? '_steel-connection_' : S.view === 'timber' ? '_timber-bridge-rating_' : '_frame-analysis_') + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
       if (dl) await dl.save({ filename: name, data: blob }); else pdf.save(name);
       toast(T('PDF saved', 'บันทึก PDF แล้ว'), 'ok');
     } catch (e) {
@@ -2379,7 +2371,6 @@
     view = ANV.includes(view) ? view : 'analysis';
     if (!AN2[view]) {
       if (view === 'timber') { if (!window.SC_TIMBER_UI || !window.TIMBER) return null; AN2[view] = window.SC_TIMBER_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, go }); AN = AN2[view]; window.SC_AN = AN; return AN; }
-      if (view === 'boqwh') { if (!window.SC_BOQ_UI || !window.BOQ) return null; AN2[view] = window.SC_BOQ_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, go }); AN = AN2[view]; window.SC_AN = AN; return AN; }
       if (view === 'tdraw') { if (!window.SC_TDRAW_UI || !window.TDET || !window.TDRAW) return null; AN2[view] = window.SC_TDRAW_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, go }); AN = AN2[view]; window.SC_AN = AN; return AN; }
       if (view === 'conn') { if (!window.SC_CONN_UI || !window.CONN || !window.CONN.fe) return null; AN2[view] = window.SC_CONN_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile }); AN = AN2[view]; window.SC_AN = AN; return AN; }
       if (!window.SC_ANALYSIS_UI || !window.FRAME || (view === 'bridge' && !window.BRIDGE) || (view === 'building' && !window.BUILDING)) return null;
@@ -2419,7 +2410,6 @@
     if (a.startsWith('an-') && ANV.includes(S.view) && AN) { AN.onClick(a, b); return; }
     if (a.startsWith('cn-') && S.view === 'conn' && AN) { AN.onClick(a, b); return; }
     if (a.startsWith('tb-') && S.view === 'timber' && AN) { AN.onClick(a, b); return; }
-    if (a.startsWith('bq-') && S.view === 'boqwh' && AN) { AN.onClick(a, b); return; }
     if (a.startsWith('td-') && S.view === 'tdraw' && AN) { AN.onClick(a, b); return; }
     if (a === 'lang') { if (A.edit) syncModalDraft(); const wasReport = S.reportOpen; setLang(b.dataset.l); if (wasReport && S.view === 'design') { S.reportOpen = true; renderReport(); } }
     else if (a === 'nav') { const v = b.dataset.v; if (ANV.includes(v) && isOff(v)) { toast(offMsg(), 'bad'); return; } if ((v === 'home' || v === 'codes' || ANV.includes(v)) && S.role === 'guest') { S.role = 'free'; saveSession(); track('free'); } go(v); if (b.dataset.qto && ANV.includes(v)) setTimeout(() => { const an = anUI(v); if (an && an.openQto) an.openQto(); }, 30); }
