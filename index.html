@@ -956,6 +956,28 @@ body.an-resizing,body.an-resizing *{cursor:ns-resize!important;user-select:none!
 @media (max-width:900px){.an-apps{grid-template-columns:1fr}.an-appc{grid-template-columns:auto 1fr;column-gap:16px}.an-appc .ei{grid-row:span 4}}
 @media (max-width:520px){.an-appc{grid-template-columns:1fr}.an-appc .ei{grid-row:auto}}
 .box-qto .menu-n{background:linear-gradient(135deg,var(--teal),var(--ok))}
+.bq-app .bq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px 14px;margin:6px 0 10px}
+.bq-app .bq-grid .cn-f{display:flex;flex-direction:column;gap:3px;font-size:12.5px;text-align:left;align-items:stretch}.bq-app .bq-grid .cn-f>span{text-align:left}
+.bq-app .bq-grid .cn-f i{font-style:normal;color:var(--muted);font-size:11.5px}
+.bq-app .bq-grid input,.bq-app .bq-grid select{font:inherit;font-size:13px;padding:5px 7px;border:1px solid var(--line2);border-radius:7px;background:var(--bg);color:var(--ink);min-width:0}
+.bq-schw{height:min(30vh,260px)}.bq-svg{width:100%;height:100%}
+.bq-sk .gl{stroke:var(--muted);stroke-width:1.2}.bq-sk .st{stroke:var(--blue);stroke-width:3;fill:none}.bq-sk .rf{stroke:var(--ink);stroke-width:1.2;fill:none;stroke-dasharray:4 3}
+.bq-sk .cc{fill:var(--line2);stroke:var(--muted);stroke-width:.8}.bq-sk .pl{stroke:var(--muted);stroke-width:2;stroke-dasharray:3 2}.bq-sk .bw{fill:#c2410c;opacity:.75}
+.bq-sk .pw{fill:none;stroke:var(--ink);stroke-width:1.2}.bq-sk .fr{stroke:var(--blue);stroke-width:1;opacity:.55}.bq-sk .cl{fill:var(--blue)}.bq-sk .gp{fill:var(--teal,#0f9f8f)}.bq-sk .br{stroke:#c2410c;stroke-width:.8;fill:none}.bq-sk .rs{stroke:#c2410c;stroke-width:4}
+.bq-sk .dm{font-size:11px;fill:var(--muted);text-anchor:middle}.bq-sk .tt{font-size:11px;font-weight:700;fill:var(--ink);letter-spacing:.04em}
+.bq-app .an-wt li.bq-tt{display:flex;flex-direction:column;align-items:flex-start;padding:6px 8px 8px;border-bottom:1px solid var(--line2);margin-bottom:4px}
+.bq-app .an-wt li.bq-th{display:block;padding:10px 8px 2px;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.bq-app .an-wt li.bq-tot{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin:12px 6px 6px;padding:10px;border-radius:10px;background:var(--bg);border:1px solid var(--line2)}.bq-tot b{font-size:18px;font-variant-numeric:tabular-nums}
+.bq-app .an-tl2{display:flex;justify-content:space-between;gap:6px;width:100%}
+.bq-app th.num,.report .bq-boq th.num{text-align:right}.bq-boq td{vertical-align:top}.bq-calc{font-size:11px;color:var(--muted);font-family:var(--f-mono);white-space:normal;margin-top:2px}
+.bq-cat td{font-weight:700;background:var(--bg)}.bq-sub td{font-weight:600;border-top:1px solid var(--line2)}.bq-gt td{font-weight:800;border-top:2px solid var(--ink);font-size:13.5px}
+.bq-chk{display:inline-flex;gap:6px;align-items:center;font-size:13px;margin:2px 0 8px}
+.bq-warn{border-left:3px solid #d97706;padding:6px 10px;background:color-mix(in srgb,#d97706 8%,transparent);border-radius:6px}
+.bq-ed td{background:color-mix(in srgb,var(--blue) 7%,transparent)}
+.bq-app .tb-panel .cn-tbl td input{width:100%;min-width:60px}
+.bq-words{margin:6px 2px;font-weight:600}
+.bq-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}.bq-kpi>div{border:1px solid var(--line2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.bq-kpi b{font-size:18px;font-variant-numeric:tabular-nums}.bq-kpi span{font-size:12px;color:var(--muted)}
+.report .bq-calc{font-size:9px}.report .bq-boq table{font-size:10.5px}
 .an-qto{cursor:default}.an-qto:hover{transform:none;border-color:var(--line2)}
 .an-qbtns{display:flex;flex-direction:column;gap:6px}
 @media (max-width:640px){.an-qbtns{flex-direction:row;flex-wrap:wrap}}
@@ -1261,6 +1283,9 @@ body.an-resizing,body.an-resizing *{cursor:ns-resize!important;user-select:none!
 <script src="tdet_p4.js"></script>
 <script src="tdet_p42.js"></script>
 <script src="tdraw.js"></script>
+<script src="xlsxw.js"></script>
+<script src="boq.js"></script>
+<script src="boqui.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
