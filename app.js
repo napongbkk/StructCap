@@ -2108,7 +2108,7 @@
         pdf.text('Page ' + (i + 1) + ' of ' + n, 210 - mm.r, 297 - mm.b + 8.5, { align: 'right' });
       }
       const blob = pdf.output('blob');
-      const name = ANV.includes(S.view) ? (S.meta.ref || S.view).replace(/[^\w\-]+/g, '_') + (S.view === 'conn' ? '_steel-connection_' : S.view === 'timber' ? '_timber-bridge-rating_' : '_frame-analysis_') + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
+      const name = ANV.includes(S.view) ? (S.meta.ref || S.view).replace(/[^\w\-]+/g, '_') + (S.view === 'conn' ? '_steel-connection_' : S.view === 'timber' ? '_timber-bridge-rating_' : S.view === 'colclamp' ? '_column-clamp_' : '_frame-analysis_') + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
       if (dl) await dl.save({ filename: name, data: blob }); else pdf.save(name);
       toast(T('PDF saved', 'บันทึก PDF แล้ว'), 'ok');
     } catch (e) {
