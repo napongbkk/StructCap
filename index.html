@@ -722,6 +722,28 @@ button.an-pickrow:hover{border-color:var(--line2)} button.an-pickrow.on{border-c
 .box-analysis .menu-n{background:linear-gradient(135deg,var(--blue),var(--teal))}
 .box-special .menu-n{background:linear-gradient(135deg,#7c3aed,#db2777)}
 .box-field .menu-n{background:linear-gradient(135deg,#0f9f8f,#2e6bff)}
+.cc-app{display:block;padding:0}
+.cc-wrap{display:flex;flex-direction:column;height:calc(100vh - 70px);min-height:520px}
+.cc-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line2);background:var(--card)}
+.cc-tabs{display:flex;gap:4px}.cc-tab{font:inherit;font-size:13.5px;font-weight:600;padding:6px 14px;border:1px solid var(--line2);border-radius:8px;background:var(--bg);color:var(--ink);cursor:pointer}.cc-tab[aria-pressed=true]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.cc-lockt{font-size:12px;color:var(--muted)}.cc-bar .grow{flex:1}
+.cc-main{flex:1;min-height:0;display:grid;grid-template-columns:270px minmax(0,1fr)}
+.cc-side{overflow:auto;border-right:1px solid var(--line2);padding:10px;background:var(--card);font-size:12.5px}
+.cc-stat{display:flex;flex-direction:column;gap:2px;padding:10px;border-radius:10px;margin-bottom:8px;border:1px solid}.cc-stat.ok{border-color:#16a34a;background:color-mix(in srgb,#16a34a 8%,transparent)}.cc-stat.bad{border-color:#dc2626;background:color-mix(in srgb,#dc2626 8%,transparent)}.cc-stat b{font-size:14px}.cc-stat small{color:var(--muted)}
+.cc-nh{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin:12px 2px 4px}
+.cc-nav,.cc-ck{display:flex;justify-content:space-between;gap:6px;width:100%;text-align:left;font:inherit;font-size:12px;padding:4px 6px;border:0;border-radius:6px;background:none;color:var(--ink);cursor:pointer}.cc-nav:hover,.cc-ck:hover{background:var(--bg)}
+.cc-ck span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cc-ck b{white-space:nowrap;color:#15803d;font-variant-numeric:tabular-nums}.cc-ck.bad b{color:#dc2626}
+.cc-view{overflow:auto;background:#e9ecf1;padding:12px}
+.cc-zoom{width:max-content;margin:0 auto;box-shadow:0 2px 14px rgba(0,0,0,.15)}
+.cc-load,.cc-lock{padding:40px;display:flex;justify-content:center}.cc-lock .card{max-width:620px;padding:22px}
+.xs-sheet{position:relative;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;font-size:13.33px;overflow:hidden}
+.xs-c{position:absolute;box-sizing:border-box;display:flex;overflow:hidden;white-space:pre;line-height:1.15;padding:0 2px}
+.xs-c.xs-w{white-space:pre-wrap;word-break:break-word}.xs-c span{display:block;max-width:100%}
+.xs-chw{position:absolute}.xs-chw svg{display:block;font-family:Arial,Helvetica,sans-serif}
+.xs-ic{padding:0}.xs-in{width:100%;height:100%;box-sizing:border-box;border:0;background:transparent;font-family:Arial,Helvetica,sans-serif;color:#0000ff;padding:0 3px;outline:none}
+.xs-in:focus{outline:2px solid #2e6bff;outline-offset:-2px;background:#fff}select.xs-in{cursor:pointer;padding:0}
+.cc-print{position:fixed;left:-30000px;top:0}
+@media (max-width:900px){.cc-main{grid-template-columns:1fr}.cc-side{max-height:200px;border-right:0;border-bottom:1px solid var(--line2)}.cc-wrap{height:auto}}
 .an-apps.an-apps1{grid-template-columns:minmax(0,1fr)}
 .an-apps1 .an-appc{grid-template-columns:auto minmax(0,1fr);column-gap:18px}
 .an-apps1 .an-appc .ei{grid-row:span 4}
@@ -1261,6 +1283,9 @@ body.an-resizing,body.an-resizing *{cursor:ns-resize!important;user-select:none!
 <script src="tdet_p4.js"></script>
 <script src="tdet_p42.js"></script>
 <script src="tdraw.js"></script>
+<script src="xlcalc.js"></script>
+<script src="xlsheet.js"></script>
+<script src="colclampui.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
