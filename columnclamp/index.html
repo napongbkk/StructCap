@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Column Clamp Weld Sequence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: shop-traveller - step list left, 3D model centre, weld card for the current step below the model */
+:root{
+  --bg:#EEF0F2; --panel:#FFFFFF; --ink:#1B232B; --muted:#5B6672; --line:#CDD3D9; --steel:#2E5C8A;
+  --weld:#D9482B; --weld-done:#7A2416; --pp:#2D6BE0; --pp-done:#1B3F86; --chip:#E3E8ED; --focus:#2E5C8A;
+  --scene:#F6F7F8; --edge:#2C2C2A;
+  --display:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12171C; --panel:#1A2128; --ink:#E4E9EE; --muted:#97A3AF; --line:#2E3842; --steel:#7FA8D1;
+  --weld:#F06A4B; --weld-done:#B4472E; --pp:#5B95FF; --pp-done:#3A64B8; --chip:#25303A; --focus:#7FA8D1; --scene:#161C22; --edge:#C9D1D8; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171C; --panel:#1A2128; --ink:#E4E9EE; --muted:#97A3AF; --line:#2E3842; --steel:#7FA8D1;
+  --weld:#F06A4B; --weld-done:#B4472E; --pp:#5B95FF; --pp-done:#3A64B8; --chip:#25303A; --focus:#7FA8D1; --scene:#161C22; --edge:#C9D1D8; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--display);font-size:15px;line-height:1.55;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 32px}
+.wrap{max-width:1240px;margin:0 auto;display:grid;gap:16px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px;border-bottom:1px solid var(--line);padding-bottom:12px}
+h1{font-size:clamp(20px,2.4vw,26px);font-weight:600;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.meta{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.02em}
+.grid{display:grid;grid-template-columns:280px minmax(0,1fr);gap:16px}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.steps{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:2px;align-self:start}
+.steps button{all:unset;display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;padding:9px 10px;border-radius:4px;cursor:pointer;color:var(--ink)}
+.steps button:hover{background:var(--chip)}
+.steps button:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.steps button[aria-current="step"]{background:var(--chip);box-shadow:inset 3px 0 0 var(--weld)}
+.num{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:2px}
+.steps .t{font-size:14px;font-weight:500;line-height:1.35}
+.steps .w{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:2px}
+.stage{display:grid;gap:12px;min-width:0}
+.viewer{position:relative;background:var(--scene);border:1px solid var(--line);border-radius:6px;overflow:hidden;height:min(62vh,560px);min-height:340px;cursor:grab}
+.viewer:active{cursor:grabbing}
+.hud{position:absolute;left:12px;top:12px;right:12px;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.hud>*{pointer-events:auto}
+.tb{font-family:var(--display);font-size:12.5px;font-weight:500;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:6px 10px;cursor:pointer}
+.tb:hover{border-color:var(--muted)}
+.tb:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.tb[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.spacer{flex:1}
+.hint{position:absolute;left:12px;bottom:10px;font-family:var(--mono);font-size:11px;color:var(--muted);pointer-events:none}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;display:grid;gap:12px}
+.cardhead{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
+.cardhead h2{font-size:18px;font-weight:600;margin:0;flex:1;min-width:0;text-wrap:balance}
+.nav{display:flex;gap:6px}
+.desc{margin:0;color:var(--muted);max-width:75ch}
+.access{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--weld);border-radius:4px;font-size:13.5px}
+.access b{color:var(--weld);font-weight:600;white-space:nowrap}
+.tblwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:520px}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.id{font-family:var(--mono);font-weight:500;color:var(--weld)}
+td.id.pp{color:var(--pp)}
+td.mono{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.side{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:3px;background:var(--chip)}
+.none{color:var(--muted);font-style:italic}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+footer{font-size:12.5px;color:var(--muted);max-width:90ch}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="meta">C8136 · TYPE 5 COLUMN CLAMP (CC) · ONE CLAMP HALF</div>
+      <h1>Column clamp fabrication and weld sequence</h1>
+    </div>
+    <div class="meta">Sizes from 07_T5_Column_Clamp Rev35 · dimensions in mm</div>
+  </header>
+
+  <div class="grid">
+    <nav class="steps" id="steps" aria-label="Fabrication steps"></nav>
+
+    <section class="stage">
+      <div class="viewer" id="viewer">
+        <div class="hud">
+          <button class="tb" id="vIso" type="button">Iso</button>
+          <button class="tb" id="vTop" type="button">Plan</button>
+          <button class="tb" id="vSide" type="button">Side</button>
+          <span class="spacer"></span>
+          <button class="tb" id="tSee" type="button" aria-pressed="true">See-through end plates</button>
+          <button class="tb" id="tExp" type="button" aria-pressed="false">Lift outer plate</button>
+          <button class="tb" id="tPlay" type="button" aria-pressed="false">Play</button>
+        </div>
+        <div class="hint">Drag to rotate · scroll or pinch to zoom · right-drag to pan</div>
+      </div>
+
+      <article class="card" aria-live="polite">
+        <div class="cardhead">
+          <h2 id="sTitle">Step 1</h2>
+          <div class="nav">
+            <button class="tb" id="prev" type="button">Previous</button>
+            <button class="tb" id="next" type="button">Next</button>
+          </div>
+        </div>
+        <p class="desc" id="sDesc"></p>
+        <div class="access" id="sAccess" hidden><b>Access</b><span id="sAccessT"></span></div>
+        <div class="tblwrap">
+          <table>
+            <thead><tr><th>Weld</th><th>Joint</th><th>Type</th><th>Size</th><th>Side</th></tr></thead>
+            <tbody id="sWelds"></tbody>
+          </table>
+        </div>
+        <div class="legend">
+          <span><span class="sw" style="background:#2E5C8A"></span>End plates 40</span>
+          <span><span class="sw" style="background:#1D9E75"></span>Web plates 30</span>
+          <span><span class="sw" style="background:#D4537E"></span>Diaphragm 40</span>
+          <span><span class="sw" style="background:#EF9F27"></span>Stiffeners 25</span>
+          <span><span class="sw" style="background:#97C459"></span>Bar cell walls / side plates 25</span>
+          <span><span class="sw" style="background:var(--weld)"></span>Fillet weld (FW) this step</span>
+          <span><span class="sw" style="background:var(--weld-done)"></span>FW completed</span>
+          <span><span class="sw" style="background:var(--pp)"></span>PPBW this step</span>
+          <span><span class="sw" style="background:var(--pp-done)"></span>PPBW completed</span>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <footer>
+    Rule used: no weld is made inside a closed cell and no slot welds are used. Internal joints are double fillets made while the pockets are open; the outer end plate is PPBW where reached through the open side bays and fitted for bearing elsewhere; the side plates close the box and are PPBW to both end plates from outside. Sequence for discussion with the fabricator; the final order follows their welding procedure and access check.
+    FW = fillet weld (leg s), BS = both sides, PPBW = partial penetration butt weld. The model is simplified: corner snipes 10x10 and bar holes are not drawn,
+    and one-side welds are drawn on the face the welder works from.
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const H=853,B=1416,BL=900,HN=140,TE=40,LX=600,TW=30,TD=40,PD=20,TS=25,TC=25,LS=350;
+const YW=[778,496.5,215,70],XS=[160,305],XC=[470.5,695.5],GB=583,YB=[638,355];
+const COL={ep:0x2E5C8A,wp:0x1D9E75,di:0xD4537E,st:0xEF9F27,cw:0x97C459,bar:0x6B6A64,bp:0x444441};
+const WELDS={
+ W1:['Web plates to inner end plate','Double fillet','16 FW','BS'],
+ W2:['Centre diaphragm to inner end plate','Double fillet','12 FW','BS'],
+ W4:['Stiffeners to inner end plate','Double fillet','10 FW','BS'],
+ W5:['Stiffeners to web plates','Double fillet','10 FW','BS'],
+ W7:['Inner bar cell walls to web plates','Double fillet','10 FW','BS'],
+ W8:['Inner bar cell walls to inner end plate','Double fillet','10 FW','BS'],
+ W9:['Centre diaphragm to web plates','Double fillet','10 FW','BS'],
+ 'PPBW 1':['Web plates 1, 3 and 4 to outer end plate - full length, open face','PPBW one side','Throat per calc','Open face'],
+ 'PPBW 2':['Web plate 2 and inner cell walls to outer end plate - outer bays only','PPBW one side','Throat per calc','Outer bay'],
+ 'PPBW 3':['Diaphragm to outer end plate - above web plate 1 and below web plate 3','PPBW one side','Throat per calc','Open zone'],
+ Bearing:['Diaphragm and plates inside the closed centre cells to outer end plate','Fitted for full contact bearing - no weld','EN 1090-2 fit-up','-'],
+ 'PPBW side':['Side plates (infill between web plates) - all round to web plates and both end plates','PPBW from outside','Throat per calc','Outside']};
+const STEPS=[
+ {t:'Inner end plate on the bench',w:[],d:'Lay the 40 thk inner end plate (1416 x 853, lower part 900 wide) flat on the bench, column face down. Mark out every plate line. Everything below is built up from this plate.'},
+ {t:'Centre diaphragm',w:['W2'],d:'Stand the 40 thk diaphragm on the centre line (it runs the full height and projects 20 above for the LCB seat). Weld both sides to the inner end plate.'},
+ {t:'Web plates',w:['W1','W9'],d:'Fit the four 30 thk web plates, each in one piece on each side of the diaphragm and continuous through the bar cell line. Fillet weld both sides to the inner end plate and to the diaphragm while the sides and outer face are open.'},
+ {t:'Stiffeners between web plates 1 and 2',w:['W4','W5'],d:'Fit the 25 thk stiffeners into the top panel. Fillet weld both sides to the inner end plate and to both web plates, from the open outer face.'},
+ {t:'Inner bar cell walls',w:['W8','W7'],d:'Fit the inner cell wall pieces between web plates 1-2 and 2-3 (web plate 2 stays continuous). Fillet weld both sides to the inner end plate and to the web plates, from the open outer face.',a:'Pockets are about 250 x 225 x 520 deep. Weld the deep end at the inner end plate first and confirm torch reach with the fabricator.'},
+ {t:'Close with the outer end plate',w:['PPBW 1','PPBW 2','PPBW 3','Bearing'],d:'Fit the outer end plate on all internal plates and PPBW it from the open sides: web plates 1, 3 and 4 along their full length on the open face, web plate 2 and the inner cell walls in the outer bays, and the diaphragm in the open zones above web plate 1 and below web plate 3.',a:'The closed centre cells (between the diaphragm and the inner cell walls, web plates 1 to 3) are not welded inside - the plates there are fitted for contact bearing on the outer end plate.'},
+ {t:'Side plates',w:['PPBW side'],d:'Web plates 1 to 3 run out to the plate edge. Fit the 25 thk side plates in between them, flush with the edges, closing the outer bays. PPBW each side plate all round from outside: to the web plate above, the web plate below and both end plates. No slot welds.'},
+ {t:'Stress bars and bearing plates',w:[],d:'No welding. Fit the 250 x 250 x 70 loose bearing plates, DIA 160 spherical washers and nuts on the 75 DIA stress bars at 1166 centres.'}];
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const el=document.getElementById('viewer');
+const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(2,devicePixelRatio));
+el.prepend(R.domElement);
+const S=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(32,1,0.01,60);
+const ctl=new THREE.OrbitControls(cam,R.domElement);ctl.enableDamping=true;ctl.target.set(0,0.3,-0.42);
+S.add(new THREE.HemisphereLight(0xffffff,0x8a9099,0.75));
+const dl=new THREE.DirectionalLight(0xffffff,0.55);dl.position.set(2,3.2,1.6);S.add(dl);
+const G=new THREE.Group();G.rotation.x=-Math.PI/2;S.add(G);
+const grid=new THREE.GridHelper(3,30,0x9aa3ad,0xc4cad0);grid.position.y=-0.002;S.add(grid);
+const s=0.001,parts=[],edges=[];
+function box(x0,x1,y0,y1,z0,z1,col,step,kind){
+  const g=new THREE.BoxGeometry((x1-x0)*s,(y1-y0)*s,(z1-z0)*s);
+  const m=new THREE.MeshLambertMaterial({color:col,transparent:true});
+  const me=new THREE.Mesh(g,m);me.position.set((x0+x1)/2*s,(y0+y1)/2*s,(z0+z1)/2*s);
+  const e=new THREE.LineSegments(new THREE.EdgesGeometry(g),new THREE.LineBasicMaterial({transparent:true,opacity:.55}));
+  me.add(e);edges.push(e);me.userData={step,kind,base:me.position.z};G.add(me);parts.push(me);return me;}
+function weld(a,b,step,kind){
+  const v=new THREE.Vector3(b[0]-a[0],b[1]-a[1],b[2]-a[2]).multiplyScalar(s);
+  const me=new THREE.Mesh(new THREE.CylinderGeometry(.0075,.0075,v.length(),8),new THREE.MeshBasicMaterial());
+  me.position.set((a[0]+b[0])/2*s,(a[1]+b[1])/2*s,(a[2]+b[2])/2*s);
+  me.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.clone().normalize());
+  me.userData={step,kind:'w',outer:kind==='outer',base:me.position.z};G.add(me);parts.push(me);}
+function endPlate(z0,z1,step,kind){box(-B/2,B/2,HN,H,z0,z1,COL.ep,step,kind);box(-BL/2,BL/2,0,HN,z0,z1,COL.ep,step,kind);}
+endPlate(0,TE,0,'inner');
+const ZI=TE+6,ZO=LX-TE-6,EDGE=B/2,XSP=B/2-TC;
+box(-TD/2,TD/2,0,H+PD,TE,LX-TE,COL.di,1);
+for(const g of[-1,1])weld([g*(TD/2+6),6,ZI],[g*(TD/2+6),H-6,ZI],1);
+const wspan=i=>i===3?BL/2:EDGE;
+for(let i=0;i<4;i++)for(const g of[-1,1]){
+  const x0=g>0?TD/2:-wspan(i),x1=g>0?wspan(i):-TD/2;
+  box(x0,x1,YW[i]-TW/2,YW[i]+TW/2,TE,LX-TE,COL.wp,2);
+  for(const f of[1,-1]){weld([x0,YW[i]+f*(TW/2+6),ZI],[x1,YW[i]+f*(TW/2+6),ZI],2);
+    weld([g*(TD/2+6),YW[i]+f*(TW/2+6),TE],[g*(TD/2+6),YW[i]+f*(TW/2+6),LX-TE],2);}}
+for(const g of[-1,1])for(const x of XS){
+  box(g*x-TS/2,g*x+TS/2,YW[1]+TW/2,YW[0]-TW/2,TE,TE+LS,COL.st,3);
+  for(const f of[1,-1]){const xw=g*(x+f*(TS/2+6));
+    weld([xw,YW[1]+TW/2,ZI],[xw,YW[0]-TW/2,ZI],3);
+    weld([xw,YW[0]-TW/2-6,TE],[xw,YW[0]-TW/2-6,TE+LS],3);weld([xw,YW[1]+TW/2+6,TE],[xw,YW[1]+TW/2+6,TE+LS],3);}}
+const BAYS=[[YW[1]+TW/2,YW[0]-TW/2],[YW[2]+TW/2,YW[1]-TW/2]];
+for(const g of[-1,1])for(const [y0,y1] of BAYS){
+  const x=XC[0];box(g*x-TC/2,g*x+TC/2,y0,y1,TE,LX-TE,COL.cw,4);
+  for(const f of[1,-1]){const xw=g*(x+f*(TC/2+6));
+    weld([xw,y0,ZI],[xw,y1,ZI],4);weld([xw,y1-6,TE],[xw,y1-6,LX-TE],4);weld([xw,y0+6,TE],[xw,y0+6,LX-TE],4);}}
+endPlate(LX-TE,LX,5,'outer');
+const XB=XC[0]+TC/2,PO=(a,b)=>weld(a,b,5,'outer');
+for(const g of[-1,1]){
+  PO([g*TD/2,YW[0]+TW/2+6,ZO],[g*EDGE,YW[0]+TW/2+6,ZO]);
+  PO([g*TD/2,YW[2]-TW/2-6,ZO],[g*EDGE,YW[2]-TW/2-6,ZO]);
+  PO([g*TD/2,YW[3]-TW/2-6,ZO],[g*BL/2,YW[3]-TW/2-6,ZO]);
+  for(const f of[1,-1])PO([g*XB,YW[1]+f*(TW/2+6),ZO],[g*EDGE,YW[1]+f*(TW/2+6),ZO]);
+  for(const [y0,y1] of BAYS)PO([g*(XB+6),y0,ZO],[g*(XB+6),y1,ZO]);
+  PO([g*(TD/2+6),YW[0]+TW/2,ZO],[g*(TD/2+6),H-6,ZO]);
+  PO([g*(TD/2+6),6,ZO],[g*(TD/2+6),YW[2]-TW/2,ZO]);}
+for(const g of[-1,1])for(const [y0,y1] of BAYS){
+  box(g*XSP,g*EDGE,y0,y1,TE,LX-TE,COL.cw,6,'side');
+  const xe=g*(EDGE+4);
+  weld([xe,y0+4,TE],[xe,y0+4,LX-TE],6);weld([xe,y1-4,TE],[xe,y1-4,LX-TE],6);
+  weld([xe,y0,TE+4],[xe,y1,TE+4],6);weld([xe,y0,LX-TE-4],[xe,y1,LX-TE-4],6);}
+for(const g of[-1,1])for(const y of YB){
+  const b=new THREE.Mesh(new THREE.CylinderGeometry(.0375,.0375,.9,20),new THREE.MeshLambertMaterial({color:COL.bar,transparent:true}));
+  b.rotation.x=Math.PI/2;b.position.set(g*GB*s,y*s,.33);b.userData={step:7,kind:'bar',base:.33};G.add(b);parts.push(b);
+  box(g*GB-125,g*GB+125,y-125,y+125,LX,LX+70,COL.bp,7,'bp');
+  const w=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.02,24),new THREE.MeshLambertMaterial({color:COL.bp,transparent:true}));
+  w.rotation.x=Math.PI/2;w.position.set(g*GB*s,y*s,(LX+80)*s);w.userData={step:7,kind:'bp',base:w.position.z};G.add(w);parts.push(w);
+  const n=new THREE.Mesh(new THREE.CylinderGeometry(.065,.065,.075,6),new THREE.MeshLambertMaterial({color:0x2C2C2A,transparent:true}));
+  n.rotation.x=Math.PI/2;n.position.set(g*GB*s,y*s,(LX+127)*s);n.userData={step:7,kind:'bp',base:n.position.z};G.add(n);parts.push(n);}
+
+let cur=0,see=true,lift=false,timer=null;
+const stepsEl=document.getElementById('steps');
+STEPS.forEach((st,i)=>{const b=document.createElement('button');b.type='button';b.id='step-'+(i+1);
+  b.innerHTML='<span class="num">'+String(i+1).padStart(2,'0')+'</span><span><div class="t"></div><div class="w"></div></span>';
+  b.querySelector('.t').textContent=st.t;b.querySelector('.w').textContent=st.w.length?st.w.join(' · '):'No welding';
+  b.onclick=()=>{stop();go(i);};stepsEl.appendChild(b);});
+function themeColors(){
+  R.setClearColor(new THREE.Color(css('--scene')||'#F6F7F8'));
+  const ec=new THREE.Color(css('--edge')||'#2C2C2A');edges.forEach(e=>e.material.color.copy(ec));
+  const dark=(css('color-scheme')||'').includes('dark')||document.documentElement.dataset.theme==='dark'||
+    (!document.documentElement.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches);
+  grid.material.color&&(grid.material.opacity=dark?.25:.6,grid.material.transparent=true);render();}
+function render(){
+  const wN=new THREE.Color(css('--weld')||'#D9482B'),wD=new THREE.Color(css('--weld-done')||'#7A2416');
+  const pN=new THREE.Color(css('--pp')||'#2D6BE0'),pD=new THREE.Color(css('--pp-done')||'#1B3F86');
+  const dz=lift&&cur>=5?.32:0;
+  parts.forEach(p=>{const u=p.userData;p.visible=u.step<=cur;
+    const isOuter=u.kind==='outer'||u.kind==='bar'||u.kind==='bp';
+    p.position.z=u.base+((isOuter&&u.kind!=='w')||u.outer?dz:0);
+    if(u.kind==='w'){const pp=u.step>=5;p.material.color.copy(u.step===cur?(pp?pN:wN):(pp?pD:wD));const k=u.step===cur?1.7:1;p.scale.set(k,1,k);}
+    else{const t=see&&((u.kind==='inner'&&cur>=2)||u.kind==='outer');p.material.opacity=t?.2:1;p.material.depthWrite=!t;
+      if(p.children[0])p.children[0].material.opacity=t?.28:.55;}});}
+function go(i){cur=(i+STEPS.length)%STEPS.length;const st=STEPS[cur];
+  document.getElementById('sTitle').textContent='Step '+(cur+1)+' of '+STEPS.length+' · '+st.t;
+  document.getElementById('sDesc').textContent=st.d;
+  const ac=document.getElementById('sAccess');ac.hidden=!st.a;document.getElementById('sAccessT').textContent=st.a||'';
+  const tb=document.getElementById('sWelds');tb.innerHTML='';
+  if(!st.w.length){tb.innerHTML='<tr><td colspan="5" class="none">No welds in this step</td></tr>';}
+  st.w.forEach(id=>{const w=WELDS[id];const tr=document.createElement('tr');
+    tr.innerHTML='<td class="id'+(/PPBW/.test(w[1])?' pp':'')+'"></td><td></td><td></td><td class="mono"></td><td><span class="side"></span></td>';
+    const c=tr.children;c[0].textContent=id;c[1].textContent=w[0];c[2].textContent=w[1];c[3].textContent=/^\d+ FW$/.test(w[2])?w[2]+' (a = '+(parseInt(w[2])/Math.SQRT2).toFixed(1)+')':w[2];
+    c[4].firstChild.textContent=w[3]==='BS'?'BS · both sides':(w[3]==='OS'?'OS · one side':w[3]);tb.appendChild(tr);});
+  [...stepsEl.children].forEach((b,k)=>b.setAttribute('aria-current',k===cur?'step':'false'));
+  render();}
+function stop(){if(timer){clearInterval(timer);timer=null;const b=document.getElementById('tPlay');b.setAttribute('aria-pressed','false');b.textContent='Play';}}
+document.getElementById('prev').onclick=()=>{stop();go(cur-1);};
+document.getElementById('next').onclick=()=>{stop();go(cur+1);};
+document.getElementById('tSee').onclick=e=>{see=!see;e.currentTarget.setAttribute('aria-pressed',see);render();};
+document.getElementById('tExp').onclick=e=>{lift=!lift;e.currentTarget.setAttribute('aria-pressed',lift);render();};
+document.getElementById('tPlay').onclick=e=>{if(timer){stop();return;}
+  e.currentTarget.setAttribute('aria-pressed','true');e.currentTarget.textContent='Pause';
+  timer=setInterval(()=>go(cur+1),2600);};
+const VIEWS={vIso:[1.9,1.55,1.9],vTop:[0.001,3.0,-0.42],vSide:[2.9,0.45,-0.42]};
+Object.keys(VIEWS).forEach(k=>document.getElementById(k).onclick=()=>{cam.position.set(...VIEWS[k]);ctl.target.set(0,0.3,-0.42);ctl.update();});
+document.addEventListener('keydown',e=>{if(e.target.closest('input,textarea'))return;
+  if(e.key==='ArrowRight'){stop();go(cur+1);} if(e.key==='ArrowLeft'){stop();go(cur-1);}});
+function size(){const w=el.clientWidth,h=el.clientHeight;R.setSize(w,h);cam.aspect=w/h;cam.updateProjectionMatrix();}
+new ResizeObserver(size).observe(el);size();
+cam.position.set(...VIEWS.vIso);
+new MutationObserver(themeColors).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',themeColors);
+const h=(location.hash||'').match(/^#step-(\d)$/);go(h?Math.min(STEPS.length,+h[1])-1:0);themeColors();
+(function loop(){requestAnimationFrame(loop);ctl.update();R.render(S,cam);})();
+</script>
+</body>
+</html>
