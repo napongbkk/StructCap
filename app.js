@@ -377,7 +377,7 @@
   // functions the administrator has switched off (settings/global.off = { key: true }); the administrator still sees them
   const FEATS = [
     ['Structural design', 'ออกแบบโครงสร้าง', [['beam', 'RC Beam', 'คาน คสล.'], ['column', 'RC Column', 'เสา คสล.'], ['pilecap', 'RC Pile Cap', 'ฐานรากบนเสาเข็ม'], ['stm3d', 'Pile Cap 3D STM', 'ฐานรากเข็ม STM 3 มิติ'], ['lwall', 'Limestone Block Wall', 'กำแพงกันดินก้อนหินปูน'], ['barrier', 'Bridge Barrier (Thai)', 'ราวกันตกสะพาน (ไทย)'], ['sbarrier', 'Steel Post-and-Rail Barrier', 'ราวกันตกเหล็ก'], ['gantry', 'Sign Gantry', 'โครงป้ายจราจรยื่น']]],
-    ['Structural analysis', 'วิเคราะห์โครงสร้าง', [['analysis', '3D frame & truss', 'โครงข้อแข็งและโครงถัก 3 มิติ'], ['building', 'Building design', 'อาคาร'], ['bridge', 'Bridge', 'สะพาน'], ['conn', 'Steel connections', 'รอยต่อเหล็ก']]],
+    ['Structural analysis', 'วิเคราะห์โครงสร้าง', [['analysis', '3D frame & truss', 'โครงข้อแข็งและโครงถัก 3 มิติ'], ['building', 'Building design', 'อาคาร'], ['house', 'House design (RC + steel roof)', 'ออกแบบบ้านพักอาศัย'], ['bridge', 'Bridge', 'สะพาน'], ['conn', 'Steel connections', 'รอยต่อเหล็ก']]],
     ['Special design', 'งานออกแบบพิเศษ', [['shelter', 'Bus shelter footing', 'ฐานรากที่พักผู้โดยสาร'], ['signcol', 'Sign column footing', 'ฐานรากเสาป้าย']]],
     ['Timber bridges', 'สะพานไม้', [['timber', 'Timber bridge assessment', 'ประเมินสะพานไม้'], ['tdraw', 'Repair detail drawings', 'แบบรายละเอียดการซ่อม']]],
     ['Output', 'ผลลัพธ์', [['pdf', 'PDF export (reports and drawings)', 'ส่งออก PDF (รายงานและแบบ)'], ['dxf', 'AutoCAD DXF export', 'ส่งออก DXF สำหรับ AutoCAD']]]
@@ -627,7 +627,7 @@
   }
 
   // ------------------------------------------------------------------ navigation
-  const ANV = ['analysis', 'building', 'bridge', 'conn', 'timber', 'tdraw'];
+  const ANV = ['analysis', 'building', 'bridge', 'conn', 'timber', 'tdraw', 'house'];
   function go(view, patch) { Object.assign(S, patch || {}); S.view = view; S.codePop = false; S.reportOpen = false; render(); window.scrollTo(0, 0); }
   function saveSession() { ss.set('srcSession', { role: S.role, user: S.user }); }
   function logout() { S.role = 'guest'; S.user = null; ss.del('srcSession'); ss.del('scAdminToken'); ss.del('scUserToken'); A.loaded = false; go('landing'); toast(T('Signed out', 'ออกจากระบบแล้ว')); }
@@ -1045,6 +1045,7 @@
         <div class="an-apps">${[
           ['analysis', analysisIcon(), T('3D frame & truss', 'โครงข้อแข็งและโครงถัก 3 มิติ'), T('Any frame, truss or grillage: nodes and elements, supports, releases, loads and combinations.', 'โครงข้อแข็ง โครงถัก หรือกริลเลจ: จุดต่อ ชิ้นส่วน จุดรองรับ การปลดแรง น้ำหนัก และการรวมน้ำหนัก'), [T('Linear static', 'สถิตเชิงเส้น'), 'P-Delta', T('Modal', 'โหมด'), T('Buckling', 'การโก่งเดาะ'), T('Results → RC design', 'ผล → ออกแบบ RC')]],
           ['building', buildingIcon(), T('Building design', 'อาคาร'), T('Grid lines and stories, draw columns, beams and slabs on plan, floor loads by tributary area, automatic wind, story drift.', 'เส้นกริดและชั้น วาดเสา คาน แผ่นพื้นบนแปลน น้ำหนักบนพื้นตามพื้นที่รับ แรงลมอัตโนมัติ ดริฟต์รายชั้น'), [T('Grids & stories', 'กริดและชั้น'), T('Floor loads', 'น้ำหนักบนพื้น'), T('Wind AS · EN · DPT 1311-50', 'ลม AS · EN · มยผ. 1311-50'), T('Rigid diaphragm', 'ไดอะแฟรมแข็ง'), T('Story drift', 'ดริฟต์')]],
+          ['house', houseIcon(), T('House design', 'ออกแบบบ้านพักอาศัย'), T('Prefabricated and small houses: grids, storeys, columns, pedestals and footings, beams, slabs, stair and steel roof. 3D analysis, automatic RC and steel design with your own adjustments, 3D rebar, Thai calculation report, BBS / BOQ and permit drawings (PDF, DXF).', 'บ้านสำเร็จรูปและบ้านพักอาศัย: กริด ชั้น เสา ตอม่อ ฐานราก คาน พื้น บันได และโครงหลังคาเหล็ก วิเคราะห์ 3 มิติ ออกแบบ คสล. และเหล็กอัตโนมัติ ปรับแก้ได้ เหล็กเสริม 3D รายการคำนวณ BBS / BOQ และแบบขออนุญาต (PDF, DXF)'), ['SDM · ว.ส.ท.', T('Steel roof ASD', 'หลังคาเหล็ก ASD'), T('Calc report', 'รายการคำนวณ'), 'BBS · BOQ', 'PDF · DXF A4–A0']],
           ['bridge', bridgeIcon(), T('Bridge', 'สะพาน'), T('Girder decks, box girders, truss, arch and cable-stayed bridges under moving traffic loads.', 'สะพานคาน คานกล่อง โครงถัก โค้ง และขึงเคเบิล ภายใต้น้ำหนักจราจรเคลื่อนที่'), ['AS 5100 · EN 1991-2 · HL-93', T('Influence lines', 'เส้นอิทธิพล'), T('Construction stages', 'ขั้นตอนก่อสร้าง'), T('Prestress', 'แรงอัดล่วงหน้า')]],
           ['conn', connIcon(), T('Steel connections', 'รอยต่อเหล็ก'), T('Bolted and welded joints: end plates, fin plates, cleats, base plates, splices, gussets and tube joints, checked by plate FE (CBFEM) and the component method.', 'รอยต่อสลักเกลียวและรอยเชื่อม: แผ่นปลาย แผ่นครีบ เหล็กฉาก แผ่นฐาน รอยต่อทาบ แผ่นกัสเซ็ท และรอยต่อท่อ ตรวจสอบด้วยไฟไนต์เอลิเมนต์แผ่น (CBFEM) และวิธีชิ้นส่วน'), ['AS 4100 · EN 1993-1-8 · AISC 360', 'CBFEM', T('Bolts · welds · plates', 'สลัก · รอยเชื่อม · แผ่น'), 'I · SHS · RHS · CHS']]
         ].map(appCard).join('')}</div>
@@ -1124,6 +1125,9 @@
   }
   function bridgeIcon() {
     return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M4 50h112" class="ln"/><path d="M14 50V40M106 50V40" class="ln"/><path d="M14 40 Q60 6 106 40" class="ln" fill="none"/>${[26, 38, 50, 60, 70, 82, 94].map(x => { const y = 40 - 34 * (1 - Math.pow((x - 60) / 46, 2)); return `<path d="M${x} ${y.toFixed(1)}V50" class="ln-thin"/>`; }).join('')}<path d="M40 64V50M80 64V50" class="ln"/><path d="M34 68h12M74 68h12" class="ln-thin"/><path d="M52 34l6-6 6 6" class="ln-acc"/></svg>`;
+  }
+  function houseIcon() {
+    return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M4 66h112" class="ln"/><path d="M18 66V32h84v34M18 49h84" class="ln"/><path d="M12 32L60 8l48 24" class="ln"/><path d="M30 32l30-15 30 15M45 25v7M60 17v15M75 25v7" class="ln-thin"/><path d="M40 66V32M80 66V32" class="ln-dash"/><g class="ln-acc"><path d="M14 66h10v4H14zM55 66h10v4H55zM96 66h10v4H96z"/></g></svg>`;
   }
   function buildingIcon() {
     return `<svg class="ei an-ico" viewBox="0 0 120 72" aria-hidden="true"><path d="M6 66h108" class="ln"/>${[0, 1, 2, 3].map(k => `<path d="M${22 + k * 4} ${62 - k * 14}h${64 - k * 0}" class="ln"/>`).join('')}${[22, 54, 86].map(x => `<path d="M${x} 66V${66 - 4 * 14 - 2}" class="ln"/>`).join('')}<path d="M86 66l20-10V8L86 18M106 8L86 18H22l20-10h64" class="ln-thin"/><path d="M96 9v50M74 8v52" class="ln-dash"/><g class="ln-acc"><path d="M4 22h12M4 34h12M4 46h12"/><path d="M12 19l4 3-4 3M12 31l4 3-4 3M12 43l4 3-4 3"/></g></svg>`;
@@ -2105,7 +2109,7 @@
         pdf.text('Page ' + (i + 1) + ' of ' + n, 210 - mm.r, 297 - mm.b + 8.5, { align: 'right' });
       }
       const blob = pdf.output('blob');
-      const name = ANV.includes(S.view) ? (S.meta.ref || S.view).replace(/[^\w\-]+/g, '_') + (S.view === 'conn' ? '_steel-connection_' : S.view === 'timber' ? '_timber-bridge-rating_' : '_frame-analysis_') + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
+      const name = ANV.includes(S.view) ? (S.meta.ref || S.view).replace(/[^\w\-]+/g, '_') + (S.view === 'conn' ? '_steel-connection_' : S.view === 'timber' ? '_timber-bridge-rating_' : S.view === 'house' ? '_house-structural-calculation_' : '_frame-analysis_') + today() + '.pdf' : (S.meta.ref || S.elem).replace(/[^\w\-]+/g, '_') + '_' + S.elem + '_' + S.code + '_' + today() + '.pdf';
       if (dl) await dl.save({ filename: name, data: blob }); else pdf.save(name);
       toast(T('PDF saved', 'บันทึก PDF แล้ว'), 'ok');
     } catch (e) {
@@ -2370,6 +2374,7 @@
   function anUI(view) {
     view = ANV.includes(view) ? view : 'analysis';
     if (!AN2[view]) {
+      if (view === 'house') { if (!window.SC_HOUSE_UI || !window.HOUSE || !window.FRAME) return null; AN2[view] = window.SC_HOUSE_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, go }); AN = AN2[view]; window.SC_AN = AN; return AN; }
       if (view === 'timber') { if (!window.SC_TIMBER_UI || !window.TIMBER) return null; AN2[view] = window.SC_TIMBER_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, go }); AN = AN2[view]; window.SC_AN = AN; return AN; }
       if (view === 'tdraw') { if (!window.SC_TDRAW_UI || !window.TDET || !window.TDRAW) return null; AN2[view] = window.SC_TDRAW_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile, go }); AN = AN2[view]; window.SC_AN = AN; return AN; }
       if (view === 'conn') { if (!window.SC_CONN_UI || !window.CONN || !window.CONN.fe) return null; AN2[view] = window.SC_CONN_UI({ T, esc, f, $, $$, S, toast, isPro, COPY, logoMark, today, render, saveFile }); AN = AN2[view]; window.SC_AN = AN; return AN; }
@@ -2410,6 +2415,7 @@
     if (a.startsWith('an-') && ANV.includes(S.view) && AN) { AN.onClick(a, b); return; }
     if (a.startsWith('cn-') && S.view === 'conn' && AN) { AN.onClick(a, b); return; }
     if (a.startsWith('tb-') && S.view === 'timber' && AN) { AN.onClick(a, b); return; }
+    if (a.startsWith('hs-') && S.view === 'house' && AN) { AN.onClick(a, b); return; }
     if (a.startsWith('td-') && S.view === 'tdraw' && AN) { AN.onClick(a, b); return; }
     if (a === 'lang') { if (A.edit) syncModalDraft(); const wasReport = S.reportOpen; setLang(b.dataset.l); if (wasReport && S.view === 'design') { S.reportOpen = true; renderReport(); } }
     else if (a === 'nav') { const v = b.dataset.v; if (ANV.includes(v) && isOff(v)) { toast(offMsg(), 'bad'); return; } if ((v === 'home' || v === 'codes' || ANV.includes(v)) && S.role === 'guest') { S.role = 'free'; saveSession(); track('free'); } go(v); if (b.dataset.qto && ANV.includes(v)) setTimeout(() => { const an = anUI(v); if (an && an.openQto) an.openQto(); }, 30); }

@@ -1216,6 +1216,51 @@ body.an-resizing,body.an-resizing *{cursor:ns-resize!important;user-select:none!
 .cn-rotg b{font-weight:600}
 .cn-rotg .btn{padding:1px 6px}
 .cn-drawer.on{height:min(32%,300px)}
+
+/* house design app */
+.hs-app{grid-template-columns:340px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+.hs-app>#reportWrap{position:fixed}
+.hs-top{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--card)}
+.hs-title{display:flex;flex-direction:column;min-width:150px} .hs-title b{font-size:15px}
+.hs-steps{display:flex;gap:4px;overflow-x:auto;flex:1;min-width:0;padding-bottom:2px}
+.hs-step{flex:none;display:flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 10px 4px 4px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.hs-step i{font-style:normal;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--line);font-size:11px}
+.hs-step.on{border-color:var(--accent,#e8590c);background:var(--accent,#e8590c);color:#fff} .hs-step.on i{background:rgba(255,255,255,.25)}
+.hs-step.done:not(.on) i{background:#119C55;color:#fff}
+.hs-tools{display:flex;gap:4px;flex-wrap:wrap}
+.hs-side{grid-column:1;grid-row:2;overflow:auto;border-right:1px solid var(--line);background:var(--card);padding:8px 14px 28px}
+.hs-side h3{font-size:15px;margin:12px 0 4px} .hs-side .sm,.hs-out .sm{font-size:11.5px}
+.hs-form{display:grid;grid-template-columns:1fr;gap:2px}
+.hs-row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.hs-work{grid-column:2;grid-row:2;min-width:0;min-height:0;overflow:auto;background:var(--bg)}
+.hs-planw{height:calc(100vh - 220px);min-height:420px;padding:8px;box-sizing:border-box}
+.hs-plan{width:100%;height:100%;display:block;user-select:none}
+.hs-gl{stroke:var(--muted);stroke-width:.8;stroke-dasharray:10 4 2 4}
+.hs-bub{fill:var(--card);stroke:var(--ink);stroke-width:1.2} .hs-bt{font-size:12px;font-weight:600;text-anchor:middle;fill:var(--ink)}
+.hs-dim{font-size:11px;text-anchor:middle;fill:var(--muted);font-family:var(--f-mono)}
+.hs-slab{fill:rgba(80,140,220,.12);stroke:rgba(80,140,220,.5);stroke-width:1} .hs-slab.gnd{fill:rgba(150,120,80,.14);stroke:rgba(150,120,80,.5)} .hs-slab.ng,.hs-beam.ng,.hs-col.ng{stroke:#D8303F}
+.hs-stair{fill:rgba(240,170,40,.14);stroke:rgba(200,130,20,.7)} .hs-tread{stroke:rgba(200,130,20,.7);stroke-width:1} .hs-open{stroke:var(--muted);stroke-width:1;stroke-dasharray:6 4}
+.hs-wall{stroke:#8a6f52;stroke-width:4;opacity:.75}
+.hs-beam{stroke:var(--ink);opacity:.8;stroke-linecap:round} .hs-beam.ng{stroke:#D8303F;opacity:1}
+.hs-col{fill:var(--ink);stroke:var(--ink)} .hs-col.ng{fill:#D8303F}
+.hs-fnd{fill:none;stroke:var(--muted);stroke-dasharray:5 3}
+.hs-lb{font-size:12px;font-weight:600;text-anchor:middle;fill:var(--ink)} .hs-sm{font-size:10px;text-anchor:middle;fill:var(--muted)}
+.hs-bl{font-size:10.5px;text-anchor:middle;fill:var(--ink);font-family:var(--f-mono)} .hs-cl{font-size:10px;fill:var(--muted);font-family:var(--f-mono)}
+.hs-ttl{font-size:13px;text-anchor:end;fill:var(--muted)}
+.hs-hit{fill:transparent;stroke:transparent;cursor:pointer} .hs-hit.seg{stroke-width:14} .hs-hit:hover{fill:rgba(232,89,12,.18);stroke:rgba(232,89,12,.45)} .hs-hit.pt:hover{fill:rgba(232,89,12,.35)}
+.hs-c3{height:calc(100vh - 220px);min-height:420px} .hs-c3 canvas{width:100%;height:100%;display:block;outline:0}
+.hs-pick{margin-top:8px;font-size:12.5px}
+.hs-out{padding:10px 16px 30px} .hs-out h3{font-size:15px;margin:14px 0 4px}
+.hs-t{border-collapse:collapse;font-size:12.5px;width:100%} .hs-t th,.hs-t td{padding:3px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.hs-t th{background:var(--line);font-weight:600;white-space:nowrap} .hs-t td.num{text-align:right;font-family:var(--f-mono)}
+.hs-t input,.hs-t select{font:inherit;font-size:12px;padding:2px 4px;border:1px solid var(--line2);border-radius:5px;background:var(--bg);color:var(--ink);max-width:100%}
+.hs-side .hs-t input{width:100%}
+.hs-t tr.hs-grp th{background:transparent;border-bottom:1.5px solid var(--ink)}
+.hs-empty{padding:40px;text-align:center;color:var(--muted)}
+.hs-stat{margin:8px 0;font-size:13px} .hs-stat .ok{color:#0C7A42} .hs-stat .bad,.hs-out .bad,.hs-side .bad{color:#B3202E}
+.hs-warn{margin:6px 0 0 16px;font-size:12px;color:var(--muted)}
+.hs-sheets{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px} .hs-sheet{background:#fff;border:1px solid var(--line2);box-shadow:0 2px 10px rgba(0,0,0,.08)} .hs-sheet svg{width:100%;height:auto;display:block}
+@media (max-width:900px){.hs-app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto}.hs-side,.hs-work{grid-column:1;grid-row:auto}.hs-side{border-right:0;border-bottom:1px solid var(--line)}.hs-planw,.hs-c3{height:60vh}}
 </style>
 </head>
 <body>
@@ -1261,6 +1306,11 @@ body.an-resizing,body.an-resizing *{cursor:ns-resize!important;user-select:none!
 <script src="tdet_p4.js"></script>
 <script src="tdet_p42.js"></script>
 <script src="tdraw.js"></script>
+<script src="house.js"></script>
+<script src="housebbs.js"></script>
+<script src="housereport.js"></script>
+<script src="housedwg.js"></script>
+<script src="houseui.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
