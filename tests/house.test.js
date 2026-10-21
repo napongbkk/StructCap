@@ -18,7 +18,7 @@ P('Method 2 case 1, m = 1.0, short neg. continuous', X.coef(X.M2[1][0], 1), 0.03
 P('Method 2 case 4, m = 0.75 short pos. (interpolated)', X.coef(X.M2[4][2], 0.75), (0.056 + 0.062) / 2, 1e-6);
 
 // 2. example house: load take-down equilibrium (Σ service reactions = Σ applied loads + self weight)
-const H = X.example(), A = X.analyse(H), D = X.designAll(H, A), Q = BB.boq(H, D);
+const H = X.example(), SV = X.solve(H), A = SV.A, D = SV.D, Q = BB.boq(H, D);
 {
   const m = A.fm.model, wD = m.loads.filter(l => l.case === 'D' || l.case === 'L').reduce((s, l) => s + (l.kind === "udl" ? (l.w1 + l.w2) / 2 * (l.b - l.a) : 0), 0);
   const nodes = Object.fromEntries(m.nodes.map(n => [n.id, n])), secs = Object.fromEntries(m.sections.map(q => [q.id, q]));
@@ -61,6 +61,28 @@ const H = X.example(), A = X.analyse(H), D = X.designAll(H, A), Q = BB.boq(H, D)
   T('truss members within ASD (Fa, 0.6Fy) and KL/r ≤ 200', r.truss.groups.every(g => g.sec && g.sec.ok));
   P('Fa(KL/r = 100, Fy 2400) AISC ASD (ksc)', X.Fa(100, 2400, 2.04e6), (() => { const Cc = Math.sqrt(2 * Math.PI ** 2 * 2.04e6 / 2400), q = 100 / Cc; return (1 - q * q / 2) * 2400 / (5 / 3 + 3 / 8 * q - q ** 3 / 8); })(), 1e-9);
 }
+{ // purlin: biaxial bending on the slope with sag rods, deflection both ways
+  const pu = D.roof.purlin, th = D.roof.g.th, p = pu.p, cov = X.ROOFS[H.roof.cover][1], w = cov * D.roof.psp + p.w + D.roof.rl.L * Math.cos(th) * D.roof.psp;
+  P('purlin load w = cover·psp + self + LL·cosθ·psp (kg/m)', pu.w, w, 1e-9);
+  P('purlin wt = w·sinθ', pu.wt, w * Math.sin(th), 1e-9);
+  P('purlin interaction fbx/0.6Fy + fby/0.75Fy', pu.ur, (w * Math.cos(th) * D.roof.sp ** 2 / 8 * 100 / p.Sx) / 1440 + (w * Math.sin(th) * pu.Ly ** 2 / 8 * 100 / p.Sy) / 1800, 1e-9);
+  P('purlin Δt along the slope = 5wt·Ly⁴/384EIy (cm)', pu.dy, 5 * pu.wt / 100 * (pu.Ly * 100) ** 4 / (384 * H.mat.Es * p.Iy), 1e-9);
+  const h2 = X.example(); h2.roof.sp = 4; h2.roof.pitch = 35; const r2 = X.solve(h2).D.roof.purlin;
+  T(`purlin 4 m span at 35°: sag rods added (${r2.nsag}) and every check OK (${r2.name})`, r2.nsag >= 2 && r2.ok);
+  const h3 = X.example(); h3.roof.sp = 4; h3.roof.pitch = 35; h3.roof.sag = 0; h3.roof.purlin = '75x45x15x2.3'; T('purlin C75 over 4 m without sag rods fails the weak-axis check', !X.solve(h3).D.roof.purlin.ok);
+}
+{ // pedestals run down to the top of each designed footing
+  const h = X.example(); h.grid.x = [0, 6, 12, 18]; h.grid.y = [0, 6, 12]; h.loads.sdl = 300; const r = X.solve(h);
+  const nodes = r.A.fm.model.nodes.filter(n => n.sup === 'fixed');
+  T('frame base level = −Df + t of the footing below every column', r.D.fnds.every(f => { const n = nodes.find(q => q.id === `F:${f.i}:${f.j}`); return Math.abs(n.z - (-h.soil.Df + f.t / 100)) < 1e-9; }) && r.D.fnds.some(f => f.t > 30));
+}
+{ // BOQ default unit rates and VAT
+  const c = Q.items.find(i => i.key === 'conc'), b = Q.items.find(i => i.key === 'bar_DB12');
+  P('default concrete rate (mat + labour, บาท/ลบ.ม.)', c.mat + c.lab, 2634 + 522, 1e-9);
+  P('default DB12 rate (บาท/กก.)', b.mat + b.lab, 20.65 + 3.9, 1e-9);
+  P('BOQ total = Σ q·(mat + lab); grand = total × 1.07', Q.grand, Q.items.reduce((s, i) => s + i.q * (i.mat + i.lab), 0) * 1.07, 1e-9);
+  const h = X.example(); h.rates = { conc: { mat: 3000 } }; const q2 = BB.boq(h, D); T('user rate overrides the default', q2.items.find(i => i.key === 'conc').mat === 3000 && q2.items.find(i => i.key === 'conc').lab === 522);
+}
 T('example house: every member passes', X.summary(D).nBad === 0);
 // 4. BBS
 P('90° hook DB12 = 12db (m)', BB.hook90('DB12'), 0.144, 1e-9);
@@ -74,7 +96,7 @@ T('3D cage has bars for every member type', ['fnd:', 'col:', 'beam:'].every(k =>
 [['pile foundations', h => { h.soil.type = 'pile'; }], ['wind on', h => { h.loads.wind.on = true; }], ['hip roof', h => { h.roof.type = 'hip'; }], ['shed roof', h => { h.roof.type = 'shed'; h.roof.pitch = 10; }], ['flat (no truss)', h => { h.roof.type = 'flat'; }], ['user combos', h => { h.loads.combos = [{ id: 'U1', name: '1.2D+1.6L', f: { D: 1.2, L: 1.6 } }, { id: 'SV', name: 'D+L', f: { D: 1, L: 1 }, type: 'SLS' }]; }],
  ['overrides', h => { h.over = { ['beam:' + h.beams[5].id]: { top: 'DB16', ntop: 4 } }; }], ['3 storeys, 5 × 3 bays', h => { h.grid = { x: [0, 4, 8, 12, 16, 20], y: [0, 3.5, 7, 10.5], xn: ['1', '2', '3', '4', '5', '6'], yn: ['A', 'B', 'C', 'D'] }; h.stories.push({ id: 'S4', name: 'ชั้น 3', z: 9.2 }); h.columns = []; h.beams = []; h.slabs = []; h.stairs = []; h.walls = []; X.auto(h, { cols: true, beams: true, slabs: true }); h.slabs = h.slabs.filter(s => s.st !== 'S4'); h.slabs.filter(s => s.st === 'S1').forEach(s => { s.ground = true; }); h.roof.st = 'S4'; }]
 ].forEach(([nm, mod]) => {
-  try { const h = X.example(); mod(h); const a = X.analyse(h), d = X.designAll(h, a), q = BB.boq(h, d), s = X.summary(d);
+  try { const h = X.example(); mod(h); const sv = X.solve(h), a = sv.A, d = sv.D, q = BB.boq(h, d), s = X.summary(d);
     T(`variant ${nm}: analysed and designed (${s.nOk} OK, ${s.nBad} NG), BOQ ${q.items.length} items`, s.list.length > 10 && q.items.length > 10);
     if (nm === 'pile foundations') T('pile caps: load per pile ≤ capacity', d.fnds.every(f => f.Rpile <= h.soil.pile.cap + 1e-9));
     if (nm === 'overrides') { const b = d.beams.find(x => x.id === h.beams[5].id); T('override: 4-DB16 top bars used', b.top.bar === 'DB16' && b.top.n === 4); }

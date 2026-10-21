@@ -106,10 +106,21 @@
   }
 
   // ------------------------------------------------------------------ BOQ (quantities, optional unit rates in H.rates)
+  // default unit rates (บาท, ไม่รวม VAT) — editable per project in H.rates[key] = { mat, lab }
+  // วัสดุ: สนค. กระทรวงพาณิชย์ ราคาเฉลี่ยทั่วประเทศ ส.ค. 2569; ค่าแรง: บัญชีค่าแรงงาน กรมบัญชีกลาง ว 480 (26 มิ.ย. 2569); 'est' = ประมาณการ
+  const SRC = { M: 'สนค. ส.ค. 2569', L: 'กรมบัญชีกลาง ว 480 (2569)', E: 'ประมาณการ' };
+  const RATES = {
+    dig: { mat: 0, lab: 153, src: [null, 'L'] }, fill: { mat: 0, lab: 121, src: [null, 'L'] }, sand: { mat: 450, lab: 112, src: ['E', 'L'] }, lean: { mat: 2100, lab: 427, src: ['E', 'L'] },
+    pile: { mat: 750, lab: 183, src: ['E', 'L'] }, conc: { mat: 2634, lab: 522, src: ['M', 'L'] }, form: { mat: 220, lab: 163, src: ['E', 'L'] },
+    bar_RB6: { mat: 22.36, lab: 4.9, src: ['M', 'L'] }, bar_RB9: { mat: 21.32, lab: 4.9, src: ['M', 'L'] }, bar_DB10: { mat: 21.0, lab: 3.9, src: ['E', 'L'] }, bar_DB12: { mat: 20.65, lab: 3.9, src: ['M', 'L'] },
+    bar_DB16: { mat: 20.54, lab: 3.9, src: ['M', 'L'] }, bar_DB20: { mat: 20.77, lab: 3.5, src: ['M', 'L'] }, bar_DB25: { mat: 21.21, lab: 3.5, src: ['M', 'L'] }, bar_DB28: { mat: 21.21, lab: 3.5, src: ['E', 'L'] },
+    wire: { mat: 42.7, lab: 0, src: ['M', null] }, steel: { mat: 26, lab: 14, src: ['E', 'L'] }, purlin: { mat: 26, lab: 12, src: ['E', 'L'] }, paint: { mat: 45, lab: 35, src: ['E', 'E'] }
+  };
+  const rateOf = (H, key) => { const d = RATES[key] || { mat: 0, lab: 0, src: [] }, u = (H.rates || {})[key] || {}; const pick = (f, i) => (u[f] != null && u[f] !== '' ? { v: +u[f] || 0, src: 'ผู้ใช้' } : { v: d[f], src: d.src[i] ? SRC[d.src[i]] : '' }); return { mat: pick('mat', 0), lab: pick('lab', 1) }; };
   function boq(H, D) {
-    const B = schedule(H, D), r = H.rates || {}, items = [];
+    const B = schedule(H, D), items = [];
     const sum = (L, f) => L.reduce((s, x) => s + f(x), 0);
-    const it = (grp, name, q, unit, key) => { const rt = r[key] || {}; items.push({ grp, name, q, unit, key, mat: +rt.mat || 0, lab: +rt.lab || 0 }); };
+    const it = (grp, name, q, unit, key) => { const rt = rateOf(H, key); items.push({ grp, name, q, unit, key, mat: rt.mat.v, lab: rt.lab.v, smat: rt.mat.src, slab: rt.lab.src, own: rt.mat.src === 'ผู้ใช้' || rt.lab.src === 'ผู้ใช้' }); };
     const vc = g => sum(B.conc.filter(c => c.grp === g && !c.lean && !c.sand && !c.dig), c => c.v);
     it('1. งานดิน', 'งานดินขุดฐานราก', sum(B.conc.filter(c => c.dig), c => c.v), 'ลบ.ม.', 'dig');
     it('1. งานดิน', 'งานดินถมกลับ (ประมาณ)', max(0, sum(B.conc.filter(c => c.dig), c => c.v) - vc('ฐานราก') - vc('ตอม่อ')), 'ลบ.ม.', 'fill');
@@ -122,10 +133,11 @@
     B.byBar.forEach(o => it('5. งานเหล็กเสริม', `เหล็ก${/^RB/.test(o.bar) ? 'กลม SR24' : 'ข้ออ้อย SD40'} ${o.bar} (เผื่อ ${H.mat.waste}%)`, o.kgw, 'กก.', 'bar_' + o.bar));
     const kgAll = sum(B.byBar, o => o.kgw);
     it('5. งานเหล็กเสริม', 'ลวดผูกเหล็ก (15 กก./ตันเหล็ก)', kgAll * 0.015, 'กก.', 'wire');
-    B.steel.forEach(s => it('6. งานโครงหลังคาเหล็ก', `${s.item} ${s.sec}`, s.kg, 'กก.', 'steel'));
+    B.steel.forEach(s => it('6. งานโครงหลังคาเหล็ก', `${s.item} ${s.sec}`, s.kg, 'กก.', s.item === 'แป' ? 'purlin' : 'steel'));
     if (B.steel.length) it('6. งานโครงหลังคาเหล็ก', 'สีกันสนิม + สีทับหน้า (ประมาณ 1 ตร.ม. ต่อ 12 กก.)', sum(B.steel, s => s.kg) / 12, 'ตร.ม.', 'paint');
-    items.forEach(x => { x.tot = x.q * (x.mat + x.lab); });
-    return { B, items, total: sum(items, x => x.tot), kgAll };
+    items.forEach(x => { x.tmat = x.q * x.mat; x.tlab = x.q * x.lab; x.tot = x.tmat + x.tlab; });
+    const total = sum(items, x => x.tot), vat = +(H.vat == null ? 7 : H.vat) || 0;
+    return { B, items, total, tmat: sum(items, x => x.tmat), tlab: sum(items, x => x.tlab), vat, vatAmt: total * vat / 100, grand: total * (1 + vat / 100), kgAll, SRC };
   }
 
   // ------------------------------------------------------------------ 3D rebar cage (world coordinates m: x, y plan; z up)
@@ -170,5 +182,5 @@
     return P;
   }
 
-  G.HOUSEBBS = { schedule, boq, cage, perimeterPts, hook90, hook180, hookStir, lap, STOCK, fndTop };
+  G.HOUSEBBS = { schedule, boq, RATES, rateOf, SRC, cage, perimeterPts, hook90, hook180, hookStir, lap, STOCK, fndTop };
 })(typeof window !== 'undefined' ? window : globalThis);

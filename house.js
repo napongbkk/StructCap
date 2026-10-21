@@ -19,13 +19,13 @@
   const CLIP = ['75x45x15x2.3', '100x50x20x2.3', '100x50x20x3.2', '125x50x20x2.3', '125x50x20x3.2', '150x50x20x2.3', '150x50x20x3.2', '150x65x20x3.2'];
   function steelProps(kind, name) { // returns A cm², Ix cm⁴, Iy, Sx cm³, rx, ry cm, w kg/m, h, b cm
     const p = name.split('x').map(Number);
-    if (kind === 'box') { const [b, h, t] = p.map(v => v / 10); const A = 2 * t * (b + h - 2 * t), Ix = (b * h ** 3 - (b - 2 * t) * (h - 2 * t) ** 3) / 12, Iy = (h * b ** 3 - (h - 2 * t) * (b - 2 * t) ** 3) / 12; return { A, Ix, Iy, Sx: Ix / (h / 2), rx: sq(Ix / A), ry: sq(Iy / A), w: A * 0.785, h, b, t, name: '□' + name }; }
+    if (kind === 'box') { const [b, h, t] = p.map(v => v / 10); const A = 2 * t * (b + h - 2 * t), Ix = (b * h ** 3 - (b - 2 * t) * (h - 2 * t) ** 3) / 12, Iy = (h * b ** 3 - (h - 2 * t) * (b - 2 * t) ** 3) / 12; return { A, Ix, Iy, Sx: Ix / (h / 2), Sy: Iy / (b / 2), rx: sq(Ix / A), ry: sq(Iy / A), w: A * 0.785, h, b, t, name: '□' + name }; }
     const [h, b, c, t] = p.map(v => v / 10); // lipped channel, mid-line approximation
     const segs = [[b - t, t, (h - t) / 2], [b - t, t, -(h - t) / 2], [h - t, t, 0, 1], [c - t / 2, t, (h - t) / 2 - (c - t / 2) / 2, 1], [c - t / 2, t, -(h - t) / 2 + (c - t / 2) / 2, 1]];
     let A = 0, Ix = 0; segs.forEach(([L, tt, y, vert]) => { const a = L * tt; A += a; Ix += a * y * y + (vert ? tt * L ** 3 / 12 : L * tt ** 3 / 12); });
     const xw = 0, xs = [[b - t, (b - t) / 2], [b - t, (b - t) / 2], [h - t, 0], [c - t / 2, b - t], [c - t / 2, b - t]];
     const xc = xs.reduce((s, [L, x]) => s + L * t * x, 0) / A; let Iy = 0; xs.forEach(([L, x], i) => { const a = L * t; Iy += a * (x - xc) ** 2 + (i < 2 ? t * L ** 3 / 12 : 0); });
-    return { A, Ix, Iy, Sx: Ix / (h / 2), rx: sq(Ix / A), ry: sq(Iy / A), w: A * 0.785, h, b, t, name: 'C' + name };
+    return { A, Ix, Iy, Sx: Ix / (h / 2), Sy: Iy / max(xc + t / 2, b - t / 2 - xc), xc, rx: sq(Ix / A), ry: sq(Iy / A), w: A * 0.785, h, b, t, c, name: 'C' + name };
   }
   // live loads (kg/m²) — Ministerial Regulation No. 6 (B.E. 2527) under the Building Control Act B.E. 2522
   const LL = { res: ['ที่พักอาศัย', 150], toilet: ['ห้องน้ำ ห้องส้วม', 150], stair: ['บันได ช่องทางเดิน', 300], balcony: ['ระเบียง', 300], office: ['สำนักงาน', 250], store: ['ห้องเก็บของ', 500], roofc: ['หลังคา คสล. / ดาดฟ้า', 100], garage: ['ที่จอดรถยนต์นั่ง', 400] };
@@ -150,7 +150,7 @@
     return L;
   }
   // ------------------------------------------------------------------ build the 3D frame model (FRAME, kN m)
-  function frameModel(H) {
+  function frameModel(H, ft) {
     const S = stories(H), fc = H.mat.fc, Ec = 15100 * sq(fc) * 0.0980665; // MPa
     const zBase = -num(H.soil.Df, 1.5) + 0.3;    // top of the footing: base at Df, minimum footing thickness 30 cm
     const nodes = [], nset = new Set(), members = [], loads = [], warn = [];
@@ -160,7 +160,7 @@
     // columns: base at the top of the footing, segment per storey up to the column top
     H.columns.forEach(c => {
       const sec = secOf(H, c.sec), x = gx(H, c.i), y = gy(H, c.j), top = stIdx(H, c.top); addSec(sec);
-      const bid = `F:${c.i}:${c.j}`; addNode(bid, x, y, zBase, 'fixed');
+      const bid = `F:${c.i}:${c.j}`; addNode(bid, x, y, ft && ft[c.id] ? -num(H.soil.Df, 1.5) + ft[c.id] : zBase, 'fixed');
       let prev = bid;
       for (let k = 0; k <= top && k < S.length; k++) { const id = nid(S[k].id, c.i, c.j); addNode(id, x, y, S[k].z); members.push({ id: `col:${c.id}:${k}`, i: prev, j: id, sec: sec.id, mat: 'RC', beta: 0 }); prev = id; }
     });
@@ -238,9 +238,9 @@
     if (H.loads.combos && H.loads.combos.length) { const ids = new Set(cases.map(c => c.id)); return { model: { nodes, members, sections, materials, cases, loads, combos: userCombos(H, ids) }, warn, zBase }; }
     return { model: { nodes, members, sections, materials, cases, loads, combos }, warn, zBase };
   }
-  function analyse(H) {
+  function analyse(H, ft) {
     if (!G.FRAME) throw new Error('frame.js is required');
-    const fm = frameModel(H);
+    const fm = frameModel(H, ft);
     if (!fm.model.members.length) throw new Error('ยังไม่มีชิ้นส่วนโครงสร้าง');
     const res = G.FRAME.analyse(fm.model, { nseg: 1, nps: 10 });
     const ult = fm.model.combos.filter(c => c.type === 'ULS').map(c => c.id);
@@ -248,7 +248,7 @@
     const byId = {}; env.mem.forEach((m, k) => { byId[m.id] = { env: m, sls: sls.mem[k], u1: res.combos.U1.mem[k] }; });
     // base reactions (kN -> t): service and ultimate, per column
     const RX = {}; fm.model.nodes.forEach((n, p) => { if (n.sup !== 'fixed') return; const s = sls.R.slice(6 * p, 6 * p + 6).map(v => v / KG / 1000), u = res.combos.U1.R.slice(6 * p, 6 * p + 6).map(v => v / KG / 1000); RX[n.id] = { s, u }; });
-    return { fm, res, env, byId, RX, warn: fm.warn.concat(res.warn || []), combos: fm.model.combos };
+    return { fm, res, env, byId, RX, ft: ft || null, warn: fm.warn.concat(res.warn || []), combos: fm.model.combos };
   }
 
   // ------------------------------------------------------------------ RC design helpers (SDM, kg-cm)
@@ -491,10 +491,16 @@
   function roofDesign(H) {
     const R = H.roof, g = roofGeom(H), rl = roofLoads(H); if (!g || !rl) return null;
     const Fy = num(H.mat.Fy, 2400), E = H.mat.Es, sp = num(R.sp, 1.0), psp = num(R.psp, 1.0), out = { g, rl, sp, psp, warn: [] };
-    // purlins: simple span = truss spacing, load on the slope (cover + LL on plan × cos)
-    const wP = (rl.cover / (1 / Math.cos(g.th)) * 1 + 5 + rl.L * Math.cos(g.th)) * psp, Mp = wP * sp * sp / 8; // kg-m
-    let purl = null; for (const nm of CLIP) { const p = steelProps('clip', nm), fb = Mp * 100 / p.Sx, dl = 5 * wP / 100 * (sp * 100) ** 4 / (384 * E * p.Ix); if (fb <= 0.6 * Fy && dl <= sp * 100 / 180) { purl = { name: nm, p, fb, dl, M: Mp, w: wP }; break; } }
-    if (R.purlin) { const p = steelProps('clip', R.purlin); purl = { name: R.purlin, p, fb: Mp * 100 / p.Sx, dl: 5 * wP / 100 * (sp * 100) ** 4 / (384 * E * p.Ix), M: Mp, w: wP }; }
+    // purlins: simply supported between trusses (span = truss spacing), biaxial bending on the slope (ASD):
+    // gravity per m  w = cover·psp + self weight + LL·cosθ·psp  →  normal wn = w·cosθ (strong axis, span L), along the slope wt = w·sinθ
+    // (weak axis, span L / (n_sag + 1) with sag rods); fbx/Fbx + fby/Fby ≤ 1 with Fbx = 0.6Fy, Fby = 0.75Fy; deflections ≤ L/180 both ways
+    const cs = Math.cos(g.th), sn = Math.sin(g.th), cov = (ROOFS[R.cover] || ROOFS.tile)[1], nsag = R.sag == null ? (sp > 3 ? 2 : sp > 1.6 ? 1 : 0) : max(0, round(+R.sag)), Ly = sp / (nsag + 1);
+    const pChk = nm => { const p = steelProps('clip', nm), w = cov * psp + p.w + rl.L * cs * psp, wn = w * cs, wt = w * sn, Mx = wn * sp * sp / 8, My = wt * Ly * Ly / 8;
+      const fbx = Mx * 100 / p.Sx, fby = My * 100 / p.Sy, Fbx = 0.6 * Fy, Fby = 0.75 * Fy, ur = fbx / Fbx + fby / Fby;
+      const dx = 5 * wn / 100 * (sp * 100) ** 4 / (384 * E * p.Ix), dy = 5 * wt / 100 * (Ly * 100) ** 4 / (384 * E * p.Iy), dlim = sp * 100 / 180, dlimy = Ly * 100 / 180;
+      return { name: nm, p, w, wn, wt, M: Mx, Mx, My, fb: fbx, fbx, fby, Fbx, Fby, ur, dl: dx, dx, dy, dlim, dlimy, nsag, Ly, ok: ur <= 1 && dx <= dlim && dy <= dlimy }; };
+    let purl = null; for (const nm of CLIP) { const q = pChk(nm); if (q.ok) { purl = q; break; } }
+    if (R.purlin) purl = pChk(R.purlin);
     out.purlin = purl; if (!purl) out.warn.push('แปเกินขนาดในตาราง');
     // truss: 2D analysis (pinned members), panel loads from the roof load × truss spacing
     const tg = trussGeom(g), nodes = tg.nodes.map((p, i) => ({ id: 'n' + i, x: p[0], y: 0, z: p[1], sup: i === tg.sup[0] ? 'pin' : i === tg.sup[1] ? 'rollerX' : 'free' }));
@@ -512,10 +518,21 @@
     const pick = gr => { const list = R['sec_' + gr.kind] ? [R['sec_' + gr.kind]] : BOX; for (const nm of list) { const p = steelProps('box', nm), KLr = gr.L * 100 / min(p.rx, p.ry), fa = Fa(KLr, Fy, E), ft = 0.6 * Fy, urc = gr.Nc / p.A / fa, urt = gr.Nt / p.A / ft; if ((urc <= 1 && urt <= 1 && KLr <= 200) || list.length === 1) return { name: nm, p, KLr, fa, ft, urc, urt, ur: max(urc, urt), ok: urc <= 1 && urt <= 1 && KLr <= 200 }; } return null; };
     out.truss = { geom: tg, members: Nmem, groups: Object.values(groups).map(gr => Object.assign(gr, { sec: pick(gr) })), R: res.combos.S1.R };
     out.nTruss = floor((g.len) / sp) + 1; out.reaction = (rl.D + rl.L) * sp * (g.span / 2 + g.ov);
-    out.ok = !!purl && out.truss.groups.every(gr => gr.sec && gr.sec.ok);
+    out.ok = !!purl && purl.ok && out.truss.groups.every(gr => gr.sec && gr.sec.ok);
     return out;
   }
 
+  // analyse and design, then re-analyse with every pedestal running down to the top of its designed footing (thickness t)
+  // until the footing thicknesses stop changing (normally one extra pass)
+  function solve(H) {
+    let A = analyse(H), D = designAll(H, A);
+    for (let k = 0; k < 4; k++) {
+      const ft = {}; D.fnds.forEach(f => { if (f.t) ft[f.id] = f.t / 100; });
+      const used = A.ft || {}, same = H.columns.every(c => abs((used[c.id] || 0.3) - (ft[c.id] || 0.3)) < 1e-9);
+      if (same) break; A = analyse(H, ft); D = designAll(H, A);
+    }
+    return { A, D };
+  }
   // ------------------------------------------------------------------ design everything + marks
   function designAll(H, A) {
     const S = stories(H), D = { slabs: [], beams: [], cols: [], fnds: [], stairs: [], roof: null, warn: [] };
@@ -551,5 +568,5 @@
   }
 
   G.HOUSE = { KG, BARS, barD, barA, barW, BOX, CLIP, steelProps, LL, WALLS, ROOFS, defaults, example, auto, stories, stIdx, topSt, secOf, beamOn, beamLines, slabGeom, slabEdges, slabCont, slabLoads, roofGeom, roofLoads,
-    frameModel, defCombos, uFac, analyse, slabDesign, beamDesign, columnDesign, interaction, footingDesign, stairDesign, roofDesign, trussGeom, designAll, summary, rhoB, rhoReq, beta1, devLen, M2, coef, Fa, PILE_PATTERNS, perimeter, uid, nid, clone };
+    frameModel, solve, defCombos, uFac, analyse, slabDesign, beamDesign, columnDesign, interaction, footingDesign, stairDesign, roofDesign, trussGeom, designAll, summary, rhoB, rhoReq, beta1, devLen, M2, coef, Fa, PILE_PATTERNS, perimeter, uid, nid, clone };
 })(typeof window !== 'undefined' ? window : globalThis);
