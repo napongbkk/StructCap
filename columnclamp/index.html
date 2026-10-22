@@ -133,9 +133,9 @@ footer{font-size:12.5px;color:var(--muted);max-width:90ch}
   </div>
 
   <footer>
-    Rule used: no weld is made inside a closed cell and no slot welds are used. Internal joints are double fillets made while the pockets are open; the outer end plate is PPBW where reached through the open side bays and fitted for bearing elsewhere; the side plates close the box and are PPBW to both end plates from outside. Sequence for discussion with the fabricator; the final order follows their welding procedure and access check.
+    Rule used: no weld is made inside a closed cell and no slot welds are used. Internal joints are welded while the bay beside them is still open (stiffeners and cell walls single fillet on the outboard face); the outer end plate is PPBW where reached through the open side bays and fitted for bearing elsewhere (the centre diaphragm is not welded to it); the side plates close the box and are PPBW to both end plates from outside. Sequence for discussion with the fabricator; the final order follows their welding procedure and access check.
     FW = fillet weld (leg s), BS = both sides, PPBW = partial penetration butt weld. The model is simplified: corner snipes 10x10 and bar holes are not drawn,
-    and one-side welds are drawn on the face the welder works from.
+    and one-side welds are drawn on the face the welder works from.<br>Calculation inputs to match this sequence (07_T5 Rev 35): centre diaphragm edges welded = "Inner end plate + web plates (W2 + W9)" (W10 carries no design force - all results unchanged); stiffeners in the panels between web plates 1-2 and 2-3; W1 to the outer end plate on webs 1 and 3 only (shear flow 3376 N/mm, PPBW design throat ≥ 15 mm). Hand checks: box with webs 1 and 3 only - shear UR 0.72, bending 0.31, Eq 6.1 0.39; panel 3-4 end plate spanning between the web plates UR 0.36; top and bottom end plate strips as cantilevers (60 / 55) UR 0.37 / 0.31.
   </footer>
 </div>
 
@@ -148,23 +148,22 @@ const COL={ep:0x2E5C8A,wp:0x1D9E75,di:0xD4537E,st:0xEF9F27,cw:0x97C459,bar:0x6B6
 const WELDS={
  W1:['Web plates to inner end plate','Double fillet','16 FW','BS'],
  W2:['Centre diaphragm to inner end plate','Double fillet','12 FW','BS'],
- W4:['Stiffeners to inner end plate','Double fillet','10 FW','BS'],
- W5:['Stiffeners to web plates','Double fillet','10 FW','BS'],
- W7:['Inner bar cell walls to web plates','Double fillet','10 FW','BS'],
- W8:['Inner bar cell walls to inner end plate','Double fillet','10 FW','BS'],
+ W4:['Stiffeners to inner end plate - nominal (fitted for contact bearing, no design force)','Single fillet','10 FW','Outboard face'],
+ W5:['Stiffeners to web plates - top and bottom edges','Single fillet','10 FW','Outboard face'],
+ W7:['Inner bar cell walls to web plates','Single fillet','10 FW','Outboard face'],
+ W8:['Inner bar cell walls to inner end plate','Single fillet','10 FW','Outboard face'],
  W9:['Centre diaphragm to web plates','Double fillet','10 FW','BS'],
- 'PPBW 1':['Web plates 1, 3 and 4 to outer end plate - full length, open face','PPBW one side','Throat per calc','Open face'],
- 'PPBW 2':['Web plate 2 and inner cell walls to outer end plate - outer bays only','PPBW one side','Throat per calc','Outer bay'],
- 'PPBW 3':['Diaphragm to outer end plate - above web plate 1 and below web plate 3','PPBW one side','Throat per calc','Open zone'],
- Bearing:['Diaphragm and plates inside the closed centre cells to outer end plate','Fitted for full contact bearing - no weld','EN 1090-2 fit-up','-'],
+ 'PPBW 1':['Web plates 1, 3 and 4 to outer end plate - full length, open face. Webs 1 and 3 carry the box shear flow (web 2 is not welded in the centre cells)','PPBW one side','a ≥ 15 (webs 1, 3)','Open face'],
+ 'PPBW 2':['Web plate 2 and inner cell walls to outer end plate - outer bays only (web 2 not counted in the box check)','PPBW one side','a ≥ 10','Outer bay'],
+ Bearing:['Centre diaphragm, web plate 2 and the plates inside the closed centre cells to outer end plate','Fitted for full contact bearing - no weld','EN 1090-2 fit-up','-'],
  'PPBW side':['Side plates (infill between web plates) - all round to web plates and both end plates','PPBW from outside','Throat per calc','Outside']};
 const STEPS=[
  {t:'Inner end plate on the bench',w:[],d:'Lay the 40 thk inner end plate (1416 x 853, lower part 900 wide) flat on the bench, column face down. Mark out every plate line. Everything below is built up from this plate.'},
- {t:'Centre diaphragm',w:['W2'],d:'Stand the 40 thk diaphragm on the centre line (it runs the full height and projects 20 above for the LCB seat). Weld both sides to the inner end plate.'},
+ {t:'Centre diaphragm',w:['W2'],d:'Stand the 40 thk diaphragm on the centre line (it runs the full height and projects 20 above for the LCB seat). Weld both sides to the inner end plate. The diaphragm is not welded to the outer end plate: it works as a T on the inner end plate, held by the web plates (W2 + W9 in step 3).'},
  {t:'Web plates',w:['W1','W9'],d:'Fit the four 30 thk web plates, each in one piece on each side of the diaphragm and continuous through the bar cell line. Fillet weld both sides to the inner end plate and to the diaphragm while the sides and outer face are open.'},
- {t:'Stiffeners between web plates 1 and 2',w:['W4','W5'],d:'Fit the 25 thk stiffeners into the top panel. Fillet weld both sides to the inner end plate and to both web plates, from the open outer face.'},
- {t:'Inner bar cell walls',w:['W8','W7'],d:'Fit the inner cell wall pieces between web plates 1-2 and 2-3 (web plate 2 stays continuous). Fillet weld both sides to the inner end plate and to the web plates, from the open outer face.',a:'Pockets are about 250 x 225 x 520 deep. Weld the deep end at the inner end plate first and confirm torch reach with the fabricator.'},
- {t:'Close with the outer end plate',w:['PPBW 1','PPBW 2','PPBW 3','Bearing'],d:'Fit the outer end plate on all internal plates and PPBW it from the open sides: web plates 1, 3 and 4 along their full length on the open face, web plate 2 and the inner cell walls in the outer bays, and the diaphragm in the open zones above web plate 1 and below web plate 3.',a:'The closed centre cells (between the diaphragm and the inner cell walls, web plates 1 to 3) are not welded inside - the plates there are fitted for contact bearing on the outer end plate.'},
+ {t:'Stiffeners between web plates 1-2 and 2-3',w:['W4','W5'],d:'In both panels (web plates 1-2 and 2-3), each side of the diaphragm: fit stiffener 1 (160 from the centreline) and weld it, then fit and weld stiffener 2 (305). Each stiffener is welded on its outboard face only - single fillet 10 along the top and bottom edges to the web plates (W5, the load-carrying weld) and a nominal single fillet to the inner end plate (W4). The inboard face and the end at the inner end plate are fitted for contact. They support the inner end plate under the grout pad pressure; without them it spans 470 to the cell wall and is overstressed about 5.6 times.',a:'Because stiffener 1 is welded before stiffener 2 is fitted, and stiffener 2 before the cell walls, the outboard side is always an open 251 mm high slot reached from the panel end and the outer face - no weld is made inside a narrow pocket. Confirm torch reach (up to 520 deep) with the fabricator. The panel between web plates 3 and 4 (115 clear) has no stiffeners: there the inner end plate spans 145 vertically between the web plates (m = 33.5 kNmm/mm, UR 0.36).'},
+ {t:'Inner bar cell walls',w:['W8','W7'],d:'Fit the inner cell wall pieces between web plates 1-2 and 2-3 (web plate 2 stays continuous). Single fillet weld on the outboard face (bar cell side) to the inner end plate and to the web plates; the inboard face is not welded.',a:'The bar cell is still open at the plate edge (the side plates come in step 7), so the outboard face is reached from the side: cell about 200 wide x 251 high, 520 deep. Weld the deep end at the inner end plate first.'},
+ {t:'Close with the outer end plate',w:['PPBW 1','PPBW 2','Bearing'],d:'Fit the outer end plate on all internal plates and PPBW it from the open sides: web plates 1, 3 and 4 along their full length on the open face (webs 1 and 3 with a design throat of at least 15), and web plate 2 and the inner cell walls in the outer bays. The diaphragm is not welded to the outer end plate.',a:'Inside the closed centre cells nothing is welded - the diaphragm, web plate 2 and the stiffener ends are fitted for contact bearing on the outer end plate. Web plate 2 is therefore not counted in the box shear flow: webs 1 and 3 carry 3376 N/mm each, which needs a ≥ 14.0 mm (15 specified).'},
  {t:'Side plates',w:['PPBW side'],d:'Web plates 1 to 3 run out to the plate edge. Fit the 25 thk side plates in between them, flush with the edges, closing the outer bays. PPBW each side plate all round from outside: to the web plate above, the web plate below and both end plates. No slot welds.'},
  {t:'Stress bars and bearing plates',w:[],d:'No welding. Fit the 250 x 250 x 70 loose bearing plates, DIA 160 spherical washers and nuts on the 75 DIA stress bars at 1166 centres.'}];
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -202,15 +201,15 @@ for(let i=0;i<4;i++)for(const g of[-1,1]){
   box(x0,x1,YW[i]-TW/2,YW[i]+TW/2,TE,LX-TE,COL.wp,2);
   for(const f of[1,-1]){weld([x0,YW[i]+f*(TW/2+6),ZI],[x1,YW[i]+f*(TW/2+6),ZI],2);
     weld([g*(TD/2+6),YW[i]+f*(TW/2+6),TE],[g*(TD/2+6),YW[i]+f*(TW/2+6),LX-TE],2);}}
-for(const g of[-1,1])for(const x of XS){
-  box(g*x-TS/2,g*x+TS/2,YW[1]+TW/2,YW[0]-TW/2,TE,TE+LS,COL.st,3);
-  for(const f of[1,-1]){const xw=g*(x+f*(TS/2+6));
-    weld([xw,YW[1]+TW/2,ZI],[xw,YW[0]-TW/2,ZI],3);
-    weld([xw,YW[0]-TW/2-6,TE],[xw,YW[0]-TW/2-6,TE+LS],3);weld([xw,YW[1]+TW/2+6,TE],[xw,YW[1]+TW/2+6,TE+LS],3);}}
 const BAYS=[[YW[1]+TW/2,YW[0]-TW/2],[YW[2]+TW/2,YW[1]-TW/2]];
+for(const g of[-1,1])for(const x of XS)for(const [y0,y1] of BAYS){
+  box(g*x-TS/2,g*x+TS/2,y0,y1,TE,TE+LS,COL.st,3);
+  const xw=g*(x+TS/2+6);
+  weld([xw,y0,ZI],[xw,y1,ZI],3);
+  weld([xw,y1-6,TE],[xw,y1-6,TE+LS],3);weld([xw,y0+6,TE],[xw,y0+6,TE+LS],3);}
 for(const g of[-1,1])for(const [y0,y1] of BAYS){
   const x=XC[0];box(g*x-TC/2,g*x+TC/2,y0,y1,TE,LX-TE,COL.cw,4);
-  for(const f of[1,-1]){const xw=g*(x+f*(TC/2+6));
+  {const xw=g*(x+TC/2+6);
     weld([xw,y0,ZI],[xw,y1,ZI],4);weld([xw,y1-6,TE],[xw,y1-6,LX-TE],4);weld([xw,y0+6,TE],[xw,y0+6,LX-TE],4);}}
 endPlate(LX-TE,LX,5,'outer');
 const XB=XC[0]+TC/2,PO=(a,b)=>weld(a,b,5,'outer');
@@ -220,8 +219,7 @@ for(const g of[-1,1]){
   PO([g*TD/2,YW[3]-TW/2-6,ZO],[g*BL/2,YW[3]-TW/2-6,ZO]);
   for(const f of[1,-1])PO([g*XB,YW[1]+f*(TW/2+6),ZO],[g*EDGE,YW[1]+f*(TW/2+6),ZO]);
   for(const [y0,y1] of BAYS)PO([g*(XB+6),y0,ZO],[g*(XB+6),y1,ZO]);
-  PO([g*(TD/2+6),YW[0]+TW/2,ZO],[g*(TD/2+6),H-6,ZO]);
-  PO([g*(TD/2+6),6,ZO],[g*(TD/2+6),YW[2]-TW/2,ZO]);}
+}
 for(const g of[-1,1])for(const [y0,y1] of BAYS){
   box(g*XSP,g*EDGE,y0,y1,TE,LX-TE,COL.cw,6,'side');
   const xe=g*(EDGE+4);
